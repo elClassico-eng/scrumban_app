@@ -4,13 +4,13 @@
 
 ### MVP
 - **Метод:** email + пароль.
-- **Хэширование:** argon2id (параметры: m=64MB, t=3, p=2).
-- **Сессии:** random 256-bit token в cookie, hash в таблице `sessions`.
+- **Хэширование:** argon2id через `hashPassword()` / `verifyPassword()` из `nuxt-auth-utils`.
+- **Сессии:** подписанный HTTP-only cookie с user_id (через `setUserSession()`). Подпись через `NUXT_SESSION_PASSWORD` (256-bit env-секрет).
 - **Cookie flags:** `HttpOnly`, `Secure` (в prod), `SameSite=Lax`.
 - **TTL:** 7 дней sliding (продлевается при активности), абсолютный лимит 30 дней.
-- **Logout:** revoke записи в `sessions` (удаляется / помечается `revoked_at`).
+- **Logout:** `clearUserSession(event)` — cookie очищается; для глобальной revoke нужна отдельная таблица `revoked_sessions` (Target).
 - **Восстановление пароля:** email-ссылка с токеном, 1 час жизни, одноразовая.
-- **Защита от брутфорса:** rate limit на /login (5 попыток / 5 мин на email), после превышения — CAPTCHA или блокировка на 15 мин.
+- **Защита от брутфорса:** rate limit на /api/auth/login (5 попыток / 5 мин на email), после превышения — CAPTCHA или блокировка на 15 мин.
 
 ### Target
 - Опциональный 2FA (TOTP через authenticator-приложения).
@@ -47,7 +47,7 @@
 - Guest-пользователи (доступ к одной задаче/проекту без членства в workspace).
 
 ### Реализация
-- Middleware `rbac.go` в backend: `RequireRole("admin")` или `RequirePermission("task.create")`.
+- Middleware `server/middleware/rbac.ts`: helper `requireRole(event, 'admin')` или `requirePermission(event, 'task.create')`.
 - Frontend условно показывает кнопки на основе role из `useAuth()` composable.
 - RBAC проверяется **всегда на сервере**, frontend только скрывает UI.
 
@@ -58,7 +58,7 @@
 1. **`workspace_id` в каждой tenant-scoped таблице.**
 2. **Composite индексы всегда начинаются с `workspace_id`.**
 3. **Row-Level Security (RLS) в Postgres.** (hard guard)
-4. **Tenant middleware в Go** — выставляет `SET LOCAL app.workspace_id` в начале каждой транзакции.
+4. **Tenant middleware в Nitro** — выставляет `SET LOCAL app.workspace_id` в начале каждой транзакции через Drizzle.
 
 ### RLS политика (пример)
 ```sql
@@ -70,39 +70,54 @@ CREATE POLICY tasks_tenant_isolation ON tasks
 
 Эффект: любой SELECT/UPDATE/DELETE автоматически фильтруется по текущему `app.workspace_id`. Забыть WHERE теперь безопасно — Postgres вернёт 0 строк.
 
-### Tenant middleware (Go)
-```go
-func TenantMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-    return func(c echo.Context) error {
-        wsID := extractWorkspaceFromPath(c)
-        if !userBelongsToWorkspace(c.Get("user_id").(uuid.UUID), wsID) {
-            return c.NoContent(403)
-        }
-        // SET LOCAL для текущей транзакции
-        ctx := context.WithValue(c.Request().Context(), "workspace_id", wsID)
-        c.SetRequest(c.Request().WithContext(ctx))
-        return next(c)
-    }
+### Tenant middleware (Nitro)
+```typescript
+// server/middleware/tenant.ts
+export default defineEventHandler(async event => {
+  const session = await getUserSession(event)
+  if (!session.userId) return
+
+  const workspaceId = extractWorkspaceFromPath(event)
+  const isMember = await UsersService.belongsToWorkspace(session.userId, workspaceId)
+  if (!isMember) throw createError({ statusCode: 403 })
+
+  event.context.workspaceId = workspaceId
+})
+```
+
+`SET LOCAL app.workspace_id` выставляется в начале каждой транзакции через Drizzle helper в `server/utils/db.ts`:
+
+```typescript
+export async function withTenant<T>(workspaceId: string, fn: (tx: Transaction) => Promise<T>): Promise<T> {
+  return db.transaction(async tx => {
+    await tx.execute(sql`SET LOCAL app.workspace_id = ${workspaceId}`)
+    return fn(tx)
+  })
 }
 ```
 
-`SET LOCAL app.workspace_id` выставляется в начале каждой транзакции в `storage/tx.go`.
-
 ### Тест безопасности (обязателен в CI)
-```go
-func TestRLS_CrossTenantIsolation(t *testing.T) {
-    // В workspace A создаём задачу
-    // Меняем app.workspace_id на B
-    // Пытаемся прочитать задачу из A → должно вернуть 0 строк
-}
+```typescript
+// tests/integration/rls.test.ts
+it('cross-tenant access returns 0 rows', async () => {
+  await withTenant(workspaceA, async tx => {
+    await tx.insert(tasks).values({ title: 'secret', workspaceId: workspaceA })
+  })
+
+  const leaked = await withTenant(workspaceB, async tx => {
+    return tx.select().from(tasks).where(eq(tasks.title, 'secret'))
+  })
+
+  expect(leaked).toHaveLength(0)
+})
 ```
 
 ## Observability
 
 ### Structured logging
-- `log/slog` (стандартная библиотека Go 1.21+).
-- Формат JSON в prod, человекочитаемый — в dev.
-- Обязательные поля: `time`, `level`, `msg`, `request_id`, `user_id` (если есть), `workspace_id` (если есть), `trace_id` (если есть).
+- `pino` (Node.js standard для structured JSON logs).
+- Формат JSON в prod, человекочитаемый (`pino-pretty`) в dev.
+- Обязательные поля: `time`, `level`, `msg`, `requestId`, `userId` (если есть), `workspaceId` (если есть), `traceId` (если есть).
 - Уровни: DEBUG (только dev), INFO, WARN, ERROR.
 
 ### Request tracing
@@ -113,7 +128,7 @@ func TestRLS_CrossTenantIsolation(t *testing.T) {
 - Простые счётчики через stdout (INFO лог на завершение запроса с latency).
 
 ### Target metrics
-- Prometheus endpoint `/metrics`: HTTP latency (histogram), error rate, active SSE connections, queue depth (river), DB connection pool usage.
+- Prometheus endpoint `/api/metrics`: HTTP latency (histogram), error rate, active SSE connections, queue depth (pg-boss), DB connection pool usage.
 - Dashboard в Grafana (или Yandex Monitoring).
 - Alerting на основные пороги (error rate >1%, latency p95 >1s).
 
@@ -138,7 +153,7 @@ func TestRLS_CrossTenantIsolation(t *testing.T) {
 - HSTS включён.
 
 ### Защита от типовых атак
-- **SQL injection:** исключено использованием sqlc (все параметры — prepared statements).
+- **SQL injection:** исключено использованием Drizzle (все параметры через template strings, никогда не конкатенируются в строку).
 - **XSS:** Vue 3 escapes по умолчанию, content-security-policy headers через Caddy.
 - **CSRF:** SameSite=Lax на сессионном cookie; отдельных CSRF токенов нет (Fetch+cookie с SameSite достаточно).
 - **Clickjacking:** X-Frame-Options: DENY.
@@ -167,10 +182,10 @@ func TestRLS_CrossTenantIsolation(t *testing.T) {
 - Работает при 100 concurrent SSE-соединениях на одну реплику.
 
 ### Оптимизации
-- Connection pooling (pgxpool): min=10, max=100.
-- Prepared statements (sqlc делает автоматически).
+- Connection pooling (`postgres-js` встроенный pool): max=20 на инстанс по умолчанию.
+- Prepared statements (Drizzle использует параметризованные запросы автоматически).
 - Индексы на всех query paths.
-- N+1 борется через SQL JOIN'ы, не в Go-коде.
+- N+1 борется через SQL JOIN'ы (`db.select().from(...).leftJoin(...)`), не в service-коде.
 
 ## Резервное копирование
 
@@ -201,7 +216,7 @@ func TestRLS_CrossTenantIsolation(t *testing.T) {
 
 ### MVP
 - Таблица `feature_flags`: `name`, `enabled_globally`, `allowed_workspaces`.
-- Helper `ff.IsEnabled(ctx, "monte_carlo_forecast")`.
+- Helper `await ff.isEnabled(workspaceId, 'monte_carlo_forecast')`.
 - UI для управления флагами — отдельный admin-endpoint, без красивого UI (SQL или CLI).
 
 ### Target
@@ -214,10 +229,10 @@ func TestRLS_CrossTenantIsolation(t *testing.T) {
 
 | Аспект | Current (MVP) | Target |
 |--------|---------------|--------|
-| AuthN | email/password + session cookie | + 2FA, SSO (OAuth/SAML) |
+| AuthN | email/password + signed session cookie (nuxt-auth-utils) | + 2FA, SSO (OAuth/SAML) |
 | AuthZ | 4 фикс. роли | per-project, кастомные роли |
 | RLS | включён везде с 1 дня | включён + тесты |
-| Logs | slog JSON | + Sentry + OTel |
+| Logs | pino JSON | + Sentry + OTel |
 | Metrics | INFO-логи | Prometheus + Grafana |
 | Backups | ежесуточный pg_dump | WAL + еженедельный restore test |
 | Audit | events + is_audit | отдельная audit_log, 7y retention |

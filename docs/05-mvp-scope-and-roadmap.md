@@ -74,24 +74,18 @@
 
 ## Roadmap по фазам
 
-### Фаза 0 — Подготовка (месяц 0, параллельно с началом работы)
-**Цель:** освоить Go до продуктивного уровня.
-- Неделя 1: Tour of Go, основы синтаксиса.
-- Неделя 2: простой HTTP API на net/http + echo (in-memory).
-- Неделя 3: тот же API на Postgres через pgx + sqlc + goose.
-- Неделя 4: cookies, middleware, Docker, подготовка репозитория.
-
-**Критерий выхода:** есть рабочий pet-project «заметки» с Auth, БД, миграциями, Docker.
+### Фаза 0 — Подготовка (пропущена, 2026-04-26)
+**Изначально:** учебный pet-project Nitro starter (`docs/superpowers/plans/2026-04-23-phase0-week1-nitro-starter.md`) для освоения стека. **После решения 2026-04-26:** Phase 0 пропускается — backend пишет Claude, user обучается через ревью реального Scrumban-кода. Plan-файл оставлен в репо как референс рабочего setup'а Nuxt+Nitro+Drizzle.
 
 ### Фаза 1 — MVP Foundation (месяц 1)
 **Цель:** скелет системы, на котором можно наращивать фичи.
-- Монорепо `backend/` + `frontend/`.
-- OpenAPI контракт в `api/openapi.yaml`.
-- Базовая схема БД: User, Workspace, WorkspaceMember, Invitation, Session.
-- Auth endpoints: register, login, logout, password reset.
-- Nuxt SPA с маршрутизацией, Pinia стором, базовыми страницами (login, dashboard-заглушка).
-- CI/CD pipeline (GitHub Actions): build, test, docker push.
-- Docker Compose для dev.
+- Nuxt 4 monorepo: `app/` (frontend) + `server/` (Nitro backend).
+- OpenAPI контракт code-first из zod-схем → `openapi/scrumban.yaml`.
+- Базовая schema БД: User, Workspace, WorkspaceMember, Invitation (Drizzle).
+- Auth endpoints через nuxt-auth-utils: register, login, logout, password reset.
+- Минимальные Nuxt-страницы: login, dashboard-заглушка.
+- CI/CD pipeline (GitHub Actions): typecheck, vitest, build.
+- Docker Compose для dev (PostgreSQL).
 
 **Критерий выхода:** пользователь может зарегистрироваться и залогиниться, frontend видит данные user'а.
 
@@ -180,7 +174,7 @@
 
 | Риск | Вероятность | Влияние | Митигация |
 |------|-------------|---------|-----------|
-| Go учится медленнее ожидаемого | Средняя | Высокое | Фаза 0 не начинаем писать Scrumban-код, пока не пройдём базу |
+| Backend (Nitro/Drizzle/pg-boss) новые библиотеки для user'а | Низкая | Среднее | Backend пишет Claude; user учится через ревью; экосистема стандартная |
 | Недостаточно данных для Monte Carlo к демо | Высокая | Среднее | Sandbox-данные генерируются скриптом из статистических распределений |
 | Переусложнение в процессе | Средняя | Высокое | Двухнедельные review спецификации: ничего нового, не запланированного заранее |
 | Баги в RLS → утечка данных | Низкая | Критическое | RLS-guard test в CI обязателен |

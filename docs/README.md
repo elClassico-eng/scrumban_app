@@ -22,19 +22,23 @@
 |-------|----------|------------|
 | 06 | [System Architecture](06-system-architecture.md) | Высокоуровневая архитектура, компоненты, потоки данных |
 | 07 | [Domain Model](07-domain-model.md) | Сущности, связи, схема БД |
-| 08 | [Backend Design](08-backend-design.md) | Go-бэкенд: структура, паттерны, тесты |
-| 09 | [Frontend Design](09-frontend-design.md) | Nuxt 3 SPA: структура, стор, маршрутизация |
+| 08 | [Backend Design](08-backend-design.md) | Nitro backend: структура, паттерны, тесты |
+| 09 | [Frontend Design](09-frontend-design.md) | Nuxt 4 SPA: структура, стор, маршрутизация |
 | 10 | [Analytics Design](10-analytics-design.md) | CFD, cycle time, Monte Carlo, Little's Law |
 | 11 | [Non-Functional](11-non-functional.md) | Auth, RBAC, multi-tenancy (RLS), observability |
 | 12 | [Deployment](12-deployment.md) | Docker, CI/CD, мониторинг, бэкапы, on-prem |
 
 ## Master spec
 
-- [`superpowers/specs/2026-04-18-scrumban-platform-design.md`](superpowers/specs/2026-04-18-scrumban-platform-design.md) — консолидированная спецификация проекта, ссылается на все документы выше.
+- **Актуальный:** [`superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`](superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md) — Nuxt monorepo с Nitro backend (после pivot'а с Go).
+- **Исходный (заменён):** [`superpowers/specs/2026-04-18-scrumban-platform-design.md`](superpowers/specs/2026-04-18-scrumban-platform-design.md) — оригинальный дизайн с Go backend.
 
 ## Статус документов
 
-Все документы созданы 2026-04-18 как результат сессии проектирования. Версии и изменения отражаются в git-истории.
+- 2026-04-18: документы созданы как результат сессии проектирования (Go backend).
+- 2026-04-23: pivot на Nuxt monorepo (Nitro backend); основной master spec заменён.
+- 2026-04-26: уточнения стека (Nuxt 4, Nuxt UI v3, latest stable hard rule); подход к разработке (Claude пишет backend, frontend совместно).
+- Все изменения отражаются в git-истории.
 
 ## Ключевые принципы работы с документацией
 

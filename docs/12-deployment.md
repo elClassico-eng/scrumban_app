@@ -10,15 +10,15 @@
 services:
   caddy:
     # TLS, reverse-proxy, sticky sessions для SSE
-  nuxt:
-    # Nuxt SPA (production build) + BFF
-  backend:
-    # Go бэкенд
+  app:
+    # Nuxt 4 monorepo (Nitro server отдаёт и API, и SPA static)
   postgres:
     # PostgreSQL 16
   minio:
     # S3-compat storage (для on-prem и dev; в SaaS — Yandex Object Storage)
 ```
+
+> **Примечание:** один Nitro-процесс обслуживает и `/api/*` (HTTP handlers), и SPA (Nuxt build). Отдельных контейнеров для frontend/backend нет — это и есть выгода monorepo.
 
 ## Локальная разработка
 
@@ -27,42 +27,44 @@ services:
 git clone https://gitflic.ru/project/<owner>/scrumban.git
 cd scrumban
 cp .env.example .env                 # редактируем по необходимости
-make dev                             # поднимает Postgres + MinIO
+docker compose -f docker-compose.dev.yml up -d   # Postgres + MinIO
+pnpm install
+pnpm db:migrate                      # применить миграции
+pnpm dev                             # запустить Nuxt dev-сервер (frontend + Nitro backend)
 ```
 
 ### Dev workflow
 ```bash
-# Терминал 1: только БД и storage
+# Терминал 1: инфра (БД и storage в Docker)
 docker compose -f docker-compose.dev.yml up -d
 
-# Терминал 2: backend с live reload
-cd backend && air                    # или make backend-dev
-
-# Терминал 3: frontend HMR
-cd frontend && npm run dev           # или make frontend-dev
+# Терминал 2: Nuxt dev-сервер с HMR (один процесс отдаёт и SPA, и API)
+pnpm dev
 ```
 
-Nuxt прокси `/api/*` → `http://localhost:8080` (backend).
+Открываем http://localhost:3000. Frontend и backend живут в одном процессе — никаких отдельных портов и proxy.
 
-### Makefile targets
-- `make dev` — запуск всего для разработки.
-- `make migrate-up` / `make migrate-down` — goose миграции.
-- `make sqlc` — генерация Go-кода из SQL.
-- `make oapi` — генерация Go server interface из OpenAPI.
-- `make types` — генерация TS-клиента из OpenAPI.
-- `make test` — запуск всех тестов.
-- `make build` — сборка Docker-образов.
-- `make lint` — gofmt + golangci-lint + go-arch-lint.
+### npm scripts (вместо Makefile)
+- `pnpm dev` — Nuxt dev-сервер (HMR для frontend, hot-reload для backend).
+- `pnpm build` — production-сборка (генерит `.output/` готовый к деплою).
+- `pnpm db:generate` — `drizzle-kit generate` создаёт SQL-миграцию из изменений в schema.
+- `pnpm db:migrate` — `drizzle-kit migrate` применяет pending миграции.
+- `pnpm db:studio` — Drizzle Studio (GUI для БД).
+- `pnpm openapi:generate` — собрать `openapi/scrumban.yaml` из zod-схем.
+- `pnpm codegen` — `openapi-typescript` обновляет `shared/types/api.d.ts`.
+- `pnpm test` — `vitest run` (unit + integration + e2e).
+- `pnpm lint` — eslint + prettier check.
 
 ## CI/CD (GitHub Actions — или GitFlic CI)
 
 ### Pipeline на PR
-1. **lint** — gofmt, golangci-lint, eslint, prettier.
-2. **test-backend** — unit + integration (testcontainers-go с Postgres).
-3. **test-frontend** — vitest unit tests.
-4. **contract-test** — Schemathesis сверяет реализацию с OpenAPI spec (Target).
-5. **rls-guard-test** — проверка cross-tenant isolation.
-6. **build** — Docker images (без push).
+1. **lint** — eslint + prettier (TS), `pnpm typecheck` (tsc --noEmit).
+2. **test-unit** — vitest unit-тесты (services, utils, pure functions).
+3. **test-integration** — vitest + @testcontainers/postgresql (реальный PG в Docker).
+4. **test-e2e** — @nuxt/test-utils для HTTP handler-ов.
+5. **contract-test** — Schemathesis сверяет реализацию с `openapi/scrumban.yaml` (Target).
+6. **rls-guard-test** — проверка cross-tenant isolation.
+7. **build** — Docker image (без push).
 
 Если всё зелёное — PR можно мёржить.
 
@@ -80,7 +82,7 @@ Nuxt прокси `/api/*` → `http://localhost:8080` (backend).
 
 ### Local (dev)
 - Postgres и MinIO в Docker.
-- Backend и Nuxt — локальные процессы с live reload.
+- Nuxt dev-сервер локально (один процесс на frontend + Nitro backend) с HMR.
 - `.env` содержит dev-креды.
 
 ### Staging (Yandex Cloud VM, наш SaaS для демо)
@@ -110,24 +112,27 @@ Nuxt прокси `/api/*` → `http://localhost:8080` (backend).
 ```
 # PostgreSQL
 POSTGRES_PASSWORD=change_me
-DB_DSN=postgres://scrumban:change_me@postgres:5432/scrumban?sslmode=disable
+DATABASE_URL=postgresql://scrumban:change_me@postgres:5432/scrumban
 
-# Backend
-BACKEND_PORT=8080
-SESSION_SECRET=long_random_string
+# Nitro / Nuxt session
+NUXT_SESSION_PASSWORD=long_random_string_at_least_32_chars
+NUXT_HOST=0.0.0.0
+NUXT_PORT=3000
+
+# Object Storage (S3-compat)
 OBJECT_STORAGE_ENDPOINT=http://minio:9000
 OBJECT_STORAGE_BUCKET=scrumban
 OBJECT_STORAGE_ACCESS_KEY=minioadmin
 OBJECT_STORAGE_SECRET_KEY=minioadmin
+
+# Email (для уведомлений)
 EMAIL_SMTP_HOST=smtp.yandex.ru
 EMAIL_SMTP_PORT=587
 EMAIL_SMTP_USER=...
 EMAIL_SMTP_PASSWORD=...
 
-# Frontend
-NUXT_PUBLIC_API_BASE=http://localhost:8080  # в prod: /api
-NUXT_HOST=0.0.0.0
-NUXT_PORT=3000
+# Logging
+LOG_LEVEL=info
 
 # Caddy
 DOMAIN=scrumban.local
@@ -136,12 +141,12 @@ DOMAIN=scrumban.local
 ## Миграции в deployment
 
 ### Подход
-- Миграции запускаются **при старте backend'а** (автоматически в MVP).
-- Goose проверяет версию БД, применяет недостающие миграции up-ward.
-- Если стартует несколько реплик — advisory lock предотвращает гонки.
+- Миграции запускаются **при старте Nitro-плагина** (автоматически в MVP) или вручную через `pnpm db:migrate` перед деплоем.
+- Drizzle Kit проверяет версию БД (через `__drizzle_migrations` таблицу), применяет недостающие миграции up-ward.
+- Если стартует несколько реплик — advisory lock на уровне БД предотвращает гонки.
 
 ### Rollback-стратегия
-- `down`-миграции пишутся для каждого `up`.
+- Drizzle не генерирует down-миграции автоматически. Откат — отдельный SQL-файл, написанный вручную.
 - Откат только для последних нескольких версий; для старых — через точечные манипуляции.
 - Продакшн-rollback НЕ автоматизирован в MVP; требует ручного вмешательства.
 
@@ -161,8 +166,8 @@ DOMAIN=scrumban.local
 ## Мониторинг и алерты
 
 ### MVP
-- `stdout` логи → journald → Yandex Cloud Logging.
-- Health endpoint'ы `/healthz` и `/readyz` у backend и Nuxt.
+- `pino` JSON-логи в `stdout` → journald → Yandex Cloud Logging.
+- Health endpoint'ы `/api/healthz` (live) и `/api/readyz` (с проверкой БД) в Nitro.
 - Простая uptime-проверка (uptimerobot или скрипт на cron).
 
 ### Target
@@ -184,16 +189,17 @@ DOMAIN=scrumban.local
 Caddy делает всё автоматически:
 ```
 scrumban.ru {
-    reverse_proxy /api/* backend:8080
-    reverse_proxy nuxt:3000
-    
-    # Sticky sessions для SSE
+    reverse_proxy app:3000
+
+    # Sticky sessions для SSE (когда появятся 2+ реплики)
     @sse path /api/v1/workspaces/*/stream
-    reverse_proxy @sse backend:8080 {
+    reverse_proxy @sse app:3000 {
         lb_policy cookie sticky_id
     }
 }
 ```
+
+Один upstream — Nitro процесс отдаёт и API, и SPA static. В Target (2+ реплики) Caddy балансирует между ними; sticky cookie гарантирует, что SSE-клиент остаётся на той же реплике.
 
 ## Dual-track сводка
 
@@ -206,7 +212,7 @@ scrumban.ru {
 | Monitoring | journald + uptime check | Sentry + Prometheus + Alerts |
 | Secrets | .env на VM | + vault / Yandex Lockbox |
 | HTTPS | Let's Encrypt через Caddy | + HSTS preload |
-| Scaling | single instance | 2+ реплик backend за балансером |
+| Scaling | single Nitro process | 2+ реплики Nitro за балансером + отдельный pg-boss worker |
 
 ## Стоимость (обновлённая сводка)
 
@@ -231,6 +237,6 @@ scrumban.ru {
 
 ## Связанные документы
 - [`06-system-architecture.md`](06-system-architecture.md) — компоненты
-- [`08-backend-design.md`](08-backend-design.md) — backend-деплой
+- [`08-backend-design.md`](08-backend-design.md) — Nitro backend
 - [`09-frontend-design.md`](09-frontend-design.md) — frontend-сборка
 - [`11-non-functional.md`](11-non-functional.md) — безопасность, backups

@@ -2,49 +2,52 @@
 
 ## Обзор
 
-Scrumban-платформа — модульный монолит на Go с SPA-фронтендом на Nuxt 3, работающая в двух режимах развёртывания (SaaS multi-tenant и on-premise single-tenant) из одного кода и docker-compose-файла.
+Scrumban-платформа — Nuxt 4 monorepo: SPA-frontend в `app/` и Nitro-backend (Node.js) в `server/`. Работает в двух режимах развёртывания (SaaS multi-tenant и on-premise single-tenant) из одного кода и docker-compose-файла.
 
 ## Компоненты системы
 
 ```
-┌─────────────────── Browser (Nuxt SPA) ────────────────────┐
+┌─────────────────── Browser (Nuxt 4 SPA) ──────────────────┐
 │   Vue 3 • Pinia • ECharts • SSE-клиент • TypeScript       │
 └────────────────────────┬──────────────────────────────────┘
                          │ HTTPS
 ┌────────────────────────▼──────────────────────────────────┐
 │              Caddy (TLS, reverse-proxy)                    │
-│    /api/* → Go backend        everything else → Nuxt       │
-└────┬──────────────────────────────────┬───────────────────┘
-     │ static + /bff/*                   │ /api/*
-┌────▼─────────────────┐        ┌────────▼──────────────────┐
-│   Nuxt server (BFF)  │        │    Go Backend (1+ реплик) │
-│  - аггрегация        │        │  - HTTP API (echo)         │
-│  - адаптация         │        │  - auth middleware         │
-│  - proxy to Go       │        │  - tenant middleware (RLS) │
-└──────────────────────┘        │  - domain services         │
-                                │  - analytics engine        │
-                                │  - event publisher         │
-                                │  - SSE hub                 │
-                                │  - background worker       │
-                                └──┬──────────────────┬──────┘
-                                   │                  │
-                        ┌──────────▼───────┐    ┌─────▼────────┐
-                        │   PostgreSQL 16   │    │ Object Store  │
-                        │ - tenant data     │    │ (S3-compat)   │
-                        │ - events          │    │ - attachments │
-                        │ - aggregates      │    │ - backups     │
-                        │ - job queue(river)│    └──────────────┘
-                        │ - LISTEN/NOTIFY   │
-                        │ - RLS policies    │
-                        └───────────────────┘
+│    /api/* + static → один Nitro-процесс (Nuxt monorepo)    │
+└────────────────────────┬──────────────────────────────────┘
+                         │
+                ┌────────▼──────────────────────┐
+                │    Nitro Server (1+ реплик)    │
+                │  - HTTP API (H3 router)        │
+                │  - auth middleware             │
+                │  - tenant middleware (RLS)     │
+                │  - domain services             │
+                │  - analytics engine            │
+                │  - event publisher             │
+                │  - SSE hub                     │
+                │  - pg-boss workers             │
+                │  - SPA static (Nuxt build)     │
+                └──┬──────────────────────┬──────┘
+                   │                      │
+        ┌──────────▼──────────┐    ┌──────▼────────┐
+        │   PostgreSQL 16      │    │ Object Store  │
+        │ - tenant data        │    │ (S3-compat)   │
+        │ - events             │    │ - attachments │
+        │ - aggregates         │    │ - backups     │
+        │ - pg-boss job queue  │    └───────────────┘
+        │ - LISTEN/NOTIFY      │
+        │ - RLS policies       │
+        └──────────────────────┘
 ```
 
 ## Ключевые архитектурные решения
 
-### 1. Модульный монолит на Go
-**Почему не микросервисы:** для соло-разработчика микросервисы означают удвоение/утроение работы (несколько CI/CD, несколько деплоев, сложная локальная разработка). Модульный монолит даёт ту же структуру — доменные пакеты с чёткими границами — без оверхеда.
+### 1. Модульный монолит на Node.js (Nitro)
+**Почему не микросервисы:** для соло-разработчика микросервисы означают удвоение/утроение работы (несколько CI/CD, несколько деплоев, сложная локальная разработка). Модульный монолит даёт ту же структуру — модули `server/services/*` с чёткими границами — без оверхеда.
 
-**Горизонтальное масштабирование** достигается репликами одного бинаря за балансером. Для 99% реальных нагрузок этого достаточно.
+**Почему Nitro, не отдельный backend:** TypeScript end-to-end (один язык на frontend и backend), общие типы через `shared/types/`, OpenAPI codegen без межязыковых границ. Solo-разработчик с TS-фоном пишет всё в одном стеке.
+
+**Горизонтальное масштабирование** достигается репликами одного Node-процесса за балансером. Для 99% реальных нагрузок этого достаточно.
 
 ### 2. Reverse-proxy (Caddy) как единая точка входа
 - Нулевой config для HTTPS (автоматический Let's Encrypt).
@@ -53,7 +56,7 @@ Scrumban-платформа — модульный монолит на Go с SPA
 - Единый домен для пользователя; разделение на backend/frontend невидимо.
 
 ### 3. PostgreSQL как единый источник правды
-- Хранит данные и фоновые задачи (river).
+- Хранит данные и фоновые задачи (pg-boss — Postgres-очередь).
 - LISTEN/NOTIFY используется для SSE fan-out при scale-out.
 - RLS (Row-Level Security) обеспечивает изоляцию tenant'ов.
 - Никаких Redis / RabbitMQ / Kafka до тех пор, пока нагрузка не оправдает.
@@ -78,28 +81,28 @@ Scrumban-платформа — модульный монолит на Go с SPA
 
 ### Обычный HTTP-запрос
 1. Browser → HTTPS → Caddy.
-2. Caddy → Go backend (если `/api/*`).
-3. Middleware chain: logging → recovery → authN (cookie) → **tenant (SET app.workspace_id для RLS)** → RBAC.
-4. Handler → service → storage (RLS действует) → response.
-5. Если изменение домена: event публикуется в in-process event bus.
+2. Caddy → Nitro (один процесс отдаёт и `/api/*`, и SPA static).
+3. Middleware chain в `server/middleware/`: logging → authN (session cookie) → **tenant (SET app.workspace_id для RLS)** → RBAC.
+4. Handler (`server/api/...`) → service (`server/services/...`) → Drizzle query (RLS действует на уровне БД) → response.
+5. Если изменение домена: event публикуется в in-process event bus или сразу через `pg NOTIFY`.
 
 ### Event-driven побочные эффекты
-1. Событие (например, `task_moved`) попадает в bus.
+1. Событие (например, `task_moved`) попадает в in-process bus.
 2. Подписчики:
-   - `sse.Hub` → рассылает активным SSE-клиентам workspace'а.
-   - `jobs.Enqueue` → фоновая отправка webhook'ов / email'ов.
-   - `analytics.Aggregator` → incremental update `flow_daily` агрегата.
-3. Между репликами Go-инстанса: событие транслируется через Postgres `LISTEN/NOTIFY`.
+   - SSE hub → рассылает активным клиентам workspace'а через `H3 createEventStream()`.
+   - `boss.send('jobName', payload)` → фоновая отправка webhook'ов / email'ов.
+   - Analytics aggregator → incremental update `flow_daily` агрегата.
+3. Между репликами Nitro: событие транслируется через Postgres `LISTEN/NOTIFY`.
 
 ### Background jobs
-- Подписчики публикуют задачи в очередь (river на Postgres).
-- Воркер (тот же бинарь или отдельный) разгребает очередь.
+- Сервисы публикуют задачи в очередь (`pg-boss` — Postgres-based).
+- Воркер (тот же Nitro-процесс или отдельный) разгребает очередь.
 - Типичные задачи: webhook dispatch, email send, aggregate recompute, ML research jobs (LATER).
 
 ### SSE поток
 1. Клиент (Nuxt) открывает `GET /api/v1/workspaces/{id}/stream` с Accept: text/event-stream.
-2. Caddy проставляет sticky cookie, маршрутизирует на одну и ту же реплику Go.
-3. Go добавляет клиента в in-process hub.
+2. Caddy проставляет sticky cookie, маршрутизирует на одну и ту же реплику Nitro.
+3. H3 `createEventStream(event)` добавляет клиента в in-process hub.
 4. При событии в текущем инстансе → broadcast внутри процесса.
 5. При событии в другом инстансе → через LISTEN/NOTIFY приходит уведомление → broadcast.
 
@@ -119,22 +122,23 @@ Scrumban-платформа — модульный монолит на Go с SPA
 ## Dual-track
 
 ### Current (MVP)
-- Go backend — единая реплика на одной VM.
+- Nitro server — единая реплика на одной VM (один Node-процесс отдаёт и API, и SPA static).
 - Postgres — в Docker на той же VM.
 - Object Storage — Yandex Object Storage (или MinIO локально для dev).
 - Caddy — HTTPS + routing.
 - Events: in-process bus (без LISTEN/NOTIFY пока одна реплика).
-- SSE: in-memory hub.
-- Background jobs: river в Postgres.
+- SSE: in-memory hub через H3 `createEventStream()`.
+- Background jobs: pg-boss в Postgres (в том же Node-процессе).
 - Feature flags: env + БД.
 - RLS: включён с первого дня на всех tenant-scoped таблицах.
 
 ### Target
-- Go backend — 2+ реплики за балансером.
+- Nitro — 2+ реплики за балансером.
 - Postgres — managed (Yandex Managed PostgreSQL) или отдельная VM с репликой.
 - LISTEN/NOTIFY для cross-node event propagation.
 - Object Storage — с CDN для статичных ассетов.
-- Observability: Sentry + OpenTelemetry + structured logs в центральное хранилище.
+- pg-boss — отдельный worker-процесс (тот же кодбейс).
+- Observability: Sentry + OpenTelemetry + structured logs (pino) в центральное хранилище.
 - Backups автоматические, restore регулярно тестируется.
 
 ### Evolution
@@ -157,7 +161,7 @@ Scrumban-платформа — модульный монолит на Go с SPA
 
 ## Связанные документы
 - [`07-domain-model.md`](07-domain-model.md) — модель данных
-- [`08-backend-design.md`](08-backend-design.md) — детали Go-бэкенда
+- [`08-backend-design.md`](08-backend-design.md) — детали Nitro-бэкенда
 - [`09-frontend-design.md`](09-frontend-design.md) — детали Nuxt
 - [`11-non-functional.md`](11-non-functional.md) — auth, RBAC, RLS детально
 - [`12-deployment.md`](12-deployment.md) — deployment и инфраструктура
