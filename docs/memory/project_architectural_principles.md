@@ -26,9 +26,9 @@ originSessionId: 4d07de0a-84f0-4563-b2b7-e26a2bcc8a82
 - Materialized views для тяжёлых read-моделей; refresh по расписанию.
 - Min-data thresholds: не показываем перцентили при N<30 и прогнозы при <3 спринтов.
 
-**Frontend (Nuxt):**
-- Режим — SPA (Nuxt `ssr: false`), не полный SSR. Продукт авторизованный, SSR не даёт пользы.
-- Server routes используются как BFF (proxy к Go backend, агрегация, адаптация payload'ов).
+**Frontend (Nuxt 4):**
+- Режим — SPA (`ssr: false`), не полный SSR. Продукт авторизованный, SSR не даёт пользы.
+- `server/api/*` (Nitro routes) — это и есть backend (не отдельный сервис). Frontend и backend в одном Node-процессе.
 
 **Event model:**
 - Изменения домена → порождают события → события → аналитика и интеграции.
@@ -39,8 +39,8 @@ originSessionId: 4d07de0a-84f0-4563-b2b7-e26a2bcc8a82
 - На демо/предзащите — возможность выключить сырую фичу за 1 секунду.
 
 **Background jobs:**
-- MVP: river на Postgres.
-- Миграция на отдельную очередь (Redis asynq) — когда webhook'ов много или аналитика начинает мешать основным запросам. Заранее НЕ делаем.
+- MVP: pg-boss на Postgres (в том же Nitro-процессе).
+- Миграция на отдельный worker-процесс — когда фоновых задач становится много и они мешают API-запросам. Заранее НЕ делаем.
 
 **Integrations:**
 - В MVP: только demo-level. 1 рабочий бот (Telegram или Pachca) + 1 webhook direction.

@@ -91,10 +91,10 @@ CREATE POLICY <table>_tenant_isolation ON <table>
 
 ## Миграционная стратегия
 
-- **Инструмент:** `goose` (см. [`../../08-backend-design.md`](../../08-backend-design.md)).
-- **Файлы:** `db/migrations/XXX_*.sql` с парными `-- +goose Up` / `-- +goose Down`.
-- **Запуск:** при старте backend'а (goose up); защита от гонок — advisory lock в Postgres.
-- **Rollback:** только до предыдущей версии; за пределы — ручное вмешательство.
+- **Инструмент:** `drizzle-kit` (см. [`../../08-backend-design.md`](../../08-backend-design.md)).
+- **Файлы:** `drizzle/migrations/XXXX_*.sql` (генерируются автоматически из изменений Drizzle schema).
+- **Запуск:** при старте Nitro плагина (`pnpm db:migrate`); защита от гонок — advisory lock в Postgres.
+- **Rollback:** down-миграции пишутся вручную как отдельные SQL-файлы; за пределы недавних — ручное вмешательство.
 
 ## Связь с другими артефактами
 

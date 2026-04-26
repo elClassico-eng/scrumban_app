@@ -92,7 +92,7 @@ UML 2.5 определяет **14 типов диаграмм**, разделё�
 
 **Когда рисовать:** после use case, для обзора архитектуры.
 
-**В нашей работе:** Nuxt SPA, Go Backend, PostgreSQL, Object Storage, Caddy, внешние сервисы.
+**В нашей работе:** Nuxt 4 SPA, Nitro server, PostgreSQL, Object Storage, Caddy, внешние сервисы.
 
 ### 5. Deployment Diagram
 

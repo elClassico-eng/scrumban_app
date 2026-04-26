@@ -324,6 +324,6 @@ details       jsonb
 
 ## Связанные документы
 - [`06-system-architecture.md`](06-system-architecture.md) — как модель встраивается в систему
-- [`08-backend-design.md`](08-backend-design.md) — sqlc и репозиторный слой
+- [`08-backend-design.md`](08-backend-design.md) — Drizzle и слой запросов
 - [`10-analytics-design.md`](10-analytics-design.md) — как считаются метрики
 - [`11-non-functional.md`](11-non-functional.md) — RLS политики
