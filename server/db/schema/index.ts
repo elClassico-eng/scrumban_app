@@ -1,0 +1,3 @@
+// Aggregated schema export — used by Drizzle (typed db client) and
+// Drizzle Kit (migration generator). Add new tables by re-exporting them here.
+export * from './users'

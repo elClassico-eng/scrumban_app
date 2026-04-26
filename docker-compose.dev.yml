@@ -1,0 +1,25 @@
+# Local-development infrastructure only (the Nuxt app runs natively via `bun run dev`).
+# Starts a single PostgreSQL 16 container with a persistent named volume.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: scrumban-postgres-dev
+    environment:
+      POSTGRES_USER: scrumban
+      POSTGRES_PASSWORD: scrumban
+      POSTGRES_DB: scrumban_dev
+    # Host port is 5433 to avoid clashing with a Homebrew-installed
+    # PostgreSQL that listens on 5432.
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scrumban -d scrumban_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_dev_data:

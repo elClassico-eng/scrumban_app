@@ -12,8 +12,11 @@ export default defineNuxtConfig({
   ],
 
   runtimeConfig: {
-    databaseUrl: '',
-    sessionPassword: '',
+    // Server-only secrets. Nuxt auto-overrides keys via NUXT_* env vars
+    // (NUXT_SESSION_PASSWORD); for unprefixed names like DATABASE_URL we map
+    // explicitly so that .env keeps the standard variable name.
+    databaseUrl: process.env.DATABASE_URL || '',
+    sessionPassword: process.env.NUXT_SESSION_PASSWORD || '',
   },
 
   typescript: {
