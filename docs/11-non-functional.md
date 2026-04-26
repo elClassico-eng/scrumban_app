@@ -4,7 +4,7 @@
 
 ### MVP
 - **Метод:** email + пароль.
-- **Хэширование:** argon2id через `hashPassword()` / `verifyPassword()` из `nuxt-auth-utils`.
+- **Хэширование:** scrypt (default for `nuxt-auth-utils` — встроен в Node.js, нативный binary не нужен) через `hashPassword()` / `verifyPassword()`. Опционально переключаемо на argon2id (требует `@node-rs/argon2`).
 - **Сессии:** подписанный HTTP-only cookie с user_id (через `setUserSession()`). Подпись через `NUXT_SESSION_PASSWORD` (256-bit env-секрет).
 - **Cookie flags:** `HttpOnly`, `Secure` (в prod), `SameSite=Lax`.
 - **TTL:** 7 дней sliding (продлевается при активности), абсолютный лимит 30 дней.
@@ -143,7 +143,7 @@ it('cross-tenant access returns 0 rows', async () => {
 ## Безопасность
 
 ### Защита данных в покое
-- Пароли: argon2id.
+- Пароли: scrypt (default) или argon2id (опционально).
 - Пользовательские вложения: Object Storage с включённым encryption at rest.
 - БД: шифрование на уровне диска VM.
 - Бэкапы: шифруются при загрузке в Object Storage.

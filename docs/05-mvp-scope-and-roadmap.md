@@ -87,6 +87,10 @@
 - CI/CD pipeline (GitHub Actions): typecheck, vitest, build.
 - Docker Compose для dev (PostgreSQL).
 
+> **RLS отложен в Phase 2** (вместе с первой tenant-scoped data-таблицей tasks/boards).
+> В Phase 1 multi-tenant изоляция обеспечивается на уровне service-layer (queries scoped по userId).
+> При добавлении `tasks`/`boards` в Phase 2 — model «one workspace per request» через `SET LOCAL app.workspace_id` + RLS-политики становится естественной.
+
 **Критерий выхода:** пользователь может зарегистрироваться и залогиниться, frontend видит данные user'а.
 
 ### Фаза 2 — Board & Tasks (месяц 2)

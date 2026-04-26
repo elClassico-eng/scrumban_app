@@ -25,7 +25,7 @@
 ```sql
 id              uuid PK (UUID v7)
 email           text UNIQUE NOT NULL
-password_hash   text NOT NULL          -- argon2id
+password_hash   text NOT NULL          -- scrypt (default for nuxt-auth-utils); argon2id configurable
 name            text
 avatar_url      text
 locale          text DEFAULT 'ru-RU'

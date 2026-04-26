@@ -49,7 +49,7 @@ scrumban/
 - `nuxt` (4.x) + `h3` — HTTP-сервер встроен в Nuxt.
 - `drizzle-orm` + `drizzle-kit` — ORM и миграции.
 - `postgres` (postgres-js) — Postgres driver.
-- `nuxt-auth-utils` — session cookies + argon2id.
+- `nuxt-auth-utils` — session cookies + password hashing (scrypt by default; argon2id configurable).
 - `zod` — runtime-валидация input + источник OpenAPI-спеки.
 - `pino` — structured JSON logs.
 - `pg-boss` — фоновые задачи на Postgres (когда понадобится).

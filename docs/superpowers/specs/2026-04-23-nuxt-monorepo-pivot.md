@@ -86,7 +86,7 @@ scrumban/
 |--------|-----------|-------------|
 | HTTP-сервер | **Nitro + H3** (встроен в Nuxt) | Файл-роутинг, auto-import, SSE нативно |
 | ORM / DB | **Drizzle ORM + Drizzle Kit** | Близко к SQL, миграции через SQL-файлы, легко портировать |
-| Auth | **nuxt-auth-utils** + argon2 | Session cookies (HTTP-only), argon2id hash из коробки |
+| Auth | **nuxt-auth-utils** | Session cookies (HTTP-only), scrypt hash by default (argon2id опционально) |
 | Background jobs | **pg-boss** | Postgres-очередь без Redis; аналог river |
 | Валидация | **zod** | Стандарт TS, `readValidatedBody`, основа для OpenAPI |
 | OpenAPI | **zod-to-openapi + openapi-typescript** | Code-first: zod → YAML → TS-client |
