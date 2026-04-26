@@ -8,3 +8,20 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Node / Nuxt / Bun
+node_modules/
+.nuxt/
+.output/
+.data/
+.cache/
+dist/
+*.log
+
+# Env (only commit .env.example, never the real .env)
+.env
+.env.*
+!.env.example
+
+# Test coverage
+coverage/
