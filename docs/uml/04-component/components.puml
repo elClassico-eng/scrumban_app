@@ -12,7 +12,7 @@ skinparam linetype ortho
 ' ============================================================================
 
 actor "Пользователь" as User
-component "Browser\n(Nuxt SPA runtime)" as Browser << client >>
+component "Browser\n(Nuxt 4 SPA runtime)" as Browser << client >>
 
 User --> Browser
 
@@ -27,9 +27,8 @@ component "Caddy" as Caddy <<reverse-proxy>> {
 
 note right of Caddy
   • TLS (Let's Encrypt)
-  • Маршрутизация:
-    /api/* → Go
-    /* → Nuxt
+  • Маршрутизация: всё → Nitro
+    (один процесс отдаёт API + SPA)
   • Sticky sessions (SSE)
 end note
 
@@ -39,29 +38,20 @@ Browser ..> CaddyIn : HTTPS
 ' Application tier
 ' ============================================================================
 
-package "Nuxt 3 (SPA mode)" as NuxtPkg <<frontend>> {
-  component "Nuxt Static\nBundle" as NuxtStatic {
-    portin "HTTP"
+package "Nuxt 4 monorepo (Nitro server)" as NitroPkg <<backend+frontend>> {
+
+  component "SPA Static\n(Nuxt build output)" as SpaStatic {
+    portin "HTTP /" as SpaIn
   }
-  component "Nuxt Server\n(Nitro, BFF)" as NuxtServer {
-    portin "HTTP /bff/*" as NuxtBffIn
-    portout "HTTP" as NuxtBffOut
-  }
-}
 
-CaddyOut ..> NuxtStatic : "static assets"
-CaddyOut ..> NuxtBffIn : "/bff/*"
-
-package "Go Backend (монолит)" as GoPkg <<backend>> {
-
-  component "HTTP API\n(echo)" as HttpAPI {
+  component "HTTP API\n(H3 router)" as HttpAPI {
     portin "HTTP /api/*" as ApiIn
     portin "SSE /api/*/stream" as SseIn
   }
 
   component "Middleware chain" as Middleware {
-    component "Logging\n& Recovery" as MwLog
-    component "AuthN\n(cookies)" as MwAuthN
+    component "Logging\n& Error hook" as MwLog
+    component "AuthN\n(session cookie)" as MwAuthN
     component "Tenant\n(SET app.workspace_id)" as MwTenant
     component "RBAC" as MwRBAC
   }
@@ -87,12 +77,12 @@ package "Go Backend (монолит)" as GoPkg <<backend>> {
     component "LISTEN/NOTIFY\nBridge" as EvNotify
   }
 
-  component "SSE Hub" as SseHub {
+  component "SSE Hub\n(H3 createEventStream)" as SseHub {
     component "Subscriber\nRegistry" as SseReg
     component "Broadcaster" as SseBcast
   }
 
-  component "Background Worker\n(river)" as Worker {
+  component "Background Worker\n(pg-boss)" as Worker {
     component "Webhook\nDispatcher" as WkWebhook
     component "Email Sender" as WkEmail
     component "Aggregate\nRecompute" as WkAgg
@@ -100,13 +90,12 @@ package "Go Backend (монолит)" as GoPkg <<backend>> {
   }
 
   component "Feature Flags" as FF
-  component "Storage\n(pgx + sqlc)" as Storage
+  component "Storage\n(Drizzle ORM)" as Storage
 }
 
+CaddyOut ..> SpaIn : "static assets (Nuxt SPA)"
 CaddyOut ..> ApiIn : "/api/*"
 CaddyOut ..> SseIn : "/api/*/stream"
-
-NuxtBffOut ..> ApiIn : "server-to-server"
 
 ApiIn --> MwLog
 MwLog --> MwAuthN
@@ -114,9 +103,9 @@ MwAuthN --> MwTenant
 MwTenant --> MwRBAC
 MwRBAC --> Services
 
-Services ..> Storage : "SQL via sqlc"
+Services ..> Storage : "SQL via Drizzle"
 Services ..> EventBus : "publish domain events"
-Services ..> FF : "IsEnabled(ctx, feature)"
+Services ..> FF : "isEnabled(workspaceId, feature)"
 
 Analytics ..> Storage : "read aggregates"
 
@@ -138,7 +127,7 @@ package "Data tier" as DataPkg {
     component "Domain\nTables\n(RLS)" as PgDomain
     component "events\n(append-only)" as PgEvents
     component "Aggregates\n+ mat.views" as PgAgg
-    component "river\n(job queue)" as PgRiver
+    component "pg-boss\n(job queue)" as PgQueue
     component "LISTEN/NOTIFY\nchannel" as PgNotify
   }
 
@@ -151,7 +140,7 @@ package "Data tier" as DataPkg {
 Storage --> PgDomain : "SQL"
 Storage --> PgEvents : "INSERT"
 Analytics --> PgAgg : "SELECT"
-Worker --> PgRiver : "poll/claim"
+Worker --> PgQueue : "poll/claim"
 AnaAgg --> PgEvents : "subscribe via trigger"
 EvNotify <--> PgNotify : "LISTEN/NOTIFY"
 

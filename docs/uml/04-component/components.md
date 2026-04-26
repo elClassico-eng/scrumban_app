@@ -2,31 +2,29 @@
 
 Архитектура Scrumban-платформы в терминах программных компонентов и их взаимодействия (UML 2.5 component diagram).
 
-![Component Diagram](components.svg)
-
-> Исходник PlantUML: [`components.puml`](components.puml). Регенерация: `plantuml -tsvg components.puml`.
+> Исходник PlantUML: [`components.puml`](components.puml). Preview через PlantUML plugin в IDE.
 
 ## Обзор
 
 Система разделена на **4 уровня** (tiers):
 
-1. **Client tier** — Browser с Nuxt SPA runtime.
+1. **Client tier** — Browser с Nuxt 4 SPA runtime.
 2. **Edge tier** — Caddy reverse-proxy (TLS, routing, sticky sessions).
-3. **Application tier** — Nuxt (SPA static + BFF) и Go backend (монолитный сервис).
+3. **Application tier** — Nuxt monorepo (Nitro server отдаёт и SPA static, и API в одном процессе).
 4. **Data tier** — PostgreSQL (основная БД) и Object Storage (S3-совместимое).
 5. **Внешние сервисы** — SMTP, Integration Bot, Git Platform.
 
-## Компоненты Go backend (детально)
+## Компоненты Nitro server (детально)
 
-### HTTP API (echo)
-Точка входа для всех `/api/*` запросов. Определяет роутинг (`POST /api/v1/tasks`, ...) и делегирует обработку цепочке middleware и дальше в сервисы.
+### HTTP API (H3 router)
+Точка входа для всех `/api/*` запросов. Файл-роутинг: `server/api/tasks/index.post.ts` обслуживает `POST /api/tasks`. Делегирует обработку цепочке middleware и дальше в сервисы.
 
 ### Middleware chain
-Цепочка, через которую проходит каждый запрос:
-1. **Logging & Recovery** — structured logs через slog + recover от panic.
-2. **AuthN (cookies)** — проверяет session cookie, извлекает `user_id`.
-3. **Tenant** — извлекает `workspace_id` из URL, проверяет членство пользователя, выставляет `SET LOCAL app.workspace_id = $1` в транзакции для RLS.
-4. **RBAC** — проверяет разрешение для конкретного действия (через `RequireRole` / `RequirePermission`).
+Цепочка, через которую проходит каждый запрос (файлы в `server/middleware/`):
+1. **Logging & Error hook** — pino structured logs + Nitro error handler.
+2. **AuthN** — `getUserSession(event)` читает подписанный cookie, извлекает `userId` в `event.context.user`.
+3. **Tenant** — извлекает `workspaceId` из URL, проверяет членство пользователя, выставляет `SET LOCAL app.workspace_id = $1` в транзакции для RLS.
+4. **RBAC** — проверяет разрешение для конкретного действия (через `requireRole(event, 'admin')`).
 
 ### Domain Services
 «Толстые» сервисы с бизнес-логикой. Один сервис на функциональную область:
@@ -39,7 +37,7 @@
 Handlers тонкие — только парсинг/форматирование; вся логика в сервисах.
 
 ### Analytics Engine
-Отдельный пакет с математикой. Не обращается к HTTP, только к Storage.
+Отдельный модуль (`server/analytics/`) с математикой. Не обращается к HTTP, только к Storage.
 - **CFD builder** — строит Cumulative Flow Diagram из `flow_daily`.
 - **Cycle time / Percentiles** — вычисление перцентилей (`p50/p85/p95`) из `cycle_time_samples`.
 - **Monte Carlo Simulator** — ≥1000 симуляций throughput-распределения для прогноза спринта.
@@ -54,37 +52,37 @@ Handlers тонкие — только парсинг/форматировани
 - **Subscriber Registry** — пул активных SSE-соединений (чанки потоков, группировка по `workspace_id`).
 - **Broadcaster** — отправка обновлений всем подписчикам workspace'а.
 
-### Background Worker (river)
-Обрабатывает фоновые задачи:
+### Background Worker (pg-boss)
+Обрабатывает фоновые задачи. Worker'ы регистрируются в Nitro plugin при старте процесса:
 - **Webhook Dispatcher** — доставка webhook'ов во внешние системы.
 - **Email Sender** — отправка через SMTP.
 - **Aggregate Recompute** — пересчёт агрегатов, если нужен batch (fallback к trigger'ам).
 - **MC Refresh** — пересчёт Monte Carlo для активных спринтов.
 
 ### Feature Flags
-- Таблица `feature_flags` в БД + helper `ff.IsEnabled(ctx, "feature_name")`.
+- Таблица `feature_flags` в БД + helper `await ff.isEnabled(workspaceId, 'feature_name')`.
 - Используется сервисами для gated rollout.
 
-### Storage (pgx + sqlc)
-- Типобезопасный доступ к PostgreSQL через sqlc-генерируемый код.
-- Управление транзакциями, connection pool.
+### Storage (Drizzle ORM)
+- Типобезопасный доступ к PostgreSQL через Drizzle (typeof inference из schema-определений).
+- Управление транзакциями, postgres-js connection pool.
 
 ## Ключевые интерфейсы и потоки
 
-### Browser → Caddy → Go/Nuxt
+### Browser → Caddy → Nitro
 1. Пользователь открывает `https://scrumban.ru` → Caddy (HTTPS).
-2. Caddy маршрутизирует:
-   - `/api/*` → Go HTTP API (порт 8080).
-   - `/api/*/stream` → Go с sticky-cookie (чтобы SSE-соединение держалось на одной реплике).
-   - остальное → Nuxt static bundle (порт 3000) + Nuxt Server routes через `/bff/*`.
+2. Caddy маршрутизирует **всё** на один upstream — Nitro процесс (порт 3000):
+   - `/api/*` → H3 router → handler в `server/api/`.
+   - `/api/*/stream` → SSE handler с sticky-cookie (чтобы соединение держалось на одной реплике).
+   - всё остальное → SPA static (Nuxt build).
 
-### Event flow внутри Go
-1. Сервис выполняет бизнес-операцию (например, `TasksService.Move`).
-2. После успеха: `EventBus.Publish(event)`.
+### Event flow внутри Nitro
+1. Сервис выполняет бизнес-операцию (например, `tasksService.move()`).
+2. После успеха: `eventBus.publish(event)`.
 3. In-proc Publisher параллельно вызывает:
-   - `SSEHub.Broadcast(event)` → рассылка подписчикам в этом процессе.
-   - `Worker.Enqueue(...)` → ставит задачу для webhook/email.
-   - `Analytics.Aggregator.On(event)` → инкрементальное обновление агрегатов.
+   - `sseHub.broadcast(event)` → рассылка подписчикам в этом процессе через H3 `createEventStream()`.
+   - `boss.send('jobName', payload)` → ставит задачу для webhook/email через pg-boss.
+   - `analyticsAggregator.on(event)` → инкрементальное обновление агрегатов.
 4. LISTEN/NOTIFY Bridge (при scale-out): публикует событие в Postgres-канал, другие реплики подхватывают через LISTEN.
 
 ### Данные на S3
@@ -101,7 +99,7 @@ Git Platform (GitFlic/GitVerse) шлёт webhook при push:
 ## Архитектурные принципы, видные из диаграммы
 
 ### 1. Модульный монолит, не микросервисы
-Все Go-компоненты — один бинарь. Разделение — на уровне пакетов с дисциплиной импортов (проверяется `go-arch-lint`). Это даёт простоту деплоя (один образ, один реестр) при сохранении внутренней модульности.
+Все backend-компоненты — один Node-процесс (Nitro). Разделение — на уровне модулей `server/services/*` с дисциплиной импортов (проверяется ESLint `no-restricted-imports`). Это даёт простоту деплоя (один образ, один реестр) при сохранении внутренней модульности.
 
 ### 2. Единая точка входа — Caddy
 TLS, routing, sticky sessions для SSE решаются на одном слое. Dev и prod окружения отличаются только конфигурацией — нулевая дельта.
@@ -110,7 +108,7 @@ TLS, routing, sticky sessions для SSE решаются на одном сло
 - Данные (domain tables с RLS).
 - События (append-only `events`).
 - Агрегаты + materialized views.
-- Очередь фоновых задач (`river`).
+- Очередь фоновых задач (`pg-boss`).
 - Канал межрепликной коммуникации (`LISTEN/NOTIFY`).
 
 Redis, RabbitMQ, Kafka — сознательно отсутствуют до момента, когда нагрузка реально потребует.
@@ -122,10 +120,10 @@ Redis, RabbitMQ, Kafka — сознательно отсутствуют до м
 Никакого vendor lock-in'а.
 
 ### 5. SSE вместо WebSocket
-Проще: обычное HTTP keep-alive соединение, сервер держит stream и пушит события. Для MVP хватает (нужен только server→client direction, client→server идёт через обычные POST). Sticky sessions решают проблему множественных реплик.
+Проще: обычное HTTP keep-alive соединение, сервер держит stream через H3 `createEventStream()` и пушит события. Для MVP хватает (нужен только server→client direction, client→server идёт через обычные POST). Sticky sessions решают проблему множественных реплик.
 
-### 6. BFF-паттерн с Nuxt Server
-Nuxt Server routes (Nitro) — тонкий BFF слой: агрегирует запросы, адаптирует payload'ы, проксирует к Go. Это даёт frontend'у возможность делать бизнес-специфичные оптимизации (объединение нескольких API-вызовов в один) без изменения backend'а.
+### 6. Один процесс — frontend + backend
+Nitro отдаёт и `/api/*` (HTTP handlers), и SPA static (build Nuxt). Никакого отдельного BFF — `server/api/` и есть «backend для frontend». TypeScript end-to-end, общие типы через `shared/types/`. Это и есть выгода Nuxt monorepo.
 
 ## Границы (что НЕ показано)
 
