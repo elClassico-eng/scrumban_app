@@ -8,12 +8,12 @@ skinparam sequenceArrowThickness 1.5
 skinparam roundCorner 6
 
 actor "Пользователь" as User
-participant "Browser\n(Nuxt SPA)" as Browser
+participant "Browser\n(Nuxt 4 SPA)" as Browser
 participant "Caddy\n(reverse-proxy)" as Caddy
-participant "HTTP API\n(echo)" as API
+participant "HTTP API\n(Nitro / H3)" as API
 participant "AuthN\nMiddleware" as Auth
 participant "Auth Service" as AuthSvc
-participant "Storage\n(pgx+sqlc)" as Storage
+participant "Storage\n(Drizzle ORM)" as Storage
 database "PostgreSQL" as PG
 
 == Ввод учётных данных ==

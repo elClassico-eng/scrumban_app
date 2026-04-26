@@ -19,7 +19,7 @@ participant "Storage" as Storage
 database "PostgreSQL" as PG
 participant "Event Bus" as EB
 participant "SSE Hub" as SSE
-participant "Worker\n(river)" as Worker
+participant "Worker\n(pg-boss)" as Worker
 
 == Предусловие: Browser B уже подключён к SSE-потоку ==
 BB -> Caddy : GET /api/v1/workspaces/{wsId}/stream\nAccept: text/event-stream
@@ -68,7 +68,7 @@ par Параллельные реакции
   BB --> UserB : Карточка задачи\nпоявляется на доске
 else
   EB -> Worker : Enqueue(NotifyJob)\nесли включены уведомления
-  Worker -> Storage : pollClaim (river)
+  Worker -> Storage : pollClaim (pg-boss)
   Worker -> Worker : HTTP POST\nTelegram/Pachca API
 end
 
