@@ -1,0 +1,54 @@
+@startuml 03-вложенность
+!theme plain
+title Шаг 3 — Вложенные компоненты (вложенность)
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam componentStyle rectangle
+
+component "Go Backend" as Backend {
+    component "HTTP API\n(echo)" as API
+    component "Middleware\n(auth, tenant, RBAC)" as MW
+    component "Services\n(tasks, sprints, ...)" as Svc
+    component "Storage\n(sqlc + pgx)" as Storage
+
+    API --> MW : запрос
+    MW --> Svc : проверенный запрос
+    Svc --> Storage : получить/сохранить
+}
+
+database "PostgreSQL" as DB
+
+Storage --> DB : SQL
+
+note right of Backend
+  <b>Один компонент может СОДЕРЖАТЬ другие.</b>
+
+  Здесь <b>Go Backend</b> — "крупный" компонент,
+  состоящий из подкомпонентов:
+  • HTTP API — принимает HTTP-запросы.
+  • Middleware — обрабатывает их по цепочке.
+  • Services — бизнес-логика.
+  • Storage — обращение к БД.
+
+  Каждый подкомпонент — отдельный пакет в Go-коде
+  (<code>internal/handlers/</code>, <code>internal/middleware/</code>,
+  <code>internal/services/</code>, <code>internal/storage/</code>).
+
+  <b>Это архитектурное решение</b> — разделение на слои.
+end note
+
+note bottom
+  <b>Зачем вложенность:</b>
+  1. <b>Zooming</b> — сначала общая картина (Backend как 1 чёрный ящик),
+     потом можно "заглянуть внутрь" (API → MW → Svc → Storage).
+  2. <b>Граница ответственности</b> — видно кто за что отвечает.
+  3. <b>Легче тестировать</b> — можно заменить любой подкомпонент
+     на mock'и в тестах.
+
+  В нашей архитектуре backend'а (см. полную диаграмму
+  <code>../components.puml</code>) вложенность идёт ещё глубже —
+  внутри Services есть TaskService, SprintService, и так далее.
+end note
+
+@enduml

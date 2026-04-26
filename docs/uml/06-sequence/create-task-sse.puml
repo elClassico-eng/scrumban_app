@@ -1,0 +1,83 @@
+@startuml create-task-sse
+!theme plain
+title Сценарий «Создание задачи с real-time обновлением доски»
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam sequenceArrowThickness 1.5
+skinparam roundCorner 6
+
+actor "Пользователь A\n(создаёт)" as UserA
+actor "Пользователь B\n(наблюдает)" as UserB
+participant "Browser A" as BA
+participant "Browser B" as BB
+participant "Caddy" as Caddy
+participant "HTTP API" as API
+participant "Middleware\n(AuthN→Tenant→RBAC)" as MW
+participant "Task Service" as TaskSvc
+participant "Storage" as Storage
+database "PostgreSQL" as PG
+participant "Event Bus" as EB
+participant "SSE Hub" as SSE
+participant "Worker\n(river)" as Worker
+
+== Предусловие: Browser B уже подключён к SSE-потоку ==
+BB -> Caddy : GET /api/v1/workspaces/{wsId}/stream\nAccept: text/event-stream
+Caddy -> Caddy : sticky cookie\n(закрепить на реплике)
+Caddy -> API : forward
+API -> MW : authn + tenant
+MW -> SSE : Subscribe(workspaceId,\nuserId, conn)
+SSE --> BB : stream open\n(держит соединение)
+
+== Основной сценарий ==
+UserA -> BA : Клик «Создать задачу»,\nзаполняет форму,\nподтверждает
+BA -> Caddy : POST /api/v1/projects/{pid}/tasks\n{title, type, priority, column_id}
+Caddy -> API : forward /api/*
+API -> MW : chain
+
+MW -> MW : AuthN: проверка cookie,\nuserId из session
+MW -> MW : Tenant: SET LOCAL\napp.workspace_id = $1\n(для RLS)
+MW -> MW : RBAC: RequireRole(Member+)
+
+MW -> TaskSvc : Create(ctx, CreateTaskReq)
+
+TaskSvc -> TaskSvc : Validate\n(title ≠ empty,\nproject exists)
+
+TaskSvc -> Storage : BeginTx()
+Storage -> PG : BEGIN
+TaskSvc -> Storage : InsertTask(params)
+Storage -> PG : INSERT INTO tasks\n(workspace_id, project_id, ...)\nRETURNING *
+PG --> Storage : Task
+Storage --> TaskSvc : Task
+
+TaskSvc -> Storage : InsertEvent(\nevent_type=task_created,\npayload={...})
+Storage -> PG : INSERT INTO events\n(workspace_id, event_type,\nentity_id, payload, ...)
+PG --> Storage : event_id
+Storage --> TaskSvc : ok
+
+TaskSvc -> Storage : Commit()
+Storage -> PG : COMMIT
+
+TaskSvc -> EB : Publish(TaskCreatedEvent)
+
+par Параллельные реакции
+  EB -> SSE : Broadcast(workspaceId, event)
+  SSE -> SSE : Для каждого\nактивного подписчика\nworkspace'а
+  SSE --> BB : event: task_created\ndata: {...}
+  BB -> BB : vue-query\ninvalidate(['tasks', pid])
+  BB --> UserB : Карточка задачи\nпоявляется на доске
+else
+  EB -> Worker : Enqueue(NotifyJob)\nесли включены уведомления
+  Worker -> Storage : pollClaim (river)
+  Worker -> Worker : HTTP POST\nTelegram/Pachca API
+end
+
+TaskSvc --> MW : Task
+MW --> API : 201 Created
+API --> Caddy : {task: {...}}
+Caddy --> BA : 201
+
+BA -> BA : vue-query\ninvalidate + optimistic UI
+BA --> UserA : Карточка появилась\nна доске
+
+@enduml

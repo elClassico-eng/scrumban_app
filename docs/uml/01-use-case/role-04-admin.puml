@@ -1,0 +1,62 @@
+@startuml role-admin
+!theme plain
+title Use Case — Роль «Admin»
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Admin" as Admin
+
+rectangle "Scrumban Platform" {
+
+    package "Управление участниками (новое для Admin)" #E8F4FD {
+        usecase "Пригласить\nучастника" as UC_InviteMember
+        usecase "Управлять ролями\nучастников" as UC_ManageRoles
+    }
+
+    package "Проекты (новое для Admin)" #E8F4FD {
+        usecase "Создать проект" as UC_CreateProject
+        usecase "Архивировать\nпроект" as UC_ArchiveProject
+    }
+
+    package "Унаследовано от Scrum Master" #F5F5F5 {
+        usecase "Управление спринтами\n(4 прецедента)" as UC_Sprints
+        usecase "Настройка колонок\nи WIP-лимитов" as UC_ConfigBoard
+        usecase "Углублённая аналитика\n(Monte Carlo, Little's Law,\nscatter, compare, bottleneck)" as UC_AdvAna
+    }
+
+    package "Унаследовано от Team Member" #F5F5F5 {
+        usecase "Работа с задачами" as UC_Tasks
+        usecase "Учётная запись" as UC_Account
+    }
+
+    package "Унаследовано от Viewer" #F5F5F5 {
+        usecase "Просмотр и поиск" as UC_ViewAndSearch
+        usecase "Базовая аналитика" as UC_BasicAna
+    }
+}
+
+Admin --> UC_InviteMember
+Admin --> UC_ManageRoles
+Admin --> UC_CreateProject
+Admin --> UC_ArchiveProject
+Admin --> UC_Sprints
+Admin --> UC_ConfigBoard
+Admin --> UC_AdvAna
+Admin --> UC_Tasks
+Admin --> UC_Account
+Admin --> UC_ViewAndSearch
+Admin --> UC_BasicAna
+
+note bottom of Admin
+  <b>Admin</b> — администратор workspace'а.
+  Управляет составом команды и проектами,
+  но не меняет самого workspace.
+  Синий фон = добавлено к Scrum Master.
+end note
+
+@enduml

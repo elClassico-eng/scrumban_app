@@ -1,0 +1,71 @@
+@startuml 04-наследование-ролей
+!theme plain
+title Шаг 4 — Наследование (обобщение) актёров
+
+skinparam actorStyle awesome
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+left to right direction
+
+actor "Viewer\n(только читает)" as Viewer
+actor "Team Member\n(читает + пишет)" as Member
+
+' Наследование!
+Member --|> Viewer
+
+rectangle "Scrumban" {
+    package "Для всех" #F5F5F5 {
+        usecase "Просмотр\nзадачи" as UC_View
+        usecase "Поиск" as UC_Search
+    }
+
+    package "Только для Team Member" #E8F4FD {
+        usecase "Создать\nзадачу" as UC_Create
+        usecase "Переместить\nзадачу" as UC_Move
+        usecase "Комментировать" as UC_Comment
+    }
+}
+
+' Viewer идёт к своим прецедентам
+Viewer --> UC_View
+Viewer --> UC_Search
+
+' Member идёт к своим новым (но также унаследовал все от Viewer)
+Member --> UC_Create
+Member --> UC_Move
+Member --> UC_Comment
+
+note top of Member
+  <b>Треугольная стрелка от Member к Viewer</b>
+  означает <b>обобщение</b> (generalization): Member
+  <i>наследует</i> всё от Viewer.
+
+  Это как в ООП: "Member — это разновидность Viewer".
+
+  <b>Практически:</b> Member автоматически может
+  всё, что может Viewer (читать, искать), плюс
+  свои новые возможности (создавать, двигать, комментировать).
+end note
+
+note bottom of Viewer
+  <b>Viewer не умеет ничего писать.</b>
+  Только чтение. Это базовая роль.
+
+  Примеры Viewer: внешний аудитор,
+  представитель заказчика, гость на проекте.
+end note
+
+note right of UC_Create
+  На диаграмме видно:
+  - Viewer <b>не проводит</b> линий к этим прецедентам
+    (только чтение).
+  - Member проводит — плюс автоматически
+    через наследование получает доступ к прецедентам Viewer.
+
+  <b>Важно для защиты:</b> научрук может спросить
+  «а Member умеет просматривать?». Ответ: «Да,
+  через обобщение от Viewer, явно линию рисовать не нужно».
+end note
+
+@enduml

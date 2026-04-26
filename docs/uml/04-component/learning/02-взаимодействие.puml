@@ -1,0 +1,46 @@
+@startuml 02-взаимодействие
+!theme plain
+title Шаг 2 — Как компоненты взаимодействуют
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam componentStyle rectangle
+
+actor "Пользователь" as User
+component "Browser" as Browser
+component "Go Backend" as Backend
+database "PostgreSQL" as DB
+
+User --> Browser : клик, ввод
+Browser --> Backend : HTTPS\nзапрос
+Backend --> DB : SQL\nзапрос
+DB --> Backend : данные
+Backend --> Browser : HTTP\nответ
+Browser --> User : страница, UI
+
+note top
+  <b>Стрелки между компонентами</b> — это связи.
+  Подпись на стрелке — <b>что передаётся</b> (протокол, тип данных).
+end note
+
+note right of Browser
+  <b>Browser → Backend:</b> HTTPS запрос.
+  Это означает: Browser отправляет HTTP-запрос
+  (POST, GET, ...) по защищённому соединению.
+
+  Зачастую подписывают именно <b>протокол</b>
+  (HTTPS, SQL, gRPC, ...), чтобы было видно,
+  как именно общаются компоненты.
+end note
+
+note bottom of DB
+  <b>database</b> — особый тип компонента
+  (обычно цилиндр). Используется для БД,
+  data lakes, data stores.
+
+  У нас это PostgreSQL. Пишется он так же
+  как обычный компонент, но визуально отличается,
+  что помогает быстро ориентироваться.
+end note
+
+@enduml

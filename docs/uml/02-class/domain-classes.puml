@@ -1,0 +1,258 @@
+@startuml domain-classes
+!theme plain
+title Диаграмма классов — Доменная модель Scrumban
+
+skinparam classAttributeIconSize 0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam packageStyle rectangle
+
+' ============================================================================
+' Перечисления (enums) — значения, допустимые в полях классов
+' ============================================================================
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum WorkspacePlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum TaskType {
+  STORY
+  BUG
+  TASK
+  EPIC
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ColumnRole {
+  BACKLOG
+  IN_PROGRESS
+  REVIEW
+  DONE
+  OTHER
+}
+
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  CLOSED
+}
+
+enum BoardType {
+  SCRUMBAN
+  SCRUM
+  KANBAN
+}
+
+' ============================================================================
+' Identity & Tenancy
+' ============================================================================
+
+class User {
+  + id : UUID
+  + email : string <<unique>>
+  + name : string
+  + avatarUrl : string
+  + locale : string
+  + createdAt : DateTime
+  + lastSeenAt : DateTime
+  + deletedAt : DateTime?
+}
+
+class Workspace <<tenant root>> {
+  + id : UUID
+  + name : string
+  + slug : string <<unique>>
+  + plan : WorkspacePlan
+  + settings : JSON
+  + createdAt : DateTime
+  + archivedAt : DateTime?
+}
+
+class WorkspaceMember {
+  + role : Role
+  + joinedAt : DateTime
+}
+
+class Invitation {
+  + id : UUID
+  + email : string
+  + role : Role
+  + tokenHash : string
+  + expiresAt : DateTime
+  + acceptedAt : DateTime?
+}
+
+class Session {
+  + id : UUID
+  + tokenHash : string <<unique>>
+  + expiresAt : DateTime
+  + userAgent : string
+  + ip : string
+  + createdAt : DateTime
+  + revokedAt : DateTime?
+}
+
+' ============================================================================
+' Project & Board
+' ============================================================================
+
+class Project {
+  + id : UUID
+  + name : string
+  + key : string
+  + description : string
+  + archivedAt : DateTime?
+  + createdAt : DateTime
+}
+
+class Board {
+  + id : UUID
+  + name : string
+  + type : BoardType
+  + createdAt : DateTime
+}
+
+class Column {
+  + id : UUID
+  + name : string
+  + orderIndex : int
+  + wipLimit : int?
+  + wipStrict : bool
+  + columnRole : ColumnRole
+  + isTerminal : bool
+}
+
+' ============================================================================
+' Task & Sprint
+' ============================================================================
+
+class Task {
+  + id : UUID
+  + shortId : string
+  + title : string
+  + description : string
+  + type : TaskType
+  + priority : TaskPriority
+  + storyPoints : decimal?
+  + estimateHours : decimal?
+  + createdAt : DateTime
+  + updatedAt : DateTime
+  + closedAt : DateTime?
+  + reopenedCount : int
+}
+
+class TaskTag {
+  + tag : string
+}
+
+class TaskComment {
+  + id : UUID
+  + body : string
+  + createdAt : DateTime
+  + updatedAt : DateTime?
+  + deletedAt : DateTime?
+}
+
+class TaskAttachment {
+  + id : UUID
+  + objectKey : string
+  + filename : string
+  + sizeBytes : long
+  + contentType : string
+  + createdAt : DateTime
+}
+
+class Sprint {
+  + id : UUID
+  + name : string
+  + goal : string
+  + startAt : DateTime
+  + plannedEndAt : DateTime
+  + closedAt : DateTime?
+  + status : SprintStatus
+  + createdAt : DateTime
+}
+
+' ============================================================================
+' Events — append-only журнал для аналитики
+' ============================================================================
+
+class Event <<append-only>> {
+  + id : UUID
+  + occurredAt : DateTime
+  + entityType : string
+  + entityId : UUID
+  + eventType : string
+  + payload : JSON
+}
+
+' ============================================================================
+' Cross-cutting
+' ============================================================================
+
+class FeatureFlag {
+  + name : string <<PK>>
+  + enabledGlobally : bool
+  + allowedWorkspaces : UUID[]
+  + description : string
+}
+
+' ============================================================================
+' Связи — ассоциации, агрегации, композиции
+' ============================================================================
+
+' Identity & Tenancy — User и Workspace соединяются через WorkspaceMember
+User "1" -- "0..*" Session : > has
+User "1" -- "0..*" WorkspaceMember : > is a
+Workspace "1" -- "1..*" WorkspaceMember : < contains
+Workspace "1" -- "0..*" Invitation : < issued
+
+' Workspace как tenant — композиция с проектами (при архивации уходят все)
+Workspace "1" *-- "0..*" Project : contains >
+
+' Project — 1:1 Board (в MVP); 1:* Sprint
+Project "1" *-- "1" Board : has >
+Project "1" *-- "0..*" Sprint : contains >
+
+' Board composed of Columns
+Board "1" *-- "2..*" Column : has >
+
+' Column contains tasks
+Column "1" -- "0..*" Task : < current location
+
+' Task — композиция с вложенными сущностями
+Task "1" *-- "0..*" TaskTag : has >
+Task "1" *-- "0..*" TaskComment : has >
+Task "1" *-- "0..*" TaskAttachment : has >
+
+' Task — ассоциация со Sprint (может быть вне спринта)
+Task "0..*" -- "0..1" Sprint : in >
+
+' Task — связи с пользователями (assignee, reporter)
+Task "0..*" -- "0..1" User : > assignee
+Task "0..*" -- "1" User : > reporter
+
+' TaskComment, TaskAttachment — кто создал
+TaskComment "0..*" -- "1" User : < author
+TaskAttachment "0..*" -- "1" User : < uploader
+
+' Event — связан с workspace (tenant-scoped) и актором (опционально)
+Event "0..*" -- "1" Workspace : scope >
+Event "0..*" -- "0..1" User : actor >
+
+@enduml

@@ -1,0 +1,50 @@
+@startuml 02-цепочка-вызовов
+!theme plain
+title Шаг 2 — Цепочка вызовов через несколько слоёв
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+actor "Пользователь" as User
+participant "Browser" as Browser
+participant "Go Backend" as API
+database "PostgreSQL" as DB
+
+User -> Browser : клик «Создать задачу»
+activate Browser
+Browser -> API : POST /api/tasks
+activate API
+API -> DB : INSERT INTO tasks
+activate DB
+DB --> API : task_id
+deactivate DB
+API --> Browser : 201 Created\n{task_id}
+deactivate API
+Browser --> User : задача появилась\nна доске
+deactivate Browser
+
+note right of Browser
+  <b>Чёрные прямоугольники на lifeline</b> — это
+  <b>activation bars</b>, или "зоны активации".
+
+  Они показывают, <b>когда участник АКТИВЕН</b>
+  (выполняет работу). После ответа — деактивируется.
+
+  Полезно, чтобы видеть:
+  <b>кто ждёт</b> ответ (удлинённая полоса),
+  <b>кто только помогает</b> (короткая полоса).
+end note
+
+note left
+  <b>Читаем сверху вниз:</b>
+  1. User кликает в браузере
+  2. Browser шлёт POST на Backend
+  3. Backend делает INSERT в БД
+  4. БД возвращает id созданной записи
+  5. Backend возвращает 201 с данными
+  6. Browser обновляет UI
+
+  Это типичный <b>CRUD-флоу</b> в нашем приложении.
+end note
+
+@enduml

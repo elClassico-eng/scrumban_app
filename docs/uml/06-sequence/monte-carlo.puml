@@ -1,0 +1,92 @@
+@startuml monte-carlo
+!theme plain
+title Сценарий «Monte Carlo прогноз доставки спринта»
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam sequenceArrowThickness 1.5
+skinparam roundCorner 6
+
+actor "Scrum Master" as SM
+participant "Browser" as Browser
+participant "Caddy" as Caddy
+participant "HTTP API" as API
+participant "Middleware" as MW
+participant "Analytics\nHandler" as AnaH
+participant "Forecast\nCache (LRU, 15м)" as Cache
+participant "Monte Carlo\nSimulator" as MC
+participant "Storage" as Storage
+database "PostgreSQL\n(sprint_stats,\nmv_throughput)" as PG
+
+== Открытие страницы аналитики спринта ==
+SM -> Browser : Переход на\nPages > Sprint > Analytics
+Browser -> Caddy : GET /api/v1/projects/{pid}\n/sprints/{sid}/forecast
+
+Caddy -> API : forward
+API -> MW : authn + tenant + rbac (≥Viewer)
+MW -> AnaH : Forecast(ctx, projectId, sprintId)
+
+== Проверка кэша ==
+AnaH -> Cache : Get(projectId, sprintId)
+
+alt Cache hit (свежий <15 мин)
+  Cache --> AnaH : ForecastResult
+  AnaH --> MW : 200 + body
+  note right of AnaH
+    Быстрый путь —
+    милисекунды.
+  end note
+else Cache miss или stale
+
+  == Сбор входных данных ==
+  AnaH -> Storage : GetSprintInProgress(sprintId)
+  Storage -> PG : SELECT * FROM sprints\nWHERE id = $1 AND status = 'active'
+  PG --> Storage : Sprint
+  Storage --> AnaH : Sprint
+
+  AnaH -> Storage : CountRemainingTasks(sprintId)
+  Storage -> PG : SELECT COUNT(*)\nFROM tasks WHERE sprint_id=$1\nAND closed_at IS NULL
+  PG --> Storage : N = 12
+  Storage --> AnaH : 12
+
+  AnaH -> Storage : GetThroughputHistory(projectId,\nlastNSprints=5)
+  Storage -> PG : SELECT throughput_tasks\nFROM sprint_stats\nWHERE project_id=$1\nORDER BY sprint.start_at DESC\nLIMIT 5
+  PG --> Storage : [11, 14, 9, 13, 10]
+  Storage --> AnaH : history
+
+  == Проверка порога данных ==
+  alt History < 3 спринтов
+    AnaH --> MW : 200 + {status: "insufficient_data",\nmin_sprints: 3}
+    note right of AnaH
+      Min-data threshold:
+      меньше 3 спринтов =
+      "данных мало".
+    end note
+  else Достаточно истории
+
+    == Расчёт Monte Carlo ==
+    AnaH -> MC : Simulate(\nremainingTasks=12,\ndaysLeft=10,\nthroughput=history,\nnSimulations=1000)
+
+    MC -> MC : Для каждой\nиз 1000 симуляций:\n\n1. Инициализировать t=0, closed=0\n2. Пока closed < N:\n   sample daily throughput\n   из empirical distribution\n   closed += sampledDaily\n   t += 1 день\n3. Записать t в результаты
+
+    MC -> MC : Сортировка результатов\n(P50, P85, P95)
+    MC -> MC : p_on_time =\n#{symulations где t ≤ daysLeft} / 1000
+
+    MC --> AnaH : ForecastResult{\n  p_on_time: 0.78,\n  p50_days: 9,\n  p85_days: 11,\n  p95_days: 13,\n  samples: 1000,\n  explanation: "..."\n}
+
+    == Кэширование ==
+    AnaH -> Cache : Put(projectId, sprintId,\nresult, ttl=15m)
+    Cache --> AnaH : ok
+  end
+
+  AnaH --> MW : 200 + ForecastResult
+end
+
+MW --> API : ForecastResult
+API --> Caddy : JSON response
+Caddy --> Browser : 200
+
+Browser -> Browser : Рендер\nMonteCarloCard
+Browser --> SM : «С вероятностью 78%\nспринт будет закрыт в срок.\nP85 = 11 дней, P95 = 13 дней\n(по 1000 симуляций на истории\n5 предыдущих спринтов)»
+
+@enduml

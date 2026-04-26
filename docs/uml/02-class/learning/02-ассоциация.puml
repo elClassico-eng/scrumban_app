@@ -1,0 +1,52 @@
+@startuml 02-ассоциация
+!theme plain
+title Шаг 2 — Ассоциация: связь между классами
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+
+class User {
+  + id : UUID
+  + email : text
+  + name : text
+}
+
+class Session {
+  + id : UUID
+  + tokenHash : text
+  + expiresAt : DateTime
+  + createdAt : DateTime
+}
+
+User "1" -- "0..*" Session : > has
+
+note top
+  <b>Ассоциация</b> — обычная связь между классами.
+  Рисуется <b>простой линией</b>.
+end note
+
+note right of Session
+  <b>Цифры на концах линии = кратность (multiplicity).</b>
+
+  <b>"1"</b> на стороне User означает: у одной Session
+  всегда ровно ОДИН пользователь.
+
+  <b>"0..*"</b> на стороне Session означает: у одного User
+  может быть НОЛЬ ИЛИ БОЛЬШЕ сессий
+  (не вошёл — 0 сессий; вошёл на ноуте и телефоне — 2).
+
+  <b>Стрелка ">" рядом с "has"</b> показывает
+  направление чтения: "User HAS Session".
+end note
+
+note bottom
+  Варианты кратности, которые ты встретишь:
+  <b>1</b>       — ровно один (обязательно)
+  <b>0..1</b>    — ноль или один (опционально)
+  <b>0..*</b>    — ноль или много (может не быть вообще)
+  <b>1..*</b>    — один или много (минимум один)
+  <b>*</b>       — то же что 0..*, просто короче
+end note
+
+@enduml

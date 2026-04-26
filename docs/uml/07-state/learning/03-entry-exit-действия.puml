@@ -1,0 +1,79 @@
+@startuml 03-entry-exit-действия
+!theme plain
+title Шаг 3 — Действия при входе и выходе из состояния
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam state {
+  BackgroundColor #FEFEFE
+  BorderColor #444444
+}
+
+[*] --> InProgress : start
+
+state InProgress {
+  InProgress : <b>entry / </b>set_started_at()
+  InProgress : <b>entry / </b>start_cycle_timer()
+  InProgress : <b>exit / </b>stop_cycle_timer()
+  InProgress : do / update_aggregate()
+}
+
+state Review {
+  Review : <b>entry / </b>assign_reviewer()
+  Review : <b>entry / </b>send_notification()
+  Review : <b>exit / </b>log_review_duration()
+}
+
+state Done {
+  Done : <b>entry / </b>set_closed_at()
+  Done : <b>entry / </b>emit_event(task_closed)
+}
+
+InProgress --> Review : ready_for_review
+Review --> Done : approved
+Review --> InProgress : needs_rework
+Done --> [*]
+
+note right of InProgress
+  <b>Действия внутри состояния:</b>
+
+  <b>entry /</b> — выполняется СРАЗУ при входе в состояние.
+  Пример: при входе в "InProgress" — записать start_at
+  и запустить таймер cycle_time.
+
+  <b>exit /</b> — выполняется при ВЫХОДЕ из состояния.
+  Пример: при уходе из "InProgress" — остановить таймер.
+
+  <b>do /</b> — выполняется В ТЕЧЕНИЕ нахождения в состоянии
+  (пока объект активен). Пример: обновлять агрегат.
+end note
+
+note left of Review
+  <b>Зачем это нужно в нашем коде:</b>
+
+  Логика работы с задачей <b>привязана к состоянию</b>,
+  а не разбросана по разным местам.
+
+  Сбор cycle time, отправка уведомлений, эмиссия
+  событий в append-only лог — всё это "entry actions"
+  на соответствующих состояниях.
+
+  В Go-коде это превращается в функции, которые
+  вызываются в transition handler:
+  <code>onTaskMoved(oldState, newState) {</code>
+  <code>  execExitActions(oldState)</code>
+  <code>  execEntryActions(newState)</code>
+  <code>}</code>
+end note
+
+note bottom of Done
+  <b>Состояние Done</b> — важная точка:
+  • set_closed_at() — ставим время закрытия.
+  • emit_event(task_closed) — публикуем событие,
+    которое запустит пересчёт velocity спринта
+    и может отправить уведомления.
+
+  Всё это — в одном месте, привязано к переходу.
+end note
+
+@enduml

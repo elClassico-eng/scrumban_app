@@ -1,0 +1,57 @@
+@startuml 02-переходы-с-событиями
+!theme plain
+title Шаг 2 — Переходы с событиями, условиями и действиями
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam state {
+  BackgroundColor #FEFEFE
+  BorderColor #444444
+}
+
+[*] --> Draft : создано
+
+Draft --> Published : опубликовать\n[title != ""] / send_notification()
+Published --> Draft : вернуть в черновик\n[role = editor]
+Published --> Archived : архивировать\n/ set_archived_at()
+
+Archived --> [*]
+
+note right of Draft
+  <b>Что написано на стрелке перехода:</b>
+
+  <code>событие [условие] / действие</code>
+
+  <b>событие</b> (event) — что вызвало переход.
+  Пример: "опубликовать" (пользователь нажал кнопку).
+
+  <b>[условие] (guard)</b> в квадратных скобках —
+  обязательное условие. Если false — переход не произойдёт.
+  Пример: [title != ""] — публикация возможна только
+  при заполненном заголовке.
+
+  <b>/ действие (action)</b> после слэша — что выполняется
+  при переходе. Побочный эффект.
+  Пример: / send_notification() — отправить уведомление.
+end note
+
+note left of Published
+  <b>У одного состояния может быть много исходящих
+  переходов — по разным событиям.</b>
+
+  Здесь из "Published" есть два пути:
+  • в "Draft" (если редактор вернул в черновик);
+  • в "Archived" (если кто-то архивировал).
+
+  Выбор пути зависит от события.
+end note
+
+note bottom of Archived
+  <b>Final state</b> (конечное состояние) — круг в круге
+  (bullseye). Сюда объект "умирает".
+
+  Пример: задача заархивирована, больше не будет
+  менять состояния. В БД остаётся с пометкой archived_at.
+end note
+
+@enduml

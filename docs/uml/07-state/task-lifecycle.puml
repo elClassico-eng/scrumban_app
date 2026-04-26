@@ -1,0 +1,84 @@
+@startuml task-lifecycle
+!theme plain
+title Жизненный цикл задачи — State Machine
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam state {
+  BackgroundColor #FEFEFE
+  BorderColor #444444
+  FontSize 11
+}
+
+[*] --> Backlog : task_created\n/ event: task_created
+
+note left of Backlog
+  Логические состояния задачи соответствуют
+  <b>column_role</b> текущей колонки (см. ER-диаграмму).
+  Состояние хранится через foreign key на
+  <b>columns.column_role</b>, не как поле status.
+end note
+
+state Backlog {
+  Backlog : entry / добавить в backlog проекта
+  Backlog : подсветка: нет активной работы
+}
+
+state InProgress as "In Progress" {
+  InProgress : entry / увеличить time_in_column
+  InProgress : проверка WIP-лимита колонки
+}
+
+state Review {
+  Review : entry / старт cycle_time\nдля column_role = REVIEW
+  Review : старт таймера stuck-alert
+}
+
+state Done {
+  Done : entry / set closed_at = now()
+  Done : event: task_closed
+  Done : trigger: update sprint_stats
+}
+
+state Archived {
+  Archived : entry / set deleted_at = now()
+  Archived : скрыть из основных view
+}
+
+Backlog --> InProgress : move to IN_PROGRESS\n/ event: task_moved_column,\nзапись cycle_time_sample
+InProgress --> Review : move to REVIEW\n/ event: task_moved_column
+Review --> Done : move to DONE\n/ event: task_closed,\nreopened_count = reopened_count
+
+Review --> InProgress : needs_rework\n(двигаем назад)\n/ event: task_moved_column
+
+note right of Review
+  Переход Review → InProgress —
+  реальный флоу при провале ревью.
+  Влияет на cycle time в Review
+  (добавляется второй проход).
+end note
+
+' Reopened path
+Done --> InProgress : reopen\n[role ≥ Member]\n/ event: task_reopened,\nreopened_count++,\nunset closed_at
+
+note left of Done
+  reopened_count хранится на задаче
+  и участвует в process-mining аналитике
+  как индикатор «неустойчивого» качества.
+end note
+
+' Backlog loop (редко, но реален)
+InProgress --> Backlog : deprioritize\n/ event: task_moved_column
+
+' Archive (soft delete) — из любого состояния
+Backlog --> Archived : archive\n[role = Admin/Owner]
+InProgress --> Archived : archive
+Review --> Archived : archive
+Done --> Archived : archive
+
+Archived --> [*]
+
+' Early deletion from Backlog
+Backlog --> [*] : delete (только если\nневыполнено любой работы\nи роль = Admin)
+
+@enduml

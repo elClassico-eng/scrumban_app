@@ -1,0 +1,177 @@
+@startuml use-case
+!theme plain
+title Диаграмма вариантов использования Scrumban-платформы
+
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam monochrome false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+left to right direction
+
+' ============================================================================
+' Primary (human) actors — с наследованием ролей
+' Viewer ⊂ Team Member ⊂ Scrum Master ⊂ Admin ⊂ Workspace Owner
+' (каждая последующая роль имеет все возможности предыдущей + свои)
+' ============================================================================
+
+actor "Viewer" as Viewer
+actor "Team Member" as Member
+actor "Scrum Master /\nDelivery Manager" as SM
+actor "Admin" as Admin
+actor "Workspace Owner" as Owner
+
+Member --|> Viewer
+SM --|> Member
+Admin --|> SM
+Owner --|> Admin
+
+' ============================================================================
+' Secondary (external) actors
+' ============================================================================
+
+actor "SMTP Service" as SMTP << external >>
+actor "Integration Bot\n(Telegram / Pachca)" as Bot << external >>
+actor "Git Platform\n(GitFlic / GitVerse)" as Git << external >>
+actor "Scheduler" as Cron << external >>
+
+' ============================================================================
+' System boundary
+' ============================================================================
+
+rectangle "Scrumban Platform" {
+
+    package "Управление учётной записью" as PKG_Account {
+        usecase "Регистрация\nаккаунта" as UC_Register
+        usecase "Вход / выход" as UC_Login
+        usecase "Сброс пароля" as UC_ResetPwd
+        usecase "Принять\nприглашение" as UC_AcceptInvite
+        usecase "Редактировать\nпрофиль" as UC_EditProfile
+    }
+
+    package "Workspace & участники" as PKG_Workspace {
+        usecase "Создать workspace" as UC_CreateWS
+        usecase "Настройки workspace" as UC_WSSettings
+        usecase "Пригласить\nучастника" as UC_InviteMember
+        usecase "Управлять ролями\nучастников" as UC_ManageRoles
+        usecase "Архивировать\nworkspace" as UC_ArchiveWS
+    }
+
+    package "Проекты и доски" as PKG_Project {
+        usecase "Создать проект" as UC_CreateProject
+        usecase "Настроить колонки\nи WIP-лимиты" as UC_ConfigBoard
+        usecase "Архивировать\nпроект" as UC_ArchiveProject
+    }
+
+    package "Работа с задачами" as PKG_Task {
+        usecase "Создать задачу" as UC_CreateTask
+        usecase "Назначить\nисполнителя" as UC_AssignTask
+        usecase "Переместить\nзадачу" as UC_MoveTask
+        usecase "Редактировать\nзадачу" as UC_EditTask
+        usecase "Комментировать\nзадачу" as UC_CommentTask
+        usecase "Прикрепить файл" as UC_AttachFile
+        usecase "Просмотр задачи" as UC_ViewTask
+        usecase "Поиск и фильтрация" as UC_SearchTask
+    }
+
+    package "Управление спринтами" as PKG_Sprint {
+        usecase "Создать спринт" as UC_CreateSprint
+        usecase "Планировать\nспринт" as UC_PlanSprint
+        usecase "Запустить спринт" as UC_StartSprint
+        usecase "Закрыть спринт" as UC_CloseSprint
+    }
+
+    package "Аналитика (B и B+)" as PKG_Analytics {
+        usecase "Просмотр CFD" as UC_ViewCFD
+        usecase "Cycle time\nscatter" as UC_ViewScatter
+        usecase "Throughput" as UC_ViewThroughput
+        usecase "Monte Carlo\nпрогноз спринта" as UC_ViewMC
+        usecase "WIP-рекомендация\n(Little's Law)" as UC_ViewWIPRec
+        usecase "Сравнение\nспринтов" as UC_CompareSprints
+        usecase "Bottleneck\nheatmap" as UC_ViewBottleneck
+    }
+
+    package "Системные процессы" as PKG_System {
+        usecase "Отправить email\n(приглашение, сброс)" as UC_SendEmail
+        usecase "Отправить\nуведомление" as UC_SendNotification
+        usecase "Привязать коммит\nк задаче" as UC_LinkCommit
+        usecase "Пересчитать\nагрегаты потока" as UC_RecomputeAgg
+        usecase "Обновить\nпрогноз MC" as UC_UpdateMC
+    }
+}
+
+' ============================================================================
+' Ассоциации: кто с какими прецедентами работает
+' ============================================================================
+
+' Viewer — только чтение
+Viewer --> UC_Login
+Viewer --> UC_EditProfile
+Viewer --> UC_ViewTask
+Viewer --> UC_SearchTask
+Viewer --> UC_ViewCFD
+Viewer --> UC_ViewThroughput
+
+' Team Member наследует Viewer + может писать
+Member --> UC_Register
+Member --> UC_ResetPwd
+Member --> UC_AcceptInvite
+Member --> UC_CreateTask
+Member --> UC_AssignTask
+Member --> UC_MoveTask
+Member --> UC_EditTask
+Member --> UC_CommentTask
+Member --> UC_AttachFile
+
+' Scrum Master — спринты и аналитика
+SM --> UC_CreateSprint
+SM --> UC_PlanSprint
+SM --> UC_StartSprint
+SM --> UC_CloseSprint
+SM --> UC_ViewScatter
+SM --> UC_ViewMC
+SM --> UC_ViewWIPRec
+SM --> UC_CompareSprints
+SM --> UC_ViewBottleneck
+SM --> UC_ConfigBoard
+
+' Admin — управление workspace-контентом
+Admin --> UC_InviteMember
+Admin --> UC_ManageRoles
+Admin --> UC_CreateProject
+Admin --> UC_ArchiveProject
+
+' Owner — жизненный цикл workspace и биллинг
+Owner --> UC_CreateWS
+Owner --> UC_WSSettings
+Owner --> UC_ArchiveWS
+
+' ============================================================================
+' Внешние акторы
+' ============================================================================
+
+UC_SendEmail --> SMTP
+UC_SendNotification --> Bot
+Git --> UC_LinkCommit
+Cron --> UC_RecomputeAgg
+Cron --> UC_UpdateMC
+
+' ============================================================================
+' Отношения между прецедентами
+' ============================================================================
+
+' Include — обязательное использование
+UC_Register ..> UC_SendEmail : <<include>>
+UC_ResetPwd ..> UC_SendEmail : <<include>>
+UC_InviteMember ..> UC_SendEmail : <<include>>
+UC_AcceptInvite ..> UC_Login : <<include>>
+UC_CloseSprint ..> UC_UpdateMC : <<include>>
+
+' Extend — опциональное расширение
+UC_MoveTask <.. UC_SendNotification : <<extend>>
+UC_AssignTask <.. UC_SendNotification : <<extend>>
+UC_CommentTask <.. UC_SendNotification : <<extend>>
+
+@enduml

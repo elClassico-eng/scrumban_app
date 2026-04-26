@@ -1,0 +1,175 @@
+@startuml components
+!theme plain
+title Диаграмма компонентов Scrumban-платформы
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+' ============================================================================
+' Внешние клиенты
+' ============================================================================
+
+actor "Пользователь" as User
+component "Browser\n(Nuxt SPA runtime)" as Browser << client >>
+
+User --> Browser
+
+' ============================================================================
+' Edge tier
+' ============================================================================
+
+component "Caddy" as Caddy <<reverse-proxy>> {
+  portin "HTTPS 443" as CaddyIn
+  portout "HTTP" as CaddyOut
+}
+
+note right of Caddy
+  • TLS (Let's Encrypt)
+  • Маршрутизация:
+    /api/* → Go
+    /* → Nuxt
+  • Sticky sessions (SSE)
+end note
+
+Browser ..> CaddyIn : HTTPS
+
+' ============================================================================
+' Application tier
+' ============================================================================
+
+package "Nuxt 3 (SPA mode)" as NuxtPkg <<frontend>> {
+  component "Nuxt Static\nBundle" as NuxtStatic {
+    portin "HTTP"
+  }
+  component "Nuxt Server\n(Nitro, BFF)" as NuxtServer {
+    portin "HTTP /bff/*" as NuxtBffIn
+    portout "HTTP" as NuxtBffOut
+  }
+}
+
+CaddyOut ..> NuxtStatic : "static assets"
+CaddyOut ..> NuxtBffIn : "/bff/*"
+
+package "Go Backend (монолит)" as GoPkg <<backend>> {
+
+  component "HTTP API\n(echo)" as HttpAPI {
+    portin "HTTP /api/*" as ApiIn
+    portin "SSE /api/*/stream" as SseIn
+  }
+
+  component "Middleware chain" as Middleware {
+    component "Logging\n& Recovery" as MwLog
+    component "AuthN\n(cookies)" as MwAuthN
+    component "Tenant\n(SET app.workspace_id)" as MwTenant
+    component "RBAC" as MwRBAC
+  }
+
+  component "Domain Services" as Services {
+    component "Workspace\nService" as SvcWS
+    component "Project &\nBoard Service" as SvcProject
+    component "Task Service" as SvcTask
+    component "Sprint Service" as SvcSprint
+    component "Auth Service" as SvcAuth
+  }
+
+  component "Analytics Engine" as Analytics {
+    component "CFD" as AnaCFD
+    component "Cycle time /\nPercentiles" as AnaCT
+    component "Monte Carlo\nSimulator" as AnaMC
+    component "Little's Law\nRecommender" as AnaLL
+    component "Aggregator\n(flow_daily,\ncycle_samples)" as AnaAgg
+  }
+
+  component "Event Bus" as EventBus {
+    component "In-proc\nPublisher" as EvPub
+    component "LISTEN/NOTIFY\nBridge" as EvNotify
+  }
+
+  component "SSE Hub" as SseHub {
+    component "Subscriber\nRegistry" as SseReg
+    component "Broadcaster" as SseBcast
+  }
+
+  component "Background Worker\n(river)" as Worker {
+    component "Webhook\nDispatcher" as WkWebhook
+    component "Email Sender" as WkEmail
+    component "Aggregate\nRecompute" as WkAgg
+    component "MC Refresh" as WkMC
+  }
+
+  component "Feature Flags" as FF
+  component "Storage\n(pgx + sqlc)" as Storage
+}
+
+CaddyOut ..> ApiIn : "/api/*"
+CaddyOut ..> SseIn : "/api/*/stream"
+
+NuxtBffOut ..> ApiIn : "server-to-server"
+
+ApiIn --> MwLog
+MwLog --> MwAuthN
+MwAuthN --> MwTenant
+MwTenant --> MwRBAC
+MwRBAC --> Services
+
+Services ..> Storage : "SQL via sqlc"
+Services ..> EventBus : "publish domain events"
+Services ..> FF : "IsEnabled(ctx, feature)"
+
+Analytics ..> Storage : "read aggregates"
+
+EvPub --> SseHub
+EvPub --> Worker : "enqueue jobs"
+EvPub <..> EvNotify : "cross-node fan-out"
+
+SseHub --> SseIn : "event-stream"
+
+Worker --> Storage : "read queue / persist results"
+
+' ============================================================================
+' Data tier
+' ============================================================================
+
+package "Data tier" as DataPkg {
+
+  database "PostgreSQL 16+" as PG {
+    component "Domain\nTables\n(RLS)" as PgDomain
+    component "events\n(append-only)" as PgEvents
+    component "Aggregates\n+ mat.views" as PgAgg
+    component "river\n(job queue)" as PgRiver
+    component "LISTEN/NOTIFY\nchannel" as PgNotify
+  }
+
+  cloud "Object Storage\n(S3-compat)" as ObjStore {
+    component "Attachments" as ObjFiles
+    component "Backups" as ObjBackup
+  }
+}
+
+Storage --> PgDomain : "SQL"
+Storage --> PgEvents : "INSERT"
+Analytics --> PgAgg : "SELECT"
+Worker --> PgRiver : "poll/claim"
+AnaAgg --> PgEvents : "subscribe via trigger"
+EvNotify <--> PgNotify : "LISTEN/NOTIFY"
+
+Services --> ObjFiles : "presigned URL"
+Worker --> ObjBackup : "pg_dump upload"
+
+' ============================================================================
+' Внешние сервисы
+' ============================================================================
+
+package "Внешние сервисы" as ExtPkg {
+  cloud "SMTP Service" as SMTP
+  cloud "Integration Bot\n(Telegram / Pachca)" as Bot
+  cloud "Git Platform\n(GitFlic / GitVerse)" as Git
+}
+
+WkEmail --> SMTP : "SMTP"
+WkWebhook --> Bot : "HTTP webhook"
+Git --> ApiIn : "webhook POST"
+
+@enduml

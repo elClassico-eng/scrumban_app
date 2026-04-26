@@ -1,0 +1,49 @@
+@startuml 01-одна-таблица
+!theme plain
+title Шаг 1 — Одна таблица БД
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+entity users {
+  *<b>id</b> : uuid <<PK>>
+  --
+  *email : text <<U>>
+  *password_hash : text
+   name : text
+  *created_at : timestamptz
+   deleted_at : timestamptz
+}
+
+note right of users
+  <b>Таблица (entity)</b> = рамка с именем наверху и полями внутри.
+
+  <b>Верхняя часть</b> (до разделителя "--") — <b>первичный ключ</b> (PK).
+  <b>Нижняя часть</b> — остальные поля.
+
+  <b>Слева от поля:</b>
+  • <b>"*"</b> — NOT NULL (поле обязательное)
+  • без звезды — Nullable (может быть пустым / NULL)
+
+  <b>Справа в &lt;&lt;...&gt;&gt;:</b>
+  • <b>PK</b> — Primary Key, первичный ключ
+  • <b>U</b>  — Unique, уникальное значение
+  • <b>FK</b> — Foreign Key (на других диаграммах)
+  • <b>I</b>  — Indexed, есть индекс
+end note
+
+note bottom of users
+  <b>Типы данных в PostgreSQL, которые мы используем:</b>
+
+  • <b>uuid</b>        — уникальный идентификатор (16 байт)
+  • <b>text</b>        — строка любой длины
+  • <b>timestamptz</b> — дата+время с часовым поясом, в UTC
+  • <b>int</b>         — целое число
+  • <b>bigint</b>      — большое целое (для размеров файлов)
+  • <b>numeric</b>     — дробное число (деньги, story points)
+  • <b>boolean</b>     — true/false
+  • <b>jsonb</b>       — JSON-объект, хранится бинарно
+  • <b>inet</b>        — IP-адрес
+end note
+
+@enduml

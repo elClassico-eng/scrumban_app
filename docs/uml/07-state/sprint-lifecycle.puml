@@ -1,0 +1,60 @@
+@startuml sprint-lifecycle
+!theme plain
+title Жизненный цикл спринта — State Machine
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam state {
+  BackgroundColor #FEFEFE
+  BorderColor #444444
+  FontSize 11
+}
+
+[*] --> Planned : create sprint\n[role ≥ Scrum Master]\n/ event: sprint_created,\nset planned_end_at
+
+state Planned {
+  Planned : entry / создан, добавлен в бэклог спринтов
+  Planned : команда добавляет задачи
+  Planned : возможно изменение start_at, end_at
+}
+
+state Active {
+  Active : entry / set start_at = now(),\nstatus = 'active'
+  Active : event: sprint_started
+  Active : запустить MC-refresh job (каждый час)
+  Active : SSE broadcast: sprint_started
+}
+
+state Closed {
+  Closed : entry / set closed_at = now(),\nstatus = 'closed'
+  Closed : event: sprint_closed
+  Closed : trigger: пересчёт sprint_stats\n(velocity, throughput, avg cycle time)
+  Closed : trigger: обновить Monte Carlo\nпрогноз следующего спринта
+  Closed : задачи unclosed → rollover\nв следующий Planned sprint
+}
+
+Planned --> Active : start\n[role ≥ Scrum Master]\n/ проверка: нет другого active\nв этом проекте
+Active --> Closed : close\n[role ≥ Scrum Master]\n/ event: sprint_closed
+
+' Cancel from Planned (крайне редко — спринт ещё не начался)
+Planned --> Closed : cancel\n[role ≥ Admin]\n/ event: sprint_cancelled,\nзадачи возвращаются в бэклог
+
+note top of Planned
+  В одном проекте одновременно
+  может быть несколько спринтов в Planned,
+  но только один в Active.
+end note
+
+note right of Closed
+  Закрытие спринта — важная точка:
+  1. Пересчитывается sprint_stats.
+  2. Обновляется материал для Monte Carlo
+     прогноза следующего спринта.
+  3. Незакрытые задачи возвращаются
+     в backlog (или rollover в следующий
+     спринт, если выбран).
+end note
+
+Closed --> [*]
+
+@enduml

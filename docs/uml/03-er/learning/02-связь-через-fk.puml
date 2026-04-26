@@ -1,0 +1,66 @@
+@startuml 02-связь-через-fk
+!theme plain
+title Шаг 2 — Связь между таблицами через Foreign Key
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam linetype ortho
+
+entity users {
+  *<b>id</b> : uuid <<PK>>
+  --
+  *email : text <<U>>
+  *name : text
+}
+
+entity sessions {
+  *<b>id</b> : uuid <<PK>>
+  --
+  *<b>user_id</b> : uuid <<FK>>
+  *token_hash : text <<U>>
+  *expires_at : timestamptz
+  *created_at : timestamptz
+}
+
+users ||--o{ sessions
+
+note top of sessions
+  <b>user_id</b> с меткой <b>&lt;&lt;FK&gt;&gt;</b> — это <b>внешний ключ</b>
+  (Foreign Key). Он ссылается на <b>users.id</b>.
+
+  Говорит БД: "в этом поле не любые uuid,
+  а только те, которые есть в таблице users".
+end note
+
+note right
+  <b>Линия с символами на концах</b> = <b>связь</b> между таблицами.
+  Нотация называется <b>"crow's foot"</b> (воронья лапка).
+
+  Символы на конце "users":
+  <b>||</b>   = ровно ОДИН (одна двойная вертикалка + вертикалка)
+
+  Символы на конце "sessions":
+  <b>o{</b>   = НОЛЬ или МНОГО ("o" = ноль, "{" = ветка-лапка)
+
+  <b>Итого:</b> "один user — 0 или много sessions".
+
+  В БД: один пользователь может иметь
+  несколько активных сессий (залогинен с ноута,
+  телефона и т.д.), но может быть и не залогинен.
+end note
+
+note bottom
+  <b>Нотация crow's foot (шпаргалка):</b>
+
+  <b>|| </b>   = ровно один (обязательно)
+  <b>|o </b>   = ноль или один (опционально)
+  <b>}| </b>   = один или много (минимум один)
+  <b>}o </b>   = ноль или много
+
+  <b>Примеры чтения:</b>
+  "||--o{" = "один — к нулю или многим" (классическая 1:N)
+  "||--||" = "один — к одному" (1:1)
+  "}o--o{" = "много ко многим" (N:M, через связующую таблицу)
+end note
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml 03-композиция
+!theme plain
+title Шаг 3 — Композиция vs Ассоциация
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam classAttributeIconSize 0
+
+class Board {
+  + id : UUID
+  + name : text
+  + type : BoardType
+}
+
+class Column {
+  + id : UUID
+  + name : text
+  + orderIndex : int
+  + wipLimit : int?
+}
+
+class Task {
+  + id : UUID
+  + title : text
+  + priority : Priority
+}
+
+class User {
+  + id : UUID
+  + email : text
+}
+
+' Композиция: Board *-- Column
+Board "1" *-- "2..*" Column : has >
+
+' Ассоциация (обычная): Task - User
+Task "0..*" -- "0..1" User : > assignee
+
+note top of Board
+  <b>Композиция</b> — <b>закрашенный ромб</b>.
+  Сильная связь: "часть и целое".
+
+  <b>Если удалить Board — все Column умрут вместе с ним.</b>
+  Column не может существовать отдельно.
+
+  В коде: при удалении Board из БД нужно
+  каскадно удалить все Column (ON DELETE CASCADE).
+end note
+
+note bottom of Task
+  <b>Ассоциация</b> (обычная линия) —
+  <b>слабая связь</b>, объекты независимы.
+
+  Task может существовать БЕЗ исполнителя
+  (User) — и даже если User удалится,
+  Task останется (просто assignee станет null).
+end note
+
+note right of Column
+  <b>Почему Board → Column это композиция?</b>
+  Колонки — логически часть доски.
+  Без доски колонки бессмысленны.
+
+  <b>Почему Task → User это ассоциация?</b>
+  Задача существует независимо от человека.
+  Можно сменить assignee, можно удалить User,
+  но задача остаётся.
+end note
+
+@enduml

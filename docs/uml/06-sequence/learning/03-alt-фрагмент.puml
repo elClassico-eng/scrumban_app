@@ -1,0 +1,51 @@
+@startuml 03-alt-фрагмент
+!theme plain
+title Шаг 3 — Условное ветвление через alt
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+actor "Пользователь" as User
+participant "Browser" as Browser
+participant "Go Backend" as API
+database "PostgreSQL" as DB
+
+User -> Browser : ввод email+пароль,\nклик «Войти»
+Browser -> API : POST /api/auth/login
+API -> DB : SELECT user\nWHERE email = ?
+
+alt Пользователь найден И пароль верен
+    DB --> API : user
+    API --> Browser : 200 OK\n(Set-Cookie)
+    Browser --> User : /dashboard
+else Пользователь не найден ИЛИ пароль неверен
+    DB --> API : (нет данных или mismatch)
+    API --> Browser : 401 Unauthorized
+    Browser --> User : «Неверный email или пароль»
+end
+
+note right
+  <b>alt</b> (alternative) — это <b>фрагмент</b> диаграммы
+  с <b>условным ветвлением</b>.
+
+  Рисуется рамкой с меткой <b>"alt"</b> слева сверху.
+  Разные варианты разделены <b>горизонтальной пунктирной</b>
+  линией с меткой <b>else</b>.
+
+  Каждый вариант = ветка исполнения в зависимости
+  от условия. Выполняется только ОДНА из веток.
+end note
+
+note left of Browser
+  <b>Типичные фрагменты:</b>
+
+  <b>alt</b>   — if/else (ветвление по условию)
+  <b>opt</b>   — optional (выполнится ИЛИ не выполнится)
+  <b>loop</b>  — цикл
+  <b>par</b>   — параллельное выполнение
+  <b>break</b> — прерывание
+
+  Каждый фрагмент — рамка с веткой-подписью.
+end note
+
+@enduml
