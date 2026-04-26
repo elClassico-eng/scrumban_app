@@ -14,9 +14,7 @@
 
 ## 1. Сценарий «Вход пользователя»
 
-![Login Sequence](login.svg)
-
-> Исходник: [`login.puml`](login.puml). Регенерация: `plantuml -tsvg login.puml`.
+> Исходник: [`login.puml`](login.puml). Preview через PlantUML plugin в IDE.
 
 ### Ключевые точки
 
@@ -28,9 +26,7 @@
 
 ## 2. Сценарий «Создание задачи с real-time обновлением»
 
-![Create Task + SSE](create-task-sse.svg)
-
-> Исходник: [`create-task-sse.puml`](create-task-sse.puml). Регенерация: `plantuml -tsvg create-task-sse.puml`.
+> Исходник: [`create-task-sse.puml`](create-task-sse.puml). Preview через PlantUML plugin в IDE.
 
 ### Ключевые точки
 
@@ -41,7 +37,7 @@
 - **Event Bus после commit** — `TasksService.Create` публикует `TaskCreatedEvent` после успешного commit.
 - **`par` фрагмент** — параллельные реакции на событие:
   - **SSE Hub** рассылает всем подписчикам workspace'а → Browser B получает событие и инвалидирует vue-query cache.
-  - **Worker** (river) забирает NotifyJob → отправляет в Telegram/Pachca.
+  - **Worker** (pg-boss) забирает NotifyJob → отправляет в Telegram/Pachca.
 - **Оптимистичные обновления на Browser A**: задача появляется в Pinia-сторе сразу после 201 ответа, даже до полного invalidate.
 
 ### Почему SSE, не WebSocket
@@ -49,9 +45,7 @@
 
 ## 3. Сценарий «Monte Carlo прогноз спринта»
 
-![Monte Carlo Forecast](monte-carlo.svg)
-
-> Исходник: [`monte-carlo.puml`](monte-carlo.puml). Регенерация: `plantuml -tsvg monte-carlo.puml`.
+> Исходник: [`monte-carlo.puml`](monte-carlo.puml). Preview через PlantUML plugin в IDE.
 
 ### Ключевые точки
 
