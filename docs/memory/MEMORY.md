@@ -1,0 +1,10 @@
+- [User critical thinking](user_critical_thinking.md) — пушит на hype, оценит честную критику и trade-off'ы; magistr-thesis solo dev на Scrumban-платформе
+- [Claim discipline](feedback_claim_discipline.md) — язык должен соответствовать реализации; используй «inspired by» вместо «X system», если не реализуешь X полноценно
+- [Architectural rigor](feedback_architectural_rigor.md) — user делает senior-grade критику архитектуры; интегрировать каждое замечание буквально
+- [Teaching calibration](feedback_teaching_calibration.md) — user учит Go с нуля, впервые делает backend; не презентовать senior-patterns как must-have; предлагать progressive complexity с learning path
+- [Learning pace](feedback_learning_pace.md) — user хочет понимать сам, не черный ящик; объяснять термины при первом упоминании, не давить темпом
+- [No SVG in learning](feedback_no_svg_in_learning.md) — в learning/ папках только .puml+.md, у user есть IDE-плагин для preview
+- [Latest stack versions](feedback_latest_stack_versions.md) — всегда latest stable, strict TS, codegen на всех границах; Nuxt 4 (НЕ 3), Nuxt UI v3 (НЕ NextUI)
+- [Project core decisions](project_core_decisions.md) — scope, позиционирование, стек (Nuxt monorepo, Nitro), deployment, монетизация; обновлено 2026-04-26
+- [Architectural principles](project_architectural_principles.md) — hard rules для кодовой базы: multi-tenancy (RLS), SSE pub/sub, event-sourced analytics, SPA mode, feature flags
+- [Dual-track approach](project_dual_track_approach.md) — каждый spec документирует Current MVP + Target architecture + Evolution path

@@ -1,0 +1,10 @@
+# Claude Code
+.superpowers/
+.claude/settings.local.json
+
+# JetBrains IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
