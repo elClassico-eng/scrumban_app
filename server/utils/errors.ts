@@ -36,9 +36,29 @@ export function isDomainError(err: unknown): err is DomainError {
 
 // Maps a domain error to H3's createError shape. Use at handler boundaries:
 //   try { ... } catch (e) { throw toHttpError(e) }
+//
+// Zod errors are converted to 400 with the issues list as the body so the
+// frontend can show field-level messages.
 export function toHttpError(err: unknown) {
   if (isDomainError(err)) {
     return createError({ statusCode: err.statusCode, statusMessage: err.message })
   }
+  if (isZodError(err)) {
+    return createError({
+      statusCode: 400,
+      statusMessage: 'Validation Error',
+      data: { issues: err.issues },
+    })
+  }
   return err
+}
+
+function isZodError(err: unknown): err is { issues: unknown[]; name: string } {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'name' in err &&
+    (err as { name: string }).name === 'ZodError' &&
+    Array.isArray((err as { issues?: unknown[] }).issues)
+  )
 }
