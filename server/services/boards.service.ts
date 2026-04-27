@@ -8,7 +8,12 @@
 //   update    → admin+
 //   delete    → owner (destructive: cascades to columns + tasks + events)
 import { and, eq } from 'drizzle-orm'
-import { boards, type Board, type WorkspaceMemberRole } from '../db/schema'
+import {
+  boardColumns,
+  boards,
+  type Board,
+  type WorkspaceMemberRole,
+} from '../db/schema'
 import { withTenant } from '../utils/db'
 import {
   ConflictError,
@@ -17,6 +22,17 @@ import {
 import { requireMinRole } from '../utils/rbac'
 
 const PG_UNIQUE_VIOLATION = '23505'
+
+// Default board layout. New boards get these four columns auto-created so a
+// freshly-made board is immediately usable. The user can rename or reorder
+// them; column_role values stay so flow analytics remain meaningful even if
+// the user-facing names diverge across teams.
+const DEFAULT_COLUMNS = [
+  { name: 'Backlog', columnRole: 'backlog' as const },
+  { name: 'In Progress', columnRole: 'in_progress' as const },
+  { name: 'Review', columnRole: 'review' as const },
+  { name: 'Done', columnRole: 'done' as const },
+]
 
 export async function listBoards(
   workspaceId: string,
@@ -56,6 +72,19 @@ export async function createBoard(input: {
           slug: input.slug,
         })
         .returning()
+
+      // Seed default columns in the same transaction so a board never exists
+      // without them. If this insert fails, the board insert rolls back too.
+      await tx.insert(boardColumns).values(
+        DEFAULT_COLUMNS.map((c, position) => ({
+          workspaceId: input.workspaceId,
+          boardId: row!.id,
+          name: c.name,
+          columnRole: c.columnRole,
+          position,
+        })),
+      )
+
       return row!
     })
   } catch (err) {
