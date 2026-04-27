@@ -36,6 +36,20 @@
       "when": 1777273936837,
       "tag": "0004_rls_nullif_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777294317042,
+      "tag": "0005_striped_zzzax",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777294759570,
+      "tag": "0006_sprints_rls",
+      "breakpoints": true
     }
   ]
 }
