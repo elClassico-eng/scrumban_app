@@ -15,6 +15,27 @@
       "when": 1777239640371,
       "tag": "0001_sweet_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777271181710,
+      "tag": "0002_flippant_mantis",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777271283037,
+      "tag": "0003_rls_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777273936837,
+      "tag": "0004_rls_nullif_fix",
+      "breakpoints": true
     }
   ]
 }

@@ -2,3 +2,5 @@
 // Drizzle Kit (migration generator). Add new tables by re-exporting them here.
 export * from './users'
 export * from './workspaces'
+export * from './boards'
+export * from './tasks'

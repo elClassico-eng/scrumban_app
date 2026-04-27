@@ -1,12 +1,15 @@
 // Per-test DB helpers. Connection is opened lazily on first call and
 // closed via afterAll() in the test files that use it.
+//
+// Uses ADMIN_URL (scrumban superuser) — TRUNCATE requires the table owner
+// or superuser; scrumban_app does not have that privilege.
 import postgres from 'postgres'
-import { TEST_URL } from '../setup.global'
+import { ADMIN_URL } from '../setup.global'
 
 let _client: ReturnType<typeof postgres> | null = null
 
 export function getTestSql() {
-  if (!_client) _client = postgres(TEST_URL, { max: 1 })
+  if (!_client) _client = postgres(ADMIN_URL, { max: 1 })
   return _client
 }
 

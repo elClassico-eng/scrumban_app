@@ -14,6 +14,9 @@ services:
       - "5433:5432"
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
+      # Runs once on first DB init: strips BYPASSRLS from the scrumban
+      # role so RLS policies actually apply. See db/init/01_app_role.sql.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U scrumban -d scrumban_dev"]
       interval: 5s

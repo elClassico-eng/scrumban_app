@@ -9,7 +9,9 @@ export default defineConfig({
   out: './drizzle/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    // Admin connection — drizzle-kit needs CREATE/ALTER/DROP privileges.
+    // Falls back to DATABASE_URL for environments that haven't split roles yet.
+    url: process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL!,
   },
   strict: true,
   verbose: true,
