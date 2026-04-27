@@ -12,15 +12,20 @@
 //
 // All queries go through withTenant() so RLS at the DB enforces tenant
 // isolation as a second line of defence.
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import {
+  boardColumns,
+  taskEvents,
   tasks,
+  type ColumnRole,
   type Task,
+  type TaskEvent,
+  type TaskEventType,
   type TaskPriority,
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant } from '../utils/db'
-import { NotFoundError } from '../utils/errors'
+import { NotFoundError, ValidationError } from '../utils/errors'
 import { requireMinRole } from '../utils/rbac'
 
 export async function listTasksForBoard(input: {
@@ -129,4 +134,192 @@ export async function deleteTask(input: {
     tx.delete(tasks).where(eq(tasks.id, input.taskId)),
   )
   if ((result.count ?? 0) === 0) throw new NotFoundError('Task not found')
+}
+
+// Move a task to a different column and/or position. The whole operation
+// runs inside one transaction so:
+//   - the FK constraints + RLS policies all see consistent state,
+//   - position renumbering doesn't expose duplicates to other readers,
+//   - the task_events row is committed atomically with the state change
+//     it describes (no "ghost events" on a rollback).
+//
+// State-machine side effects:
+//   - entering a column whose column_role = 'done'    → sets closed_at = now
+//   - leaving a column whose column_role = 'done'     → clears closed_at,
+//                                                       reopened_count++
+//   - moving to 'archived'                            → emits task_archived
+//   - everything else                                 → emits task_moved
+//
+// WIP limit: if the destination column has a wipLimit AND it's already at
+// or above the limit AND this is a cross-column move, the move is rejected
+// with 422 unless the caller passes force=true.
+const PARKING_POSITION = 1_000_000
+
+export async function moveTask(input: {
+  workspaceId: string
+  taskId: string
+  toColumnId: string
+  toPosition: number
+  actorId: string
+  actorRole: WorkspaceMemberRole
+  force?: boolean
+}): Promise<Task> {
+  requireMinRole(input.actorRole, 'member')
+
+  return withTenant(input.workspaceId, async (tx) => {
+    const [task] = await tx.select().from(tasks).where(eq(tasks.id, input.taskId))
+    if (!task) throw new NotFoundError('Task not found')
+
+    const [fromCol] = await tx
+      .select()
+      .from(boardColumns)
+      .where(eq(boardColumns.id, task.columnId))
+    const [toCol] = await tx
+      .select()
+      .from(boardColumns)
+      .where(eq(boardColumns.id, input.toColumnId))
+
+    if (!toCol) throw new NotFoundError('Destination column not found')
+    if (toCol.boardId !== task.boardId) {
+      throw new ValidationError('Destination column belongs to a different board')
+    }
+
+    const isCrossColumn = task.columnId !== input.toColumnId
+
+    // WIP enforcement only on cross-column moves; reordering within the
+    // same column doesn't change column population.
+    if (isCrossColumn && toCol.wipLimit !== null && !input.force) {
+      const [agg] = await tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(tasks)
+        .where(eq(tasks.columnId, input.toColumnId))
+      if ((agg!.n ?? 0) >= toCol.wipLimit) {
+        throw new ValidationError(
+          `Column WIP limit (${toCol.wipLimit}) reached. Pass force=true to override.`,
+        )
+      }
+    }
+
+    // Phase 1: park the task at a position that can't collide while we
+    // shift its neighbours around. (We don't have a UNIQUE index on
+    // (board_id, column_id, position) yet, but treating the column as if
+    // we did keeps positions clean for ordering.)
+    await tx
+      .update(tasks)
+      .set({ position: PARKING_POSITION })
+      .where(eq(tasks.id, input.taskId))
+
+    if (isCrossColumn) {
+      // Source column: close the gap left by the task.
+      await tx
+        .update(tasks)
+        .set({ position: sql`${tasks.position} - 1` })
+        .where(and(eq(tasks.columnId, task.columnId), gt(tasks.position, task.position)))
+
+      // Destination column: open a gap at toPosition.
+      await tx
+        .update(tasks)
+        .set({ position: sql`${tasks.position} + 1` })
+        .where(
+          and(eq(tasks.columnId, input.toColumnId), gte(tasks.position, input.toPosition)),
+        )
+    } else {
+      // Same-column reorder.
+      if (input.toPosition > task.position) {
+        await tx
+          .update(tasks)
+          .set({ position: sql`${tasks.position} - 1` })
+          .where(
+            and(
+              eq(tasks.columnId, task.columnId),
+              gt(tasks.position, task.position),
+              lte(tasks.position, input.toPosition),
+            ),
+          )
+      } else if (input.toPosition < task.position) {
+        await tx
+          .update(tasks)
+          .set({ position: sql`${tasks.position} + 1` })
+          .where(
+            and(
+              eq(tasks.columnId, task.columnId),
+              gte(tasks.position, input.toPosition),
+              lt(tasks.position, task.position),
+            ),
+          )
+      }
+    }
+
+    // Phase 2: settle the moving task into its new home.
+    const stateUpdate: Partial<typeof tasks.$inferInsert> & {
+      columnId: string
+      position: number
+      updatedAt: Date
+    } = {
+      columnId: input.toColumnId,
+      position: input.toPosition,
+      updatedAt: new Date(),
+    }
+
+    // A "reopen" only counts when the task was actually closed (closedAt
+    // is set). If it was sitting in Done with closedAt=NULL — created there
+    // directly and never closed — leaving Done is just a regular move and
+    // shouldn't bump reopened_count.
+    const enteringDone = fromCol?.columnRole !== 'done' && toCol.columnRole === 'done'
+    const leavingDoneAndWasClosed =
+      fromCol?.columnRole === 'done' &&
+      toCol.columnRole !== 'done' &&
+      task.closedAt !== null
+    if (enteringDone) {
+      stateUpdate.closedAt = new Date()
+    }
+    if (leavingDoneAndWasClosed) {
+      stateUpdate.closedAt = null
+      stateUpdate.reopenedCount = task.reopenedCount + 1
+    }
+
+    const [moved] = await tx
+      .update(tasks)
+      .set(stateUpdate)
+      .where(eq(tasks.id, input.taskId))
+      .returning()
+
+    // Pick the most specific event type so analytics doesn't have to
+    // re-derive it from column_role joins later.
+    const eventType: TaskEventType = enteringDone
+      ? 'task_closed'
+      : leavingDoneAndWasClosed
+        ? 'task_reopened'
+        : toCol.columnRole === 'archived'
+          ? 'task_archived'
+          : 'task_moved'
+
+    await tx.insert(taskEvents).values({
+      workspaceId: input.workspaceId,
+      taskId: input.taskId,
+      eventType,
+      fromColumnId: task.columnId,
+      toColumnId: input.toColumnId,
+      actorId: input.actorId,
+      payload: {
+        fromPosition: task.position,
+        toPosition: input.toPosition,
+        fromColumnRole: fromCol?.columnRole as ColumnRole | undefined,
+        toColumnRole: toCol.columnRole,
+      },
+    })
+
+    return moved!
+  })
+}
+
+export async function listTaskEvents(input: {
+  workspaceId: string
+  taskId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<TaskEvent[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) =>
+    tx.select().from(taskEvents).where(eq(taskEvents.taskId, input.taskId)).orderBy(asc(taskEvents.createdAt)),
+  )
 }
