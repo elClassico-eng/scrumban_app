@@ -26,6 +26,7 @@ import {
 } from '../db/schema'
 import { withTenant } from '../utils/db'
 import { NotFoundError, ValidationError } from '../utils/errors'
+import { publishBoardEvent } from '../utils/events'
 import { requireMinRole } from '../utils/rbac'
 
 export async function listTasksForBoard(input: {
@@ -91,6 +92,16 @@ export async function createTask(input: {
       })
       .returning()
     return row!
+  }).then((row) => {
+    // Publish AFTER the transaction commits so a rollback never produces
+    // a phantom "task created" event.
+    publishBoardEvent({
+      type: 'task.created',
+      workspaceId: input.workspaceId,
+      boardId: input.boardId,
+      payload: row,
+    })
+    return row
   })
 }
 
@@ -121,6 +132,13 @@ export async function updateTaskFields(input: {
     tx.update(tasks).set(set).where(eq(tasks.id, input.taskId)).returning(),
   )
   if (!row) throw new NotFoundError('Task not found')
+
+  publishBoardEvent({
+    type: 'task.updated',
+    workspaceId: input.workspaceId,
+    boardId: row.boardId,
+    payload: row,
+  })
   return row
 }
 
@@ -130,10 +148,22 @@ export async function deleteTask(input: {
   actorRole: WorkspaceMemberRole
 }): Promise<void> {
   requireMinRole(input.actorRole, 'admin')
-  const result = await withTenant(input.workspaceId, async (tx) =>
-    tx.delete(tasks).where(eq(tasks.id, input.taskId)),
-  )
-  if ((result.count ?? 0) === 0) throw new NotFoundError('Task not found')
+  // Capture the row BEFORE the delete so the SSE event payload knows the
+  // boardId (and the column id, useful for clients animating the removal).
+  const before = await withTenant(input.workspaceId, async (tx) => {
+    const [row] = await tx.select().from(tasks).where(eq(tasks.id, input.taskId))
+    if (!row) return null
+    await tx.delete(tasks).where(eq(tasks.id, input.taskId))
+    return row
+  })
+  if (!before) throw new NotFoundError('Task not found')
+
+  publishBoardEvent({
+    type: 'task.deleted',
+    workspaceId: input.workspaceId,
+    boardId: before.boardId,
+    payload: { taskId: input.taskId, columnId: before.columnId },
+  })
 }
 
 // Move a task to a different column and/or position. The whole operation
@@ -309,7 +339,18 @@ export async function moveTask(input: {
       },
     })
 
-    return moved!
+    return { moved: moved!, fromColumnId: task.columnId }
+  }).then(({ moved, fromColumnId }) => {
+    publishBoardEvent({
+      type: 'task.moved',
+      workspaceId: input.workspaceId,
+      boardId: moved.boardId,
+      payload: {
+        task: moved,
+        fromColumnId,
+      },
+    })
+    return moved
   })
 }
 
