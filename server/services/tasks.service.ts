@@ -65,6 +65,7 @@ export async function createTask(input: {
   description?: string
   priority?: TaskPriority
   assigneeId?: string | null
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'member')
@@ -91,6 +92,20 @@ export async function createTask(input: {
         position: Number(agg!.next),
       })
       .returning()
+
+    // Genesis row in the audit log so analytics knows when each task
+    // entered the board and where it landed. fromColumnId is null
+    // (no previous state); toColumnId carries the initial column.
+    await tx.insert(taskEvents).values({
+      workspaceId: input.workspaceId,
+      taskId: row!.id,
+      eventType: 'task_created',
+      fromColumnId: null,
+      toColumnId: input.columnId,
+      actorId: input.actorId ?? null,
+      payload: { initialPosition: row!.position },
+    })
+
     return row!
   }).then((row) => {
     // Publish AFTER the transaction commits so a rollback never produces

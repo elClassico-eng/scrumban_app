@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
       workspaceId: id,
       boardId,
       ...body,
+      actorId: user.id,
       actorRole: workspace.role,
     })
     return { task }

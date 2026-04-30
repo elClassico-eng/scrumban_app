@@ -127,7 +127,10 @@ describe('POST /tasks/:id/move — cross-column moves', () => {
       owner.jar,
       `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/events`,
     )
-    expect(events.body.events.map((e) => e.eventType)).toEqual(['task_closed'])
+    expect(events.body.events.map((e) => e.eventType)).toEqual([
+      'task_created',
+      'task_closed',
+    ])
   })
 
   it('moving out of Done clears closed_at and bumps reopened_count', async () => {
@@ -164,6 +167,7 @@ describe('POST /tasks/:id/move — cross-column moves', () => {
       `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/events`,
     )
     expect(events.body.events.map((e) => e.eventType)).toEqual([
+      'task_created',  // genesis row from createTask
       'task_moved',    // initial done → in_progress (no close yet)
       'task_closed',   // in_progress → done
       'task_reopened', // done → in_progress
