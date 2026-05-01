@@ -2,121 +2,174 @@
 
 Этот файл поддерживается в актуальном состоянии. Если ты читаешь его после компакта контекста или новой сессии — здесь точка входа: что сделано, где остановились, куда двигаемся.
 
-**Обновлён:** 2026-04-26.
+**Обновлён:** 2026-05-01.
 
 ---
 
 ## Моментальный снимок состояния
 
 ### Проект на этапе
-**Pivot завершён, docs-update в процессе, готовимся к Phase 1 backend.**
+**Backend MVP полностью готов (Phases 1-3). 124 теста зелёные. User уходит на ревью кода.**
 
-Pivot: Go backend → Nuxt monorepo (Nitro). Все ключевые решения зафиксированы:
-- Master spec: `docs/superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`
-- Стек: Nuxt 4 + Vue 3 + Tailwind 4 + Nuxt UI v3 + Nitro + Drizzle + pg-boss + zod + pino + PostgreSQL 16
-- Версионная политика: всегда latest stable, strict TS, codegen на всех границах слоёв.
+Стек:
+- Nuxt 4 monorepo (`app/` фронт + `server/` Nitro бек в одном проекте)
+- PostgreSQL 16 + Row-Level Security (две роли: `scrumban` для миграций, `scrumban_app` для рантайма)
+- Drizzle ORM + drizzle-kit (миграции в SQL)
+- nuxt-auth-utils (session cookies + scrypt)
+- zod (валидация)
+- pino (structured logs, не интегрирован в endpoints — TODO)
+- vitest + @nuxt/test-utils + testcontainers/postgresql
 
-**Approach к реализации (зафиксирован 2026-04-26):**
-- **Backend пишет Claude** с краткими code-comments об ответственностях (1-2 строки где non-obvious). User обучается через ревью реального кода.
-- **Frontend пишем совместно** — Claude предлагает, user адаптирует.
-- **Phase 0 pet-project пропущен** — обучение через реальный Scrumban-код, а не отдельный notes-api.
+### Что работает end-to-end
+- **Auth**: register / login / logout / session (4 endpoint, 11 тестов)
+- **Workspaces**: CRUD + cross-tenant isolation (3 endpoint, 9 тестов)
+- **Workspace members**: list / add / patch role / delete с full RBAC matrix (4 endpoint, 13 тестов)
+- **Boards**: CRUD внутри workspace (5 endpoint, 17 тестов)
+- **Columns**: CRUD + bulk reorder + 4 default columns при создании board (5 endpoint, 14 тестов)
+- **Tasks**: CRUD + position auto-assignment в колонке (5 endpoint, 12 тестов)
+- **Move task**: state machine (closed_at / reopened_count), task_events log, WIP enforcement с force=true override (1 endpoint, 9 тестов)
+- **Sprints**: CRUD + state machine planned→active→closed + sprint_tasks M:N (10 endpoint, 16 тестов)
+- **SSE real-time**: GET /stream endpoint, in-process event bus (4 unit-теста + smoke-test вручную)
+- **Analytics**:
+  - Throughput (по дню/неделе)
+  - Cycle time (с min-sample threshold для перцентилей)
+  - CFD (Cumulative Flow Diagram)
+  - **Monte Carlo** прогноз спринтов (B+ научная новизна)
+  - **Little's Law** WIP рекомендации (B+ научная новизна)
+- **RLS**: 8 tenant-scoped таблиц с FORCE ROW LEVEL SECURITY + WITH CHECK; 7 RLS-isolation тестов
+- **Multi-tenancy**: service-layer scoping + RLS как defence-in-depth
 
 ### Последнее выполненное действие
-2 коммита в репо: `chore: project setup` и `docs: project documentation, UML diagrams, and Nuxt monorepo pivot`. Запущено выполнение docs-update плана.
+17 коммитов реализации (Phases 1-3) за активную сессию. 124 теста проходят. User просил «продолжим backend и Phase 3, потом я буду смотреть, анализировать и давать правки».
 
 ### Следующий шаг
-Доделать docs-update плана (привести existing docs в соответствие с pivot'ом), потом — brainstorm + spec + plan для Phase 1 backend (auth + workspaces foundation), потом — implementation.
+**User берёт паузу для ревью кода.** Когда вернётся — вероятные направления:
+1. Frontend (Nuxt SPA) — login / dashboard / boards UI / kanban view с drag-n-drop / analytics charts
+2. Доработка по результатам ревью (refactoring, clarifications, fixes)
+3. Phase 4 hardening — pg-boss workers (когда появятся email/notifications), per-column cycle time, Postgres LISTEN/NOTIFY для multi-replica SSE
 
 ---
 
-## Что сделано (checklist)
+## Что сделано (commits, в порядке создания)
 
-### Этап 1 — Brainstorming & принятие решений
-- ✅ Методология Scrumban изучена, конкуренты проанализированы.
-- ✅ Позиционирование: B (process-aware analytics) + B+ (Monte Carlo / Little's Law) + E (РФ-интеграции).
-- ✅ ML перемещён из product в research extension (диплом-глава).
-- ✅ ЦА — Scrum Master в команде 30+.
-- ✅ Deploy: hybrid SaaS-first + on-prem.
-- ✅ Монетизация: Open-core (Free / Pro / Enterprise).
+### Документация и pivot (до active development)
+- Project setup (`.gitignore`, `.claude/settings.json`, `CLAUDE.md`, `COMPACT.md`)
+- Полная документация (`docs/01-12-*.md`, `docs/uml/`, master spec)
+- Pivot Go → Nuxt monorepo (`docs/superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`)
+- Docs updated under pivot (08-backend-design rewrite, system-arch, deployment, etc.)
+- Roles guide расширен с разъяснениями (роль ≠ должность)
+- README updated
 
-### Этап 2 — Документация проекта (14 файлов в `docs/`)
-- ✅ Все `01-12-*.md` написаны.
-- ✅ `README.md` — индекс.
-- ✅ Master spec v1: `docs/superpowers/specs/2026-04-18-scrumban-platform-design.md` (Go).
+### Phase 1 backend (steps 1-7) — auth + workspaces foundation
+- Step 1: Nuxt 4 skeleton, package.json, nuxt.config.ts, app/app.vue
+- Step 2: Drizzle, docker-compose с Postgres :5433, /api/healthz
+- Step 3: 4 auth endpoint через nuxt-auth-utils
+- Step 4: workspaces CRUD
+- Step 5: vitest + @nuxt/test-utils, 20/20 e2e тестов
+- Step 6: doc fixes (scrypt вместо argon2id, RLS отложен в Phase 2)
+- Step 7: workspace member management с RBAC
 
-### Этап 3 — UML диаграммы
-- ✅ Use Case (1 общая + 5 per-role — задание научрука выполнено).
-- ✅ Class (domain), ER (database), Component, Sequence (3), State Machine (2).
-- ✅ Learning материалы (по 4 .puml + learning-guide.md в каждой подпапке).
-- ⏸ Deployment диаграмма — пропущена по решению user.
+### Phase 2 backend (steps 8-13) — boards + tasks + real-time
+- Step 8: Phase 2 schema (boards, board_columns, tasks, task_events) + RLS politik + two-role Postgres setup + RLS isolation tests
+- Step 9: boards CRUD endpoints
+- Step 10: columns CRUD + reorder + default columns при создании board
+- Step 11: tasks CRUD
+- Step 12: move-task endpoint с state machine (closed_at / reopened_count) + task_events writes + WIP enforcement
+- Step 13: SSE real-time + in-process event bus
 
-### Этап 4 — Pivot Go → Nuxt monorepo (2026-04-23 → 2026-04-26)
-- ✅ Brainstorming + spec: `2026-04-23-nuxt-monorepo-pivot.md`.
-- ✅ План обновления docs: `2026-04-23-pivot-docs-update.md`.
-- ✅ План Phase 0 (как референс, не исполняется): `2026-04-23-phase0-week1-nitro-starter.md`.
-- ✅ Memory обновлена: `project_core_decisions.md` отражает Nuxt monorepo + Nitro.
-- ✅ Новые feedback-файлы: `feedback_latest_stack_versions.md`, `feedback_implementation_division.md`.
-- ✅ CLAUDE.md обновлён под Nuxt 4 + Nuxt UI v3.
-- ✅ Pivot spec уточнён под Nuxt 4 + Nuxt UI v3 (после правки 2026-04-26).
-- ✅ Roles guide расширен (роль ≠ должность; Viewer ≠ исполнитель и т.д.).
-- ✅ README обновлён под актуальный стек.
-
-### Этап 5 — Инфраструктура
-- ✅ `.gitignore`, `.claude/settings.json`.
-- ✅ CLAUDE.md, COMPACT.md.
-- ✅ docs/memory/ синхронизирован с auto-memory.
-- ✅ 2 git-коммита (project setup + docs).
-
-### Этап 6 — Docs-update execution (текущее)
-- 🔄 Task 1: COMPACT.md (этот файл — обновляется сейчас).
-- ⏳ Task 2: rewrite `08-backend-design.md`.
-- ⏳ Task 3-6: правки `06-system-architecture.md`, `12-deployment.md`, `11-non-functional.md`, `05-roadmap.md`, master spec.
-- ⏳ Task 7-8: правки UML (component + sequence diagrams).
-- ⏳ Task 9: удалить старый Go Phase 0 plan.
+### Phase 3 backend (steps 15-17) — sprints + analytics
+- Step 14 SKIPPED: pg-boss workers (YAGNI без актуальных фоновых задач)
+- Step 15: sprints schema + state machine + sprint_tasks M:N + RLS
+- Step 16: throughput + cycle-time analytics + task_created event log
+- Step 17: CFD + Monte Carlo + Little's Law
 
 ---
 
 ## Что в процессе / на паузе
 
-- 🔄 **Docs-update execution** — выполняется сейчас.
-- ⏸ **Deployment diagram** — скип по решению user.
-- ⏸ **Phase 0 pet-project** — пропущен; план оставлен в репо как референс setup'а.
+- ⏸ **Frontend** — Nuxt UI, vue-bits, ECharts. Полностью отложен до завершения backend ревью. Когда возвращаемся — collaborative подход (Claude предлагает, user адаптирует).
+- ⏸ **pg-boss** — фоновые задачи. Поднимем когда появится первая настоящая background-задача (email уведомления, ML агрегаты).
+- ⏸ **Postgres LISTEN/NOTIFY** — нужно для SSE при 2+ репликах. Phase 4.
+- ⏸ **per-column cycle time** для более точных WIP recommendations. Phase 4.
+- ⏸ **Email-based invitations** (с magic-link токеном). Phase 4.
+- ⏸ **OpenAPI codegen** (zod-to-openapi → openapi-typescript). Полезно когда будем писать frontend, но не блокер.
+- ⏸ **Deployment diagram** UML — был отложен по решению user.
 
 ---
 
-## Что дальше (по важности)
+## Что дальше (после ревью user'а)
 
-### Ближайший следующий шаг
-Завершить docs-update план → начать Phase 1 backend.
-
-### Phase 1 — MVP Foundation backend
-По roadmap: auth + workspaces + базовая schema + OpenAPI-контракт.
-
-Перед началом нужно:
-1. Brainstorm Phase 1 scope (что входит в «foundation», что в Phase 2).
-2. Spec Phase 1 backend (slack endpoints, schema, RLS).
-3. Implementation plan с TDD-последовательностью.
-4. Реализация (Claude — backend; user — frontend в Phase 2+).
+### Самое вероятное направление: Frontend
+- Composable `useCurrentUser` (обёртка над useUserSession)
+- Auth pages: /login, /register
+- Dashboard с workspaces list, переключение workspace
+- Kanban доска: draggable columns + tasks (vuedraggable)
+- Sprint view: список, planning UI, attach/detach task
+- Analytics dashboard: CFD chart, throughput trend, Monte Carlo карточка с числом «X% probability», WIP recommendations таблица
+- SSE composable: подписка на /api/.../stream, обновление Pinia store
 
 ### Долгосрочно (весь roadmap)
 Из `docs/05-mvp-scope-and-roadmap.md`:
-- Phase 1 (месяц 1): MVP Foundation — auth + workspaces.
-- Phase 2 (месяц 2): Board & Tasks.
-- Phase 3 (месяц 3): Sprints & Basic Analytics → **предзащита с рабочим демо**.
-- Phase 4–5 (месяцы 4–6): B+ углубление + multi-tenancy hardening.
-- Phase 6 (месяц 7): research-эксперимент + текст диплома.
-- Phase 7 (месяцы 8–9): production polish + защита.
+- Phase 4–5 (месяцы 4–6): B+ углубление + multi-tenancy hardening (per-column cycle, OpenAPI contract, observability)
+- Phase 6 (месяц 7): research-эксперимент с ML + текст диплома
+- Phase 7 (месяцы 8–9): production polish + защита
 
 ---
 
-## Ключевые документы (читать в порядке приоритета)
+## Структура реального кода (после Phase 3)
 
-1. **`CLAUDE.md`** — как работать, стек, принципы, что НЕ делать.
-2. **`docs/memory/MEMORY.md`** — индекс накопленной памяти.
-3. **`docs/superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`** — актуальный master spec.
-4. **`docs/05-mvp-scope-and-roadmap.md`** — фазы, DoD, критерии.
-5. **`docs/06-system-architecture.md`** — архитектура текстом.
-6. **`docs/superpowers/plans/2026-04-23-pivot-docs-update.md`** — план текущей docs-update работы.
+```
+scrumban_app/
+├── app/
+│   ├── app.vue                       ← <UApp> + <NuxtPage />
+│   └── pages/index.vue               ← заглушка "Skeleton is up"
+├── server/
+│   ├── api/
+│   │   ├── auth/                     ← register, login, logout, session
+│   │   ├── healthz.get.ts
+│   │   └── workspaces/
+│   │       ├── index.{get,post}.ts
+│   │       └── [id]/
+│   │           ├── members/          ← list/add/patch/delete
+│   │           ├── boards/
+│   │           │   ├── index.{get,post}.ts
+│   │           │   └── [boardId]/
+│   │           │       ├── columns/  ← CRUD + reorder
+│   │           │       ├── tasks/    ← CRUD + move + events
+│   │           │       ├── sprints/  ← CRUD + start/close + sprint_tasks
+│   │           │       ├── analytics/← throughput, cycle-time, cfd, monte-carlo, wip-recommendations
+│   │           │       └── stream.get.ts ← SSE
+│   ├── services/                     ← users, workspaces, workspace-members,
+│   │                                  boards, columns, tasks, sprints, analytics
+│   ├── db/
+│   │   └── schema/                   ← users, workspaces, boards, tasks, sprints (всё RLS-managed где tenant)
+│   ├── plugins/                      ← (пока пусто; pg-boss plugin будет тут)
+│   └── utils/
+│       ├── auth.ts                   ← requireAuth helper
+│       ├── db.ts                     ← useDB() singleton + withTenant() для RLS
+│       ├── errors.ts                 ← domain errors + toHttpError + Zod handler
+│       ├── events.ts                 ← in-process pub/sub для SSE
+│       └── rbac.ts                   ← role hierarchy + requireMinRole / strictlyOutranks
+├── shared/types/auth.d.ts            ← #auth-utils type augmentation
+├── drizzle/migrations/               ← 7 SQL миграций (генерируемые drizzle-kit)
+├── db/init/01_app_role.sql           ← Postgres init: создаёт scrumban_app role
+├── docker-compose.dev.yml            ← Postgres 16 на :5433
+├── tests/                            ← 12 test файлов, 124 тестов
+└── docs/                             ← всё что было раньше + pivot spec
+```
+
+---
+
+## Ключевые архитектурные решения для ревью
+
+1. **Two-role Postgres** (`scrumban` super для миграций, `scrumban_app` non-super для рантайма) — чтобы FORCE ROW LEVEL SECURITY реально применялся (super bypassит RLS неявно).
+2. **NULLIF guard в RLS политиках** — `current_setting('app.workspace_id', true)` возвращает '' (не NULL) после `SET LOCAL`; без NULLIF получаем `''::uuid` ошибку.
+3. **withTenant() helper** — единственный путь к tenant-scoped queries; вне его RLS возвращает 0 строк (защита по дизайну).
+4. **task_events append-only log** — фундамент для аналитики; createTask пишет `task_created`, moveTask пишет `task_moved` / `task_closed` / `task_reopened` / `task_archived`.
+5. **State machine в moveTask** — closed_at и reopened_count синхронны с переходами через 'done' колонку. Reopen считается только если task был реально закрыт (closedAt != null), иначе просто move.
+6. **Reorder через парковку (PARKING_POSITION = 1_000_000)** — обходит unique constraint на (board_id, position) во время bulk обновления.
+7. **In-process event bus для SSE** — Phase 4 расширим LISTEN/NOTIFY когда появятся 2+ реплики.
+8. **Min-sample thresholds в analytics** — percentiles возвращают null при <5 образцов; Monte Carlo возвращает insufficient_data при 0 закрытых задачах.
 
 ---
 
