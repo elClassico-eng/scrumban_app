@@ -6,6 +6,7 @@
 - [No SVG in learning](feedback_no_svg_in_learning.md) — в learning/ папках только .puml+.md, у user есть IDE-плагин для preview
 - [Latest stack versions](feedback_latest_stack_versions.md) — всегда latest stable, strict TS, codegen на всех границах; Nuxt 4 (НЕ 3), Nuxt UI v3 (НЕ NextUI)
 - [Implementation division](feedback_implementation_division.md) — Claude пишет backend (с brief comments об ответственностях), frontend пишем совместно; Phase 0 pet-project пропущен
+- [English commits](feedback_english_commits.md) — git commits always in English (repo convention); translate Russian templates from plan files at commit time
 - [Project core decisions](project_core_decisions.md) — scope, позиционирование, стек (Nuxt monorepo, Nitro), deployment, монетизация; обновлено 2026-04-26
 - [Architectural principles](project_architectural_principles.md) — hard rules для кодовой базы: multi-tenancy (RLS), SSE pub/sub, event-sourced analytics, SPA mode, feature flags
 - [Dual-track approach](project_dual_track_approach.md) — каждый spec документирует Current MVP + Target architecture + Evolution path
