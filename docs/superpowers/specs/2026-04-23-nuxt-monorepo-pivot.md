@@ -42,37 +42,39 @@
 
 ```
 scrumban/
-├── app/                          # Nuxt frontend (pages, components, composables)
-│   ├── pages/
-│   ├── components/
-│   └── composables/
+├── app/                          # ✅ Nuxt 4 frontend skeleton (app.vue + pages/index.vue); полноценный UI — Phase 4
+│   ├── pages/                    # ✅ только index.vue в Current
+│   ├── components/               # ⚠️ Target — папки нет. Триггер: первая реальная страница со своими блоками (Phase 4 frontend kickoff)
+│   └── composables/              # ⚠️ Target — папки нет. Триггер: первый shared-хук между ≥ 2 страницами (Phase 4)
 ├── server/                       # Nitro backend (авто-роутинг по файлам)
-│   ├── api/                      # HTTP handlers
-│   │   ├── auth/                 # login.post.ts, logout.post.ts, session.get.ts
-│   │   ├── workspaces/
-│   │   ├── boards/
-│   │   ├── tasks/
-│   │   └── analytics/
-│   ├── services/                 # бизнес-логика (pure TS-функции)
-│   │   ├── tasks.service.ts
-│   │   ├── analytics.service.ts
-│   │   ├── sprints.service.ts
-│   │   └── ...
+│   ├── api/                      # ✅ ~44 endpoint'а (`find server/api -type f -name "*.ts" | wc -l` = 44)
+│   │   ├── auth/                 # ✅ login.post.ts, logout.post.ts, register.post.ts, session.get.ts
+│   │   ├── workspaces/           # ✅ index.get/post + [id].get + вложенные members/, boards/, и далее columns/, tasks/, sprints/, analytics/ внутри boards/[boardId]/
+│   │   ├── boards/               # ⚠️ Target — на верхнем уровне `server/api/` папки нет; handler'ы лежат внутри `workspaces/[id]/boards/...` (tenant-scoped path). Триггер: появление board-операций без workspace-контекста (например, личных досок) — пока не предвидится
+│   │   ├── tasks/                # ⚠️ Target — на верхнем уровне нет; handler'ы внутри `workspaces/[id]/boards/[boardId]/tasks/...`. Триггер: тот же — taskи всегда в контексте board+workspace
+│   │   └── analytics/            # ⚠️ Target — на верхнем уровне нет; handler'ы внутри `workspaces/[id]/boards/[boardId]/analytics/`. Триггер: cross-board / workspace-wide аналитика (Phase 4+)
+│   ├── services/                 # ✅ 8 файлов: analytics, boards, columns, sprints, tasks, users, workspace-members, workspaces
+│   │   ├── tasks.service.ts      # ✅
+│   │   ├── analytics.service.ts  # ✅
+│   │   ├── sprints.service.ts    # ✅
+│   │   └── ...                   # ✅ boards / columns / users / workspaces / workspace-members
 │   ├── db/
-│   │   ├── schema/               # Drizzle table definitions (*.ts)
-│   │   └── queries/              # типизированные запросы
-│   ├── jobs/                     # pg-boss worker-функции
-│   │   ├── analytics.job.ts
-│   │   └── notifications.job.ts
-│   ├── middleware/               # auth, rbac, tenant
-│   └── utils/                   # db.ts, boss.ts, logger.ts, session.ts
+│   │   ├── schema/               # ✅ Drizzle table definitions: boards.ts, sprints.ts, tasks.ts, users.ts, workspaces.ts + index.ts (9 таблиц всего)
+│   │   └── queries/              # ⚠️ Target — папки нет; типизированные запросы живут прямо в `server/services/*.service.ts`. Триггер: дедупликация одного и того же SQL'а в ≥ 3 сервисах (раньше rebase'ить в `db/queries/` дороже, чем оставить inline)
+│   ├── jobs/                     # ⚠️ Target — папки нет, `pg-boss` не установлен. Триггер: первый async job (email send / webhook dispatch / aggregate refresh / Monte Carlo refresh). См. [`docs/06-system-architecture.md`](../../06-system-architecture.md) → Target → pg-boss workers, [`docs/08-backend-design.md`](../../08-backend-design.md) → Target → middleware/jobs/ff
+│   ├── middleware/               # ⚠️ Target — папки нет; auth + tenant guard выполняются в первых 2 строках каждого handler'а (`requireAuth(event)` + `getWorkspaceForUserOrThrow`). Триггер: ≥ 30 endpoint'ов с одинаковой комбинацией guard'ов (boilerplate дороже extraction'а). См. [`docs/08-backend-design.md`](../../08-backend-design.md) → Target → вынос middleware/jobs/ff
+│   └── utils/                    # ✅ auth.ts, db.ts (`withTenant`), errors.ts (domain errors + `toHttpError`), events.ts (in-process `EventEmitter`), rbac.ts (5 ролей)
 ├── shared/                       # типы общие для фронта и бека (Nuxt auto-import)
 │   └── types/
+│       ├── auth.d.ts             # ✅ расширение `nuxt-auth-utils` сессионных типов
+│       └── api.d.ts              # ⚠️ Target — codegen из `openapi/scrumban.yaml` не запущен (frontend ещё не вызывает API). Триггер: ≥ 5 endpoint-вызовов из `app/` (Phase 4 frontend kickoff). См. [`docs/08-backend-design.md`](../../08-backend-design.md) → Target → API contract codegen
 ├── openapi/
-│   └── scrumban.yaml             # сгенерирован из zod-схем, коммитим
+│   └── scrumban.yaml             # ⚠️ Target — папки нет, `@asteasolutions/zod-to-openapi` и `openapi-typescript` не подключены к `package.json`. Триггер: тот же codegen-trigger, что и для `shared/types/api.d.ts`
 └── drizzle/
-    └── migrations/               # SQL-файлы от drizzle-kit generate
+    └── migrations/               # ✅ 7 SQL-миграций (0000–0006), коммитятся вместе с `meta/` snapshot'ами
 ```
+
+> **Легенда аннотаций:** ✅ — реализовано в Phase 1–3 MVP (см. [`docs/05-mvp-scope-and-roadmap.md`](../../05-mvp-scope-and-roadmap.md)). ⚠️ Target — обоснованно отложено, каждое с измеримым триггером ввода. Полные Target-секции и компонентные триггеры — в сестринских документах: [`docs/06-system-architecture.md`](../../06-system-architecture.md), [`docs/07-domain-model.md`](../../07-domain-model.md), [`docs/08-backend-design.md`](../../08-backend-design.md), [`docs/11-non-functional.md`](../../11-non-functional.md).
 
 **Не используем workspace/монорепу с пакетами** — один `package.json`, один `pnpm dev`. Рефакторинг в pnpm-workspace в Phase 4+, если появится нужда (отдельный admin-frontend, worker-процесс). Это 2-3 часа работы, не блокер.
 
