@@ -14,7 +14,7 @@
 5. Базовый RBAC: 5 ролей (`viewer < member < scrum_master < admin < owner`).
 
 #### Scrum-часть
-6. Спринты: CRUD, state machine `planned → active → closed/cancelled`.
+6. Спринты: CRUD, state machine `planned → active → closed` (переход `planned → closed` напрямую — shortcut для never-started спринтов).
 7. Связь задач со спринтами (`sprint_tasks` join).
 
 #### Kanban + B-ядро (наш дифференциатор)
@@ -116,7 +116,7 @@
 
 ## Phase 3 — Sprints + Analytics ✅ Завершена
 
-- Sprints state machine (`planned → active → closed/cancelled`) в [`server/services/sprints.service.ts`](../server/services/sprints.service.ts); партиальный unique index `WHERE state = 'active'` гарантирует «один активный спринт на доску».
+- Sprints state machine (`planned → active → closed`) в [`server/services/sprints.service.ts`](../server/services/sprints.service.ts); партиальный unique index `WHERE state = 'active'` гарантирует «один активный спринт на доску».
 - `sprint_tasks` join table (M:N задачи ↔ спринты).
 - `task_events` лог: 7 типов (`task_created`, `task_moved`, `task_closed`, `task_reopened`, `task_assigned`, `task_updated`, `task_archived`) — специализированный, не универсальный (см. [`07-domain-model.md`](07-domain-model.md) → events решение).
 - Аналитика на task_events (live-SQL, без MV, без кэша) в [`server/services/analytics.service.ts`](../server/services/analytics.service.ts):
@@ -131,7 +131,7 @@
 
 - ~~`flow_daily` aggregate + триггеры~~ → Target (триггер: p95 latency `/api/.../analytics/*` > 500 мс при ≥ 100 закрытых задач/мес). См. [`07-domain-model.md`](07-domain-model.md) → Target → flow_daily.
 - ~~Materialized views (`mv_cfd_last_90d`, `mv_throughput_weekly`, `mv_cycle_time_percentiles`)~~ → Target (тот же триггер). См. [`10-analytics-design.md`](10-analytics-design.md) → Target.
-- ~~Sprint events (`sprint_started`, `sprint_closed`, `sprint_cancelled`) в task_events~~ → Target (триггер: дашборд активности команды на уровне спринтов). См. [`10-analytics-design.md`](10-analytics-design.md) → Target.
+- ~~Sprint events (`sprint_started`, `sprint_closed`) в task_events~~ → Target (триггер: дашборд активности команды на уровне спринтов). См. [`10-analytics-design.md`](10-analytics-design.md) → Target.
 - ~~Burndown chart, story points, velocity~~ → Target Phase 4+ (триггер: команда ≥ 5 человек, использующих Scrum-составляющую с оценкой задач).
 - ~~Forecast cache (LRU 15 мин)~~ → Target (триггер: Monte Carlo p95 > 1,5 с — сейчас 50–150 мс).
 - ~~`cycle_time_samples` table + bottleneck detection p85~~ → Target (триггер: ≥ 30 проходов per board per column для статистической значимости). См. [`07-domain-model.md`](07-domain-model.md) → Target.
@@ -162,7 +162,7 @@ Roadmap (детали в [`09-frontend-design.md`](09-frontend-design.md) → Ta
 - **CI/CD:** GitHub Actions / GitFlic CI — typecheck + vitest + build на каждый push. См. [`11-non-functional.md`](11-non-functional.md) → Target → CI/CD.
 - **Rate limit на `/api/auth/login`** (5 попыток / 5 мин на email + IP).
 - **HTTP security headers:** CSP, HSTS, X-Frame-Options через Caddyfile.
-- **Code quality fixes** (mini-PR, см. backlog в `COMPACT.md`):
+- **Code quality fixes** (mini-PR, см. backlog в [`COMPACT.md`](../COMPACT.md)):
   - `task_events.task_id` `ON DELETE CASCADE` → `SET NULL` + `task_id_snapshot` (сохранить аналитику при hard-delete task).
   - `assertNotLastOwner`: `SELECT ... FOR UPDATE` для защиты от race condition.
   - `deleteSprint`: атомарная проверка `state != 'active'`.
