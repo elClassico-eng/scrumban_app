@@ -32,7 +32,7 @@ Scrumban-платформа для русскоязычных IT-команд с
 
 **Структура:** Nuxt monorepo — `app/` (frontend) + `server/` (Nitro backend) в одном проекте.
 
-- **Frontend:** Nuxt 4 (SPA) + Vue 3 + Pinia + TypeScript strict + Tailwind CSS 4 + Nuxt UI v3 + ECharts
+- **Frontend:** Nuxt 4 (SPA) + Vue 3 + Pinia + TypeScript strict + Tailwind CSS 4 + Nuxt UI v4 + ECharts
 - **Backend (Nitro):** H3 + Drizzle ORM + nuxt-auth-utils + pg-boss + zod + pino
 - **БД:** PostgreSQL 16+ с Row-Level Security
 - **Real-time:** SSE через H3 + pg LISTEN/NOTIFY
@@ -46,5 +46,5 @@ Scrumban-платформа для русскоязычных IT-команд с
 
 - 2026-04-18: начало проекта, дизайн-фаза.
 - 2026-04-23: pivot Go → Nuxt monorepo.
-- 2026-04-26: уточнения (Nuxt 4, Nuxt UI v3, latest-versions hard rule).
+- 2026-04-26: уточнения (Nuxt 4, Nuxt UI v4, latest-versions hard rule).
 - Следующий шаг — обновление документации под pivot, затем Phase 0 Week 1 (Nitro starter pet-project).

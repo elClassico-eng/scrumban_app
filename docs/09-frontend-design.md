@@ -10,7 +10,7 @@
 
 Установлено и используется:
 - [`nuxt`](../package.json) `^4.4.2` — фреймворк.
-- [`@nuxt/ui`](../package.json) `^4.7.0` — компонентная база (Nuxt UI v3).
+- [`@nuxt/ui`](../package.json) `^4.7.0` — компонентная база (Nuxt UI v4).
 
 Файловая структура `app/` (всё остальное — Phase 4):
 - [`app/app.vue`](../app/app.vue) — `<UApp><NuxtPage /></UApp>`, только wrapper.
@@ -19,7 +19,7 @@
 Не существует:
 - `app/components/`, `app/composables/`, `app/stores/`, `app/lib/`, `app/assets/css/` — папки не созданы.
 - API-клиента (ручного или сгенерированного) — нет.
-- `tailwind.config.ts` / `tailwind.config.js` — нет (Tailwind 4 zero-config через Nuxt UI v3).
+- `tailwind.config.ts` / `tailwind.config.js` — нет (Tailwind 4 zero-config через Nuxt UI v4).
 
 В `package.json` отсутствуют (проверено `grep`):
 - `@tanstack/vue-query`, `pinia`
@@ -99,7 +99,7 @@ accent-danger:   rose-500 (#f43f5e)     — errors, overdue, high priority
 
 ### Target: стек UI-библиотек (трёхслойная стратегия)
 
-Слой 1 — База: **`@nuxt/ui`** (Nuxt UI v3, уже установлен). Reka UI под капотом (headless, доступные примитивы) + Tailwind CSS 4. Используется для: Button, Input, Textarea, Select, Modal, Drawer, Dropdown, Table, Tooltip, Toast, Tabs, Avatar, Command palette, Pagination, Breadcrumbs, Badge. Production-ready, accessible из коробки, отличная Nuxt-интеграция, активно развивается.
+Слой 1 — База: **`@nuxt/ui`** (Nuxt UI v4, уже установлен). Reka UI под капотом (headless, доступные примитивы) + Tailwind CSS 4. Используется для: Button, Input, Textarea, Select, Modal, Drawer, Dropdown, Table, Tooltip, Toast, Tabs, Avatar, Command palette, Pagination, Breadcrumbs, Badge. Production-ready, accessible из коробки, отличная Nuxt-интеграция, активно развивается.
 
 Слой 2 — Визуальные акценты: **`inspira-ui`** (нативный Vue-порт aceternity-style компонентов; в `package.json` пока нет, добавится на шаге 2 roadmap). Используется для: hero-градиенты, background beams, meteor effects, spotlight cards, glass cards, animated borders, aurora backgrounds, 3D-card hover, infinite moving cards. Именно эта библиотека даёт эстетику референсов; нативно Vue 3, не надо адаптировать React.
 
@@ -114,12 +114,12 @@ accent-danger:   rose-500 (#f43f5e)     — errors, overdue, high priority
 
 - **Nuxt 4** + **Vue 3** (Composition API + `<script setup>`) — установлено.
 - **TypeScript** strict — настроен Nuxt-ом.
-- **`@nuxt/ui`** v3 — установлено.
+- **`@nuxt/ui`** v4 — установлено.
 - **Pinia** — UI state, auth, текущий контекст. Будет добавлен.
 - **`@tanstack/vue-query`** — серверный кэш и синхронизация. Будет добавлен.
 - **`inspira-ui`** — визуальные акценты, glassmorphism, градиенты. Будет добавлен.
 - **`vue-bits`** — дополнительные анимации. Будет добавлен.
-- **Tailwind CSS 4** — стили (через Nuxt UI v3, без отдельного config-файла).
+- **Tailwind CSS 4** — стили (через Nuxt UI v4, без отдельного config-файла).
 - **`@nuxt/google-fonts`** — Inter + JetBrains Mono. Будет добавлен.
 - **`@nuxt/icon`** — иконки (Lucide, Heroicons collections). Будет добавлен.
 - **ECharts** (Apache) — графики (CFD, scatter, throughput). Будет добавлен.
@@ -169,7 +169,7 @@ scrumban_app/
 │   │   ├── analytics/              # CFDChart.vue, ScatterChart.vue, ThroughputChart.vue, MonteCarloCard.vue, BottleneckHeatmap.vue
 │   │   ├── dashboard/              # StatsCard.vue, GlassCard.vue, GradientHero.vue
 │   │   ├── layout/                 # AppSidebar.vue, AppHeader.vue, Breadcrumbs.vue
-│   │   └── ui/                     # кастомные расширения Nuxt UI v3
+│   │   └── ui/                     # кастомные расширения Nuxt UI v4
 │   ├── composables/                # useWorkspace, useBoard, useEventSource, useAuth, useAnalyticsCopy
 │   ├── stores/                     # Pinia: auth.ts, workspace.ts, board.ts
 │   ├── lib/                        # api-client (codegen-output), analytics-copy.ts, utils
@@ -318,7 +318,7 @@ export function useBoardStream(boardId: Ref<string>) {
 
 ### Target: accessibility
 
-- Nuxt UI v3 (Reka UI под капотом) обеспечивает a11y по умолчанию.
+- Nuxt UI v4 (Reka UI под капотом) обеспечивает a11y по умолчанию.
 - WCAG AA для контраста (основные тексты на dark background — уже соответствуют).
 - Focus-ring включён.
 - Keyboard navigation проверяется на основных флоу (login, task create, board drag — позже через accessible DnD).
@@ -340,7 +340,7 @@ export function useBoardStream(boardId: Ref<string>) {
 Параллельно (когда дойдём до пункта 1):
 - Подключить `@tanstack/vue-query`, `pinia`, `vuedraggable`, `echarts`, `vee-validate`, `@nuxt/icon`, `@nuxt/google-fonts`, `@vueuse/core`.
 - Подключить `inspira-ui` и `vue-bits` для glassmorphism / hero-сцен.
-- Настроить CSS palette + Tailwind theme, если нужны кастомизации поверх Nuxt UI v3.
+- Настроить CSS palette + Tailwind theme, если нужны кастомизации поверх Nuxt UI v4.
 - Codegen pipeline (см. [`08-backend-design.md`](08-backend-design.md) → Target → API contract codegen) — триггер активной работы над frontend.
 
 ## Связанные документы

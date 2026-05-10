@@ -37,7 +37,7 @@
 
 - 2026-04-18: документы созданы как результат сессии проектирования (Go backend).
 - 2026-04-23: pivot на Nuxt monorepo (Nitro backend); основной master spec заменён.
-- 2026-04-26: уточнения стека (Nuxt 4, Nuxt UI v3, latest stable hard rule); подход к разработке (Claude пишет backend, frontend совместно).
+- 2026-04-26: уточнения стека (Nuxt 4, Nuxt UI v4, latest stable hard rule); подход к разработке (Claude пишет backend, frontend совместно).
 - Все изменения отражаются в git-истории.
 
 ## Ключевые принципы работы с документацией

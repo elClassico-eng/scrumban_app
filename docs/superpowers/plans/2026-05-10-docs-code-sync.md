@@ -891,7 +891,7 @@ scrumban_app/
 
 - [ ] **Step 5: Sync стек-секции с CLAUDE.md / project_core_decisions**
 
-Найти раздел `## Стек (финальный)` (примерно строка 88+). Убедиться, что все библиотеки соответствуют CLAUDE.md (Nuxt UI v3 — да, vuedraggable@next — да, Inspira UI — да, vue-bits — да). Если что-то расходится — sync.
+Найти раздел `## Стек (финальный)` (примерно строка 88+). Убедиться, что все библиотеки соответствуют CLAUDE.md (Nuxt UI v4 — да, vuedraggable@next — да, Inspira UI — да, vue-bits — да). Если что-то расходится — sync.
 
 Дополнительно убедиться, что **нигде не упоминается NextUI / HeroUI** (это для React).
 

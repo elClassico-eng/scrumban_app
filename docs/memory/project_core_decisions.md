@@ -4,7 +4,7 @@ description: Locked foundational decisions — scope, positioning, stack, timeli
 type: project
 originSessionId: 4d07de0a-84f0-4563-b2b7-e26a2bcc8a82
 ---
-Магистерский дипломный проект Scrumban-платформы. Решения зафиксированы в brainstorming 2026-04-18, стек обновлён 2026-04-23 (pivot Go → Nuxt monorepo) и 2026-04-26 (Nuxt 4, Nuxt UI v3, latest versions hard rule).
+Магистерский дипломный проект Scrumban-платформы. Решения зафиксированы в brainstorming 2026-04-18, стек обновлён 2026-04-23 (pivot Go → Nuxt monorepo) и 2026-04-26 (Nuxt 4, Nuxt UI v4, latest versions hard rule).
 
 **Scope & timeline:**
 - Production-ready продукт (не прототип).
@@ -34,7 +34,7 @@ originSessionId: 4d07de0a-84f0-4563-b2b7-e26a2bcc8a82
 
 **Стек (обновлён 2026-04-26):**
 - **Структура:** Nuxt monorepo — `app/` (frontend) + `server/` (Nitro backend) в одном проекте. НЕ отдельные `backend/` + `frontend/` папки.
-- **Frontend:** Nuxt 4 + Vue 3 + Pinia + TypeScript strict + Tailwind CSS 4 + Nuxt UI v3 (база) + Inspira UI (wow-эффекты) + vue-bits (анимации) + ECharts + vuedraggable + @tanstack/vue-query.
+- **Frontend:** Nuxt 4 + Vue 3 + Pinia + TypeScript strict + Tailwind CSS 4 + Nuxt UI v4 (база) + Inspira UI (wow-эффекты) + vue-bits (анимации) + ECharts + vuedraggable + @tanstack/vue-query.
 - **Backend (Nitro):** H3 router, Drizzle ORM + Drizzle Kit, nuxt-auth-utils + argon2id, pg-boss (Postgres-очередь), zod (валидация + источник OpenAPI), pino (structured logs).
 - **БД:** PostgreSQL 16+ с Row-Level Security.
 - **Контракт API:** code-first OpenAPI — zod-схемы → zod-to-openapi → openapi-typescript для frontend client. Все типы пересекающие границу — генерятся, не пишутся.

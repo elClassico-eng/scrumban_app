@@ -28,7 +28,7 @@
    - `feedback_learning_pace.md` — хочет понимать сам, не чёрный ящик.
    - `feedback_claim_discipline.md` — язык должен соответствовать реализации.
    - `feedback_no_svg_in_learning.md` — SVG в `learning/` не генерировать.
-   - `feedback_latest_stack_versions.md` — latest stable, strict TS, codegen везде; Nuxt 4 (НЕ 3), Nuxt UI v3 (НЕ NextUI).
+   - `feedback_latest_stack_versions.md` — latest stable, strict TS, codegen везде; Nuxt 4 (НЕ 3), Nuxt UI v4 (НЕ NextUI).
    - `project_core_decisions.md` — зафиксированные scope/стек/монетизация (обновлено 2026-04-26).
    - `project_architectural_principles.md` — hard rules для кодовой базы.
    - `project_dual_track_approach.md` — Current/Target/Evolution формат.
@@ -74,7 +74,7 @@
 - **Nuxt 4** в SPA-режиме (`ssr: false`) + Vue 3 + Composition API + `<script setup lang="ts">`.
 - **Pinia** — UI state.
 - **TypeScript** strict (никаких `any` без обоснования).
-- **Tailwind CSS 4** + **Nuxt UI v3** (база; **НЕ NextUI/HeroUI** — это для React) + **Inspira UI** (glassmorphism/gradient) + **vue-bits** (анимации).
+- **Tailwind CSS 4** + **Nuxt UI v4** (база; **НЕ NextUI/HeroUI** — это для React) + **Inspira UI** (glassmorphism/gradient) + **vue-bits** (анимации).
 - **@tanstack/vue-query** — серверный кэш.
 - **ECharts** — графики (CFD, scatter, Monte Carlo).
 - **vuedraggable** — drag-n-drop на доске.
@@ -106,7 +106,7 @@
 - **Не GraphQL** — REST + OpenAPI достаточно.
 - **Не Redis/Kafka/RabbitMQ** — pg-boss на Postgres.
 - **Не Kubernetes в MVP** — Docker Compose на VM.
-- **Не Next.js/React/NextUI/HeroUI** — Nuxt/Vue/Nuxt UI v3.
+- **Не Next.js/React/NextUI/HeroUI** — Nuxt/Vue/Nuxt UI v4.
 - **Не ORM с DSL (Prisma)** — Drizzle близок к SQL.
 - **Не WebSocket** — SSE достаточно.
 - **Не SSR** — SPA mode (auth-gated продукт).
@@ -205,4 +205,4 @@ User = Даня Черкесов, магистрант ВолГУ. Email artemov
 
 ---
 
-**Последнее обновление:** 2026-04-26 (Nuxt 4 + Nuxt UI v3 + latest-stack rule зафиксированы).
+**Последнее обновление:** 2026-04-26 (Nuxt 4 + Nuxt UI v4 + latest-stack rule зафиксированы).

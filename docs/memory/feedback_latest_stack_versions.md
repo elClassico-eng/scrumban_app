@@ -4,12 +4,12 @@ description: User требует последние стабильные вер�
 type: feedback
 ---
 
-При выборе версий и инструментов всегда используй **последние стабильные** релизы. На 2026-04 это:
+При выборе версий и инструментов всегда используй **последние стабильные** релизы. На 2026-05 это:
 - **Nuxt 4** (НЕ Nuxt 3) — новая структура с `app/`, улучшенная TS-интеграция
 - **Vue 3** последний (`<script setup lang="ts">` обязателен)
 - **Pinia** последний
 - **Tailwind CSS 4**
-- **Nuxt UI v3** (база компонентов; **НЕ NextUI/HeroUI** — это для React)
+- **Nuxt UI v4** (база компонентов; **НЕ NextUI/HeroUI** — это для React)
 - **Drizzle ORM** последний (с drizzle-kit)
 - **Node.js 22 LTS+**
 - **TypeScript** последний с `strict: true`
@@ -25,5 +25,5 @@ type: feedback
   - HTTP request validation: zod schemas → static types из них же
   - HTTP контракт frontend ↔ backend: zod-to-openapi → openapi-typescript → typed client
   - Все типы пересекающие границу слоя — авто-сгенерированы, не написаны руками
-- Nuxt UI: всегда v3+, **никогда не путать** с NextUI/HeroUI (React-only)
+- Nuxt UI: latest stable major (на 2026-05 — v4), **никогда не путать** с NextUI/HeroUI (React-only)
 - При появлении новой major версии стека (mid-project) — обсудить миграцию, не игнорировать

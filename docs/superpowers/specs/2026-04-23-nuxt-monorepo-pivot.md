@@ -96,7 +96,7 @@ scrumban/
 
 ### Frontend
 
-**Nuxt 4** SPA (`ssr: false`), Vue 3, Pinia, TypeScript strict, **Tailwind CSS 4** + **Nuxt UI v3** (база; НЕ NextUI/HeroUI — это для React) + Inspira UI (wow-эффекты) + vue-bits (анимации), @tanstack/vue-query, ECharts, vuedraggable.
+**Nuxt 4** SPA (`ssr: false`), Vue 3, Pinia, TypeScript strict, **Tailwind CSS 4** + **Nuxt UI v4** (база; НЕ NextUI/HeroUI — это для React) + Inspira UI (wow-эффекты) + vue-bits (анимации), @tanstack/vue-query, ECharts, vuedraggable.
 
 > **Hard rule:** всегда latest stable версии стека. Codegen типов между всеми слоями обязателен (Drizzle infer / zod / openapi-typescript). Никаких `any` без явного обоснования. См. `docs/memory/feedback_latest_stack_versions.md`.
 
