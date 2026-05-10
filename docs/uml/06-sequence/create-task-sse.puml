@@ -1,83 +1,83 @@
 @startuml create-task-sse
 !theme plain
-title Сценарий «Создание задачи с real-time обновлением доски»
+title Sequence — Создание задачи + real-time SSE broadcast (Current)
 
 skinparam defaultFontName Arial
 skinparam defaultFontSize 11
 skinparam sequenceArrowThickness 1.5
 skinparam roundCorner 6
 
-actor "Пользователь A\n(создаёт)" as UserA
-actor "Пользователь B\n(наблюдает)" as UserB
-participant "Browser A" as BA
-participant "Browser B" as BB
-participant "Caddy" as Caddy
-participant "HTTP API" as API
-participant "Middleware\n(AuthN→Tenant→RBAC)" as MW
-participant "Task Service" as TaskSvc
-participant "Storage" as Storage
-database "PostgreSQL" as PG
-participant "Event Bus" as EB
-participant "SSE Hub" as SSE
-participant "Worker\n(pg-boss)" as Worker
+actor "User\n(browser tab A)" as A
+actor "User\n(browser tab B)" as B
+participant "Nitro\n(H3 router)" as Nitro
+participant "tasks.service.ts" as Service
+participant "withTenant\n(server/utils/db.ts)" as DB
+database "Postgres 16\n(RLS)" as PG
+participant "EventBus\n(in-process EventEmitter)" as Bus
+participant "SSE hub\n(H3 createEventStream)" as SSE
 
-== Предусловие: Browser B уже подключён к SSE-потоку ==
-BB -> Caddy : GET /api/v1/workspaces/{wsId}/stream\nAccept: text/event-stream
-Caddy -> Caddy : sticky cookie\n(закрепить на реплике)
-Caddy -> API : forward
-API -> MW : authn + tenant
-MW -> SSE : Subscribe(workspaceId,\nuserId, conn)
-SSE --> BB : stream open\n(держит соединение)
+== Предусловие: tab B уже подписан на SSE-поток ==
+B -> Nitro : GET /api/workspaces/[id]/boards/[boardId]/stream\nAccept: text/event-stream
+Nitro -> Nitro : requireAuth + getWorkspaceForUserOrThrow\n(membership check)
+Nitro -> SSE : createEventStream(event)
+SSE -> Bus : subscribeBoardEvents(boardId, handler)
+SSE --> B : stream open\n(heartbeat ': ping' каждые 25 с)
 
-== Основной сценарий ==
-UserA -> BA : Клик «Создать задачу»,\nзаполняет форму,\nподтверждает
-BA -> Caddy : POST /api/v1/projects/{pid}/tasks\n{title, type, priority, column_id}
-Caddy -> API : forward /api/*
-API -> MW : chain
+== Основной сценарий: tab A создаёт задачу ==
+A -> Nitro : POST /api/workspaces/[id]/boards/[boardId]/tasks\n{ columnId, title, description?, priority?, assigneeId? }
+Nitro -> Nitro : getValidatedRouterParams (zod)\nreadValidatedBody (zod)
+Nitro -> Nitro : in-handler guard:\nrequireAuth → user\ngetWorkspaceForUserOrThrow → role
+Nitro -> Service : createTask({ workspaceId, boardId, ...body,\nactorId, actorRole })
 
-MW -> MW : AuthN: проверка cookie,\nuserId из session
-MW -> MW : Tenant: SET LOCAL\napp.workspace_id = $1\n(для RLS)
-MW -> MW : RBAC: RequireRole(Member+)
+Service -> Service : requireMinRole(actorRole, 'member')
+Service -> DB : withTenant(workspaceId, tx)
+DB -> PG : SELECT set_config('app.workspace_id', $1, true)
+note right of PG : RLS активен:\nвсе SELECT/INSERT\nфильтруются по\napp.workspace_id
 
-MW -> TaskSvc : Create(ctx, CreateTaskReq)
+Service -> PG : SELECT COALESCE(MAX(position), -1) + 1\nFROM tasks WHERE board_id=$1 AND column_id=$2
+PG --> Service : next position
+Service -> PG : INSERT INTO tasks(workspace_id, board_id,\ncolumn_id, title, description, priority, ...)\nRETURNING *
+PG --> Service : new task row
+Service -> PG : INSERT INTO task_events(workspace_id, task_id,\nevent_type='task_created', from_column_id=null,\nto_column_id, actor_id, payload)
+PG --> Service : event_id
+note right of PG
+  Транзакция охватывает task + task_events.
+  Если упадёт запись audit-события —
+  откатится и сама задача.
+end note
 
-TaskSvc -> TaskSvc : Validate\n(title ≠ empty,\nproject exists)
+Service -> DB : COMMIT
+Service -> Bus : publishBoardEvent({ type: 'task.created',\nworkspaceId, boardId, payload: row })
+note right of Service
+  Publish ПОСЛЕ commit'а — никаких
+  фантомных событий о задаче,
+  которая могла откатиться.
+end note
 
-TaskSvc -> Storage : BeginTx()
-Storage -> PG : BEGIN
-TaskSvc -> Storage : InsertTask(params)
-Storage -> PG : INSERT INTO tasks\n(workspace_id, project_id, ...)\nRETURNING *
-PG --> Storage : Task
-Storage --> TaskSvc : Task
+Bus -> SSE : emit на канале board:{boardId}\n(handler вызывается синхронно)
+SSE --> B : event: task.created\ndata: { type, workspaceId, boardId, payload, ts }
+B -> B : EventSource.onmessage:\ninvalidate tasks query
 
-TaskSvc -> Storage : InsertEvent(\nevent_type=task_created,\npayload={...})
-Storage -> PG : INSERT INTO events\n(workspace_id, event_type,\nentity_id, payload, ...)
-PG --> Storage : event_id
-Storage --> TaskSvc : ok
+Service --> Nitro : new task
+Nitro --> A : 201 Created\n{ task: {...} }
+A -> A : @tanstack/vue-query:\ninvalidate tasks query
 
-TaskSvc -> Storage : Commit()
-Storage -> PG : COMMIT
+note over Bus, SSE
+  In-process EventEmitter — работает только внутри
+  одного Nitro-процесса (single instance в Current).
+  Cross-node fan-out через pg LISTEN/NOTIFY — Target
+  (см. [`docs/06-system-architecture.md`](../../06-system-architecture.md) → Target).
+  Триггер эволюции: появление 2-й реплики Nitro.
+end note
 
-TaskSvc -> EB : Publish(TaskCreatedEvent)
+note over Nitro, Service
+  Папок server/middleware/ и server/jobs/ нет —
+  guards (requireAuth, getWorkspaceForUserOrThrow,
+  requireMinRole) вызываются в первых строках
+  handler'а (in-handler pattern).
 
-par Параллельные реакции
-  EB -> SSE : Broadcast(workspaceId, event)
-  SSE -> SSE : Для каждого\nактивного подписчика\nworkspace'а
-  SSE --> BB : event: task_created\ndata: {...}
-  BB -> BB : vue-query\ninvalidate(['tasks', pid])
-  BB --> UserB : Карточка задачи\nпоявляется на доске
-else
-  EB -> Worker : Enqueue(NotifyJob)\nесли включены уведомления
-  Worker -> Storage : pollClaim (pg-boss)
-  Worker -> Worker : HTTP POST\nTelegram/Pachca API
-end
-
-TaskSvc --> MW : Task
-MW --> API : 201 Created
-API --> Caddy : {task: {...}}
-Caddy --> BA : 201
-
-BA -> BA : vue-query\ninvalidate + optimistic UI
-BA --> UserA : Карточка появилась\nна доске
+  pg-boss / Telegram / Pachca / Caddy sticky cookies —
+  Target (см. [`docs/06-system-architecture.md`](../../06-system-architecture.md) → Target).
+end note
 
 @enduml
