@@ -15,9 +15,9 @@ Class diagram показывает **из чего состоит наша си�
 - как они связаны между собой.
 
 Это **скелет модели данных**. Позже он превращается в:
-- **таблицы БД** (ER-диаграмма, папка `../../03-er/`);
-- **Go-структуры** в коде (`type User struct { ... }`);
-- **TypeScript-типы** на фронтенде (`interface User { ... }`).
+- **таблицы БД** — Drizzle SQL-миграции в `drizzle/migrations/` + текстовое описание в [`../../../07-domain-model.md`](../../../07-domain-model.md);
+- **TypeScript-типы** в Drizzle schema (`server/db/schema.ts`);
+- **TypeScript-типы** на фронтенде через openapi-typescript (`shared/types/api.d.ts`).
 
 Так что class diagram — это **документ-контракт**: все три (БД, бэк, фронт) должны отражать одну модель.
 
@@ -252,5 +252,4 @@ const (
 
 - [`../domain-classes.md`](../domain-classes.md) — полное описание class diagram для диплома.
 - [`../../theory.md`](../../theory.md) — теория UML в целом, все 14 типов.
-- [`../../../07-domain-model.md`](../../../07-domain-model.md) — как класс-модель отражается в БД.
-- [`../../03-er/`](../../03-er/) — ER-диаграмма (физическая схема БД).
+- [`../../../07-domain-model.md`](../../../07-domain-model.md) — как класс-модель отражается в БД (заменяет ER-диаграмму).

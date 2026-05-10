@@ -9,6 +9,15 @@ skinparam monochrome false
 skinparam defaultFontName Arial
 skinparam defaultFontSize 12
 
+skinparam usecase {
+  BackgroundColor<<Future>> #fde68a
+  BorderColor<<Future>> #b45309
+}
+skinparam actor {
+  BackgroundColor<<Future>> #fde68a
+  BorderColor<<Future>> #b45309
+}
+
 left to right direction
 
 ' ============================================================================
@@ -29,13 +38,14 @@ Admin --|> SM
 Owner --|> Admin
 
 ' ============================================================================
-' Secondary (external) actors
+' Secondary (external) actors — все 4 помечены <<Future>>: ни SMTP, ни боты,
+' ни Git-вебхуки, ни планировщик не подключены в Phase 1-3 MVP.
 ' ============================================================================
 
-actor "SMTP Service" as SMTP << external >>
-actor "Integration Bot\n(Telegram / Pachca)" as Bot << external >>
-actor "Git Platform\n(GitFlic / GitVerse)" as Git << external >>
-actor "Scheduler" as Cron << external >>
+actor "SMTP Service" as SMTP <<Future>>
+actor "Integration Bot\n(Telegram / Pachca)" as Bot <<Future>>
+actor "Git Platform\n(GitFlic / GitVerse)" as Git <<Future>>
+actor "Scheduler" as Cron <<Future>>
 
 ' ============================================================================
 ' System boundary
@@ -46,23 +56,23 @@ rectangle "Scrumban Platform" {
     package "Управление учётной записью" as PKG_Account {
         usecase "Регистрация\nаккаунта" as UC_Register
         usecase "Вход / выход" as UC_Login
-        usecase "Сброс пароля" as UC_ResetPwd
-        usecase "Принять\nприглашение" as UC_AcceptInvite
-        usecase "Редактировать\nпрофиль" as UC_EditProfile
+        usecase "Сброс пароля" as UC_ResetPwd <<Future>>
+        usecase "Принять\nприглашение" as UC_AcceptInvite <<Future>>
+        usecase "Редактировать\nпрофиль" as UC_EditProfile <<Future>>
     }
 
     package "Workspace & участники" as PKG_Workspace {
         usecase "Создать workspace" as UC_CreateWS
-        usecase "Настройки workspace" as UC_WSSettings
-        usecase "Пригласить\nучастника" as UC_InviteMember
+        usecase "Настройки workspace" as UC_WSSettings <<Future>>
+        usecase "Пригласить\nучастника" as UC_InviteMember <<Future>>
         usecase "Управлять ролями\nучастников" as UC_ManageRoles
-        usecase "Архивировать\nworkspace" as UC_ArchiveWS
+        usecase "Архивировать\nworkspace" as UC_ArchiveWS <<Future>>
     }
 
     package "Проекты и доски" as PKG_Project {
-        usecase "Создать проект" as UC_CreateProject
+        usecase "Создать проект" as UC_CreateProject <<Future>>
         usecase "Настроить колонки\nи WIP-лимиты" as UC_ConfigBoard
-        usecase "Архивировать\nпроект" as UC_ArchiveProject
+        usecase "Архивировать\nпроект" as UC_ArchiveProject <<Future>>
     }
 
     package "Работа с задачами" as PKG_Task {
@@ -70,8 +80,8 @@ rectangle "Scrumban Platform" {
         usecase "Назначить\nисполнителя" as UC_AssignTask
         usecase "Переместить\nзадачу" as UC_MoveTask
         usecase "Редактировать\nзадачу" as UC_EditTask
-        usecase "Комментировать\nзадачу" as UC_CommentTask
-        usecase "Прикрепить файл" as UC_AttachFile
+        usecase "Комментировать\nзадачу" as UC_CommentTask <<Future>>
+        usecase "Прикрепить файл" as UC_AttachFile <<Future>>
         usecase "Просмотр задачи" as UC_ViewTask
         usecase "Поиск и фильтрация" as UC_SearchTask
     }
@@ -85,20 +95,20 @@ rectangle "Scrumban Platform" {
 
     package "Аналитика (B и B+)" as PKG_Analytics {
         usecase "Просмотр CFD" as UC_ViewCFD
-        usecase "Cycle time\nscatter" as UC_ViewScatter
+        usecase "Cycle time\nscatter" as UC_ViewScatter <<Future>>
         usecase "Throughput" as UC_ViewThroughput
         usecase "Monte Carlo\nпрогноз спринта" as UC_ViewMC
         usecase "WIP-рекомендация\n(Little's Law)" as UC_ViewWIPRec
-        usecase "Сравнение\nспринтов" as UC_CompareSprints
-        usecase "Bottleneck\nheatmap" as UC_ViewBottleneck
+        usecase "Сравнение\nспринтов" as UC_CompareSprints <<Future>>
+        usecase "Bottleneck\nheatmap" as UC_ViewBottleneck <<Future>>
     }
 
     package "Системные процессы" as PKG_System {
-        usecase "Отправить email\n(приглашение, сброс)" as UC_SendEmail
-        usecase "Отправить\nуведомление" as UC_SendNotification
-        usecase "Привязать коммит\nк задаче" as UC_LinkCommit
-        usecase "Пересчитать\nагрегаты потока" as UC_RecomputeAgg
-        usecase "Обновить\nпрогноз MC" as UC_UpdateMC
+        usecase "Отправить email\n(приглашение, сброс)" as UC_SendEmail <<Future>>
+        usecase "Отправить\nуведомление" as UC_SendNotification <<Future>>
+        usecase "Привязать коммит\nк задаче" as UC_LinkCommit <<Future>>
+        usecase "Пересчитать\nагрегаты потока" as UC_RecomputeAgg <<Future>>
+        usecase "Обновить\nпрогноз MC" as UC_UpdateMC <<Future>>
     }
 }
 
@@ -173,5 +183,23 @@ UC_CloseSprint ..> UC_UpdateMC : <<include>>
 UC_MoveTask <.. UC_SendNotification : <<extend>>
 UC_AssignTask <.. UC_SendNotification : <<extend>>
 UC_CommentTask <.. UC_SendNotification : <<extend>>
+
+note bottom
+  Жёлтые use-cases / external actors помечены <<Future>> — не реализованы в Phase 1-3 MVP.
+  Конкретные триггеры ввода и зависимости — в docs/05-mvp-scope-and-roadmap.md → Phase 4-5+
+  и в Target-секциях docs/07-domain-model.md, docs/10-analytics-design.md, docs/11-non-functional.md.
+
+  Implemented (без стереотипа): регистрация, вход, создание workspace, ручное добавление
+  участника, управление ролями, CRUD досок и колонок, lifecycle задач (создание, назначение,
+  перемещение, редактирование, просмотр, поиск), lifecycle спринта (создание, планирование,
+  запуск, закрытие), live-аналитика CFD / Throughput / Monte Carlo / WIP-рекомендации.
+
+  UC_InviteMember помечен <<Future>>, потому что в диаграмме он связан с UC_SendEmail
+  через <<include>> (полноценный flow с magic-link), а текущий эндпоинт только добавляет
+  уже зарегистрированного пользователя по email — без рассылки писем.
+
+  UC_Register, UC_ResetPwd: регистрация реализована без подтверждения email,
+  поэтому <<include>> UC_SendEmail сейчас не исполняется; UC_ResetPwd целиком отложен.
+end note
 
 @enduml

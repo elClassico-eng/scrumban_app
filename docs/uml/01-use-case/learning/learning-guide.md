@@ -190,7 +190,7 @@ Viewer → Team Member → Scrum Master → Admin → Workspace Owner
 
 ## Связанные документы
 
-- [`../roles-guide.md`](../roles-guide.md) — гайд по per-role диаграммам (для диплома).
+- [`../roles-guide.md`](../roles-guide.md) — гайд по use case диаграмме и ролевой модели (для диплома).
 - [`../use-case.md`](../use-case.md) — полное описание use case для диплома.
 - [`../../theory.md`](../../theory.md) — теория UML в целом.
 - [`../../02-class/learning/learning-guide.md`](../../02-class/learning/learning-guide.md) — учебный разбор class diagram.

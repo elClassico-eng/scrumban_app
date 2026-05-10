@@ -1,6 +1,7 @@
 // POST /api/auth/register — creates a new user and starts a session.
 // Validates input with zod, hashes the password via nuxt-auth-utils
-// (argon2id), persists the user, and writes a signed session cookie.
+// hashPassword() — scrypt (Node-native, library default) — persists the
+// user, and writes a signed session cookie.
 import { z } from 'zod'
 import { createUser } from '../../services/users.service'
 import { toHttpError } from '../../utils/errors'

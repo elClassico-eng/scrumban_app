@@ -1,109 +1,101 @@
 # Диаграммы последовательности
 
-Три ключевых сценария работы Scrumban-платформы в виде UML-диаграмм последовательности (sequence diagram).
+Два ключевых сценария работы Scrumban-платформы в виде UML-диаграмм последовательности (sequence diagram). Обе синхронизированы с Current-кодом (ветка `docs/code-sync-2026-05-10`).
 
 ## Выбор сценариев
 
-Из десятков возможных сценариев выбраны **3 самых репрезентативных**, каждый иллюстрирует разный архитектурный аспект:
+Из десятков возможных сценариев оставлены **2 самых репрезентативных** — каждый иллюстрирует архитектурный аспект, отличающий Scrumban-платформу:
 
-1. **Login** — синхронный auth-флоу с проверкой пароля и созданием сессии.
-2. **Create task + SSE broadcast** — event-driven модель и real-time обновления.
-3. **Monte Carlo forecast** — основной дифференциатор продукта (B+ аналитика) с кэшированием и min-data thresholds.
+1. **Create task + SSE broadcast** — event-driven модель и real-time обновления доски.
+2. **Monte Carlo forecast** — основной дифференциатор продукта (B+ аналитика) с честным min-data threshold.
 
-Для диплома этого достаточно: sequence-диаграммы иллюстрируют, остальные сценарии описываются текстом в главе «Реализация».
+Login-флоу убран в [UML cleanup](../README.md): это типовой auth-сценарий (argon2id + cookie + nuxt-auth-utils), параметры описаны в [`../../11-non-functional.md#authn`](../../11-non-functional.md). Отдельная диаграмма не добавляла инсайта.
 
-## 1. Сценарий «Вход пользователя»
-
-> Исходник: [`login.puml`](login.puml). Preview через PlantUML plugin в IDE.
-
-### Ключевые точки
-
-- **AuthN middleware на login-endpoint'е пропускает без проверки cookie** — сессии ещё нет.
-- **Пароль проверяется argon2id** — параметры (m=64MB, t=3, p=2) из [`../../11-non-functional.md#authN`](../../11-non-functional.md).
-- **В cookie кладётся raw-token, в БД — его SHA-256 hash**. Это защищает от утечки БД: украденный hash бесполезен без raw-token.
-- **Cookie-flags: `HttpOnly`, `Secure`, `SameSite=Lax`** — защита от XSS, MITM, CSRF.
-- **alt-фрагменты** показывают 3 исхода: пользователь не найден / пароль неверен / успех. Для клиента ответ идентичен (401 + `invalid_credentials`) — это защита от user enumeration.
-
-## 2. Сценарий «Создание задачи с real-time обновлением»
+## 1. Сценарий «Создание задачи с real-time обновлением» (Current)
 
 > Исходник: [`create-task-sse.puml`](create-task-sse.puml). Preview через PlantUML plugin в IDE.
 
-### Ключевые точки
+### Ключевые точки (что есть в коде)
 
-- **Предусловие**: Browser B уже подключён к SSE-потоку (GET `/api/v1/workspaces/{wsId}/stream`).
-- **Sticky cookie на Caddy** закрепляет SSE-соединение на одной реплике backend'а — важно, когда работают несколько реплик.
-- **Middleware chain**: AuthN → Tenant (SET `app.workspace_id` для RLS) → RBAC (проверка роли ≥Member).
-- **Транзакция**: INSERT task + INSERT event — атомарно. Если event-запись упадёт, task не попадёт в БД.
-- **Event Bus после commit** — `TasksService.Create` публикует `TaskCreatedEvent` после успешного commit.
-- **`par` фрагмент** — параллельные реакции на событие:
-  - **SSE Hub** рассылает всем подписчикам workspace'а → Browser B получает событие и инвалидирует vue-query cache.
-  - **Worker** (pg-boss) забирает NotifyJob → отправляет в Telegram/Pachca.
-- **Оптимистичные обновления на Browser A**: задача появляется в Pinia-сторе сразу после 201 ответа, даже до полного invalidate.
+- **Предусловие**: Browser B уже подключён к SSE-потоку через `GET /api/workspaces/[id]/boards/[boardId]/stream` ([`server/api/.../stream.get.ts`](../../../server/api/workspaces/[id]/boards/[boardId]/stream.get.ts)). Соединение держится открытым, heartbeat `: ping` каждые 25 с защищает от idle-таймаутов прокси.
+- **Browser A создаёт задачу**: `POST /api/workspaces/[id]/boards/[boardId]/tasks` ([`server/api/.../tasks/index.post.ts`](../../../server/api/workspaces/[id]/boards/[boardId]/tasks/index.post.ts)) с body `{ columnId, title, description?, priority?, assigneeId? }`. URL содержит `workspaceId` и `boardId`; `project_id` в схеме нет — задачи привязаны к доске напрямую.
+- **In-handler guards** (нет папки `server/middleware/`): `requireAuth` → `getWorkspaceForUserOrThrow` → `requireMinRole(role, 'member')` в первых строках handler'а.
+- **Tenant-isolation через `withTenant(workspaceId, tx)`** ([`server/utils/db.ts`](../../../server/utils/db.ts)): `SELECT set_config('app.workspace_id', $1, true)` в транзакции — RLS-политики на `tasks` и `task_events` фильтруют по этому GUC.
+- **Транзакция охватывает task + task_events**: `INSERT INTO tasks` + `INSERT INTO task_events(event_type='task_created', from_column_id=null, to_column_id, ...)`. Если упадёт audit-запись — откатится и сама задача (атомарность).
+- **Publish ПОСЛЕ commit'а**: `publishBoardEvent({ type: 'task.created', ... })` ([`server/utils/events.ts`](../../../server/utils/events.ts)) выполняется в `.then()` после транзакции — фантомных событий о неуспешной операции не бывает.
+- **In-process EventEmitter** рассылает по каналу `board:{boardId}`. SSE-handler подписан через `subscribeBoardEvents(boardId, handler)` и пушит JSON-сериализованный event в открытый `createEventStream`.
+- **Browser B получает `event: task.created`** и инвалидирует кэш `@tanstack/vue-query`. Browser A после ответа `201 Created` тоже инвалидирует — задача появляется на обоих экранах.
+
+### Что НЕ реализовано (Target)
+
+- **Cross-node fan-out через pg LISTEN/NOTIFY** — только когда появится 2-я реплика Nitro (см. [`../../06-system-architecture.md`](../../06-system-architecture.md) → Target).
+- **pg-boss workers, Telegram/Pachca интеграции, Caddy sticky-cookie sessions** — все Target. Сейчас single-instance Nitro, Caddy не настроен, pg-boss не установлен.
+- **Optimistic UI на стороне Browser A** — Pinia-store update до ответа сервера не реализован, ждём `201` и затем инвалидируем query.
 
 ### Почему SSE, не WebSocket
-Рассылка — только server → client. Двусторонняя связь не нужна для этого флоу. SSE проще (обычное HTTP keep-alive), не требует отдельного сервера, автоматически переподключается клиентом.
 
-## 3. Сценарий «Monte Carlo прогноз спринта»
+Рассылка односторонняя (server → client). Двусторонняя связь не нужна для real-time обновления доски. SSE проще: обычное HTTP keep-alive, авто-переподключение `EventSource` на стороне браузера, без отдельного сервера.
+
+## 2. Сценарий «Monte Carlo прогноз завершения работ» (Current)
 
 > Исходник: [`monte-carlo.puml`](monte-carlo.puml). Preview через PlantUML plugin в IDE.
 
-### Ключевые точки
+### Ключевые точки (что есть в коде)
 
-- **Страница дашборда спринта** триггерит запрос прогноза.
-- **LRU-кэш на 15 мин** — большинство запросов попадают в кэш, БД не нагружается.
-- **Cache miss запускает полный расчёт:**
-  1. Получить текущий спринт (active).
-  2. Посчитать оставшиеся задачи (N).
-  3. Вытащить историю throughput последних 5 спринтов (из `sprint_stats`).
-- **Проверка min-data threshold**: если `<3 закрытых спринта` → возвращаем `insufficient_data`, не считаем MC. UI показывает «данных мало, нужно ещё X спринтов».
-- **Monte Carlo симуляция**: 1000 итераций, в каждой — семплируем дневной throughput из эмпирического распределения, накапливаем до закрытия N задач, фиксируем дату.
-- **Результат**: вероятность закрытия в срок (`p_on_time`), перцентили P50/P85/P95, размер выборки, текстовое объяснение.
-- **Кэширование результата** на 15 мин перед возвратом клиенту.
-- **UI рендерит `MonteCarloCard`** с числом «78%» крупно и детальным объяснением ниже.
+- **Endpoint**: `GET /api/workspaces/[id]/boards/[boardId]/analytics/monte-carlo?tasksRemaining=N&horizonDays=H&iterations=K` ([`server/api/.../analytics/monte-carlo.get.ts`](../../../server/api/workspaces/[id]/boards/[boardId]/analytics/monte-carlo.get.ts)). Параметры — query string, не sprint-row.
+- **Источник истории — `task_events` за `HISTORY_LOOKBACK_DAYS = 90` дней**, тип `task_closed`. Никаких `sprint_stats` или `mv_throughput_weekly` — этих таблиц/MV в Current нет.
+- **`expandWithZeros`** разворачивает результат GROUP-BY в вектор длиной 90 с нулями в дни без закрытий — иначе bias в сторону «всегда что-то закрывают».
+- **Min-data threshold**: `totalClosed === 0 || sampleDays < MIN_DAYS_OF_HISTORY (14)` → `{ ok: false, reason: 'insufficient_data', sampleDays, requiredDays: 14 }`. Threshold по дням истории, а НЕ по числу закрытых спринтов («≥3 sprints») — sprint-scoped аналитика отложена в Target.
+- **Bootstrap-семплинг**: `DEFAULT_ITERATIONS = 1000` итераций (clamped до 10 000). В каждой — суммируем сэмплы из `dailyThroughput` (with replacement) пока `total ≥ tasksRemaining` или закончится `horizonDays`. Записываем `completionDays` (`day + 1` или `H + 1`).
+- **Возвращаемый объект**: `{ ok: true, iterations, sampleDays, historicalDailyThroughput, probability, percentileDays: { p50, p85, p95 } }`.
+
+### Что НЕ реализовано (Target)
+
+- **Forecast cache (LRU, TTL 15 мин)** — отложено до триггера: Monte Carlo p95 latency > 1.5 с (см. [`../../10-analytics-design.md`](../../10-analytics-design.md) → Target). Сейчас замер локально: 50–150 мс на 1000 итераций — кэш экономически не оправдан.
+- **Sprint-scoped variant `/sprints/{id}/forecast`** — отложено вместе с `sprint_stats` MV. Когда появится — будет считать `tasksRemaining` из `sprint_tasks WHERE closed_at IS NULL`, threshold переедет на «≥ 3 закрытых спринта».
+- **Текстовое объяснение «explanation»** в payload — UI-слой, ещё не написан.
 
 ### Математическая суть алгоритма
 
 Дневной throughput моделируется как эмпирическое распределение:
 
-`D ~ Empirical({historical_daily_throughputs})`
+`D ~ Empirical({historicalDailyThroughput[]})  // длиной 90, с нулями для дней без закрытий`
 
 Задачи-остаток — `N`. Сколько дней до закрытия?
 
-`T = min { t : sum(D_1..D_t) >= N }`
+`T = min { t : sum(D_1..D_t) >= N }   при условии t ≤ horizonDays`
 
-Распределение `T` строится симуляцией (1000 независимых розыгрышей). Перцентили — из отсортированного массива `T_samples`.
+Распределение `T` строится симуляцией (1000 независимых розыгрышей). Перцентили — из отсортированного массива `completionDays`.
 
-Вероятность успеть в срок:
+Вероятность успеть в горизонт:
 
-`p_on_time = |{t in T_samples : t ≤ daysLeft}| / 1000`
+`probability = |{t in completionDays : t ≤ horizonDays}| / iterations`
 
-### Почему статистика, не ML
+### Почему bootstrap, а не среднее × дни
 
-Подробно обосновано в [`../../10-analytics-design.md#ml-research-extension`](../../10-analytics-design.md). Коротко: на малых-средних выборках (одна команда, 5 спринтов × 12 задач ≈ 60 сэмплов) ML даёт шум. Статистика на том же объёме — устойчивые, интерпретируемые результаты.
+Подробно — в [`../../10-analytics-design.md`](../../10-analytics-design.md). Коротко: на малых выборках (90 дней истории) среднее теряет хвосты распределения. Bootstrap семплирует исходную форму распределения без предположений о её виде (нормальность / Пуассон / экспоненциальность) — это устойчиво и интерпретируемо.
 
 ## Общие архитектурные решения, видимые из sequence-диаграмм
 
-1. **Middleware chain** применяется ко ВСЕМ защищённым эндпоинтам. Возможность забыть Tenant или RBAC закрыта архитектурно — middleware навешивается на router-группу.
-2. **Транзакции охватывают изменение домена + событие**. Если упадёт запись события — упадёт и основное изменение.
-3. **Events публикуются ПОСЛЕ commit'а**. Никогда не публикуется «будущий» event, который потом может не произойти.
-4. **Параллельные подписчики** — event рассылается нескольким реакциям одновременно (SSE + Worker). Но это in-proc синхронный бросок; внешние эффекты (отправка в Telegram) идут через Worker.
-5. **Sticky sessions для SSE** решают проблему multi-node развёртывания без сложного pub/sub; LISTEN/NOTIFY добавляется в Target-state, когда нужно рассылать события между репликами.
-6. **Кэш для дорогих расчётов** (Monte Carlo) — LRU с TTL 15 мин. Большинство запросов к дашборду — cache hit.
-7. **Min-data thresholds** встроены в логику аналитики — продукт честно говорит «данных мало», а не выдаёт шум за сигнал.
+1. **In-handler guards** применяются в первых строках каждого защищённого handler'а: `requireAuth` → `getWorkspaceForUserOrThrow` → `requireMinRole(role, ...)`. Папки `server/middleware/` нет — это осознанное решение в Phase 2 (см. [`../../06-system-architecture.md`](../../06-system-architecture.md)).
+2. **Tenant-isolation через RLS + `withTenant`**. Любая операция, трогающая `tasks` / `task_events` / `boards` / `sprints`, обязательно идёт через `withTenant(workspaceId, tx)` — иначе RLS отрежет все строки.
+3. **Транзакции охватывают изменение домена + audit-событие** (`task` + `task_events`). Если упадёт запись `task_events` — упадёт и основной INSERT.
+4. **Events публикуются ПОСЛЕ commit'а** — никогда не публикуется «будущий» event, который может откатиться.
+5. **In-process EventEmitter в Current** (single instance Nitro). Cross-node fan-out — Target.
+6. **Min-data thresholds в аналитике**: продукт честно говорит «данных мало», а не выдаёт шум за сигнал.
 
 ## Не показаны (осознанные пропуски)
 
-- Error paths в middleware (401, 403) — уже очевидны по use case.
-- Logout flow — тривиальный revoke в БД + удаление cookie.
-- Password reset flow — вариант на login-флоу с промежуточным email-токеном; при необходимости можно добавить 4-й sequence.
-- Полный WebSocket upgrade handshake — мы не используем WebSocket.
-- SSE reconnection logic — обрабатывается на клиенте (EventSource автоматически переподключается).
-- Детали payload'а events — см. [`../../10-analytics-design.md`](../../10-analytics-design.md).
+- **Error paths** в guards (401, 403) — очевидны по use case, ветвление сделало бы диаграммы громоздкими.
+- **Login / logout / register** — типовые `nuxt-auth-utils` сценарии, отдельная sequence ничего не добавляет.
+- **SSE reconnection logic** — обрабатывается на клиенте (`EventSource` авто-переподключается).
+- **Детали payload'а events** — см. `BoardEvent` в [`../../../server/utils/events.ts`](../../../server/utils/events.ts).
 
 ## Связь с другими артефактами
 
-- **Use case:** [`../01-use-case/`](../01-use-case/) — прецеденты, для которых показаны sequence'ы.
-- **Component diagram:** [`../04-component/`](../04-component/) — участники sequence'ов в виде компонентов.
-- **Class (domain):** [`../02-class/`](../02-class/) — сущности, фигурирующие в сценариях.
-- **Non-functional:** [`../../11-non-functional.md`](../../11-non-functional.md) — детали auth, RBAC, multi-tenancy.
-- **Analytics design:** [`../../10-analytics-design.md`](../../10-analytics-design.md) — детали расчётов Monte Carlo, Little's Law.
+- **Use case:** [`../01-use-case/`](../01-use-case/) — прецеденты, для которых построены sequence'ы.
+- **Component diagram:** [`../04-component/`](../04-component/) — участники в виде компонентов.
+- **Class (domain):** [`../02-class/`](../02-class/) — сущности (`Task`, `TaskEvent`).
+- **System architecture:** [`../../06-system-architecture.md`](../../06-system-architecture.md) — Current/Target/Evolution для SSE, pg-boss, multi-replica.
+- **Analytics design:** [`../../10-analytics-design.md`](../../10-analytics-design.md) — детали Monte Carlo, Little's Law, выбор bootstrap.
+- **Non-functional:** [`../../11-non-functional.md`](../../11-non-functional.md) — auth, RBAC, multi-tenancy.

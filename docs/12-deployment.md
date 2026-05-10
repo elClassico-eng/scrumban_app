@@ -2,9 +2,16 @@
 
 ## Обзор
 
-Единый `docker-compose.yml` поднимает всю систему. Используется локально для разработки, на staging-среде Yandex Cloud VM — для демо и первых пользователей, и у клиентов при on-prem развёртывании. Одни и те же образы, разные конфигурации.
+Документ описывает **целевую модель деплоя** (production / staging / on-prem) и **локальную разработку**. На момент написания продакшн-деплоя нет: разработка ведётся локально через `docker-compose.dev.yml` (Postgres + MinIO) и `pnpm dev` (Nitro в HMR-режиме). Production-артефакты (`Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`, `.github/workflows/`, `.gitflic-ci/`) в репозитории отсутствуют — это Target, см. ниже.
 
-## Сервисы в Docker Compose
+Целевая идея: единый `docker-compose.yml` поднимает всю систему — локально для разработки, на staging-среде Yandex Cloud VM для демо и первых пользователей, и у клиентов при on-prem развёртывании. Одни и те же образы, разные конфигурации.
+
+> **Текущая реальность (Current):**
+> - В репо есть: `docker-compose.dev.yml` (Postgres + MinIO для локалки), `package.json` со скриптами `dev/build/test/lint/typecheck/db:*`, миграции Drizzle.
+> - В репо НЕТ: `Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`, конфиги CI (`.github/workflows/`, `.gitflic-ci/`), `Sentry`-конфигурации, бэкап-скриптов.
+> - Триггер ввода production-артефактов: первый продакшн-деплой (см. триггеры в [`06-system-architecture.md`](06-system-architecture.md) → Target).
+
+## Сервисы в Docker Compose (Target)
 
 ```yaml
 services:
@@ -55,7 +62,9 @@ pnpm dev
 - `pnpm test` — `vitest run` (unit + integration + e2e).
 - `pnpm lint` — eslint + prettier check.
 
-## CI/CD (GitHub Actions — или GitFlic CI)
+## CI/CD (GitHub Actions — или GitFlic CI) — Target
+
+> CI/CD не настроен: ни `.github/workflows/`, ни `.gitflic-ci/` в репозитории нет. Тесты (`vitest` + `@testcontainers/postgresql`, ~124 теста) запускаются локально через `pnpm test`. Триггер ввода — первый внешний коллаборатор или первый продакшн-деплой.
 
 ### Pipeline на PR
 1. **lint** — eslint + prettier (TS), `pnpm typecheck` (tsc --noEmit).
@@ -80,25 +89,25 @@ pnpm dev
 
 ## Среды (environments)
 
-### Local (dev)
-- Postgres и MinIO в Docker.
-- Nuxt dev-сервер локально (один процесс на frontend + Nitro backend) с HMR.
-- `.env` содержит dev-креды.
+### Local (dev) — Current
+- Postgres и MinIO в Docker (`docker-compose.dev.yml`).
+- Nuxt dev-сервер локально (один процесс на frontend + Nitro backend) с HMR (`pnpm dev`).
+- `.env` содержит dev-креды (см. `.env.example`).
 
-### Staging (Yandex Cloud VM, наш SaaS для демо)
+### Staging (Yandex Cloud VM, наш SaaS для демо) — Target
 - Одна VM 2 vCPU / 4 GB / 40 GB SSD (~1000 ₽/мес).
 - Docker Compose со всеми сервисами.
 - Отдельный домен (например, `staging.scrumban.ru`).
 - Sandbox-данные для демо.
 
-### Production (после защиты, когда нужно)
+### Production (после защиты, когда нужно) — Target
 - VM Yandex Cloud (или VK Cloud / Selectel).
-- Отделённая БД (отдельная VM или Managed PostgreSQL).
-- Object Storage: Yandex Object Storage.
+- Отделённая БД (отдельная VM или Managed PostgreSQL). Триггер Managed PostgreSQL — ≥ 500 активных workspace'ов **или** размер БД > 50 ГБ (см. [`06-system-architecture.md`](06-system-architecture.md)).
+- Object Storage: Yandex Object Storage. Триггер — первый продакшн-клиент с реальными данными.
 - Домен: scrumban.ru (или подобный).
 - Monitoring: Sentry + Yandex Monitoring.
 
-### On-prem (клиент разворачивает у себя)
+### On-prem (клиент разворачивает у себя) — Target
 - Клиент клонирует публичный репозиторий (или получает tarball).
 - Заполняет `.env` своими значениями.
 - Запускает `docker compose up -d`.
@@ -184,9 +193,9 @@ DOMAIN=scrumban.local
 - Object Storage — доступ только из backend через IAM policy.
 - Регулярные обновления OS (через Yandex Cloud / apt unattended-upgrades).
 
-## HTTPS (Let's Encrypt)
+## HTTPS (Let's Encrypt) — Target
 
-Caddy делает всё автоматически:
+Caddyfile в репо отсутствует. Триггер ввода — первый продакшн-деплой за публичным URL без внешнего балансера (см. [`06-system-architecture.md`](06-system-architecture.md) → Target → Caddy). Целевая конфигурация:
 ```
 scrumban.ru {
     reverse_proxy app:3000

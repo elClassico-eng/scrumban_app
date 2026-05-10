@@ -2,7 +2,7 @@
 
 Этот файл поддерживается в актуальном состоянии. Если ты читаешь его после компакта контекста или новой сессии — здесь точка входа: что сделано, где остановились, куда двигаемся.
 
-**Обновлён:** 2026-05-01.
+**Обновлён:** 2026-05-10.
 
 ---
 
@@ -36,7 +36,7 @@
   - CFD (Cumulative Flow Diagram)
   - **Monte Carlo** прогноз спринтов (B+ научная новизна)
   - **Little's Law** WIP рекомендации (B+ научная новизна)
-- **RLS**: 8 tenant-scoped таблиц с FORCE ROW LEVEL SECURITY + WITH CHECK; 7 RLS-isolation тестов
+- **RLS**: RLS на 6 таблиц из 9 (boards, board_columns, tasks, task_events, sprints, sprint_tasks) с FORCE ROW LEVEL SECURITY + WITH CHECK; 7 RLS-isolation тестов. `workspaces` + `workspace_members` — известное отставание (см. Backlog).
 - **Multi-tenancy**: service-layer scoping + RLS как defence-in-depth
 
 ### Последнее выполненное действие
@@ -83,6 +83,44 @@
 - Step 16: throughput + cycle-time analytics + task_created event log
 - Step 17: CFD + Monte Carlo + Little's Law
 
+### 2026-05-10 — Docs/code sync (план [`docs/superpowers/plans/2026-05-10-docs-code-sync.md`](docs/superpowers/plans/2026-05-10-docs-code-sync.md))
+
+После аудита (`docs/audit-2026-05-10-issues.md`) обнаружено ~150 расхождений между документацией и реализацией. Стратегия: **код — реальность, документация догоняет**; всё реально нереализованное помечено как Target с измеримым триггером ввода.
+
+**Архив:**
+- `docs/archive/` создана; перенесены [Go-spec](docs/archive/2026-04-18-scrumban-platform-design.md) и [Phase 0 plan](docs/archive/2026-04-23-phase0-week1-nitro-starter.md) с migration header'ами как материал для главы «Эволюция архитектуры» в магистерской.
+
+**Numbered docs (12 файлов):** [`07-domain-model.md`](docs/07-domain-model.md), [`06-system-architecture.md`](docs/06-system-architecture.md), [`11-non-functional.md`](docs/11-non-functional.md), [`08-backend-design.md`](docs/08-backend-design.md), [`09-frontend-design.md`](docs/09-frontend-design.md), [`10-analytics-design.md`](docs/10-analytics-design.md), [`05-mvp-scope-and-roadmap.md`](docs/05-mvp-scope-and-roadmap.md) — все переведены в формат Current (что реально работает в коде) + Target (что обоснованно отложено с триггером). Точечные правки в [`01-vision-and-goals.md`](docs/01-vision-and-goals.md), [`04-economic-rationale.md`](docs/04-economic-rationale.md), [`12-deployment.md`](docs/12-deployment.md). [`02-target-audience.md`](docs/02-target-audience.md), [`03-competitive-analysis.md`](docs/03-competitive-analysis.md) — без drift.
+
+**Master spec:** [pivot-spec](docs/superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md) структура папок аннотирована (реализовано / Target).
+
+**Code comments:** `users.ts`, `register.post.ts`, `db.ts` — устаревшие claims (`argon2id` → `scrypt`, `SET LOCAL` → `set_config`).
+
+**UML (7 диаграмм после reset'а):**
+- Use case (главная, без per-role) с `<<Future>>` стереотипом для нереализованных UC.
+- Class diagram (9 entities + 5 enums) — single source of truth для domain + persistence (ER папка удалена).
+- **Package diagram (NEW)** — модульная организация, acyclic dependency claim.
+- Component diagram (Current only — Target живёт в bottom-note + 06-system-architecture.md).
+- 2 sequence diagrams: create-task-SSE + Monte Carlo (login убран).
+- 2 state machines: task-lifecycle, sprint-lifecycle.
+- Удалены: `03-er/`, `05-deployment/`, `01-use-case/per-role/`, `06-sequence/login.puml`.
+
+**Verified facts** (greppable в коде, согласованы word-for-word через все docs):
+- 9 таблиц БД; RLS на 6 таблиц из 9 (boards, board_columns, tasks, task_events, sprints, sprint_tasks); `users` глобальная, `workspaces` + `workspace_members` — известное отставание.
+- 5 RBAC ролей (`viewer < member < scrum_master < admin < owner`).
+- 3-state sprint enum (`planned/active/closed`, без отдельного `cancelled` состояния — отмена через shortcut `planned → closed`).
+- 7 task_event_type values; specialized event log (не универсальная `events`).
+- ~44 HTTP endpoint'ов; 124 теста зелёные.
+- Auth: scrypt (не argon2id) через nuxt-auth-utils.
+- Analytics: live-SQL без MV/cache; `MIN_DAYS_OF_HISTORY = 14`, `DEFAULT_ITERATIONS = 1000`, `HISTORY_LOOKBACK_DAYS = 90`.
+- Frontend: skeleton (`app.vue` + `pages/index.vue`); все pages/composables/stores — Phase 4.
+
+**Накопленная память** (новые feedback-записи в [`docs/memory/`](docs/memory/)):
+- [English commits convention](docs/memory/feedback_english_commits.md).
+- [Verify concrete claims with grep](docs/memory/feedback_verify_concrete_claims.md) — paid lesson после RLS-overclaim, sprint cancellation drift и Nuxt UI drift.
+
+**Эффект:** документация теперь честно отражает реализацию; всё откладываемое имеет триггер ввода. На защите комиссия может грепать кодом любой числовой claim в docs — он совпадёт.
+
 ---
 
 ## Что в процессе / на паузе
@@ -97,22 +135,50 @@
 
 ---
 
-## Что дальше (после ревью user'а)
+## Что дальше
 
-### Самое вероятное направление: Frontend
-- Composable `useCurrentUser` (обёртка над useUserSession)
-- Auth pages: /login, /register
-- Dashboard с workspaces list, переключение workspace
-- Kanban доска: draggable columns + tasks (vuedraggable)
-- Sprint view: список, planning UI, attach/detach task
-- Analytics dashboard: CFD chart, throughput trend, Monte Carlo карточка с числом «X% probability», WIP recommendations таблица
-- SSE composable: подписка на /api/.../stream, обновление Pinia store
+**Phase 4 — Frontend MVP** (триггер: docs/code sync завершён).
 
-### Долгосрочно (весь roadmap)
-Из `docs/05-mvp-scope-and-roadmap.md`:
-- Phase 4–5 (месяцы 4–6): B+ углубление + multi-tenancy hardening (per-column cycle, OpenAPI contract, observability)
-- Phase 6 (месяц 7): research-эксперимент с ML + текст диплома
-- Phase 7 (месяцы 8–9): production polish + защита
+Roadmap из [`09-frontend-design.md`](docs/09-frontend-design.md) → Target → Phase 4 implementation roadmap:
+1. Auth flow — `/auth/login`, `/auth/register`. `useAuth()` composable. Pinia auth-store.
+2. Workspace + Board view — drag-n-drop задач (vuedraggable), real-time SSE (`useBoardStream` поверх `@vueuse/core` `useEventSource`), WIP-индикаторы.
+3. Task detail panel.
+4. Analytics dashboard — CFD, throughput, Monte Carlo card, cycle-time scatter, Little's Law рекомендации (ECharts).
+5. Sprint planning UI.
+6. Settings + Members — RBAC management UI (5 ролей).
+
+Параллельно: подключить отсутствующие deps (Pinia, vue-query, ECharts, vuedraggable, vee-validate, Inspira UI, vue-bits, @nuxt/icon, @nuxt/google-fonts, @vueuse/core), настроить codegen pipeline (zod-to-openapi → openapi-typescript → `shared/types/api.d.ts`).
+
+**Phase 5 — Production-readiness** (триггер: Phase 4 завершена, MVP готов к показу).
+
+См. [`05-mvp-scope-and-roadmap.md`](docs/05-mvp-scope-and-roadmap.md) → Phase 5: Dockerfile, Caddyfile, docker-compose.prod, pino + requestId, Sentry, CI (typecheck + vitest + build), pg_dump → Object Storage, rate limit на /auth/login, CSP/HSTS.
+
+---
+
+## Backlog (mini-PRs до / во время Phase 4-5)
+
+Обнаружено во время docs/code sync (2026-05-10) — мелкие задачи, не блокирующие Phase 4, но требующие закрытия до production.
+
+**Database integrity:**
+- `task_events.task_id` `ON DELETE CASCADE` → `SET NULL` + snapshot in payload. Триггер: первое hard-delete задачи в проде, потеря истории станет реальной болью. См. [`07-domain-model.md`](docs/07-domain-model.md) → Quirks → task_events.
+- RLS на `workspaces` и `workspace_members` (известное отставание — Phase 1 не покрыло). Триггер: первый клиент с >1 workspace, где утечка через эти таблицы — реальный риск.
+
+**Race conditions:**
+- `assertNotLastOwner` — добавить `SELECT ... FOR UPDATE` для защиты от concurrent demotion двух последних owner'ов.
+- `deleteSprint` — атомарная проверка `state != 'active'` (currently — read-then-delete без lock).
+
+**Convention drift:**
+- `pnpm` vs `bun` — реально используется bun (`bun.lock` в репо), но docs (08, 11, pivot-spec, plan) пишут `pnpm`. Cross-cutting sweep — найти все упоминания `pnpm dev/test/build/install`, заменить на `bun run` / `bun test` / `bun install`. Триггер: первый коллаборатор споткнётся.
+- `archived_at` на `tasks` — Task 12 (Class diagram) обнаружил, что в коде нет колонки `archived_at`; архивирование через `column_role='archived'` + `task_archived` event. Возможно [`07-domain-model.md`](docs/07-domain-model.md) всё ещё содержит false claim — проверить и поправить.
+
+**Pre-Phase 4 prep:**
+- Создать `app/components/`, `app/composables/`, `app/stores/`, `app/lib/` (пустые folder structure).
+- Установить frontend deps пакетным `bun install` (Pinia + vue-query + vuedraggable + ECharts + vee-validate + @nuxt/icon + @nuxt/google-fonts + @vueuse/core + Inspira UI + vue-bits).
+- Настроить CSS palette (CSS custom properties для dark theme).
+
+**Pre-Phase 5 prep:**
+- Создать `Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`.
+- Настроить GitHub Actions (typecheck + vitest + build).
 
 ---
 

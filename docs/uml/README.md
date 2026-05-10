@@ -8,17 +8,18 @@
 
 ## Набор диаграмм
 
+Минимальный когерентный набор для защиты — без диаграмм-дублей. ER ушла (Class diagram + Drizzle SQL-миграции покрывают то же), per-role use cases — в RBAC-матрицу [`11-non-functional.md`](../11-non-functional.md), Deployment — отложена до Phase 5, Login sequence — слишком общий сценарий.
+
 | # | Папка | Диаграмма | Назначение | Глава диплома |
 |---|-------|-----------|------------|---------------|
-| 1 | [`01-use-case/`](01-use-case/) | Use Case | Функциональные требования, актёры и прецеденты | Анализ требований |
+| 1 | [`01-use-case/`](01-use-case/) | Use Case (главная) | Функциональные требования, актёры и прецеденты | Анализ требований |
 | 2 | [`02-class/`](02-class/) | Class (domain) | Доменная модель, связи сущностей | Проектирование данных |
-| 3 | [`03-er/`](03-er/) | ER | Физическая схема БД PostgreSQL | Проектирование БД |
-| 4 | [`04-component/`](04-component/) | Component | Архитектура системы: Nuxt / Go / Postgres / Storage / Caddy | Архитектура |
-| 5 | [`05-deployment/`](05-deployment/) | Deployment | Физическое развёртывание (SaaS + on-prem) | Развёртывание |
-| 6 | [`06-sequence/`](06-sequence/) | Sequence (×3) | Ключевые сценарии: логин, создание задачи с SSE, Monte Carlo | Реализация |
+| 3 | [`03-package/`](03-package/) | Package | Модульная организация `app/` + `server/` + `shared/` + миграции + tests, с acyclic dependency claim | Архитектура реализации |
+| 4 | [`04-component/`](04-component/) | Component (Current) | Архитектура системы: Nuxt / Nitro / Postgres / Storage / Caddy | Архитектура |
+| 6 | [`06-sequence/`](06-sequence/) | Sequence (×2) | Ключевые сценарии: создание задачи с SSE, Monte Carlo | Реализация |
 | 7 | [`07-state/`](07-state/) | State Machine (×2) | Жизненный цикл Task и Sprint | Реализация |
 
-См. [`theory.md`](theory.md) — краткий справочник по всем 14 типам UML-диаграмм (для главы «Анализ методологии моделирования» или «Обзор инструментов»).
+Гэп `05` намеренный: `05-deployment/` — органически в Phase 5. См. [`theory.md`](theory.md) — краткий справочник по всем 14 типам UML-диаграмм (для главы «Анализ методологии моделирования» или «Обзор инструментов»).
 
 ## Инструмент — PlantUML
 
@@ -71,8 +72,9 @@ plantuml -tpng docs/uml/01-use-case/use-case.puml
 
 ## Связанные документы
 
-- [`../superpowers/specs/2026-04-18-scrumban-platform-design.md`](../superpowers/specs/2026-04-18-scrumban-platform-design.md) — master spec
-- [`../06-system-architecture.md`](../06-system-architecture.md) — текстовое описание архитектуры (→ component, deployment)
-- [`../07-domain-model.md`](../07-domain-model.md) — текстовое описание доменной модели (→ class, ER)
+- [`../superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`](../superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md) — master spec (актуальный)
+- [`../archive/2026-04-18-scrumban-platform-design.md`](../archive/2026-04-18-scrumban-platform-design.md) — архивированный Go-spec, исторический референс для главы об эволюции архитектуры
+- [`../06-system-architecture.md`](../06-system-architecture.md) — текстовое описание архитектуры (→ component, package)
+- [`../07-domain-model.md`](../07-domain-model.md) — текстовое описание доменной модели (→ class)
 - [`../02-target-audience.md`](../02-target-audience.md) — описание актёров (→ use case)
-- [`../11-non-functional.md`](../11-non-functional.md) — RBAC и роли (→ use case)
+- [`../11-non-functional.md`](../11-non-functional.md) — RBAC-матрица и роли (→ use case, заменяет per-role диаграммы)

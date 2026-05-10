@@ -31,13 +31,13 @@
 ## Master spec
 
 - **Актуальный:** [`superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`](superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md) — Nuxt monorepo с Nitro backend (после pivot'а с Go).
-- **Исходный (заменён):** [`superpowers/specs/2026-04-18-scrumban-platform-design.md`](superpowers/specs/2026-04-18-scrumban-platform-design.md) — оригинальный дизайн с Go backend.
+- **Исходный (архивирован):** [`archive/2026-04-18-scrumban-platform-design.md`](archive/2026-04-18-scrumban-platform-design.md) — оригинальный дизайн с Go backend, сохранён как референс для главы «Эволюция архитектуры» в магистерской работе.
 
 ## Статус документов
 
 - 2026-04-18: документы созданы как результат сессии проектирования (Go backend).
 - 2026-04-23: pivot на Nuxt monorepo (Nitro backend); основной master spec заменён.
-- 2026-04-26: уточнения стека (Nuxt 4, Nuxt UI v3, latest stable hard rule); подход к разработке (Claude пишет backend, frontend совместно).
+- 2026-04-26: уточнения стека (Nuxt 4, Nuxt UI v4, latest stable hard rule); подход к разработке (Claude пишет backend, frontend совместно).
 - Все изменения отражаются в git-истории.
 
 ## Ключевые принципы работы с документацией

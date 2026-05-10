@@ -1,6 +1,8 @@
-// Users table: the authentication subject. Password is stored as an argon2id
-// hash (computed by nuxt-auth-utils). Email uniqueness is enforced at the DB
-// level; case-folding to lowercase is the responsibility of the service layer.
+// Users table: the authentication subject. Password is stored as a scrypt
+// hash via nuxt-auth-utils hashPassword(); scrypt is built into Node and is
+// the library default. Argon2id is supported but requires @node-rs/argon2
+// (not installed). Email uniqueness is enforced at the DB level; case-folding
+// to lowercase is the responsibility of the service layer.
 import { pgTable, uuid, varchar, timestamp } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {

@@ -1,0 +1,57 @@
+@startuml 03-ацикличность-vs-цикл
+!theme plain
+title Шаг 3 — Ацикличный граф (наш) vs запрещённый цикл
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+
+' ===== Левая половина — корректная архитектура =====
+package "OK: ацикличный граф (наш проект)" as ok_box {
+    package "server/api (OK)" as ok_api
+    package "server/services (OK)" as ok_svc
+    package "server/db (OK)" as ok_db
+
+    ok_api --> ok_svc : "использует"
+    ok_svc --> ok_db : "использует"
+}
+
+' ===== Правая половина — запрещённый цикл =====
+package "BAD: цикл (так нельзя)" as bad_box #FFEBEE {
+    package "api (BAD)" as bad_api
+    package "services (BAD)" as bad_svc
+    package "db (BAD)" as bad_db
+
+    bad_api --> bad_svc
+    bad_svc --> bad_db
+    bad_db --> bad_api : "<color:red><b>ЦИКЛ</b></color>"
+}
+
+ok_box -[hidden]right- bad_box
+
+note bottom of ok_box
+  <b>Корректная многослойная архитектура.</b>
+  Стрелки идут <b>только в одну сторону</b>:
+  api → services → db.
+
+  Никто «снизу» не дёргает «сверху».
+
+  Это и есть <b>модульный монолит</b> — мы
+  доказываем чистоту границ через граф импортов.
+end note
+
+note bottom of bad_box
+  <b>Цикл — это запрет.</b>
+  Если db импортирует api — ломается:
+  • <b>сборка</b> (TS не выведет порядок типов);
+  • <b>понятность</b> (где живёт логика?);
+  • <b>тестирование</b> (нельзя замокать слой).
+
+  В CI на Target подключим <code>eslint-plugin-boundaries</code>,
+  чтобы такой цикл сломал build автоматически.
+
+  Сейчас (Phase 1-3) контроль через code review
+  и через эту диаграмму.
+end note
+
+@enduml

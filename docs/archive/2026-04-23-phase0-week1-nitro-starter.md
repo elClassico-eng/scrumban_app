@@ -1,3 +1,11 @@
+> ## ⚠️ OBSOLETE — Phase 0 пропущен
+>
+> **Статус:** план не выполнялся, реализация началась сразу с Phase 1.
+> **Причина:** на момент 2026-04-26 user принял решение пропустить отдельный pet-project Phase 0 и начать сразу с Phase 1 (RLS-foundation для Scrumban).
+> **Зачем сохранён:** показывает рассмотренный learning-путь (Phase 0 как pet-project для освоения TS-backend), отказ от которого — обоснованное решение solo-разработчика с уверенным TS-фоном.
+
+---
+
 # Phase 0 Week 1 — Nuxt Nitro Starter (notes-api)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

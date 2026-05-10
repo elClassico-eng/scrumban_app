@@ -891,7 +891,7 @@ scrumban_app/
 
 - [ ] **Step 5: Sync стек-секции с CLAUDE.md / project_core_decisions**
 
-Найти раздел `## Стек (финальный)` (примерно строка 88+). Убедиться, что все библиотеки соответствуют CLAUDE.md (Nuxt UI v3 — да, vuedraggable@next — да, Inspira UI — да, vue-bits — да). Если что-то расходится — sync.
+Найти раздел `## Стек (финальный)` (примерно строка 88+). Убедиться, что все библиотеки соответствуют CLAUDE.md (Nuxt UI v4 — да, vuedraggable@next — да, Inspira UI — да, vue-bits — да). Если что-то расходится — sync.
 
 Дополнительно убедиться, что **нигде не упоминается NextUI / HeroUI** (это для React).
 
@@ -1104,7 +1104,7 @@ git commit -m "docs(10): analytics design — без Go-пакетов; поро
 ```markdown
 ## Phase 3 — Sprints + Analytics ✅ Завершена
 
-- Sprints с state machine (`planned → active → closed/cancelled`); партиальный unique index `WHERE state = 'active'` гарантирует «один активный спринт на доску».
+- Sprints с state machine (`planned → active → closed`); партиальный unique index `WHERE state = 'active'` гарантирует «один активный спринт на доску».
 - `sprint_tasks` join table.
 - `task_events` лог: `task_created`, `task_moved`, `task_closed`, `task_reopened`, `task_assigned`, `task_updated`, `task_archived`.
 - Throughput (rolling).
@@ -1117,7 +1117,7 @@ git commit -m "docs(10): analytics design — без Go-пакетов; поро
 
 - ~~`flow_daily` aggregate + триггеры~~ → Target (триггер: p95 latency `/analytics/cfd` > 500 мс).
 - ~~Materialized views~~ → Target (тот же триггер).
-- ~~Sprint events (`sprint_started`, `sprint_closed`, `sprint_cancelled`) в task_events~~ → Target (триггер: дашборд активности команды на уровне спринтов).
+- ~~Sprint events (`sprint_started`, `sprint_closed`) в task_events~~ → Target (триггер: дашборд активности команды на уровне спринтов).
 - ~~Burndown chart, story points, velocity~~ → Target Phase 4 (триггер: команда ≥ 5 человек, использующих Scrum-составляющую).
 - ~~Forecast cache~~ → Target (триггер: p95 MC > 1s).
 ```
@@ -1279,7 +1279,7 @@ Pivot-spec остаётся master'ом, но теперь честно отра
 - `board_columns` (id, board_id FK, name, position, column_role enum: backlog/in_progress/review/done/archived, wip_limit nullable, created_at — без is_terminal/wip_strict)
 - `tasks` (id, board_id FK, column_id FK, title, description, position, priority enum: low/medium/high, assignee_id FK nullable, closed_at nullable, reopened_count int, archived_at nullable, created_at, updated_at — без project_id/sprint_id/short_id/type/story_points/estimate_hours/reporter_id)
 - `task_events` (id, workspace_id, task_id FK CASCADE, event_type, from_column_id nullable, to_column_id nullable, payload jsonb, actor_user_id, created_at)
-- `sprints` (id, board_id FK, name, goal, planned_start_at, planned_end_at, started_at nullable, ended_at nullable, state enum: planned/active/closed/cancelled, created_at, updated_at — без project_id/created_by/closed_at)
+- `sprints` (id, board_id FK, name, goal, planned_start_at, planned_end_at, started_at nullable, ended_at nullable, state enum: planned/active/closed, created_at, updated_at — без project_id/created_by/closed_at)
 - `sprint_tasks` (sprint_id FK, task_id FK, added_at) + PK (sprint_id, task_id)
 
 Связи (минимальные, без projects):
@@ -1735,7 +1735,7 @@ Per-role диаграммы (5 файлов) синхронизированы с
 
 - [ ] **Step 2: `sprint-lifecycle.puml` правки**
 
-- Sprint events (`sprint_started`, `sprint_closed`, `sprint_cancelled`) в task_events — пометить как Target (триггер: дашборд активности команды).
+- Sprint events (`sprint_started`, `sprint_closed`) в task_events — пометить как Target (триггер: дашборд активности команды).
 - SSE broadcast `sprint_started` — пометить как Target (SSE для sprints не реализован).
 - Trigger `sprint_stats` пересчёт — пометить как Target (таблицы нет).
 - «задачи unclosed → rollover в следующий Planned sprint» — пометить как Target (триггер: Sprint planning UI Phase 4).

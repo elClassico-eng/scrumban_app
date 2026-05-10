@@ -36,9 +36,8 @@ export type DbTransaction = Parameters<Parameters<Db['transaction']>[0]>[0]
 // callback; queries via `tx` participate in the transaction and see the
 // tenant GUC, queries via the bare connection do not.
 //
-// set_config(name, value, is_local=true) is the parameter-friendly
-// equivalent of `SET LOCAL` — it accepts $1 placeholders, so the
-// workspaceId is properly escaped.
+// Use set_config(..., is_local=true) instead of SET LOCAL: functionally equivalent
+// (transaction-scoped) but accepts $1 placeholders that SET LOCAL syntactically rejects.
 export async function withTenant<T>(
   workspaceId: string,
   fn: (tx: DbTransaction) => Promise<T>,

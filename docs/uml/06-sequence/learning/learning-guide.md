@@ -111,14 +111,9 @@ end
 
 ---
 
-## Теперь — наши три диплом-диаграммы
+## Теперь — наши две диплом-диаграммы
 
 Открывай в IDE:
-
-### [`../login.puml`](../login.puml)
-- Участники: User, Browser, Caddy, HTTP API, AuthN Middleware, Auth Service, Storage, PostgreSQL.
-- `alt` с тремя ветками (not found / wrong password / success).
-- Создание session: random token → hash → store in DB → cookie.
 
 ### [`../create-task-sse.puml`](../create-task-sse.puml)
 - Два разных пользователя (A создаёт, B наблюдает).
