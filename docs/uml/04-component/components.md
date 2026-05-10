@@ -42,7 +42,7 @@
 Handlers тонкие — только парсинг/форматирование; вся логика в сервисах.
 
 ### RBAC helpers
-`server/utils/rbac.ts` — `requireRole(event, workspaceId, ...allowedRoles)`. 5 ролей: `owner`, `admin`, `scrum_master`, `developer`, `viewer`. Проверка делается в handler'ах после auth+tenant, до вызова сервиса.
+`server/utils/rbac.ts` — `requireRole(event, workspaceId, ...allowedRoles)`. 5 ролей: `owner`, `admin`, `scrum_master`, `member`, `viewer` (см. `workspace_member_role` enum в [`server/db/schema/workspaces.ts`](../../../server/db/schema/workspaces.ts)). Проверка делается в handler'ах после auth+tenant, до вызова сервиса.
 
 ### Analytics engine
 Отдельный модуль (`server/services/analytics/`) с математикой. Не обращается к HTTP, только к Storage:
