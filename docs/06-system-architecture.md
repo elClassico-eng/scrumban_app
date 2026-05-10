@@ -6,20 +6,20 @@ Scrumban-платформа — Nuxt 4 monorepo: SPA-frontend в `app/` и Nitro
 
 ## Компоненты системы (Current)
 
-Диаграмма ниже отражает то, что реально есть в репозитории на момент написания: один Nitro-процесс, in-process event bus на `node:events`, прямой доступ к Nitro без reverse-proxy (Caddyfile в репо отсутствует), отсутствие pg-boss и LISTEN/NOTIFY в коде, единственный Postgres с RLS на 8 таблицах. Всё, что было раньше нарисовано на этой диаграмме (pg-boss workers, LISTEN/NOTIFY, sticky-sessions в Caddy, Aggregator), вынесено в раздел Target ниже с измеримыми триггерами ввода.
+Диаграмма ниже отражает то, что реально есть в репозитории на момент написания: один Nitro-процесс, in-process event bus на `node:events`, прямой доступ к Nitro без reverse-proxy (Caddyfile в репо отсутствует), отсутствие pg-boss и LISTEN/NOTIFY в коде, единственный Postgres с RLS на 6 таблицах. Всё, что было раньше нарисовано на этой диаграмме (pg-boss workers, LISTEN/NOTIFY, sticky-sessions в Caddy, Aggregator), вынесено в раздел Target ниже с измеримыми триггерами ввода.
 
 ```
-┌─────────────────── Browser (Nuxt 4 SPA) ──────────────────┐
+┌─────────────────── Browser (Nuxt 4 SPA) ───────────────────┐
 │   Vue 3 • Pinia • ECharts • SSE-клиент • TypeScript        │
 └────────────────────────┬───────────────────────────────────┘
                          │ HTTPS
 ┌────────────────────────▼───────────────────────────────────┐
 │   Reverse-proxy + TLS — планируется Caddy (Phase 5)        │
-│   В Current прямой доступ к Nitro (dev / single VM)         │
+│   В Current прямой доступ к Nitro (dev / single VM)        │
 └────────────────────────┬───────────────────────────────────┘
                          │
-                ┌────────▼──────────────────────┐
-                │   Nitro Server (1 реплика)    │
+                ┌────────▼───────────────────────┐
+                │   Nitro Server (1 реплика)     │
                 │   - HTTP API (H3 router)       │
                 │   - in-handler auth + tenant   │
                 │   - domain services            │
@@ -32,7 +32,7 @@ Scrumban-платформа — Nuxt 4 monorepo: SPA-frontend в `app/` и Nitro
         ┌──────────▼──────────┐
         │   PostgreSQL 16     │
         │   - tenant data     │
-        │   - RLS на 8 табл.  │
+        │   - RLS на 6 табл.  │
         │   - task_events log │
         └─────────────────────┘
 ```
@@ -50,11 +50,11 @@ Scrumban-платформа — Nuxt 4 monorepo: SPA-frontend в `app/` и Nitro
 Nitro Server (N реплик):
   + pg-boss workers          ← Триггер: первый async job (email send / webhook / aggregate refresh / MC refresh)
   + LISTEN/NOTIFY bridge     ← Триггер: появление 2-й реплики (cross-node SSE fan-out)
-  + Aggregator service       ← Триггер: p95 latency `/api/.../analytics/*` > 500мс при ≥ 100 закрытых задач/мес
+  + Aggregator service       ← Триггер: p95 latency `/api/.../analytics/*` > 500 мс при ≥ 100 закрытых задач/мес
 
 PostgreSQL:
   + flow_daily aggregates    ← Триггер: вместе с Aggregator service
-  + materialized views       ← Триггер: p95 analytics > 500мс
+  + materialized views       ← Триггер: p95 analytics > 500 мс
   + pg-boss job queue        ← Триггер: вместе с pg-boss workers
   + LISTEN/NOTIFY channel    ← Триггер: вместе с LISTEN/NOTIFY bridge
 
@@ -83,7 +83,7 @@ Object Storage (S3-совместимый / MinIO):
 
 ### 3. PostgreSQL как единый источник правды
 - Хранит tenant-данные и `task_events`-лог.
-- RLS (Row-Level Security) обеспечивает изоляцию tenant'ов — включён с первого дня на 8 таблицах.
+- RLS (Row-Level Security) обеспечивает изоляцию tenant'ов — FORCE ROW LEVEL SECURITY включён с первого дня на **6 из 9 таблиц** (`boards`, `board_columns`, `tasks`, `task_events`, `sprints`, `sprint_tasks`). `users` исключена намеренно (глобальная, не tenant-scoped), `workspaces` и `workspace_members` пока без RLS — известное отставание, см. backlog в `COMPACT.md`.
 - Никаких Redis / RabbitMQ / Kafka до тех пор, пока нагрузка не оправдает.
 
 В **Target** Postgres дополнительно берёт на себя:
@@ -180,7 +180,7 @@ Object Storage (S3-совместимый / MinIO):
 - Аналитика: live-SQL поверх `task_events` и `tasks`, без `flow_daily` и без materialized views.
 - Object Storage: не используется (нет `task_attachments` сущности — см. `07-domain-model.md`).
 - Feature flags: не реализованы — попадают в Target (см. `07-domain-model.md`).
-- RLS: включён с первого дня на 8 tenant-scoped таблицах.
+- RLS: FORCE ROW LEVEL SECURITY включён с первого дня на 6 из 9 таблиц (`boards`, `board_columns`, `tasks`, `task_events`, `sprints`, `sprint_tasks`). `users` глобальна (намеренно без RLS); `workspaces` и `workspace_members` — известное отставание, см. backlog в `COMPACT.md`.
 
 ### Target (Phase 4+, по триггерам)
 

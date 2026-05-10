@@ -9,7 +9,9 @@
 
 ## Current (Phase 1-3 MVP)
 
-Все перечисленные ниже таблицы реально определены в [`server/db/schema/`](../server/db/schema/) (Drizzle ORM, TypeScript). RLS-политики и FORCE ROW LEVEL SECURITY включены через SQL-миграции в [`drizzle/migrations/`](../drizzle/migrations/) (см. `0003_rls_policies.sql`, `0004_rls_nullif_fix.sql`, `0006_sprints_rls.sql`). Используется двухролевая Postgres-схема: `scrumban` (миграции, минует RLS) и `scrumban_app` (рантайм, FORCE RLS на 8 из 9 таблиц; `users` глобальна и не привязана к workspace).
+Все перечисленные ниже таблицы реально определены в [`server/db/schema/`](../server/db/schema/) (Drizzle ORM, TypeScript). RLS-политики и FORCE ROW LEVEL SECURITY включены через SQL-миграции в [`drizzle/migrations/`](../drizzle/migrations/) на **6 таблицах из 9**: `boards`, `board_columns`, `tasks`, `task_events` (в `0003_rls_policies.sql`, с правкой `0004_rls_nullif_fix.sql`), `sprints`, `sprint_tasks` (в `0006_sprints_rls.sql`). Используется двухролевая Postgres-схема: `scrumban` (миграции, минует RLS) и `scrumban_app` (рантайм, FORCE RLS).
+
+Из 9 таблиц без RLS: `users` (глобальная, не tenant-scoped — намеренно), `workspaces` и `workspace_members` (могли бы получить RLS-политику, но пока не получили — это **известное отставание**, выписано в backlog кода: добавить RLS на эти две таблицы + покрыть RLS-тестами).
 
 Универсальные правила Current:
 
