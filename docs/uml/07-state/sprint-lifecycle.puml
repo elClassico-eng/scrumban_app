@@ -10,7 +10,15 @@ skinparam state {
   FontSize 11
 }
 
-[*] --> Planned : create sprint\n[role ≥ Scrum Master]\n/ event: sprint_created,\nset planned_end_at
+[*] --> Planned : create sprint\n[role ≥ Scrum Master]\n/ set planned_end_at
+
+note left of Planned
+  Реальный enum: sprint_state (3 значения) —
+  planned, active, closed.
+  Отдельного состояния <i>Cancelled</i> нет —
+  отмена ещё-не-стартовавшего спринта
+  выполняется переходом Planned → Closed.
+end note
 
 state Planned {
   Planned : entry / создан, добавлен в бэклог спринтов
@@ -19,40 +27,61 @@ state Planned {
 }
 
 state Active {
-  Active : entry / set start_at = now(),\nstatus = 'active'
-  Active : event: sprint_started
-  Active : запустить MC-refresh job (каждый час)
-  Active : SSE broadcast: sprint_started
+  Active : entry / set started_at = now(),\nstate = 'active'
+  Active : guard: partial unique index\nsprints_one_active_per_board_idx
+  Active : event: sprint_started — <i>Target</i>\n(не пишется в task_events в Current)
+  Active : MC-refresh job — <i>Target</i>
+  Active : SSE broadcast sprint_started — <i>Target</i>\n(SSE для sprints не реализован)
 }
 
 state Closed {
-  Closed : entry / set closed_at = now(),\nstatus = 'closed'
-  Closed : event: sprint_closed
-  Closed : trigger: пересчёт sprint_stats\n(velocity, throughput, avg cycle time)
-  Closed : trigger: обновить Monte Carlo\nпрогноз следующего спринта
-  Closed : задачи unclosed → rollover\nв следующий Planned sprint
+  Closed : entry / set ended_at = now(),\nstate = 'closed'
+  Closed : event: sprint_closed — <i>Target</i>\n(не пишется в task_events в Current)
+  Closed : пересчёт sprint_stats — <i>Target</i>\n(таблица не существует)
+  Closed : обновление Monte Carlo прогноза — <i>Target</i>
+  Closed : rollover unclosed → next Planned — <i>Target</i>\n(Phase 4+)
 }
 
-Planned --> Active : start\n[role ≥ Scrum Master]\n/ проверка: нет другого active\nв этом проекте
-Active --> Closed : close\n[role ≥ Scrum Master]\n/ event: sprint_closed
+Planned --> Active : start\n[role ≥ Scrum Master]\n/ guard: нет другого active\nна этой доске (DB enforced)
+Active --> Closed : close\n[role ≥ Scrum Master]\n/ set ended_at = now()
 
-' Cancel from Planned (крайне редко — спринт ещё не начался)
-Planned --> Closed : cancel\n[role ≥ Admin]\n/ event: sprint_cancelled,\nзадачи возвращаются в бэклог
+' Cancellation shortcut: Planned → Closed без прохода через Active.
+' Отдельного состояния Cancelled нет — это сознательное решение Current
+' (3-state enum в server/db/schema/sprints.ts).
+Planned --> Closed : cancel\n[role ≥ Scrum Master]\n/ shortcut: never-started\n→ закрыть без старта
 
 note top of Planned
-  В одном проекте одновременно
+  В одном проекте/доске одновременно
   может быть несколько спринтов в Planned,
-  но только один в Active.
+  но только один в Active
+  (partial unique index в БД).
 end note
 
 note right of Closed
-  Закрытие спринта — важная точка:
-  1. Пересчитывается sprint_stats.
-  2. Обновляется материал для Monte Carlo
-     прогноза следующего спринта.
-  3. Незакрытые задачи возвращаются
-     в backlog (или rollover в следующий
-     спринт, если выбран).
+  Закрытие спринта (Current):
+  — только смена state на 'closed' и
+    запись ended_at = now().
+
+  Закрытие спринта (Target):
+  1. Пересчёт sprint_stats
+     (см. [`10-analytics-design.md`](../../10-analytics-design.md)).
+  2. Обновление Monte Carlo прогноза
+     следующего спринта.
+  3. Rollover незакрытых задач
+     в следующий Planned спринт
+     (см. [`05-mvp-scope-and-roadmap.md`](../../05-mvp-scope-and-roadmap.md)
+     Phase 4+).
+end note
+
+note bottom
+  Сознательно нет отдельного состояния Cancelled.
+  Отмена спринта, который ещё не стартовал, —
+  это переход Planned → Closed без захода в Active.
+  Преимущество: 3-state enum проще и единый
+  терминал Closed для аналитики, недостаток —
+  без отдельного флага «отменён» нельзя
+  отличить «закрылся успешно» от «отменили
+  до старта» иначе как по (started_at IS NULL).
 end note
 
 Closed --> [*]
