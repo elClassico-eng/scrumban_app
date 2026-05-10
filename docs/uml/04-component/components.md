@@ -136,6 +136,5 @@ Nitro отдаёт и `/api/*` (HTTP handlers), и SPA static (build Nuxt). Ни
 ## Связь с другими артефактами
 
 - **System architecture:** [`../../06-system-architecture.md`](../../06-system-architecture.md) — текстовое описание тех же компонентов.
-- **Backend design:** [`../../08-backend-design.md`](../../08-backend-design.md) — структура Go-пакетов, дисциплина импортов.
-- **Deployment diagram:** [`../05-deployment/`](../05-deployment/) — на каких физических узлах живут эти компоненты.
+- **Backend design:** [`../../08-backend-design.md`](../../08-backend-design.md) — структура Nitro-модулей, дисциплина импортов.
 - **Sequence diagrams:** [`../06-sequence/`](../06-sequence/) — взаимодействие компонентов во времени для ключевых сценариев.

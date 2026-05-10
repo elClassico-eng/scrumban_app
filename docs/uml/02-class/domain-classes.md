@@ -77,14 +77,13 @@
 
 В диаграмме намеренно не показаны:
 
-- **Aggregates** (`flow_daily`, `cycle_time_samples`, `sprint_stats`) — это не доменные сущности, а денормализованные view'ы над `Event`. Их место — ER-диаграмма ([`../03-er/`](../03-er/)).
+- **Aggregates** (`flow_daily`, `cycle_time_samples`, `sprint_stats`) — это не доменные сущности, а денормализованные view'ы над `Event`. Их место — физическая схема БД ([`../../07-domain-model.md`](../../07-domain-model.md) и Drizzle SQL-миграции в `drizzle/migrations/`).
 - **Materialized views** (`mv_cfd_last_90d`, ...) — техническая деталь уровня БД.
 - **AuditLog** — в MVP реализован как `Event` с флагом в payload; самостоятельной сущностью становится в Enterprise-фазе.
 - **Billing / Subscription** — LATER, не в MVP.
 
 ## Связь с другими артефактами
 
-- **Domain model в коде:** [`../../07-domain-model.md`](../../07-domain-model.md) — SQL-типы, индексы, RLS-политики.
-- **ER diagram:** [`../03-er/`](../03-er/) — физическая схема БД, отвечающая этой модели.
+- **Domain model в коде:** [`../../07-domain-model.md`](../../07-domain-model.md) — SQL-типы, индексы, RLS-политики (заменяет ER-диаграмму; источник истины — Drizzle SQL-миграции в `drizzle/migrations/`).
 - **Use case:** [`../01-use-case/`](../01-use-case/) — прецеденты, работающие с этими классами.
 - **Sequence diagrams:** [`../06-sequence/`](../06-sequence/) — как экземпляры этих классов взаимодействуют во времени.

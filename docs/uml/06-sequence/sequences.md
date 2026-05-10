@@ -1,30 +1,17 @@
 # Диаграммы последовательности
 
-Три ключевых сценария работы Scrumban-платформы в виде UML-диаграмм последовательности (sequence diagram).
+Два ключевых сценария работы Scrumban-платформы в виде UML-диаграмм последовательности (sequence diagram).
 
 ## Выбор сценариев
 
-Из десятков возможных сценариев выбраны **3 самых репрезентативных**, каждый иллюстрирует разный архитектурный аспект:
+Из десятков возможных сценариев выбраны **2 самых репрезентативных** — каждый иллюстрирует разный архитектурный аспект, а не общий технический шаблон:
 
-1. **Login** — синхронный auth-флоу с проверкой пароля и созданием сессии.
-2. **Create task + SSE broadcast** — event-driven модель и real-time обновления.
-3. **Monte Carlo forecast** — основной дифференциатор продукта (B+ аналитика) с кэшированием и min-data thresholds.
+1. **Create task + SSE broadcast** — event-driven модель и real-time обновления.
+2. **Monte Carlo forecast** — основной дифференциатор продукта (B+ аналитика) с кэшированием и min-data thresholds.
 
-Для диплома этого достаточно: sequence-диаграммы иллюстрируют, остальные сценарии описываются текстом в главе «Реализация».
+Login-флоу сознательно исключён: это типовой auth-сценарий без архитектурных особенностей; параметры argon2id и cookie-флаги уже описаны в [`../../11-non-functional.md#authN`](../../11-non-functional.md). Для диплома двух диаграмм достаточно: sequence иллюстрируют именно те решения, которые отличают платформу; остальные сценарии описываются текстом в главе «Реализация».
 
-## 1. Сценарий «Вход пользователя»
-
-> Исходник: [`login.puml`](login.puml). Preview через PlantUML plugin в IDE.
-
-### Ключевые точки
-
-- **AuthN middleware на login-endpoint'е пропускает без проверки cookie** — сессии ещё нет.
-- **Пароль проверяется argon2id** — параметры (m=64MB, t=3, p=2) из [`../../11-non-functional.md#authN`](../../11-non-functional.md).
-- **В cookie кладётся raw-token, в БД — его SHA-256 hash**. Это защищает от утечки БД: украденный hash бесполезен без raw-token.
-- **Cookie-flags: `HttpOnly`, `Secure`, `SameSite=Lax`** — защита от XSS, MITM, CSRF.
-- **alt-фрагменты** показывают 3 исхода: пользователь не найден / пароль неверен / успех. Для клиента ответ идентичен (401 + `invalid_credentials`) — это защита от user enumeration.
-
-## 2. Сценарий «Создание задачи с real-time обновлением»
+## 1. Сценарий «Создание задачи с real-time обновлением»
 
 > Исходник: [`create-task-sse.puml`](create-task-sse.puml). Preview через PlantUML plugin в IDE.
 
@@ -43,7 +30,7 @@
 ### Почему SSE, не WebSocket
 Рассылка — только server → client. Двусторонняя связь не нужна для этого флоу. SSE проще (обычное HTTP keep-alive), не требует отдельного сервера, автоматически переподключается клиентом.
 
-## 3. Сценарий «Monte Carlo прогноз спринта»
+## 2. Сценарий «Monte Carlo прогноз спринта»
 
 > Исходник: [`monte-carlo.puml`](monte-carlo.puml). Preview через PlantUML plugin в IDE.
 
@@ -94,8 +81,7 @@
 ## Не показаны (осознанные пропуски)
 
 - Error paths в middleware (401, 403) — уже очевидны по use case.
-- Logout flow — тривиальный revoke в БД + удаление cookie.
-- Password reset flow — вариант на login-флоу с промежуточным email-токеном; при необходимости можно добавить 4-й sequence.
+- Login / logout / password reset — типовые auth-сценарии; параметры argon2id и cookie-флаги описаны в [`../../11-non-functional.md`](../../11-non-functional.md), отдельная sequence-диаграмма не добавляет инсайта.
 - Полный WebSocket upgrade handshake — мы не используем WebSocket.
 - SSE reconnection logic — обрабатывается на клиенте (EventSource автоматически переподключается).
 - Детали payload'а events — см. [`../../10-analytics-design.md`](../../10-analytics-design.md).

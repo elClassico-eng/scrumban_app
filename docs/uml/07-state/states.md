@@ -10,7 +10,7 @@
 
 ### Состояния
 
-Логические состояния задачи соответствуют `column_role` текущей колонки (см. [ER-диаграмму](../03-er/database.md)). Поле `column_role` на `columns` — значение перечисления `ColumnRole` (`BACKLOG`, `IN_PROGRESS`, `REVIEW`, `DONE`, `OTHER`). Статус задачи **не хранится отдельно** — он производен от её местоположения.
+Логические состояния задачи соответствуют `column_role` текущей колонки (см. [`../../07-domain-model.md`](../../07-domain-model.md) — раздел `board_columns`). Поле `column_role` на `columns` — значение перечисления `ColumnRole` (`BACKLOG`, `IN_PROGRESS`, `REVIEW`, `DONE`, `OTHER`). Статус задачи **не хранится отдельно** — он производен от её местоположения.
 
 | Состояние | Что означает | Entry-действия |
 |-----------|--------------|----------------|
@@ -90,8 +90,7 @@
 
 ## Связь с другими артефактами
 
-- **Domain model:** [`../../07-domain-model.md`](../../07-domain-model.md) — поля `closed_at`, `reopened_count`, `status` на tasks и sprints.
-- **ER diagram:** [`../03-er/`](../03-er/) — физическая схема с этими полями.
+- **Domain model:** [`../../07-domain-model.md`](../../07-domain-model.md) — поля `closed_at`, `reopened_count`, `status` на tasks и sprints; физическая схема (заменяет ER-диаграмму).
 - **Analytics design:** [`../../10-analytics-design.md`](../../10-analytics-design.md) — как переходы состояний используются в CFD, cycle time samples, Monte Carlo.
 - **Sequence diagrams:** [`../06-sequence/`](../06-sequence/) — как переходы происходят во времени в реальном коде.
 - **Non-functional:** [`../../11-non-functional.md`](../../11-non-functional.md) — RBAC-роли, фигурирующие в guard'ах переходов.

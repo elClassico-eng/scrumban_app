@@ -284,7 +284,6 @@ Analytics (async):
 
 - `docs/uml/01-use-case/` — предметная область
 - `docs/uml/02-class/` — доменная модель
-- `docs/uml/03-er/` — схема БД (PostgreSQL не меняется)
 - `docs/uml/07-state/` — lifecycle задач и спринтов
 - `docs/01-vision-and-goals.md`, `02-target-audience.md`, `03-competitive-analysis.md`, `04-economic-rationale.md`, `10-analytics-design.md`
 - Все `learning/` папки

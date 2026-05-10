@@ -215,7 +215,7 @@ workspaces ──┐
 - `tasks → task_events` — append-only history; от движений между колонками выводится вся flow-аналитика.
 - `boards → sprints` — каждый спринт принадлежит одной доске; `sprint_tasks` связывает M:N со задачами доски.
 
-ER-диаграмма Current: [`docs/uml/03-er/database.puml`](uml/03-er/database.puml) (синхронизация с реализацией — отдельная задача в `docs/code-sync-2026-05-10`).
+Источник истины по физической схеме — Drizzle SQL-миграции в `drizzle/migrations/` + Drizzle schema в `server/db/schema.ts`. Отдельная ER-диаграмма не ведётся: её роль выполняет class diagram ([`docs/uml/02-class/`](uml/02-class/)) для логической модели и SQL-миграции — для физической.
 
 ---
 

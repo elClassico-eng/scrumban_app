@@ -154,16 +154,16 @@ scrumban_app/
 
 ## UML-диаграммы
 
-У нас 6 типов диаграмм (каждая в своей папке `docs/uml/NN-*/`):
+Минимальный когерентный набор (каждая в своей папке `docs/uml/NN-*/`):
 
-1. **use-case** — 1 общая + 5 per-role (задание научрука).
+1. **use-case** — одна общая (per-role диаграммы заменены RBAC-матрицей в `11-non-functional.md`).
 2. **class** — доменная модель.
-3. **ER** — физическая схема БД.
-4. **component** — архитектура системы.
-5. **sequence** (3 шт) — login, create-task-SSE, Monte Carlo.
+3. **package** — модульная организация `app/` + `server/` + `shared/` (TBD, следующая задача после UML-cleanup).
+4. **component** — архитектура системы (Current).
+5. **sequence** (2 шт) — create-task-SSE, Monte Carlo (login убран как типовой).
 6. **state machine** (2 шт) — task lifecycle, sprint lifecycle.
 
-**Deployment** диаграмма пропущена по решению user — может быть добавлена позже.
+**ER** убрана — class diagram + Drizzle SQL-миграции покрывают то же. **Deployment** пропущена до Phase 5.
 
 **В каждой папке `learning/` подпапка** с упрощёнными учебными версиями для самостоятельного понимания. У user PlantUML plugin в IDE — SVG НЕ генерируем, только `.puml` + `learning-guide.md`.
 
