@@ -87,7 +87,7 @@ accent-danger:   rose-500 (#f43f5e)     — errors, overdue, high priority
 - **Heading:** Inter или Manrope, weight 600–700.
 - **Body:** Inter / system font stack, weight 400–500.
 - **Monospace (числа, коды):** JetBrains Mono или IBM Plex Mono.
-- Подключение через `@nuxt/google-fonts` (модуль будет добавлен на шаге 1 roadmap).
+- Подключение через `@nuxt/google-fonts` (модуль добавляется параллельно с шагом 1 — см. roadmap → Параллельно).
 
 ### Target: движения и анимация
 
@@ -170,7 +170,7 @@ scrumban_app/
 │   │   ├── dashboard/              # StatsCard.vue, GlassCard.vue, GradientHero.vue
 │   │   ├── layout/                 # AppSidebar.vue, AppHeader.vue, Breadcrumbs.vue
 │   │   └── ui/                     # кастомные расширения Nuxt UI v4
-│   ├── composables/                # useWorkspace, useBoard, useEventSource, useAuth, useAnalyticsCopy
+│   ├── composables/                # useWorkspace, useBoard, useBoardStream, useAuth, useAnalyticsCopy
 │   ├── stores/                     # Pinia: auth.ts, workspace.ts, board.ts
 │   ├── lib/                        # api-client (codegen-output), analytics-copy.ts, utils
 │   └── assets/css/                 # main.css (Tailwind entry + CSS vars), animations.css
@@ -326,12 +326,12 @@ export function useBoardStream(boardId: Ref<string>) {
 
 ### Target: Phase 4 implementation roadmap
 
-> **Триггер старта:** этот план (docs/code sync) завершён → переход к Phase 4 без долга в документации.
+> **Триггер начала первого шага:** старт Phase 4 (см. триггер выше). Шаги 2–6 — последовательно по готовности предыдущего шага: каждый шаг блокируется работающим UI предыдущего (Board view не имеет смысла без Auth, Analytics не имеет смысла без Board view с реальными task_events, и т.д.).
 
 Порядок реализации (по убыванию защитной ценности):
 
 1. **Auth flow** — pages: `/auth/login`, `/auth/register`. Composable `useAuth()` поверх nuxt-auth-utils. Pinia auth-store.
-2. **Workspace + Board view** — `/workspaces/[wsId]/boards/[boardId]`. Drag-n-drop задач (vuedraggable), real-time SSE-updates (`useEventSource()` composable), WIP-индикаторы.
+2. **Workspace + Board view** — `/workspaces/[wsId]/boards/[boardId]`. Drag-n-drop задач (vuedraggable), real-time SSE-updates (`useBoardStream()` composable поверх `useEventSource` из @vueuse/core), WIP-индикаторы.
 3. **Task detail panel** — sidebar / modal с описанием, assignees, priority, state. Без комментариев и attachments (они Target в [`07-domain-model.md`](07-domain-model.md)).
 4. **Analytics dashboard** — `/workspaces/[wsId]/analytics`. CFD chart (ECharts), throughput, Monte Carlo card, cycle-time scatter, Little's Law рекомендации.
 5. **Sprint planning** — backlog view, drag в активный спринт, start/close sprint controls.
@@ -341,7 +341,7 @@ export function useBoardStream(boardId: Ref<string>) {
 - Подключить `@tanstack/vue-query`, `pinia`, `vuedraggable`, `echarts`, `vee-validate`, `@nuxt/icon`, `@nuxt/google-fonts`, `@vueuse/core`.
 - Подключить `inspira-ui` и `vue-bits` для glassmorphism / hero-сцен.
 - Настроить CSS palette + Tailwind theme, если нужны кастомизации поверх Nuxt UI v4.
-- Codegen pipeline (см. [`08-backend-design.md`](08-backend-design.md) → Target → API contract codegen) — триггер активной работы над frontend.
+- Codegen pipeline (см. [`08-backend-design.md`](08-backend-design.md) → Target → API contract codegen) — поднимаем сразу на шаге 1; иначе ручной impedance mismatch между frontend и backend накопит баги, которые будет дороже чинить позже.
 
 ## Связанные документы
 - [`06-system-architecture.md`](06-system-architecture.md) — backend-контрагент, SSE / event-bus
