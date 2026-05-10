@@ -297,7 +297,7 @@ Codegen pipeline отсутствует. Frontend и backend не разделе
 Все аналитические запросы — live SQL по `task_events` через [`server/services/analytics.service.ts`](../server/services/analytics.service.ts):
 
 - `computeThroughput` — `count(*)` по `date_trunc('day' | 'week', created_at)` с фильтром по типу `task_closed`.
-- `computeCycleTime`, `computeCfd`, `computeMonteCarlo`, `computeWipRecommendations` — там же, аналогичный SQL-стиль.
+- `computeCycleTime`, `computeCFD`, `computeMonteCarlo`, `computeWipRecommendations` — там же, аналогичный SQL-стиль.
 - Min-data thresholds: при < 5 closed tasks процентильные поля возвращаются как `null` (правило «honesty over hype» из [`docs/10-analytics-design.md`](10-analytics-design.md)).
 - RBAC: `requireMinRole(actorRole, 'viewer')` в начале каждой функции — все роли видят аналитику, но не анонимы.
 
