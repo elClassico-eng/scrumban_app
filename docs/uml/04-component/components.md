@@ -1,140 +1,126 @@
-# Диаграмма компонентов
+# Диаграмма компонентов — Current (Phase 1-3 MVP)
 
-Архитектура Scrumban-платформы в терминах программных компонентов и их взаимодействия (UML 2.5 component diagram).
+Архитектура Scrumban-платформы в терминах программных компонентов и их взаимодействия (UML 2.5 component diagram). Диаграмма отражает то, что **реально есть в репозитории** на момент написания, а не Target-план.
 
 > Исходник PlantUML: [`components.puml`](components.puml). Preview через PlantUML plugin в IDE.
 
+> Текстовая (ASCII) версия той же архитектуры и измеримые триггеры ввода Target-компонентов — в [`../../06-system-architecture.md`](../../06-system-architecture.md). Этот файл — UML-зеркало того раздела.
+
 ## Обзор
 
-Система разделена на **4 уровня** (tiers):
+Система состоит из **3 уровней** (tiers):
 
-1. **Client tier** — Browser с Nuxt 4 SPA runtime.
-2. **Edge tier** — Caddy reverse-proxy (TLS, routing, sticky sessions).
-3. **Application tier** — Nuxt monorepo (Nitro server отдаёт и SPA static, и API в одном процессе).
-4. **Data tier** — PostgreSQL (основная БД) и Object Storage (S3-совместимое).
-5. **Внешние сервисы** — SMTP, Integration Bot, Git Platform.
+1. **Browser tier** — Nuxt 4 SPA (в Current — skeleton; полноценный UI в Phase 4).
+2. **Application tier** — один Nitro-процесс (Node.js): HTTP API, бизнес-логика, аналитика, in-process EventBus, SSE hub.
+3. **Data tier** — PostgreSQL 16 с RLS на 6 таблицах из 9 и append-only `task_events`-логом.
+
+Никакого Caddy, pg-boss, LISTEN/NOTIFY, Aggregator'а, Object Storage и внешних интеграций в Current нет — всё это Target. См. блок «Не реализовано в Current» в самой диаграмме и Target-секции в [`../../06-system-architecture.md`](../../06-system-architecture.md).
 
 ## Компоненты Nitro server (детально)
 
 ### HTTP API (H3 router)
-Точка входа для всех `/api/*` запросов. Файл-роутинг: `server/api/tasks/index.post.ts` обслуживает `POST /api/tasks`. Делегирует обработку цепочке middleware и дальше в сервисы.
+Точка входа для всех `/api/*` запросов (~44 endpoints на момент Phase 3). Файл-роутинг H3: например, `server/api/workspaces/[workspaceId]/tasks/index.post.ts` обслуживает `POST /api/workspaces/:workspaceId/tasks`. Handler — тонкий: парсинг + zod-валидация + вызов сервиса + форматирование ответа.
 
-### Middleware chain
-Цепочка, через которую проходит каждый запрос (файлы в `server/middleware/`):
-1. **Logging & Error hook** — pino structured logs + Nitro error handler.
-2. **AuthN** — `getUserSession(event)` читает подписанный cookie, извлекает `userId` в `event.context.user`.
-3. **Tenant** — извлекает `workspaceId` из URL, проверяет членство пользователя, выставляет `SET LOCAL app.workspace_id = $1` в транзакции для RLS.
-4. **RBAC** — проверяет разрешение для конкретного действия (через `requireRole(event, 'admin')`).
+### Auth + Tenant guards (in-handler)
+Папки `server/middleware/` нет; вместо неё в начале каждого защищённого handler'а вызываются guard-функции:
+
+1. **Auth** — `getUserSession(event)` через `nuxt-auth-utils` читает подписанный cookie, извлекает `userId`. Если сессии нет — `throw createError({ statusCode: 401 })`.
+2. **Tenant** — `withTenant(event, workspaceId, fn)` проверяет членство пользователя в workspace и оборачивает SQL-блок в транзакцию с `SELECT set_config('app.workspace_id', $1, true)` для активации RLS-политик.
+
+Это **Current**-форма (guard-clause в handler'ах). Перенос в `server/middleware/*` — Target-задача после стабилизации списка endpoint'ов.
 
 ### Domain Services
-«Толстые» сервисы с бизнес-логикой. Один сервис на функциональную область:
-- **Workspace Service** — workspace lifecycle, membership, roles, invitations.
-- **Project & Board Service** — проекты, доски, колонки, WIP-лимиты.
-- **Task Service** — CRUD задач, перемещение, комментарии, вложения.
-- **Sprint Service** — спринты, планирование, velocity.
-- **Auth Service** — регистрация, вход, восстановление пароля, сессии.
+«Толстые» сервисы с бизнес-логикой в `server/services/*`. На момент Phase 3:
+
+- **workspaces** — workspace lifecycle, membership, инвайты.
+- **boards** — доски, колонки, WIP-лимиты.
+- **tasks** — CRUD задач, drag-n-drop перемещение, запись `task_events`.
+- **sprints** — спринты, state machine (`planning → active → closed`).
+- **analytics** — CFD, throughput, cycle time, Monte Carlo, Little's Law.
+- **auth** — регистрация, вход, сессии.
 
 Handlers тонкие — только парсинг/форматирование; вся логика в сервисах.
 
-### Analytics Engine
-Отдельный модуль (`server/analytics/`) с математикой. Не обращается к HTTP, только к Storage.
-- **CFD builder** — строит Cumulative Flow Diagram из `flow_daily`.
-- **Cycle time / Percentiles** — вычисление перцентилей (`p50/p85/p95`) из `cycle_time_samples`.
+### RBAC helpers
+`server/utils/rbac.ts` — `requireRole(event, workspaceId, ...allowedRoles)`. 5 ролей: `owner`, `admin`, `scrum_master`, `developer`, `viewer`. Проверка делается в handler'ах после auth+tenant, до вызова сервиса.
+
+### Analytics engine
+Отдельный модуль (`server/services/analytics/`) с математикой. Не обращается к HTTP, только к Storage:
+
+- **CFD builder** — строит Cumulative Flow Diagram **прямым SQL-агрегатом** по `task_events` (без `flow_daily` — это Target).
+- **Throughput / Cycle time** — перцентили `p50/p85/p95` живым SQL по `task_events`.
 - **Monte Carlo Simulator** — ≥1000 симуляций throughput-распределения для прогноза спринта.
 - **Little's Law Recommender** — формула `WIP = throughput × cycle_time` с объяснением.
-- **Aggregator** — инкрементальное обновление `flow_daily` и `cycle_time_samples` при получении события.
 
-### Event Bus
-- **In-proc Publisher** — синхронная рассылка событий подписчикам внутри процесса.
-- **LISTEN/NOTIFY Bridge** — при scale-out (2+ реплики) транслирует события между репликами через PostgreSQL `pg_notify`.
+Кэшей и материализованных представлений в Current нет: каждый запрос — fresh SQL по `task_events`. Aggregator + `flow_daily` + materialized views — Target, **триггер ввода**: p95 latency `/api/.../analytics/*` > 500 мс при ≥ 100 закрытых задач/мес (см. 06).
 
-### SSE Hub
-- **Subscriber Registry** — пул активных SSE-соединений (чанки потоков, группировка по `workspace_id`).
-- **Broadcaster** — отправка обновлений всем подписчикам workspace'а.
+### EventBus (in-process)
+`server/utils/events.ts` — Node.js `EventEmitter` (3 экземпляра / события на класс). Сервисы публикуют доменные события (`task.created`, `task.moved`, …) синхронно; SSE hub подписывается и транслирует их клиентам.
 
-### Background Worker (pg-boss)
-Обрабатывает фоновые задачи. Worker'ы регистрируются в Nitro plugin при старте процесса:
-- **Webhook Dispatcher** — доставка webhook'ов во внешние системы.
-- **Email Sender** — отправка через SMTP.
-- **Aggregate Recompute** — пересчёт агрегатов, если нужен batch (fallback к trigger'ам).
-- **MC Refresh** — пересчёт Monte Carlo для активных спринтов.
+В коде уже стоит комментарий, фиксирующий решение: при появлении 2-й реплики `publishBoardEvent()` дополнительно эмитит через `pg LISTEN/NOTIFY` — это **Target**, триггер ввода — появление 2-й Nitro-реплики.
 
-### Feature Flags
-- Таблица `feature_flags` в БД + helper `await ff.isEnabled(workspaceId, 'feature_name')`.
-- Используется сервисами для gated rollout.
+### SSE hub
+H3 `createEventStream()` держит keep-alive соединения, сгруппированные по `workspaceId`. При `eventBus.emit(event)` все активные подписчики этого workspace'а получают событие через `event-stream`. Никаких реестров и брокеров — функциональность встроена в H3.
 
-### Storage (Drizzle ORM)
-- Типобезопасный доступ к PostgreSQL через Drizzle (typeof inference из schema-определений).
-- Управление транзакциями, postgres-js connection pool.
+### Domain errors + toHttpError
+`server/utils/errors.ts` — sentinel-классы доменных ошибок (`NotFoundError`, `ForbiddenError`, `ValidationError`, …) + единая функция `toHttpError(err)` для преобразования в `H3Error` со статусом и кодом. Применяется в handler'ах через `try/catch` или Nitro error hook.
 
-## Ключевые интерфейсы и потоки
+## Ключевые потоки данных
 
-### Browser → Caddy → Nitro
-1. Пользователь открывает `https://scrumban.ru` → Caddy (HTTPS).
-2. Caddy маршрутизирует **всё** на один upstream — Nitro процесс (порт 3000):
-   - `/api/*` → H3 router → handler в `server/api/`.
-   - `/api/*/stream` → SSE handler с sticky-cookie (чтобы соединение держалось на одной реплике).
-   - всё остальное → SPA static (Nuxt build).
+### Browser → Nitro
+1. Пользователь открывает SPA (в Current — skeleton-страница). Nitro отдаёт SPA static (Nuxt build) и `/api/*`.
+2. SPA делает `fetch('/api/...')` или подписывается на `EventSource('/api/.../stream')`.
+3. В Current прямой доступ к Nitro (Caddyfile в репо отсутствует). Reverse-proxy (Caddy + TLS) — Target, **триггер ввода**: первый prod-deploy за публичным URL без внешнего балансера.
 
 ### Event flow внутри Nitro
 1. Сервис выполняет бизнес-операцию (например, `tasksService.move()`).
-2. После успеха: `eventBus.publish(event)`.
-3. In-proc Publisher параллельно вызывает:
-   - `sseHub.broadcast(event)` → рассылка подписчикам в этом процессе через H3 `createEventStream()`.
-   - `boss.send('jobName', payload)` → ставит задачу для webhook/email через pg-boss.
-   - `analyticsAggregator.on(event)` → инкрементальное обновление агрегатов.
-4. LISTEN/NOTIFY Bridge (при scale-out): публикует событие в Postgres-канал, другие реплики подхватывают через LISTEN.
+2. Записывает `task_events` (append-only) в той же транзакции.
+3. После commit'а: `eventBus.emit('task.moved', payload)`.
+4. SSE hub получает событие синхронно и транслирует подписчикам этого workspace'а.
 
-### Данные на S3
-- Вложения к задачам: через **presigned URL** — клиент загружает/скачивает напрямую в/из Object Storage, минуя backend.
-- Бэкапы БД: `pg_dump` по расписанию → upload в bucket.
+Никакой очереди, retry'ев, DLQ — это **Target** через pg-boss workers, **триггер ввода**: первый async job (email send / webhook dispatch / aggregate refresh / MC refresh).
 
-### Входящий webhook
-Git Platform (GitFlic/GitVerse) шлёт webhook при push:
-1. `POST /api/v1/webhooks/gitflic` → HTTP API.
-2. Middleware (специальный для webhook'ов: verify signature, не требует сессии).
-3. Service парсит commit, находит упомянутые задачи, линкует.
-4. Event опубликован → SSE + уведомления в чат.
+### RLS-изоляция tenant'ов
+Каждая SQL-операция, чувствительная к tenant'у, оборачивается в `withTenant(workspaceId, fn)`:
+
+```ts
+await db.transaction(async (tx) => {
+  await tx.execute(sql`SELECT set_config('app.workspace_id', ${workspaceId}, true)`)
+  return await fn(tx)
+})
+```
+
+После этого RLS-политики на 6 таблицах автоматически фильтруют выборки. `users` исключена намеренно (глобальная сущность), `workspaces` и `workspace_members` пока без RLS — известное отставание (см. backlog в `COMPACT.md`).
 
 ## Архитектурные принципы, видные из диаграммы
 
 ### 1. Модульный монолит, не микросервисы
-Все backend-компоненты — один Node-процесс (Nitro). Разделение — на уровне модулей `server/services/*` с дисциплиной импортов (проверяется ESLint `no-restricted-imports`). Это даёт простоту деплоя (один образ, один реестр) при сохранении внутренней модульности.
+Все backend-компоненты — один Node-процесс (Nitro). Разделение — на уровне модулей `server/services/*`. Это даёт простоту деплоя (один образ, один реестр) при сохранении внутренней модульности.
 
-### 2. Единая точка входа — Caddy
-TLS, routing, sticky sessions для SSE решаются на одном слое. Dev и prod окружения отличаются только конфигурацией — нулевая дельта.
+### 2. Postgres как backbone (Current — данные + лог)
+В Current Postgres хранит:
 
-### 3. Postgres как универсальный backbone
-- Данные (domain tables с RLS).
-- События (append-only `events`).
-- Агрегаты + materialized views.
-- Очередь фоновых задач (`pg-boss`).
-- Канал межрепликной коммуникации (`LISTEN/NOTIFY`).
+- Domain tables с RLS (изоляция tenant'ов).
+- `task_events` append-only лог (источник правды для аналитики).
 
-Redis, RabbitMQ, Kafka — сознательно отсутствуют до момента, когда нагрузка реально потребует.
+В Target Postgres дополнительно берёт на себя `pg-boss` (job queue), `LISTEN/NOTIFY` (cross-node SSE fan-out), `flow_daily` агрегаты, materialized views — каждый со своим триггером ввода.
 
-### 4. Object Storage через S3-совместимый интерфейс
-В коде — один интерфейс (`ObjectStore`), реализации заменяемы:
-- Production SaaS: Yandex Object Storage.
-- Dev / on-prem: MinIO.
-Никакого vendor lock-in'а.
+### 3. SSE вместо WebSocket
+Однонаправленный поток `server → client` через H3 `createEventStream()`. Client → server идёт через обычные POST. Sticky sessions не нужны в Current (single replica); Target включает их в Caddy при появлении 2-й реплики.
 
-### 5. SSE вместо WebSocket
-Проще: обычное HTTP keep-alive соединение, сервер держит stream через H3 `createEventStream()` и пушит события. Для MVP хватает (нужен только server→client direction, client→server идёт через обычные POST). Sticky sessions решают проблему множественных реплик.
-
-### 6. Один процесс — frontend + backend
-Nitro отдаёт и `/api/*` (HTTP handlers), и SPA static (build Nuxt). Никакого отдельного BFF — `server/api/` и есть «backend для frontend». TypeScript end-to-end, общие типы через `shared/types/`. Это и есть выгода Nuxt monorepo.
+### 4. Один процесс — frontend + backend
+Nitro отдаёт и `/api/*`, и SPA static (build Nuxt). TypeScript end-to-end, общие типы через `shared/types/`. Это и есть выгода Nuxt monorepo.
 
 ## Границы (что НЕ показано)
 
-- **Тестовая инфраструктура** (testcontainers, mock storage) — не часть production компонентов.
+- **Тестовая инфраструктура** (testcontainers, mock storage) — не часть production runtime.
 - **CI/CD pipeline** — не компонент системы runtime; см. [`../../12-deployment.md`](../../12-deployment.md).
-- **Observability (Sentry, OpenTelemetry)** — опущено для ясности; относится к cross-cutting concerns. В Target-state — отдельный диаграммный слой.
-- **Платёжные шлюзы (ЮKassa/CloudPayments)** — LATER, не в MVP.
+- **Observability (Sentry, OpenTelemetry)** — Target. В Current — `console.log` (pino установлен в `package.json`, но не подключён).
+- **Платёжные шлюзы (ЮKassa/CloudPayments)** — LATER.
 - **Identity Provider для SSO** (Yandex ID, SAML) — LATER.
 
 ## Связь с другими артефактами
 
-- **System architecture:** [`../../06-system-architecture.md`](../../06-system-architecture.md) — текстовое описание тех же компонентов.
+- **System architecture (текстовый канон):** [`../../06-system-architecture.md`](../../06-system-architecture.md) — ASCII-диаграмма Current и полный список Target-компонентов с триггерами ввода.
 - **Backend design:** [`../../08-backend-design.md`](../../08-backend-design.md) — структура Nitro-модулей, дисциплина импортов.
 - **Sequence diagrams:** [`../06-sequence/`](../06-sequence/) — взаимодействие компонентов во времени для ключевых сценариев.

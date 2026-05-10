@@ -1,164 +1,125 @@
 @startuml components
 !theme plain
-title Диаграмма компонентов Scrumban-платформы
+title Диаграмма компонентов — Current (Phase 1-3 MVP)
 
 skinparam defaultFontName Arial
 skinparam defaultFontSize 11
 skinparam componentStyle rectangle
 skinparam linetype ortho
 
+skinparam component {
+  BackgroundColor White
+  BorderColor #1f2937
+}
+skinparam database {
+  BackgroundColor #f9fafb
+  BorderColor #1f2937
+}
+skinparam node {
+  BackgroundColor White
+  BorderColor #1f2937
+}
+
 ' ============================================================================
-' Внешние клиенты
+' Browser tier
 ' ============================================================================
 
 actor "Пользователь" as User
-component "Browser\n(Nuxt 4 SPA runtime)" as Browser << client >>
 
-User --> Browser
-
-' ============================================================================
-' Edge tier
-' ============================================================================
-
-component "Caddy" as Caddy <<reverse-proxy>> {
-  portin "HTTPS 443" as CaddyIn
-  portout "HTTP" as CaddyOut
+node "Browser" as Browser {
+  component "Nuxt 4 SPA\n(skeleton; полноценный UI — Phase 4)" as Spa
 }
 
-note right of Caddy
-  • TLS (Let's Encrypt)
-  • Маршрутизация: всё → Nitro
-    (один процесс отдаёт API + SPA)
-  • Sticky sessions (SSE)
+note bottom of Spa
+  Vue 3 + Nuxt UI v4 + (планируется)
+  Pinia + ECharts + vue-query
+  + Inspira UI + vue-bits.
+  В Current: app/app.vue + app/pages/index.vue (заглушка).
+  SSE-клиент через `useBoardStream` поверх
+  `useEventSource` (@vueuse/core) — Phase 4.
 end note
 
-Browser ..> CaddyIn : HTTPS
+User --> Spa
 
 ' ============================================================================
 ' Application tier
 ' ============================================================================
 
-package "Nuxt 4 monorepo (Nitro server)" as NitroPkg <<backend+frontend>> {
+node "Nitro Server (1 реплика)" as Nitro {
 
-  component "SPA Static\n(Nuxt build output)" as SpaStatic {
-    portin "HTTP /" as SpaIn
-  }
+  component "HTTP API\n(H3 router, ~44 endpoints)" as HttpAPI
 
-  component "HTTP API\n(H3 router)" as HttpAPI {
-    portin "HTTP /api/*" as ApiIn
-    portin "SSE /api/*/stream" as SseIn
-  }
+  component "Auth + Tenant\n(in-handler guards)" as Guards
 
-  component "Middleware chain" as Middleware {
-    component "Logging\n& Error hook" as MwLog
-    component "AuthN\n(session cookie)" as MwAuthN
-    component "Tenant\n(SET app.workspace_id)" as MwTenant
-    component "RBAC" as MwRBAC
-  }
+  component "Domain Services\n(tasks, sprints, boards,\nworkspaces, analytics, …)" as Services
 
-  component "Domain Services" as Services {
-    component "Workspace\nService" as SvcWS
-    component "Project &\nBoard Service" as SvcProject
-    component "Task Service" as SvcTask
-    component "Sprint Service" as SvcSprint
-    component "Auth Service" as SvcAuth
-  }
+  component "RBAC helpers\n(server/utils/rbac.ts)" as Rbac
 
-  component "Analytics Engine" as Analytics {
-    component "CFD" as AnaCFD
-    component "Cycle time /\nPercentiles" as AnaCT
-    component "Monte Carlo\nSimulator" as AnaMC
-    component "Little's Law\nRecommender" as AnaLL
-    component "Aggregator\n(flow_daily,\ncycle_samples)" as AnaAgg
-  }
+  component "Analytics engine\n(live SQL on task_events)" as Analytics
 
-  component "Event Bus" as EventBus {
-    component "In-proc\nPublisher" as EvPub
-    component "LISTEN/NOTIFY\nBridge" as EvNotify
-  }
+  component "EventBus\n(in-process EventEmitter,\nserver/utils/events.ts)" as EventBus
 
-  component "SSE Hub\n(H3 createEventStream)" as SseHub {
-    component "Subscriber\nRegistry" as SseReg
-    component "Broadcaster" as SseBcast
-  }
+  component "SSE hub\n(H3 createEventStream)" as SseHub
 
-  component "Background Worker\n(pg-boss)" as Worker {
-    component "Webhook\nDispatcher" as WkWebhook
-    component "Email Sender" as WkEmail
-    component "Aggregate\nRecompute" as WkAgg
-    component "MC Refresh" as WkMC
-  }
-
-  component "Feature Flags" as FF
-  component "Storage\n(Drizzle ORM)" as Storage
+  component "Domain Errors + toHttpError\n(server/utils/errors.ts)" as Errors
 }
 
-CaddyOut ..> SpaIn : "static assets (Nuxt SPA)"
-CaddyOut ..> ApiIn : "/api/*"
-CaddyOut ..> SseIn : "/api/*/stream"
-
-ApiIn --> MwLog
-MwLog --> MwAuthN
-MwAuthN --> MwTenant
-MwTenant --> MwRBAC
-MwRBAC --> Services
-
-Services ..> Storage : "SQL via Drizzle"
-Services ..> EventBus : "publish domain events"
-Services ..> FF : "isEnabled(workspaceId, feature)"
-
-Analytics ..> Storage : "read aggregates"
-
-EvPub --> SseHub
-EvPub --> Worker : "enqueue jobs"
-EvPub <..> EvNotify : "cross-node fan-out"
-
-SseHub --> SseIn : "event-stream"
-
-Worker --> Storage : "read queue / persist results"
+note top of Guards
+  RBAC и tenant scoping выполняются
+  в начале каждого handler'а как guard-clause.
+  Папок server/middleware/, jobs/, ff/ нет —
+  это Target (см. ../../06-system-architecture.md).
+end note
 
 ' ============================================================================
 ' Data tier
 ' ============================================================================
 
-package "Data tier" as DataPkg {
-
-  database "PostgreSQL 16+" as PG {
-    component "Domain\nTables\n(RLS)" as PgDomain
-    component "events\n(append-only)" as PgEvents
-    component "Aggregates\n+ mat.views" as PgAgg
-    component "pg-boss\n(job queue)" as PgQueue
-    component "LISTEN/NOTIFY\nchannel" as PgNotify
-  }
-
-  cloud "Object Storage\n(S3-compat)" as ObjStore {
-    component "Attachments" as ObjFiles
-    component "Backups" as ObjBackup
-  }
+database "PostgreSQL 16" as Pg {
+  component "Tenant data\n(9 таблиц)" as PgData
+  component "RLS на 6 таблицах из 9\n(boards, board_columns, tasks,\ntask_events, sprints, sprint_tasks)" as PgRls
+  component "task_events лог\n(append-only)" as PgEvents
 }
 
-Storage --> PgDomain : "SQL"
-Storage --> PgEvents : "INSERT"
-Analytics --> PgAgg : "SELECT"
-Worker --> PgQueue : "poll/claim"
-AnaAgg --> PgEvents : "subscribe via trigger"
-EvNotify <--> PgNotify : "LISTEN/NOTIFY"
-
-Services --> ObjFiles : "presigned URL"
-Worker --> ObjBackup : "pg_dump upload"
-
 ' ============================================================================
-' Внешние сервисы
+' Связи
 ' ============================================================================
 
-package "Внешние сервисы" as ExtPkg {
-  cloud "SMTP Service" as SMTP
-  cloud "Integration Bot\n(Telegram / Pachca)" as Bot
-  cloud "Git Platform\n(GitFlic / GitVerse)" as Git
-}
+Spa --> HttpAPI : "HTTPS\nfetch / SSE"
 
-WkEmail --> SMTP : "SMTP"
-WkWebhook --> Bot : "HTTP webhook"
-Git --> ApiIn : "webhook POST"
+HttpAPI --> Guards
+Guards --> Services
+Services --> Rbac
+Services --> Analytics
+Services --> EventBus
+Services --> Errors
+Analytics ..> PgEvents : "live SQL\nна task_events"
+EventBus --> SseHub : "broadcast"
+SseHub --> Spa : "EventSource\n(real-time updates)"
+
+Services --> PgData : "withTenant +\nset_config('app.workspace_id', $1, true)"
+Services --> PgRls
+Services --> PgEvents
+
+' ============================================================================
+' Что НЕ реализовано в Current
+' ============================================================================
+
+note as TargetNote
+  **Не реализовано в Current — см. [06-system-architecture.md](../../06-system-architecture.md) → Target:**
+
+  • Reverse-proxy (Caddy + TLS) — триггер: первый prod-deploy
+  • 2+ Nitro реплик — триггер: p95 API latency > 500 мс или > 100 concurrent users
+  • Sticky sessions (Caddy) — триггер: появление 2-й реплики Nitro
+  • LISTEN/NOTIFY bridge (cross-node SSE fan-out) — триггер: 2-я реплика
+  • pg-boss workers (email / webhook / aggregate / MC refresh) — триггер: первый async job
+  • Aggregator + flow_daily + materialized views — триггер: p95 analytics > 500 мс при ≥ 100 закрытых задач/мес
+  • Object Storage (S3-совместимое: Yandex Object Storage / MinIO) — триггер: реализация attachments / первый prod-клиент
+  • External integrations (SMTP, Telegram/Pachca бот, GitFlic) — триггер: первый запрос пользователей
+  • Structured logging (pino установлен в package.json, не подключён) — триггер: первый prod-deploy
+  • Feature flags (`feature_flags` table + ff.isEnabled) — триггер: второй платный клиент / staged rollout
+
+  Полные триггеры — в Target-секциях 06-system-architecture.md.
+end note
 
 @enduml
