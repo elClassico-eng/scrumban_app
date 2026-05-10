@@ -56,7 +56,7 @@ Scrumban — гибридная Agile-методология, впервые о�
 
 - Конкуренция с Jira/ClickUp по ширине функционала.
 - Реализация полного process mining (discovery-алгоритмы, conformance checking).
-- Продуктовая ML-фича «AI-ассистент» — намеренно заменена на статистические методы, см. `03-competitive-analysis.md` и `10-analytics-design.md`.
+- Продуктовая ML-фича «AI-ассистент» — намеренно заменена на статистические методы, см. [`03-competitive-analysis.md`](03-competitive-analysis.md) и [`10-analytics-design.md`](10-analytics-design.md).
 - Поддержка методологий вне Scrumban (SAFe, LeSS, чистый Waterfall).
 - Нативные мобильные приложения (только адаптивный web в MVP).
 
