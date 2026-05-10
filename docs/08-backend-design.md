@@ -263,8 +263,8 @@ Codegen pipeline отсутствует. Frontend и backend не разделе
 
 - [`server/utils/events.ts`](../server/utils/events.ts) экспортирует `publishBoardEvent` и `subscribeBoardEvents`, оперируя per-board каналом `board:<boardId>`.
 - Сервисы (`tasks.service.ts`, `columns.service.ts`, ...) вызывают `publishBoardEvent({ type, workspaceId, boardId, payload })` **после** успешного `withTenant`-коммита.
-- SSE-endpoint [`server/api/workspaces/[id]/boards/[boardId]/stream.get.ts`](../server/api/workspaces/%5Bid%5D/boards/%5BboardId%5D/stream.get.ts) использует H3 `createEventStream(event)`, подписывается через `subscribeBoardEvents`, шлёт heartbeat-комментарий каждые 25 с (chuyển default Caddy idle timeout 30 с), и `stream.onClosed(() => unsubscribe())` снимает listener при дисконнекте клиента или shutdown'е сервера.
-- Single-instance only: при появлении второй реплики Nitro в bus`е будут события только от своего инстанса. Это явный комментарий внутри `events.ts`.
+- SSE-endpoint [`server/api/workspaces/[id]/boards/[boardId]/stream.get.ts`](../server/api/workspaces/%5Bid%5D/boards/%5BboardId%5D/stream.get.ts) использует H3 `createEventStream(event)`, подписывается через `subscribeBoardEvents`, шлёт heartbeat-комментарий каждые 25 с (ниже default Caddy idle timeout 30 с), и `stream.onClosed(() => unsubscribe())` снимает listener при дисконнекте клиента или shutdown'е сервера.
+- Single-instance only: при появлении второй реплики Nitro в bus'е будут события только от своего инстанса. Это явный комментарий внутри `events.ts`.
 
 ### Target: LISTEN/NOTIFY bridge для cross-node fan-out
 
@@ -316,12 +316,12 @@ Owned by 07 (определение MV) и 06 (схема Aggregator-серви�
 ### Current
 
 - vitest, `@nuxt/test-utils`, `happy-dom` стоят в `devDependencies`.
-- `pnpm test` запускает vitest. Реального тестового покрытия пока минимально — основное покрытие появится с первыми регрессиями.
+- `pnpm test` запускает vitest. Реальное тестовое покрытие — RLS-интеграционные тесты (124 теста, включая cross-tenant изоляцию; см. [`11-non-functional.md`](11-non-functional.md) → Тестирование). Юнит-тесты на сервисный слой пока минимальные — основное unit-покрытие появится с первыми регрессиями.
 - `@testcontainers/postgresql` — **не установлен**; integration-тестов с реальным Postgres сегодня нет.
 
 ### Target: расширенная пирамида тестов
 
-> **Триггер ввода:** первая регрессия, которую vitest без реального Postgres не поймал (например, RLS-баг или JSONB-оператор), **или** ≥ 3 фичи в одном sprint'е, где тесты с моком dB давали false-confidence.
+> **Триггер ввода:** первая регрессия, которую vitest без реального Postgres не поймал (например, RLS-баг или JSONB-оператор), **или** ≥ 3 фичи в одном sprint'е, где тесты с моком БД давали false-confidence.
 
 - Unit (vitest) + Integration (vitest + testcontainers/postgresql).
 - E2E API через `@nuxt/test-utils` (поднимает Nitro и бьёт по HTTP).

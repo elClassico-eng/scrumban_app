@@ -121,7 +121,7 @@ Object Storage (S3-совместимый / MinIO):
 ### Обычный HTTP-запрос (Current)
 1. Browser → HTTPS → Nitro (прямой доступ; Caddy появится в Target).
 2. Один Nitro-процесс отдаёт и `/api/*`, и SPA static.
-3. Auth + tenant guard выполняются in-handler (см. `server/utils/auth.ts`, `server/utils/tenant.ts`): logging → authN (session cookie) → **tenant context (SET app.workspace_id для RLS)** → RBAC. Это in-handler-вызовы, а не глобальные middleware-цепочки в `server/middleware/`.
+3. Auth + tenant guard выполняются in-handler (см. `server/utils/auth.ts`, `server/utils/db.ts`): logging → authN (session cookie) → **tenant context (SET app.workspace_id для RLS)** → RBAC. Это in-handler-вызовы, а не глобальные middleware-цепочки в `server/middleware/`.
 4. Handler (`server/api/...`) → service (`server/services/...`) → Drizzle query (RLS действует на уровне БД) → response.
 5. Если изменение домена попадает на доску: после успешной транзакции вызывается `publishBoardEvent()` → in-process EventEmitter.
 
