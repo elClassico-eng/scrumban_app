@@ -31,7 +31,7 @@
 ## Master spec
 
 - **Актуальный:** [`superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`](superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md) — Nuxt monorepo с Nitro backend (после pivot'а с Go).
-- **Исходный (заменён):** [`superpowers/specs/2026-04-18-scrumban-platform-design.md`](superpowers/specs/2026-04-18-scrumban-platform-design.md) — оригинальный дизайн с Go backend.
+- **Исходный (архивирован):** [`archive/2026-04-18-scrumban-platform-design.md`](archive/2026-04-18-scrumban-platform-design.md) — оригинальный дизайн с Go backend, сохранён как референс для главы «Эволюция архитектуры» в магистерской работе.
 
 ## Статус документов
 

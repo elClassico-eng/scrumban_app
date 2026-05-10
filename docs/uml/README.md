@@ -71,7 +71,8 @@ plantuml -tpng docs/uml/01-use-case/use-case.puml
 
 ## Связанные документы
 
-- [`../superpowers/specs/2026-04-18-scrumban-platform-design.md`](../superpowers/specs/2026-04-18-scrumban-platform-design.md) — master spec
+- [`../superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`](../superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md) — master spec (актуальный)
+- [`../archive/2026-04-18-scrumban-platform-design.md`](../archive/2026-04-18-scrumban-platform-design.md) — архивированный Go-spec, исторический референс для главы об эволюции архитектуры
 - [`../06-system-architecture.md`](../06-system-architecture.md) — текстовое описание архитектуры (→ component, deployment)
 - [`../07-domain-model.md`](../07-domain-model.md) — текстовое описание доменной модели (→ class, ER)
 - [`../02-target-audience.md`](../02-target-audience.md) — описание актёров (→ use case)

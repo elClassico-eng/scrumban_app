@@ -2,7 +2,7 @@
 
 **Дата:** 2026-04-23  
 **Статус:** Approved  
-**Заменяет:** Go + Nuxt split-stack из `2026-04-18-scrumban-platform-design.md`
+**Заменяет:** Go + Nuxt split-stack из `docs/archive/2026-04-18-scrumban-platform-design.md` (архивирован)
 
 ---
 

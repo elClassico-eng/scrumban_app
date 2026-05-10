@@ -75,7 +75,7 @@
 ## Roadmap по фазам
 
 ### Фаза 0 — Подготовка (пропущена, 2026-04-26)
-**Изначально:** учебный pet-project Nitro starter (`docs/superpowers/plans/2026-04-23-phase0-week1-nitro-starter.md`) для освоения стека. **После решения 2026-04-26:** Phase 0 пропускается — backend пишет Claude, user обучается через ревью реального Scrumban-кода. Plan-файл оставлен в репо как референс рабочего setup'а Nuxt+Nitro+Drizzle.
+**Изначально:** учебный pet-project Nitro starter (`docs/archive/2026-04-23-phase0-week1-nitro-starter.md`) для освоения стека. **После решения 2026-04-26:** Phase 0 пропускается — backend пишет Claude, user обучается через ревью реального Scrumban-кода. Plan-файл архивирован как референс рабочего setup'а Nuxt+Nitro+Drizzle.
 
 ### Фаза 1 — MVP Foundation (месяц 1)
 **Цель:** скелет системы, на котором можно наращивать фичи.
