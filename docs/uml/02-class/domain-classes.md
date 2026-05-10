@@ -1,89 +1,109 @@
-# Диаграмма классов — Доменная модель
+# Диаграмма классов — Доменная модель (Current)
 
-Статическая структура основных классов Scrumban-платформы. Показывает сущности, их атрибуты и связи (UML 2.5 class diagram).
+Статическая структура реализованных классов Scrumban-платформы. Источник истины для **доменной модели и физической схемы БД** (отдельная ER-диаграмма не ведётся — её роль выполняет class diagram + Drizzle SQL-миграции в [`drizzle/migrations/`](../../../drizzle/migrations/)).
 
-![Class Diagram](domain-classes.svg)
+> Исходник PlantUML: [`domain-classes.puml`](domain-classes.puml). Preview — через PlantUML plugin в IDE.
 
-> Исходник PlantUML: [`domain-classes.puml`](domain-classes.puml). Регенерация: `plantuml -tsvg domain-classes.puml`.
+## Что покрывает диаграмма
 
-## Обзор
+**9 классов** (по одному на реализованную таблицу в [`server/db/schema/`](../../../server/db/schema/)):
 
-Модель разделена на 4 логических блока (соответствует [`../../07-domain-model.md`](../../07-domain-model.md)):
+| Блок | Классы |
+|------|--------|
+| Identity & Tenancy | `User`, `Workspace`, `WorkspaceMember` |
+| Boards | `Board`, `BoardColumn` |
+| Tasks | `Task`, `TaskEvent` |
+| Sprints | `Sprint`, `SprintTask` |
 
-1. **Identity & Tenancy:** `User`, `Workspace`, `WorkspaceMember`, `Invitation`, `Session`.
-2. **Project & Board:** `Project`, `Board`, `Column`.
-3. **Task & Sprint:** `Task`, `TaskTag`, `TaskComment`, `TaskAttachment`, `Sprint`.
-4. **Events:** `Event` (append-only журнал).
+**5 enum'ов** (соответствие коду подтверждено в [`docs/07-domain-model.md`](../../07-domain-model.md)):
 
-Плюс перечисления (`Role`, `WorkspacePlan`, `TaskType`, `TaskPriority`, `ColumnRole`, `SprintStatus`, `BoardType`), задающие допустимые значения.
+| Enum | Значения | Где |
+|------|----------|-----|
+| `WorkspaceRole` | `viewer`, `member`, `scrum_master`, `admin`, `owner` | `workspaces.ts` (5 значений, иерархия в [`server/utils/rbac.ts`](../../../server/utils/rbac.ts)) |
+| `SprintState` | `planned`, `active`, `closed` | `sprints.ts` (3 значения, без `cancelled`) |
+| `ColumnRole` | `backlog`, `in_progress`, `review`, `done`, `archived` | `boards.ts` (5 значений, без `other`) |
+| `TaskPriority` | `low`, `medium`, `high` | `tasks.ts` (3 значения, без `normal`/`urgent`) |
+| `TaskEventType` | `task_created`, `task_moved`, `task_closed`, `task_reopened`, `task_assigned`, `task_updated`, `task_archived` | `tasks.ts` (7 значений) |
 
 ## Ключевые сущности
 
 ### Workspace (корень мультитенантности)
-Стереотип `<<tenant root>>` обозначает: все дочерние сущности (Project, Task, ...) содержат `workspace_id`, изоляция обеспечивается RLS в PostgreSQL (см. [`../../11-non-functional.md#multi-tenancy`](../../11-non-functional.md)). Архивация workspace каскадно архивирует все вложенные сущности — показано композицией (закрашенный ромб).
+Стереотип `<<tenant root>>`. Все дочерние таблицы (`boards`, `tasks`, `task_events`, `sprints`, `sprint_tasks`) содержат `workspace_id` с FK `ON DELETE CASCADE` — это позволяет RLS-политикам делать плоский `WHERE workspace_id = current_setting(...)` без JOIN'ов. RLS включён на 6 из 9 таблиц (см. [`docs/07-domain-model.md` → Current](../../07-domain-model.md#current-phase-1-3-mvp)).
 
 ### User
-Глобальная учётная запись. Один пользователь может состоять в нескольких workspace'ах через связующий `WorkspaceMember` (паттерн many-to-many с дополнительными атрибутами — `role`, `joinedAt`).
+Глобальная (не tenant-scoped) учётная запись. `email` уникален на уровне БД; lower-casing — задача сервис-слоя. Хеш — **scrypt** через `nuxt-auth-utils.hashPassword()` (argon2id опционален при установке `@node-rs/argon2`).
 
-### Task
-Центральная сущность рабочего процесса. Связана:
-- с `Column` — текущая локация на доске (обычная ассоциация, задача перемещается);
-- с `Sprint` — опционально (задача может быть в бэклоге без спринта), кратность `0..1`;
-- с `User` — два независимых ссылочных атрибута: `assignee` (0..1) и `reporter` (1);
-- с вложенными `TaskTag`, `TaskComment`, `TaskAttachment` — композиция, удаление задачи каскадно удаляет эти сущности.
+### WorkspaceMember
+Composite PK `(workspaceId, userId)` — никаких отдельных `id`-колонок и UNIQUE-индексов. Поля `owner_id` на `Workspace` нет: владелец вычисляется как член с `role='owner'`.
 
-### Event (append-only журнал)
-Стереотип `<<append-only>>` — в эту таблицу только пишут, никогда не апдейтят и не удаляют. Поле `payload : JSON` хранит контекстно-зависимые данные (например, для `task_moved_column` — `{from_column, to_column, duration_in_source_sec}`). Это источник данных для всех аналитических агрегатов (CFD, cycle time samples, sprint stats).
+### Task (центральная сущность)
+- `columnId` определяет lifecycle (нет отдельного `status`-поля).
+- `closedAt` проставляется при входе в колонку с `columnRole='done'`.
+- `reopenedCount` инкрементируется при выходе обратно в working states.
+- Связь со спринтом — через join-таблицу `SprintTask`, не через `sprintId` на задаче.
+- Полей `short_id`, `type`, `storyPoints`, `estimateHours`, `reporterId`, `archivedAt` **нет** — отнесены в Target.
 
-## Типы связей
+### TaskEvent (append-only журнал)
+Стереотип `<<append-only>>` — только INSERT, никаких UPDATE/DELETE на ряд. Поля `fromColumnId` / `toColumnId` — типизированные `uuid`-колонки **без FK** на `BoardColumn` (квирк — см. ниже). `payload jsonb` хранит контекстно-зависимые данные (например, `{"oldPriority":"low","newPriority":"high"}` для `task_updated`). Это специализированный журнал именно по задачам, не универсальный `events` с `entity_type`/`entity_id` (universal-events рассматривался и осознанно отвергнут — см. Target в `07`).
 
-### Ассоциация
-Обычная линия — объекты связаны, но независимы. Пример: `Task — Sprint`.
+## Ключевые ограничения и индексы (видные из диаграммы)
 
-### Агрегация (ромб пустой)
-В текущей модели не используется явно — все «контейнерные» отношения смоделированы композицией.
+| Ограничение | Где | Зачем |
+|-------------|-----|-------|
+| `tasks.column_id` ON DELETE **RESTRICT** | `tasks` | Защита от тихой потери: колонку с задачами нельзя удалить, сервис обязан переместить/архивировать. |
+| `tasks.assignee_id` ON DELETE **SET NULL** | `tasks` | Удаление пользователя оставляет задачу без исполнителя, не уничтожает её. |
+| `task_events.task_id` ON DELETE **CASCADE** | `task_events` | Известное ограничение: удаление задачи стирает её историю (Target — SET NULL + snapshot). |
+| `task_events.actor_id` ON DELETE **SET NULL** | `task_events` | История переживает удаление пользователя как анонимная. |
+| Partial UNIQUE INDEX `(boardId) WHERE state='active'` | `sprints` | Не более одного активного спринта на доску, enforced на уровне БД. |
+| PRIMARY KEY `(sprintId, taskId)` | `sprint_tasks` | M:N с защитой от дублей; carry-over в следующий спринт допустим. |
+| UNIQUE INDEX `(boardId, position)` | `board_columns` | Сортировка колонок без коллизий. |
+| UNIQUE INDEX `(workspaceId, slug)` | `boards` | Slug уникален в пределах workspace, не глобально. |
+| UNIQUE `(slug)` глобально | `workspaces` | Известное ограничение (намечено в Target — namespacing). |
 
-### Композиция (ромб закрашенный)
-Сильная связь — вложенный объект не существует без контейнера. Примеры:
-- `Workspace *-- Project` — проекты принадлежат workspace'у.
-- `Project *-- Board` / `Project *-- Sprint` — доска и спринты принадлежат проекту.
-- `Board *-- Column` — колонки — часть доски.
-- `Task *-- TaskTag / TaskComment / TaskAttachment` — вложенные в задачу сущности.
+## Quirks (структурные особенности)
 
-### Наследование/обобщение
-В доменной модели не применяется — все сущности независимы. Наследование используется только для ролей в use case diagram.
+1. **`task_events.from_column_id` / `to_column_id` — без FK на `board_columns`.** Сделано осознанно: при удалении колонки исторические события должны выживать как «висячие» снапшоты. Trade-off — невозможно через FK гарантировать существование колонки на момент создания события; корректность отслеживается в `server/services/tasks.service.ts`.
+2. **`task_events.task_id` ON DELETE CASCADE — известное ограничение.** Зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7. Target — либо `SET NULL` с `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
 
 ## Кратности (multiplicity) — важные случаи
 
 | Связь | Кратность | Пояснение |
 |-------|-----------|-----------|
-| `Workspace — Project` | `1 : 0..*` | Workspace может быть пустой |
-| `Project — Board` | `1 : 1` | В MVP каждый проект имеет ровно одну доску |
-| `Board — Column` | `1 : 2..*` | Минимум 2 колонки на доске (например, «To Do» и «Done») |
-| `Task — Sprint` | `0..* : 0..1` | Задача может быть в бэклоге (вне спринта); спринт может быть пустым |
-| `Task — User (assignee)` | `0..* : 0..1` | Задача может быть без исполнителя |
-| `Task — User (reporter)` | `0..* : 1` | У каждой задачи есть автор |
-| `Workspace — WorkspaceMember` | `1 : 1..*` | Минимум один участник — owner |
+| `Workspace — WorkspaceMember` | `1 : 1..*` | Минимум один участник — owner. |
+| `User — WorkspaceMember` | `1 : 0..*` | Пользователь может не состоять ни в одном workspace. |
+| `Workspace — Board` | `1 : 0..*` | Workspace может быть пустой. |
+| `Board — BoardColumn` | `1 : 1..*` | Минимум одна колонка (на практике team создаёт ≥ 2). |
+| `Board — Task` | `1 : 0..*` | Задачи живут на доске. |
+| `BoardColumn — Task` | `1 : 0..*` | Текущая локация задачи (RESTRICT при удалении колонки). |
+| `User — Task (assignee)` | `0..1 : 0..*` | Задача может быть без исполнителя; SET NULL при удалении. |
+| `Task — TaskEvent` | `1 : 0..*` | Композиция (CASCADE) — история живёт пока живёт задача. |
+| `Board — Sprint` | `1 : 0..*` | Доска может не иметь спринтов (pure-Kanban режим). |
+| `Sprint — SprintTask`, `Task — SprintTask` | `1 : 0..*` | M:N с composite PK (sprintId, taskId). |
 
-## Ключевые архитектурные решения, видные из диаграммы
+## Что НЕ показано (Target — отложено)
 
-1. **Event — append-only лог для process mining.** Отдельный класс; не встроен в task/sprint. Это даёт возможность восстановить любое состояние за любой момент времени и строить аналитику без блокировок OLTP-запросов (см. [`../../10-analytics-design.md`](../../10-analytics-design.md)).
-2. **`column_role` в Column.** Атрибут, не зависящий от имени колонки. Позволяет аналитике работать одинаково у команд с разными языками / разными наименованиями колонок. «Done» — это колонка с `columnRole = DONE`, а не имя.
-3. **`short_id` в Task.** Отдельный атрибут помимо UUID — человекочитаемый (`SCB-42`), используется в UI и ссылках. UUID остаётся внутренним идентификатором.
-4. **Soft delete через `deletedAt / archivedAt`.** Жёсткое удаление не применяется — все сущности имеют nullable-поля «когда удалено». Обеспечивает audit trail и возможность восстановления.
-5. **Nullable `sprint_id` на Task.** Задача может быть в бэклоге. Это важное отличие Scrumban от чистого Scrum — беклог живёт независимо от спринтов.
+В диаграмме намеренно **нет** следующих сущностей — все они описаны с измеримыми триггерами в [`docs/07-domain-model.md` → Target](../../07-domain-model.md#target-phase-4):
 
-## Отсутствующие классы (границы модели)
+- **`projects`** — контейнер досок (триггер: ≥ 3 активных досок в workspace).
+- **`task_comments`**, **`task_attachments`**, **`task_tags`** — расширение задачи (триггеры: размер команды, наличие Object Storage, ≥ 50 активных задач).
+- **`invitations`** — magic-link приглашения (триггер: первый публичный регистр).
+- **`sessions`** — серверное хранилище (рассмотрено и отвергнуто; триггер пересмотра — глобальный revoke).
+- **`feature_flags`** — флаги фич (триггер: второй платный клиент).
+- **`audit_log`** — Enterprise-аудит (триггер: первый compliance-клиент).
+- **`flow_daily`**, **`cycle_time_samples`**, **`sprint_stats`** — денормализованные агрегаты (триггер: p95 latency аналитики > 500 мс).
+- **3 materialized views** (`mv_cfd_last_90d`, `mv_throughput_weekly`, `mv_cycle_time_percentiles`) — оптимизация при росте объёма.
 
-В диаграмме намеренно не показаны:
-
-- **Aggregates** (`flow_daily`, `cycle_time_samples`, `sprint_stats`) — это не доменные сущности, а денормализованные view'ы над `Event`. Их место — физическая схема БД ([`../../07-domain-model.md`](../../07-domain-model.md) и Drizzle SQL-миграции в `drizzle/migrations/`).
-- **Materialized views** (`mv_cfd_last_90d`, ...) — техническая деталь уровня БД.
-- **AuditLog** — в MVP реализован как `Event` с флагом в payload; самостоятельной сущностью становится в Enterprise-фазе.
-- **Billing / Subscription** — LATER, не в MVP.
+Также **не** добавлены поля, которые часто хочется иметь, но в Phase 1-3 их нет:
+- `User.name` / `User.avatarUrl` / `User.locale` — auth-only учётка.
+- `Workspace.plan` / `Workspace.settings` / `Workspace.archivedAt` — биллинг и settings отнесены в Target.
+- `Task.shortId` (`SCB-42`), `Task.type` (`story/bug/...`), `Task.storyPoints`, `Task.archivedAt`, `Task.reporterId` — все в Target.
+- `Sprint.createdBy` — отнесено к `audit_log` в Target.
 
 ## Связь с другими артефактами
 
-- **Domain model в коде:** [`../../07-domain-model.md`](../../07-domain-model.md) — SQL-типы, индексы, RLS-политики (заменяет ER-диаграмму; источник истины — Drizzle SQL-миграции в `drizzle/migrations/`).
-- **Use case:** [`../01-use-case/`](../01-use-case/) — прецеденты, работающие с этими классами.
-- **Sequence diagrams:** [`../06-sequence/`](../06-sequence/) — как экземпляры этих классов взаимодействуют во времени.
+- [`docs/07-domain-model.md`](../../07-domain-model.md) — текстовый источник истины: SQL-типы, индексы, RLS-политики, триггеры эволюции для Target.
+- [`server/db/schema/`](../../../server/db/schema/) — Drizzle ORM-определения, source of truth для физической схемы.
+- [`drizzle/migrations/`](../../../drizzle/migrations/) — SQL-миграции (RLS-политики, partial unique index'ы).
+- [`server/utils/rbac.ts`](../../../server/utils/rbac.ts) — иерархия ролей (`viewer:0 < member:1 < scrum_master:2 < admin:3 < owner:4`).
+- [`docs/uml/01-use-case/roles-guide.md`](../01-use-case/roles-guide.md) — матрица прав 5 ролей.
+- [`docs/uml/06-sequence/`](../06-sequence/) — как экземпляры классов взаимодействуют во времени.

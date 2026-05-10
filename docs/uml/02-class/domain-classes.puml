@@ -1,258 +1,266 @@
 @startuml domain-classes
 !theme plain
-title Диаграмма классов — Доменная модель Scrumban
+title Диаграмма классов — Current (Phase 1-3 MVP, 9 сущностей)
 
 skinparam classAttributeIconSize 0
 skinparam defaultFontName Arial
 skinparam defaultFontSize 11
 skinparam packageStyle rectangle
+hide circle
+hide empty members
 
 ' ============================================================================
-' Перечисления (enums) — значения, допустимые в полях классов
+' Перечисления (enums) — все 5 enum'ов из server/db/schema/
 ' ============================================================================
 
-enum Role {
-  OWNER
-  ADMIN
-  MEMBER
-  VIEWER
+enum WorkspaceRole {
+  viewer
+  member
+  scrum_master
+  admin
+  owner
 }
 
-enum WorkspacePlan {
-  FREE
-  PRO
-  ENTERPRISE
-}
-
-enum TaskType {
-  STORY
-  BUG
-  TASK
-  EPIC
-}
-
-enum TaskPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
+enum SprintState {
+  planned
+  active
+  closed
 }
 
 enum ColumnRole {
-  BACKLOG
-  IN_PROGRESS
-  REVIEW
-  DONE
-  OTHER
+  backlog
+  in_progress
+  review
+  done
+  archived
 }
 
-enum SprintStatus {
-  PLANNED
-  ACTIVE
-  CLOSED
+enum TaskPriority {
+  low
+  medium
+  high
 }
 
-enum BoardType {
-  SCRUMBAN
-  SCRUM
-  KANBAN
+enum TaskEventType {
+  task_created
+  task_moved
+  task_closed
+  task_reopened
+  task_assigned
+  task_updated
+  task_archived
 }
 
 ' ============================================================================
-' Identity & Tenancy
+' Identity & Tenancy — User, Workspace, WorkspaceMember
 ' ============================================================================
 
 class User {
   + id : UUID
-  + email : string <<unique>>
-  + name : string
-  + avatarUrl : string
-  + locale : string
-  + createdAt : DateTime
-  + lastSeenAt : DateTime
-  + deletedAt : DateTime?
+  + email : varchar(255) <<UNIQUE>>
+  + passwordHash : varchar(255)
+  + createdAt : timestamptz
+  + updatedAt : timestamptz
 }
+note right of User
+  Глобальная (не tenant-scoped).
+  Хеш пароля — scrypt через
+  nuxt-auth-utils hashPassword().
+end note
 
 class Workspace <<tenant root>> {
   + id : UUID
-  + name : string
-  + slug : string <<unique>>
-  + plan : WorkspacePlan
-  + settings : JSON
-  + createdAt : DateTime
-  + archivedAt : DateTime?
+  + name : varchar(255)
+  + slug : varchar(64) <<UNIQUE глобально>>
+  + createdAt : timestamptz
+  + updatedAt : timestamptz
 }
 
 class WorkspaceMember {
-  + role : Role
-  + joinedAt : DateTime
+  + workspaceId : UUID <<FK CASCADE>>
+  + userId : UUID <<FK CASCADE>>
+  + role : WorkspaceRole
+  + createdAt : timestamptz
 }
-
-class Invitation {
-  + id : UUID
-  + email : string
-  + role : Role
-  + tokenHash : string
-  + expiresAt : DateTime
-  + acceptedAt : DateTime?
-}
-
-class Session {
-  + id : UUID
-  + tokenHash : string <<unique>>
-  + expiresAt : DateTime
-  + userAgent : string
-  + ip : string
-  + createdAt : DateTime
-  + revokedAt : DateTime?
-}
+note right of WorkspaceMember
+  PRIMARY KEY (workspaceId, userId).
+  Owner — единственный путь к workspace
+  (нет колонки owner_id; вычисляется
+  как member с role='owner').
+end note
 
 ' ============================================================================
-' Project & Board
+' Boards & Columns
 ' ============================================================================
-
-class Project {
-  + id : UUID
-  + name : string
-  + key : string
-  + description : string
-  + archivedAt : DateTime?
-  + createdAt : DateTime
-}
 
 class Board {
   + id : UUID
-  + name : string
-  + type : BoardType
-  + createdAt : DateTime
+  + workspaceId : UUID <<FK CASCADE>>
+  + name : varchar(255)
+  + slug : varchar(64)
+  + createdAt : timestamptz
+  + updatedAt : timestamptz
 }
+note right of Board
+  UNIQUE INDEX (workspaceId, slug)
+  — slug уникален в пределах workspace,
+  не глобально.
+end note
 
-class Column {
+class BoardColumn {
   + id : UUID
-  + name : string
-  + orderIndex : int
-  + wipLimit : int?
-  + wipStrict : bool
+  + workspaceId : UUID <<FK CASCADE>>
+  + boardId : UUID <<FK CASCADE>>
+  + name : varchar(255)
+  + position : integer
   + columnRole : ColumnRole
-  + isTerminal : bool
+  + wipLimit : integer?
+  + createdAt : timestamptz
 }
+note right of BoardColumn
+  UNIQUE INDEX (boardId, position).
+  wipLimit = null — без лимита.
+  Имя свободное, аналитика идёт по columnRole.
+end note
 
 ' ============================================================================
-' Task & Sprint
+' Tasks & Event Log
 ' ============================================================================
 
 class Task {
   + id : UUID
-  + shortId : string
-  + title : string
-  + description : string
-  + type : TaskType
+  + workspaceId : UUID <<FK CASCADE>>
+  + boardId : UUID <<FK CASCADE>>
+  + columnId : UUID <<FK RESTRICT>>
+  + title : varchar(255)
+  + description : text
+  + assigneeId : UUID? <<FK SET NULL>>
   + priority : TaskPriority
-  + storyPoints : decimal?
-  + estimateHours : decimal?
-  + createdAt : DateTime
-  + updatedAt : DateTime
-  + closedAt : DateTime?
-  + reopenedCount : int
+  + position : integer
+  + closedAt : timestamptz?
+  + reopenedCount : integer
+  + createdAt : timestamptz
+  + updatedAt : timestamptz
 }
+note right of Task
+  columnId ON DELETE RESTRICT —
+  защита от тихой потери (колонку
+  с задачами нельзя удалить).
+  closedAt проставляется при входе
+  в колонку с columnRole='done'.
+  Связь со sprint — через sprint_tasks,
+  не через колонку sprint_id.
+end note
 
-class TaskTag {
-  + tag : string
-}
-
-class TaskComment {
+class TaskEvent <<append-only>> {
   + id : UUID
-  + body : string
-  + createdAt : DateTime
-  + updatedAt : DateTime?
-  + deletedAt : DateTime?
+  + workspaceId : UUID <<FK CASCADE>>
+  + taskId : UUID <<FK CASCADE>>
+  + eventType : TaskEventType
+  + fromColumnId : UUID?
+  + toColumnId : UUID?
+  + actorId : UUID? <<FK SET NULL>>
+  + payload : jsonb
+  + createdAt : timestamptz
 }
+note right of TaskEvent
+  fromColumnId / toColumnId — типизированные
+  uuid-колонки БЕЗ FK на BoardColumn:
+  при удалении колонки события переживают
+  как «висячие» снапшоты для аналитики.
 
-class TaskAttachment {
-  + id : UUID
-  + objectKey : string
-  + filename : string
-  + sizeBytes : long
-  + contentType : string
-  + createdAt : DateTime
-}
+  taskId ON DELETE CASCADE — известное
+  ограничение (см. 07-domain-model.md
+  Quirks → Target: SET NULL + snapshot).
+
+  Источник истины для CFD / Monte Carlo /
+  cycle time — индекс (workspaceId, createdAt).
+end note
+
+' ============================================================================
+' Sprints
+' ============================================================================
 
 class Sprint {
   + id : UUID
-  + name : string
-  + goal : string
-  + startAt : DateTime
-  + plannedEndAt : DateTime
-  + closedAt : DateTime?
-  + status : SprintStatus
-  + createdAt : DateTime
+  + workspaceId : UUID <<FK CASCADE>>
+  + boardId : UUID <<FK CASCADE>>
+  + name : varchar(255)
+  + goal : text
+  + state : SprintState
+  + plannedStartAt : timestamptz?
+  + plannedEndAt : timestamptz?
+  + startedAt : timestamptz?
+  + endedAt : timestamptz?
+  + createdAt : timestamptz
+  + updatedAt : timestamptz
 }
+note right of Sprint
+  Partial UNIQUE INDEX (boardId)
+  WHERE state='active' — на доске
+  максимум один активный спринт.
+  Длительность считается по
+  startedAt / endedAt, не по
+  planned_*.
+end note
 
-' ============================================================================
-' Events — append-only журнал для аналитики
-' ============================================================================
-
-class Event <<append-only>> {
-  + id : UUID
-  + occurredAt : DateTime
-  + entityType : string
-  + entityId : UUID
-  + eventType : string
-  + payload : JSON
+class SprintTask {
+  + sprintId : UUID <<FK CASCADE>>
+  + taskId : UUID <<FK CASCADE>>
+  + workspaceId : UUID <<FK CASCADE>>
+  + addedAt : timestamptz
 }
+note right of SprintTask
+  PRIMARY KEY (sprintId, taskId)
+  — M:N задач и спринтов с защитой
+  от дублей. Carry-over между
+  итерациями допускается.
+end note
 
 ' ============================================================================
-' Cross-cutting
+' Связи — multiplicity и FK on-delete behavior
 ' ============================================================================
 
-class FeatureFlag {
-  + name : string <<PK>>
-  + enabledGlobally : bool
-  + allowedWorkspaces : UUID[]
-  + description : string
-}
+' Identity & Tenancy
+User "1" -- "0..*" WorkspaceMember : member of >
+Workspace "1" -- "1..*" WorkspaceMember : has >
+
+' Workspace owns boards
+Workspace "1" *-- "0..*" Board : owns >
+
+' Board composition
+Board "1" *-- "1..*" BoardColumn : has columns >
+
+' Tasks
+Board "1" -- "0..*" Task : contains >
+BoardColumn "1" -- "0..*" Task : current location\n(RESTRICT) >
+User "0..1" -- "0..*" Task : assignee\n(SET NULL) >
+
+' Task history
+Task "1" *-- "0..*" TaskEvent : history\n(CASCADE) >
+User "0..1" -- "0..*" TaskEvent : actor\n(SET NULL) >
+
+' Sprints
+Board "1" -- "0..*" Sprint : owns >
+Sprint "1" -- "0..*" SprintTask : contains >
+Task "1" -- "0..*" SprintTask : participates in >
 
 ' ============================================================================
-' Связи — ассоциации, агрегации, композиции
+' Note: Target entities (deferred)
 ' ============================================================================
 
-' Identity & Tenancy — User и Workspace соединяются через WorkspaceMember
-User "1" -- "0..*" Session : > has
-User "1" -- "0..*" WorkspaceMember : > is a
-Workspace "1" -- "1..*" WorkspaceMember : < contains
-Workspace "1" -- "0..*" Invitation : < issued
+note as N1
+  **Target (отложено, см.** [[../../07-domain-model.md 07-domain-model.md]] **→ Target):**
 
-' Workspace как tenant — композиция с проектами (при архивации уходят все)
-Workspace "1" *-- "0..*" Project : contains >
+  • projects, task_comments, task_attachments, task_tags
+  • invitations, sessions (server-side store), feature_flags, audit_log
+  • flow_daily, cycle_time_samples, sprint_stats
+  • + 3 materialized views (mv_cfd_last_90d,
+    mv_throughput_weekly, mv_cycle_time_percentiles)
 
-' Project — 1:1 Board (в MVP); 1:* Sprint
-Project "1" *-- "1" Board : has >
-Project "1" *-- "0..*" Sprint : contains >
-
-' Board composed of Columns
-Board "1" *-- "2..*" Column : has >
-
-' Column contains tasks
-Column "1" -- "0..*" Task : < current location
-
-' Task — композиция с вложенными сущностями
-Task "1" *-- "0..*" TaskTag : has >
-Task "1" *-- "0..*" TaskComment : has >
-Task "1" *-- "0..*" TaskAttachment : has >
-
-' Task — ассоциация со Sprint (может быть вне спринта)
-Task "0..*" -- "0..1" Sprint : in >
-
-' Task — связи с пользователями (assignee, reporter)
-Task "0..*" -- "0..1" User : > assignee
-Task "0..*" -- "1" User : > reporter
-
-' TaskComment, TaskAttachment — кто создал
-TaskComment "0..*" -- "1" User : < author
-TaskAttachment "0..*" -- "1" User : < uploader
-
-' Event — связан с workspace (tenant-scoped) и актором (опционально)
-Event "0..*" -- "1" Workspace : scope >
-Event "0..*" -- "0..1" User : actor >
+  Каждая сущность с измеримым триггером ввода в 07.
+  Сейчас 9 таблиц + 5 enum'ов покрывают MVP-объём
+  Phase 1-3 без преждевременной сложности.
+end note
 
 @enduml
