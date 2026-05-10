@@ -1,329 +1,332 @@
 # 07 — Domain Model
 
-## Обзор
+## Структура документа
 
-Доменная модель Scrumban-платформы состоит из четырёх логических блоков:
+- [Current (Phase 1-3 MVP)](#current-phase-1-3-mvp) — 9 реализованных таблиц.
+- [Target (Phase 4+)](#target-phase-4) — 11 entities и 3 materialized view, обоснованно отложенные с триггерами эволюции.
 
-1. **Identity & Tenancy** — пользователи, workspace'ы, роли.
-2. **Project & Board** — контейнеры работы.
-3. **Task & Sprint** — собственно работа.
-4. **Events & Aggregates** — история изменений и предрассчитанные срезы для аналитики.
+---
 
-## Универсальные правила
+## Current (Phase 1-3 MVP)
 
-- Все tenant-scoped таблицы содержат `workspace_id uuid NOT NULL`.
-- Composite индексы всегда начинаются с `workspace_id`.
-- На каждой tenant-scoped таблице включена RLS-политика (см. `11-non-functional.md`).
-- Мягкое удаление через `archived_at` / `deleted_at` (timestamptz nullable).
-- Все id — UUID v7 (сортируемы по времени, удобны для курсорной пагинации).
+Все перечисленные ниже таблицы реально определены в [`server/db/schema/`](../server/db/schema/) (Drizzle ORM, TypeScript). RLS-политики и FORCE ROW LEVEL SECURITY включены через SQL-миграции в [`drizzle/migrations/`](../drizzle/migrations/) (см. `0003_rls_policies.sql`, `0004_rls_nullif_fix.sql`, `0006_sprints_rls.sql`). Используется двухролевая Postgres-схема: `scrumban` (миграции, минует RLS) и `scrumban_app` (рантайм, FORCE RLS на 8 из 9 таблиц; `users` глобальна и не привязана к workspace).
+
+Универсальные правила Current:
+
+- Все tenant-scoped таблицы содержат `workspace_id uuid NOT NULL` с FK `ON DELETE CASCADE` на `workspaces.id`.
+- `workspace_id` дублируется на дочерних таблицах (board_columns, tasks, task_events, sprint_tasks) — это позволяет RLS-политикам делать плоский `WHERE workspace_id = current_setting(...)` без JOIN'ов. Сервис-слой проверяет согласованность при INSERT.
+- Все id — UUID v4 через `defaultRandom()` (Postgres `gen_random_uuid()`). Не v7: для текущего масштаба сортируемость по времени не нужна, переход — Target.
 - Все timestamps — `timestamptz` в UTC; отображение в локали — задача frontend'а.
+- Soft delete пока не используется; удаление — каскадное через FK.
 
-## 1. Identity & Tenancy
+### `users` — учётная запись
 
-### `users`
-Глобальная учётная запись пользователя.
-```sql
-id              uuid PK (UUID v7)
-email           text UNIQUE NOT NULL
-password_hash   text NOT NULL          -- scrypt (default for nuxt-auth-utils); argon2id configurable
-name            text
-avatar_url      text
-locale          text DEFAULT 'ru-RU'
-created_at      timestamptz NOT NULL
-last_seen_at    timestamptz
-deleted_at      timestamptz
+```text
+id              uuid PK, defaultRandom()
+email           varchar(255) NOT NULL UNIQUE
+password_hash   varchar(255) NOT NULL    -- scrypt через nuxt-auth-utils hashPassword()
+created_at      timestamptz NOT NULL DEFAULT now()
+updated_at      timestamptz NOT NULL DEFAULT now()
 ```
 
-### `workspaces` — tenant root
-```sql
-id              uuid PK
-name            text NOT NULL
-slug            text UNIQUE NOT NULL   -- для URL
-plan            text NOT NULL CHECK (plan IN ('free','pro','enterprise'))
-owner_id        uuid REFERENCES users(id)
-settings        jsonb NOT NULL DEFAULT '{}'
-created_at      timestamptz NOT NULL
-archived_at     timestamptz
+Глобальная учётная запись (не tenant-scoped). `email` уникален на уровне БД; lower-casing — задача сервис-слоя. Хеш пароля — **scrypt** (встроен в Node, дефолт nuxt-auth-utils); argon2id опционален при установке `@node-rs/argon2`. См. [`server/db/schema/users.ts`](../server/db/schema/users.ts).
+
+### `workspaces` — корень тенанта
+
+```text
+id              uuid PK, defaultRandom()
+name            varchar(255) NOT NULL
+slug            varchar(64)  NOT NULL UNIQUE  -- глобально уникален
+created_at      timestamptz NOT NULL DEFAULT now()
+updated_at      timestamptz NOT NULL DEFAULT now()
 ```
 
-### `workspace_members`
-```sql
-workspace_id    uuid REFERENCES workspaces(id)
-user_id         uuid REFERENCES users(id)
-role            text NOT NULL CHECK (role IN ('owner','admin','member','viewer'))
-joined_at       timestamptz NOT NULL
+См. [`server/db/schema/workspaces.ts`](../server/db/schema/workspaces.ts).
+
+**Quirks:**
+- `slug` имеет **глобальный** UNIQUE (не per-tenant): два независимых заказчика не смогут оба создать `acme`. Известное ограничение, зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7. Решение — Target (либо namespacing slug'ов, либо переход на короткие коды).
+- Поле `owner_id` отсутствует — владелец вычисляется как член `workspace_members` с `role = 'owner'`.
+- Никаких `plan`, `settings jsonb`, `archived_at` — биллинг и настройки не реализованы.
+
+### `workspace_members` — членство пользователей в workspace (M:N)
+
+```text
+workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+user_id         uuid NOT NULL REFERENCES users(id)      ON DELETE CASCADE
+role            workspace_member_role NOT NULL
+created_at      timestamptz NOT NULL DEFAULT now()
 PRIMARY KEY (workspace_id, user_id)
 ```
 
-### `invitations`
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL REFERENCES workspaces(id)
-email           text NOT NULL
-role            text NOT NULL
-token_hash      text NOT NULL
-expires_at      timestamptz NOT NULL
-invited_by      uuid REFERENCES users(id)
-accepted_at     timestamptz
-UNIQUE (workspace_id, email) WHERE accepted_at IS NULL
+Enum `workspace_member_role` имеет **5 значений**: `viewer`, `member`, `scrum_master`, `admin`, `owner`. Иерархия и матрица прав документирована в [`docs/uml/01-use-case/roles-guide.md`](uml/01-use-case/roles-guide.md). Наследование («admin может всё, что member») реализовано на уровне RBAC-middleware приложения, не в БД.
+
+См. [`server/db/schema/workspaces.ts`](../server/db/schema/workspaces.ts).
+
+### `boards` — доска внутри workspace
+
+```text
+id              uuid PK, defaultRandom()
+workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+name            varchar(255) NOT NULL
+slug            varchar(64)  NOT NULL  -- уникален в пределах workspace (UNIQUE INDEX по (workspace_id, slug))
+created_at      timestamptz NOT NULL DEFAULT now()
+updated_at      timestamptz NOT NULL DEFAULT now()
 ```
 
-### `sessions`
-Cookie-based сессии (см. `11-non-functional.md` про auth).
-```sql
-id              uuid PK
-user_id         uuid NOT NULL REFERENCES users(id)
-token_hash      text NOT NULL UNIQUE
-expires_at      timestamptz NOT NULL
-user_agent      text
-ip              inet
-created_at      timestamptz NOT NULL
-revoked_at      timestamptz
+`workspace → board` напрямую: промежуточный `projects` сейчас отсутствует. Нет `type` (`scrumban`/`scrum`/`kanban`) — методология определяется конфигурацией колонок и наличием/отсутствием активного спринта, а не статическим полем.
+
+См. [`server/db/schema/boards.ts`](../server/db/schema/boards.ts).
+
+### `board_columns` — колонки доски
+
+```text
+id              uuid PK, defaultRandom()
+workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+board_id        uuid NOT NULL REFERENCES boards(id)     ON DELETE CASCADE
+name            varchar(255) NOT NULL
+position        integer NOT NULL  -- UNIQUE INDEX по (board_id, position)
+wip_limit       integer            -- nullable: null = без лимита
+column_role     column_role NOT NULL
+created_at      timestamptz NOT NULL DEFAULT now()
 ```
 
-## 2. Project & Board
+Enum `column_role` имеет **5 значений**: `backlog`, `in_progress`, `review`, `done`, `archived`. Семантика отделена от пользовательского `name` — команда может переименовать «In Progress» в «Doing», а аналитика всё равно поймёт колонку через `column_role='in_progress'`.
 
-### `projects`
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL REFERENCES workspaces(id)
-name            text NOT NULL
-key             text NOT NULL              -- "SCB", для коротких ID задач
-description     text
-created_by      uuid REFERENCES users(id)
-archived_at     timestamptz
-created_at      timestamptz NOT NULL
-UNIQUE (workspace_id, key)
+Поля `is_terminal` и `wip_strict` отсутствуют: «терминальность» определяется через `column_role IN ('done', 'archived')`, а сила WIP-лимита — конфигурацией сервис-слоя (на момент Phase 1-3 лимит soft, проверка на move).
+
+См. [`server/db/schema/boards.ts`](../server/db/schema/boards.ts).
+
+### `tasks` — задача (центральная сущность)
+
+```text
+id               uuid PK, defaultRandom()
+workspace_id     uuid NOT NULL REFERENCES workspaces(id)     ON DELETE CASCADE
+board_id         uuid NOT NULL REFERENCES boards(id)         ON DELETE CASCADE
+column_id        uuid NOT NULL REFERENCES board_columns(id)  ON DELETE RESTRICT
+title            varchar(255) NOT NULL
+description      text NOT NULL DEFAULT ''
+assignee_id      uuid REFERENCES users(id) ON DELETE SET NULL
+priority         task_priority NOT NULL DEFAULT 'medium'
+position         integer NOT NULL  -- сортировка внутри (board_id, column_id)
+closed_at        timestamptz       -- проставляется при входе в column_role='done'
+reopened_count   integer NOT NULL DEFAULT 0
+created_at       timestamptz NOT NULL DEFAULT now()
+updated_at       timestamptz NOT NULL DEFAULT now()
 ```
 
-### `boards`
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL REFERENCES workspaces(id)
-project_id      uuid NOT NULL REFERENCES projects(id)
-name            text NOT NULL
-type            text NOT NULL CHECK (type IN ('scrumban','scrum','kanban'))
-created_at      timestamptz NOT NULL
--- В MVP: 1:1 с project
+Enum `task_priority` — `low`, `medium`, `high` (3 значения, **не** `low/normal/high/urgent`).
+
+`column_id` — `ON DELETE RESTRICT`: колонку с задачами нельзя удалить, сервис обязан сначала переместить или архивировать задачи. Это сознательная защита от тихой потери данных.
+
+`assignee_id` — `ON DELETE SET NULL`: при удалении пользователя задачи остаются, просто без исполнителя.
+
+Связь со спринтом — через join-таблицу `sprint_tasks`, не через колонку `sprint_id` на задаче. Колонок `project_id`, `short_id` (формат «SCB-123»), `type` (`story/bug/task/epic`), `story_points`, `estimate_hours`, `reporter_id` нет — все они отнесены в Target.
+
+См. [`server/db/schema/tasks.ts`](../server/db/schema/tasks.ts).
+
+### `task_events` — append-only журнал движений задач
+
+```text
+id               uuid PK, defaultRandom()
+workspace_id     uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+task_id          uuid NOT NULL REFERENCES tasks(id)      ON DELETE CASCADE
+event_type       task_event_type NOT NULL
+from_column_id   uuid     -- typed FK semantics на board_columns; nullable для task_created
+to_column_id    uuid      -- nullable для task_archived
+actor_id         uuid REFERENCES users(id) ON DELETE SET NULL
+payload          jsonb NOT NULL DEFAULT '{}'
+created_at       timestamptz NOT NULL DEFAULT now()
 ```
 
-### `columns`
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL
-board_id        uuid NOT NULL REFERENCES boards(id)
-name            text NOT NULL
-order_index     int NOT NULL
-wip_limit       int                        -- nullable = без лимита
-wip_strict      bool NOT NULL DEFAULT false
-column_role     text NOT NULL CHECK (column_role IN
-                  ('backlog','in_progress','review','done','other'))
-is_terminal     bool NOT NULL DEFAULT false
-```
+Enum `task_event_type` — `task_created`, `task_moved`, `task_closed`, `task_reopened`, `task_assigned`, `task_updated`, `task_archived` (7 значений). Это **специализированный** журнал именно по задачам, **не** универсальный `events` с `entity_type/entity_id`. См. секцию Target про `events` ниже — это сознательное архитектурное решение, а не недоделка.
 
-`column_role` нужен, чтобы аналитика понимала семантику («done», «in progress») независимо от того, как пользователь назвал колонку.
-
-## 3. Task & Sprint
-
-### `tasks` — центральная сущность
-```sql
-id              uuid PK (UUID v7)
-workspace_id    uuid NOT NULL
-project_id      uuid NOT NULL REFERENCES projects(id)
-board_id        uuid NOT NULL REFERENCES boards(id)
-column_id       uuid NOT NULL REFERENCES columns(id)
-sprint_id       uuid REFERENCES sprints(id)   -- nullable: может быть в бэклоге
-short_id        text NOT NULL                 -- "SCB-123"
-title           text NOT NULL
-description     text                          -- markdown
-type            text NOT NULL CHECK (type IN ('story','bug','task','epic'))
-priority        text NOT NULL CHECK (priority IN ('low','normal','high','urgent'))
-story_points    numeric
-estimate_hours  numeric
-assignee_id     uuid REFERENCES users(id)
-reporter_id     uuid NOT NULL REFERENCES users(id)
-created_at      timestamptz NOT NULL
-updated_at      timestamptz NOT NULL
-closed_at       timestamptz
-reopened_count  int NOT NULL DEFAULT 0
-UNIQUE (workspace_id, project_id, short_id)
-```
-
-### `task_tags`
-```sql
-task_id         uuid REFERENCES tasks(id)
-tag             varchar(64)
-PRIMARY KEY (task_id, tag)
-```
-
-### `task_comments`
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL
-task_id         uuid NOT NULL REFERENCES tasks(id)
-author_id       uuid NOT NULL REFERENCES users(id)
-body            text NOT NULL          -- markdown
-created_at      timestamptz NOT NULL
-updated_at      timestamptz
-deleted_at      timestamptz
-```
-
-### `task_attachments`
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL
-task_id         uuid NOT NULL REFERENCES tasks(id)
-uploaded_by     uuid NOT NULL REFERENCES users(id)
-object_key      text NOT NULL            -- путь в S3
-filename        text NOT NULL
-size_bytes      bigint NOT NULL
-content_type    text NOT NULL
-created_at      timestamptz NOT NULL
-```
-
-### `sprints`
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL
-project_id      uuid NOT NULL REFERENCES projects(id)
-name            text NOT NULL
-goal            text
-start_at        timestamptz
-planned_end_at  timestamptz
-closed_at       timestamptz
-status          text NOT NULL CHECK (status IN ('planned','active','closed'))
-created_by      uuid REFERENCES users(id)
-created_at      timestamptz NOT NULL
-```
-
-## 4. Events & Aggregates
-
-### `events` — append-only журнал изменений
-```sql
-id              uuid PK
-workspace_id    uuid NOT NULL
-occurred_at     timestamptz NOT NULL
-actor_id        uuid REFERENCES users(id)   -- null для system-событий
-entity_type     text NOT NULL               -- 'task','sprint','column','board'
-entity_id       uuid NOT NULL
-event_type      text NOT NULL
-payload         jsonb NOT NULL DEFAULT '{}'
-```
+`from_column_id` / `to_column_id` — типизированные колонки (а не поля внутри `payload jsonb`). Это даёт SQL-аналитике (CFD, cycle time) прямые JOIN'ы без парсинга JSON.
 
 Индексы:
-- `(workspace_id, occurred_at DESC)` — для ленты/audit.
-- `(workspace_id, entity_type, entity_id, occurred_at)` — для истории сущности.
-- `(workspace_id, event_type, occurred_at)` — для агрегации.
+- `(workspace_id)` — для RLS.
+- `(task_id)` — лента истории конкретной задачи.
+- `(workspace_id, created_at)` — workhorse для CFD / Monte Carlo: time-ordered scan по тенанту.
 
-**Событийная модель (MVP minimum):**
-- `task_created`, `task_updated`, `task_moved_column`, `task_assigned`, `task_sprint_changed`, `task_points_changed`, `task_closed`, `task_reopened`.
-- `sprint_created`, `sprint_started`, `sprint_closed`.
-- `column_wip_breached` — когда добавление в колонку превышает wip_limit.
+**Quirk:** `task_id` — `ON DELETE CASCADE`. Удаление задачи стирает её историю. Известное ограничение (зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7); в Target — либо `ON DELETE SET NULL` с сохранением `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
 
-Payload примеры:
-```json
-// task_moved_column
-{"from_column": "uuid", "to_column": "uuid", "duration_in_source_sec": 123456}
+См. [`server/db/schema/tasks.ts`](../server/db/schema/tasks.ts).
 
-// task_points_changed
-{"from": 3, "to": 5}
+### `sprints` — итерация работы
+
+```text
+id                uuid PK, defaultRandom()
+workspace_id      uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+board_id          uuid NOT NULL REFERENCES boards(id)     ON DELETE CASCADE
+name              varchar(255) NOT NULL
+goal              text NOT NULL DEFAULT ''
+state             sprint_state NOT NULL DEFAULT 'planned'
+planned_start_at  timestamptz
+planned_end_at    timestamptz
+started_at        timestamptz
+ended_at          timestamptz
+created_at        timestamptz NOT NULL DEFAULT now()
+updated_at        timestamptz NOT NULL DEFAULT now()
 ```
 
-### `flow_daily` — агрегат для CFD
-```sql
-workspace_id    uuid NOT NULL
-project_id      uuid NOT NULL
-date            date NOT NULL
-column_id       uuid NOT NULL
-count_in        int NOT NULL       -- вошло за день
-count_out       int NOT NULL       -- вышло за день
-count_eod       int NOT NULL       -- осталось на конец дня
-PRIMARY KEY (workspace_id, project_id, date, column_id)
+Enum `sprint_state` — `planned`, `active`, `closed` (3 значения).
+
+Стейт-машина: `planned → active` (endpoint `start`, проставляет `started_at`); `active → closed` (endpoint `close`, проставляет `ended_at`); `planned → closed` (отмена ни разу не запущенного спринта). Источник истины по длительности — `started_at` / `ended_at`, а не `planned_*`. Поля `closed_at` нет — используется `ended_at`.
+
+**Партиальный UNIQUE INDEX** `sprints_one_active_per_board_idx` по `(board_id) WHERE state = 'active'` — на доске может быть не более одного активного спринта одновременно. Enforced на уровне БД.
+
+Поля `project_id`, `created_by` отсутствуют — отнесены в Target (`projects`, `audit_log`).
+
+См. [`server/db/schema/sprints.ts`](../server/db/schema/sprints.ts).
+
+### `sprint_tasks` — M:N между спринтами и задачами
+
+```text
+sprint_id      uuid NOT NULL REFERENCES sprints(id)    ON DELETE CASCADE
+task_id        uuid NOT NULL REFERENCES tasks(id)      ON DELETE CASCADE
+workspace_id   uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+added_at       timestamptz NOT NULL DEFAULT now()
+PRIMARY KEY (sprint_id, task_id)
 ```
 
-Обновляется incrementally триггером на событии `task_moved_column` или раз в час батчем.
+Задача может попадать в несколько спринтов (carry-over между итерациями), но обычно живёт в одном. Composite PK предотвращает дубликаты. См. [`server/db/schema/sprints.ts`](../server/db/schema/sprints.ts).
+
+### Связи (Current)
+
+```
+users ──┐
+        │ (M:N через workspace_members, 5 ролей)
+        ▼
+workspaces ──┐
+             ├─► boards ──► board_columns
+             │      │
+             │      └─► tasks ──► task_events
+             │              │
+             └─► sprints ◄──┴──► sprint_tasks
+                  (1 active per board enforced)
+```
+
+- `users ↔ workspaces` — M:N через `workspace_members` (роль на каждое членство).
+- `workspaces → boards → board_columns` — иерархия workspace → board → column.
+- `boards → tasks` — задачи живут на доске; их состояние определяется колонкой (`tasks.column_id`), отдельного `status` нет.
+- `tasks → task_events` — append-only history; от движений между колонками выводится вся flow-аналитика.
+- `boards → sprints` — каждый спринт принадлежит одной доске; `sprint_tasks` связывает M:N со задачами доски.
+
+ER-диаграмма Current: [`docs/uml/03-er/database.puml`](uml/03-er/database.puml) (синхронизация с реализацией — отдельная задача в `docs/code-sync-2026-05-10`).
+
+---
+
+## Target (Phase 4+)
+
+Сущности и оптимизации, обоснованно отложенные. Каждая описана с триггером ввода. Триггер — измеримое условие нагрузки или бизнеса, при котором имеет смысл вводить сущность.
+
+### `projects` — контейнер досок и спринтов
+
+> **Status:** не реализовано в Phase 1-3 MVP.
+> **Триггер ввода:** workspace начинает использовать ≥ 3 досок одновременно с разным набором задач, и пользователи запутываются между ними.
+
+Ключевые поля: `id`, `workspace_id`, `name`, `key` (короткий префикс типа `SCB` для будущих task-short-id), `description`, `archived_at`. Связи: `workspace → projects → boards/sprints`. Сегодня `workspace → board` напрямую достаточно — большинство тестовых тенантов работают с 1–2 досками.
+
+### `task_comments` — комментарии к задачам с историей изменений
+
+> **Status:** не реализовано в Phase 1-3 MVP.
+> **Триггер ввода:** первая команда, использующая Scrumban не как «личный список дел», а как orchestration tool с asynchronous discussion (≥ 5 человек, регулярные обсуждения внутри задачи).
+
+Ключевые поля: `id`, `workspace_id`, `task_id`, `author_id`, `body` (markdown), `created_at`, `updated_at`, `deleted_at` (soft delete для истории редактирований). Связь: `task ←─ task_comments`.
+
+### `task_attachments` — файловые вложения задач
+
+> **Status:** не реализовано в Phase 1-3 MVP.
+> **Триггер ввода:** реализация Object Storage (S3-совместимый / MinIO) и первый клиент, заявивший потребность в attachments.
+
+Ключевые поля: `id`, `workspace_id`, `task_id`, `uploaded_by`, `object_key` (путь в bucket'e), `filename`, `size_bytes`, `content_type`. Связь: `task ←─ task_attachments`. Без рабочего Object Storage введение бессмысленно — таблица будет ссылаться в никуда.
+
+### `task_tags` — M:N теги задач
+
+> **Status:** не реализовано в Phase 1-3 MVP.
+> **Триггер ввода:** команда удерживает ≥ 50 активных задач одновременно и теряется в навигации без cross-cutting классификации.
+
+Ключевые поля: `task_id`, `tag` (varchar). Composite PK `(task_id, tag)`. Связь: `task ←─ task_tags`. До этого порога фильтрации по assignee и колонке достаточно.
+
+### `invitations` — magic-link приглашения по email
+
+> **Status:** не реализовано в Phase 1-3 MVP. Создание членства идёт прямым добавлением через админский endpoint.
+> **Триггер ввода:** первый публичный регистр / появление ≥ 2 одновременных команд (до этого можно создавать аккаунты вручную).
+
+Ключевые поля: `id`, `workspace_id`, `email`, `role`, `token_hash`, `expires_at`, `invited_by`, `accepted_at`, partial UNIQUE по `(workspace_id, email) WHERE accepted_at IS NULL`. Связь: `workspace ←─ invitations`.
+
+### `sessions` (server-side хранилище) — рассмотрена, отвергнута для Current
+
+> **Status:** в Current используется stateless signed cookie через nuxt-auth-utils (без session-таблицы в БД). **Не планируется к замене на серверное хранилище без явного триггера.**
+>
+> **Триггер пересмотра:** первая необходимость глобального revoke (пользователь утерял устройство, админ инвалидирует все сессии без ожидания TTL) или multi-device session listing.
+
+Это сознательная архитектурная развилка. Stateless cookie даёт zero-cost на чтение (никаких DB-round-trip'ов в auth-middleware) и ноль состояния на сервере. Цена — нельзя отозвать конкретную сессию досрочно (только дождаться TTL). Введение `sessions`-таблицы (поля: `id`, `user_id`, `token_hash UNIQUE`, `expires_at`, `user_agent`, `ip`, `revoked_at`) меняет этот трейд-офф в обмен на возможность revoke.
+
+### `feature_flags` — глобальные / per-workspace флаги фич
+
+> **Status:** не реализовано в Phase 1-3 MVP.
+> **Триггер ввода:** первая необходимость частичного раскатывания фичи (canary / staged rollout) — обычно совпадает с появлением второго платного клиента.
+
+Ключевые поля: `name PK`, `enabled_globally bool`, `allowed_workspaces uuid[]`, `description`, `created_at`. До второго клиента «фича либо есть, либо нет» — флагирование добавляет сложность без выгоды.
+
+### `audit_log` — отдельный аудит-лог
+
+> **Status:** не реализовано в Phase 1-3 MVP. Текущий журнал — `task_events`, ограничен задачами.
+> **Триггер ввода:** первый Enterprise-клиент с compliance-требованиями (retention 7 лет, экспорт по запросу регулятора, immutability-гарантии).
+
+Ключевые поля: `id`, `workspace_id`, `actor_id`, `action`, `entity_type`, `entity_id`, `occurred_at`, `ip inet`, `details jsonb`, политика хранения (партиционирование по месяцам, архив в Object Storage старше 1 года). Связь: глобальная append-only, не FK на сущности (чтобы переживать их удаление).
+
+### `events` (универсальная append-only) — рассмотрена, отвергнута для Current
+
+> **Status:** в Current реализован специализированный `task_events` (см. Current). **Не планируется к замене на универсальную таблицу в Target без явного триггера.**
+>
+> **Триггер пересмотра:** появление ≥ 3 типов entities, для которых независимо нужен event-log (sprint_events, comment_events, attachment_events). Сегодня единственный event-source — задачи; специализация даёт типизацию `from_column_id` / `to_column_id` без `payload jsonb`-парсинга в SQL аналитики.
+
+Универсальная схема выглядела бы как `(id, workspace_id, occurred_at, actor_id, entity_type, entity_id, event_type, payload jsonb)`. Её плюс — единая лента audit. Минус — потеря типизации move-событий и обязательный JSON-парсинг при каждом аналитическом запросе. Пока единственный продуктовый event-source — задачи, специализация выигрывает.
+
+### `flow_daily` — суточный агрегат для CFD
+
+> **Status:** не реализовано в Phase 1-3 MVP. CFD считается «на лету» из `task_events` при каждом запросе.
+> **Триггер ввода:** p95 latency `/api/.../analytics/cfd` > 500 мс при ≥ 100 закрытых задач/мес.
+
+Ключевые поля: `workspace_id`, `project_id` (или `board_id` пока projects нет), `date`, `column_id`, `count_in` (вошло за день), `count_out` (вышло за день), `count_eod` (осталось на конец дня), composite PK `(workspace_id, board_id, date, column_id)`. Обновление — incrementally триггером на `task_moved` либо часовым батч-job через pg-boss.
 
 ### `cycle_time_samples` — один ряд на проход задачи через колонку
-```sql
-id                 uuid PK
-workspace_id       uuid NOT NULL
-project_id         uuid NOT NULL
-task_id            uuid NOT NULL
-column_id          uuid NOT NULL
-column_role        text NOT NULL
-entered_at         timestamptz NOT NULL
-exited_at          timestamptz NOT NULL
-duration_seconds   int NOT NULL
-```
 
-Используется для scatter plots и percentile-анализа.
+> **Status:** не реализовано в Phase 1-3 MVP. Cycle time восстанавливается на лету парами `task_events` (вход/выход колонки).
+> **Триггер ввода:** вместе с bottleneck detection (см. [`docs/10-analytics-design.md`](10-analytics-design.md)) либо когда p95 latency `/api/.../analytics/cycle-time` > 500 мс на 1k задач.
 
-### `sprint_stats`
-```sql
-workspace_id             uuid NOT NULL
-sprint_id                uuid PK REFERENCES sprints(id)
-planned_points           numeric
-completed_points         numeric
-rolled_over_points       numeric
-throughput_tasks         int
-avg_cycle_time_hours     numeric
-computed_at              timestamptz NOT NULL
-```
+Ключевые поля: `id`, `workspace_id`, `task_id`, `column_id`, `column_role`, `entered_at`, `exited_at`, `duration_seconds`. Используется для scatter plots, percentile-анализа, bottleneck-эвристик.
 
-### Materialized views
-- `mv_cfd_last_90d` — CFD за последние 90 дней. Refresh ежечасно.
-- `mv_throughput_weekly` — еженедельный throughput для Monte Carlo. Refresh ежедневно.
-- Определения в SQL-миграциях; см. `10-analytics-design.md` за примерами.
+### `sprint_stats` — velocity и throughput per sprint
 
-## Cross-cutting
+> **Status:** не реализовано в Phase 1-3 MVP.
+> **Триггер ввода:** появление дашборда сравнения спринтов (UI ≥ 3 спринтов в одной таблице с трендами).
 
-### `feature_flags`
-```sql
-name                 text PK
-enabled_globally     bool NOT NULL DEFAULT false
-allowed_workspaces   uuid[] NOT NULL DEFAULT '{}'
-description          text
-created_at           timestamptz NOT NULL
-```
+Ключевые поля: `workspace_id`, `sprint_id PK`, `planned_points`, `completed_points`, `rolled_over_points`, `throughput_tasks`, `avg_cycle_time_hours`, `computed_at`. Обновляется по событию `sprint_closed` либо ручному рефрешу.
 
-### `audit_log` (Enterprise, LATER в MVP можно минимально)
-```sql
-id            uuid PK
-workspace_id  uuid NOT NULL
-actor_id      uuid REFERENCES users(id)
-action        text NOT NULL
-entity_type   text NOT NULL
-entity_id     uuid
-occurred_at   timestamptz NOT NULL
-ip            inet
-details       jsonb
-```
+### Materialized views (Phase 4+ optimization)
 
-В MVP: audit живёт в `events` с пометкой `is_audit` в payload — одна таблица.
-В Target: отдельная таблица, с политикой хранения и экспорта.
+- **`mv_cfd_last_90d`** — CFD за последние 90 дней. Refresh hourly. **Триггер:** p95 latency `/api/.../analytics/cfd` > 500 мс при ≥ 100 закрытых задач/мес.
+- **`mv_throughput_weekly`** — еженедельный throughput для Monte Carlo. Refresh daily. **Триггер:** Monte Carlo-запрос > 1.5 с (сейчас 50–150 мс на 1000 итераций).
+- **`mv_cycle_time_percentiles`** — percentile cycle time по `column_role`. Refresh hourly. **Триггер:** p95 latency `/api/.../analytics/cycle-time` > 500 мс.
 
-## Dual-track
+Каждый MV вводится **независимо** при достижении своего триггера. Преждевременное добавление всех трёх — лишний код миграций и cron-jobs без аналитической выгоды.
 
-### Current
-- Схема полностью определена в миграциях.
-- Все ключевые таблицы с RLS.
-- Events — минимальный набор типов.
-- Aggregates: `flow_daily` + `cycle_time_samples` + `sprint_stats`.
-- Materialized views с ручным refresh.
+### Эволюция и общие триггеры
 
-### Target
-- Расширенный набор event types.
-- Автоматический refresh materialized views по расписанию.
-- Partitioning больших таблиц (events, cycle_time_samples) по `workspace_id` или по времени.
-- Отдельная `audit_log` с retention policy.
+- **UUID v4 → v7** на новых таблицах: вводится при появлении первой курсорной пагинации, требующей time-sortable id (обычно — лента `task_events` или `audit_log` > 100k записей).
+- **Partitioning** (`task_events`, `cycle_time_samples`, `audit_log`) по `workspace_id` или по времени — при > 50M строк в одной таблице.
+- **Read-replica** для analytics — когда OLTP latency на write-операциях начинает страдать от тяжёлых аналитических запросов.
+- **Глобальный slug → namespaced** на `workspaces`: при появлении потенциального коллизионного конфликта (два независимых заказчика хотят `acme`).
 
-### Evolution
-- Добавление новых event types не требует миграции (payload — jsonb).
-- Partitioning вводится, когда таблица events превышает ~50M строк.
-- Перенос analytics-таблиц на read-replica, когда OLTP начинает страдать.
+---
 
 ## Связанные документы
-- [`06-system-architecture.md`](06-system-architecture.md) — как модель встраивается в систему
-- [`08-backend-design.md`](08-backend-design.md) — Drizzle и слой запросов
-- [`10-analytics-design.md`](10-analytics-design.md) — как считаются метрики
-- [`11-non-functional.md`](11-non-functional.md) — RLS политики
+
+- [`06-system-architecture.md`](06-system-architecture.md) — как модель встраивается в систему.
+- [`08-backend-design.md`](08-backend-design.md) — Drizzle и слой запросов.
+- [`10-analytics-design.md`](10-analytics-design.md) — как считаются метрики.
+- [`11-non-functional.md`](11-non-functional.md) — RLS-политики и multi-tenancy.
+- [`docs/uml/01-use-case/roles-guide.md`](uml/01-use-case/roles-guide.md) — матрица прав 5 ролей.
+- [`docs/audit-2026-05-10-issues.md`](audit-2026-05-10-issues.md) — детальный аудит расхождений docs ↔ code.
