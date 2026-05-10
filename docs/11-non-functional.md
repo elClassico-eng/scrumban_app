@@ -330,14 +330,14 @@ Backup'ов нет. Dev — данные в локальном Postgres-конт
 
 ### Current
 
-CI/CD не настроен. `.github/workflows/`, `.gitflic-ci/`, `Dockerfile` (prod) и `docker-compose.prod.yml` в репозитории отсутствуют. Тесты (`vitest` + `@testcontainers/postgresql`, 124 green) запускаются локально через `pnpm test`.
+CI/CD не настроен. `.github/workflows/`, `.gitflic-ci/`, `Dockerfile` (prod) и `docker-compose.prod.yml` в репозитории отсутствуют. Тесты (`vitest` + `@testcontainers/postgresql`, 124 green) запускаются локально через `bun run test`.
 
 ### Target: pipeline на push
 
 > **Триггер ввода:** первый коллаборатор / момент, когда «пушнул не в ту ветку» уже больно.
 
 - GitHub Actions (или GitFlic CI как зеркало).
-- Pipeline: `pnpm typecheck` + `pnpm test` + `pnpm build` на каждый push в `main`.
+- Pipeline: `bun run typecheck` + `bun run test` + `bun run build` на каждый push в `main`.
 - PR pipeline: всё то же + preview-deploy на временный URL.
 
 ### Target: prod deploy automation
@@ -398,7 +398,7 @@ Feature flags не реализованы. Таблицы `feature_flags` нет
 | Metrics / tracing | нет | Prometheus (≥ 2 реплик / SLA) → OTEL (≥ 3 сервисов) |
 | Error tracking | нет | Sentry (первый внешний user) |
 | Backups | нет | ежесуточный pg_dump (первый user с реальными данными) → WAL + автотест (RPO < 24ч / платный клиент) |
-| CI/CD | локальный `pnpm test` | GitHub Actions / GitFlic CI (первый коллаборатор) |
+| CI/CD | локальный `bun run test` | GitHub Actions / GitFlic CI (первый коллаборатор) |
 | HTTP headers | нет | CSP / HSTS / X-Frame-Options через Caddy (первый prod-deploy) |
 | Audit | `task_events` (event-sourcing, не compliance) | отдельная `audit_log` 7 лет (Enterprise compliance) |
 | Feature flags | нет | minimal table (первый частичный rollout) → rollout % / UI (≥ 5 флагов) |
