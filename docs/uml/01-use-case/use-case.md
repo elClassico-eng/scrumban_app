@@ -2,9 +2,42 @@
 
 Функциональные требования Scrumban-платформы в виде диаграммы прецедентов (UML 2.5).
 
-![Use Case Diagram](use-case.svg)
+Исходник: [`use-case.puml`](use-case.puml). Preview — через PlantUML-плагин IDE (SVG в репозитории не хранится).
 
-> Диаграмма построена в PlantUML. Исходник: [`use-case.puml`](use-case.puml). Для регенерации SVG: `plantuml -tsvg use-case.puml`.
+## Стереотип `<<Future>>` (что уже работает, что отложено)
+
+На диаграмме use-cases и внешние акторы, помеченные стереотипом `<<Future>>` (жёлтая заливка), **не реализованы в Phase 1-3 MVP**. Без стереотипа — есть рабочий backend-эндпоинт или сервис.
+
+### Реализовано в Phase 1-3 (без стереотипа)
+
+- **Учётная запись:** регистрация (`POST /api/auth/register`), вход / выход (`POST /api/auth/login`, `/api/auth/logout`).
+- **Workspace & участники:** создание workspace (`POST /api/workspaces`), ручное добавление существующего пользователя в workspace (`POST /api/workspaces/:id/members`), управление ролями (`PATCH /api/workspaces/:id/members/:userId`).
+- **Доски и колонки:** CRUD досок и колонок, реордеринг колонок.
+- **Задачи:** создать, назначить, переместить, отредактировать, посмотреть, искать (см. `server/api/workspaces/[id]/boards/[boardId]/tasks/*`).
+- **Спринты:** создать, спланировать, запустить, закрыть (state machine в `sprints.service.ts`).
+- **Аналитика:** CFD, Throughput, Monte Carlo, WIP-рекомендации (Little's Law) — live-SQL поверх `task_events`.
+
+### Отложено (`<<Future>>`)
+
+| Use case | Чего не хватает в коде |
+|----------|------------------------|
+| `UC_ResetPwd` | SMTP не подключён, magic-link нет |
+| `UC_AcceptInvite` | таблица `invitations` отсутствует |
+| `UC_EditProfile` | в `users` нет полей name / avatar / locale |
+| `UC_WSSettings` | UI и эндпоинты настроек workspace отложены |
+| `UC_InviteMember` | модельный flow включает `<<include>> UC_SendEmail` (magic-link); текущий эндпоинт лишь добавляет уже зарегистрированного пользователя |
+| `UC_ArchiveWS` | поля `workspaces.archived_at` нет |
+| `UC_CreateProject`, `UC_ArchiveProject` | сущности `projects` нет — board напрямую принадлежит workspace |
+| `UC_CommentTask` | таблица `task_comments` отсутствует |
+| `UC_AttachFile` | таблица `task_attachments` и S3/MinIO-интеграция отсутствуют |
+| `UC_ViewScatter`, `UC_CompareSprints`, `UC_ViewBottleneck` | данные есть, но требуют либо отдельных агрегатов (`cycle_time_samples`, `sprint_stats`), либо frontend ECharts (не реализован) |
+| `UC_SendEmail`, `UC_SendNotification` | SMTP и боты не подключены |
+| `UC_LinkCommit` | webhook-эндпоинт Git-платформы не реализован |
+| `UC_RecomputeAgg`, `UC_UpdateMC` | pg-boss не установлен, периодических задач нет; пока аналитика считается на лету |
+
+Внешние акторы `<<Future>>`: `SMTP`, `Bot` (Telegram / Pachca), `Git Platform` (GitFlic / GitVerse), `Scheduler` (Cron / pg-boss).
+
+Конкретные триггеры для разморозки — в [`../../05-mvp-scope-and-roadmap.md`](../../05-mvp-scope-and-roadmap.md) (Phase 4-5+) и в Target-секциях [`../../07-domain-model.md`](../../07-domain-model.md), [`../../10-analytics-design.md`](../../10-analytics-design.md), [`../../11-non-functional.md`](../../11-non-functional.md).
 
 ## Актёры
 
