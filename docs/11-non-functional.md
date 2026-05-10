@@ -27,7 +27,7 @@ Email-ссылка с одноразовым токеном (1 час жизни
 
 ### Target: глобальная revoke сессий
 
-> **Триггер ввода:** первая необходимость инвалидировать все сессии конкретного user'а (потеря устройства, увольнение). Требует таблицы `revoked_sessions` или server-side таблицы `sessions` (см. `07-domain-model.md` → Target → sessions).
+> **Триггер ввода:** первая необходимость инвалидировать все сессии конкретного user'а (потеря устройства, увольнение). Требует таблицы `revoked_sessions` или server-side таблицы `sessions` (см. [`07-domain-model.md`](07-domain-model.md) → Target → sessions).
 
 ### Target: 2FA (TOTP)
 
@@ -61,7 +61,7 @@ TOTP через authenticator-приложения (Google Authenticator, Yandex
 
 Иерархия: `viewer < member < scrum_master < admin < owner`. Источник правды — `server/db/schema/workspaces.ts` (`workspaceMemberRole` pgEnum) и `server/utils/rbac.ts` (`ROLE_LEVEL`).
 
-Полное описание прав по ролям — [`docs/roles-guide.md`](roles-guide.md).
+Полное описание прав по ролям — [`docs/uml/01-use-case/roles-guide.md`](uml/01-use-case/roles-guide.md).
 
 ### Разрешения (Current — выверено по коду)
 
@@ -85,7 +85,7 @@ TOTP через authenticator-приложения (Google Authenticator, Yandex
 | Просматривать аналитику (CFD, throughput, cycle-time, Monte Carlo, WIP-recommendations) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Удалять workspace | ✓ | − | − | − | − |
 
-> **Замечание о удалении workspace:** строка отражает intended-RBAC. Сам endpoint `DELETE /workspaces/[id]` пока не реализован (см. `server/api/workspaces/` — присутствуют только `index.{get,post}.ts`, `[id].get.ts` и поддерево `[id]/...`). Это явный gap в Current и фиксируется в backlog.
+> **Замечание об удалении workspace:** строка отражает intended-RBAC. Сам endpoint `DELETE /workspaces/[id]` пока не реализован (см. `server/api/workspaces/` — присутствуют только `index.{get,post}.ts`, `[id].get.ts` и поддерево `[id]/...`). Это явный gap в Current и фиксируется в backlog.
 
 ### Реализация (Current)
 
@@ -120,7 +120,7 @@ TOTP через authenticator-приложения (Google Authenticator, Yandex
 4. **Двухролевая Postgres-схема:** `scrumban` (миграции, минует RLS) и `scrumban_app` (рантайм, FORCE ROW LEVEL SECURITY).
 5. **`withTenant(workspaceId, fn)`** в [`server/utils/db.ts`](../server/utils/db.ts) — каждый handler оборачивает доменные DB-операции в эту функцию, которая выставляет `app.workspace_id` через `set_config(...)` в начале транзакции.
 
-### RLS политика (пример из миграции `0003_rls_policies.sql`)
+### RLS политика (Current — пример из миграции `0003_rls_policies.sql`)
 
 ```sql
 ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
@@ -245,7 +245,7 @@ OpenTelemetry traces для HTTP-запросов и DB-запросов. Backen
 
 > **Триггер ввода:** первый продакшн-деплой за публичным URL.
 
-`Content-Security-Policy`, `Strict-Transport-Security` (HSTS, `max-age=31536000; includeSubDomains; preload`), `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`. Конфигурируется в Caddyfile (см. `06-system-architecture.md` → Target → Caddy).
+`Content-Security-Policy`, `Strict-Transport-Security` (HSTS, `max-age=31536000; includeSubDomains; preload`), `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`. Конфигурируется в Caddyfile (см. [`06-system-architecture.md`](06-system-architecture.md) → Target → Caddy).
 
 ### Target: HTTPS / TLS
 
@@ -273,30 +273,32 @@ Let's Encrypt через Caddy (ACME-автомат). До этого dev раб
 
 ## Производительность
 
-### Current SLA (наблюдаемые цифры локально, без нагрузочного тестирования)
+### Current
+
+#### SLA (наблюдаемые цифры локально, без нагрузочного тестирования)
 
 - Latency API p95 < 500 мс на типовых endpoint'ах в dev (testcontainers Postgres, без сети). В prod не замерено.
 - Один Nitro-процесс, один Postgres, один in-process EventEmitter pub/sub для SSE.
 
-### Current оптимизации
+#### Оптимизации
 
 - Connection pooling — встроенный pool `postgres-js` (`max=20` по умолчанию).
 - Prepared statements — Drizzle использует параметризованные запросы автоматически.
 - Индексы на всех query paths, composite-индексы начинаются с `workspace_id`.
 - N+1 борется через SQL `JOIN`'ы (`db.select().from(...).leftJoin(...)`), не в service-коде.
 
-### Target SLA (production)
+### Target: SLA (production)
 
 > **Триггер ввода:** первый платный клиент / первый внешний клиент с ожиданиями uptime'а.
 
-- Доступность: 99.5 % uptime (≈ 3.6 часов downtime / мес).
+- Доступность: 99.5 % uptime (≈ 3,6 часа downtime / мес).
 - Latency API p95: < 200 мс.
 - Latency страницы доски (initial load): < 2 с.
 - ≥ 100 concurrent SSE-соединений на одну реплику.
 
 ### Target: горизонтальное масштабирование
 
-> **Триггер ввода:** появление 2-й реплики Nitro (см. `06-system-architecture.md` → Target → Postgres LISTEN/NOTIFY pub/sub).
+> **Триггер ввода:** появление 2-й реплики Nitro (см. [`06-system-architecture.md`](06-system-architecture.md) → Target → Postgres LISTEN/NOTIFY pub/sub).
 
 In-process EventEmitter заменяется на Postgres LISTEN/NOTIFY; sticky-sessions в reverse-proxy для SSE. До этого 1 реплика покрывает MVP-нагрузку.
 
@@ -407,4 +409,4 @@ Feature flags не реализованы. Таблицы `feature_flags` нет
 - [`07-domain-model.md`](07-domain-model.md) — схемы таблиц, RLS, точная фиксация 6 / 9.
 - [`08-backend-design.md`](08-backend-design.md) — структура `server/`, реализация `withTenant` и RBAC-сервисов.
 - [`12-deployment.md`](12-deployment.md) — деплой и секреты в prod.
-- [`roles-guide.md`](roles-guide.md) — детальное описание прав 5 ролей.
+- [`docs/uml/01-use-case/roles-guide.md`](uml/01-use-case/roles-guide.md) — детальное описание прав 5 ролей.
