@@ -22,11 +22,11 @@
 ### `users` — учётная запись
 
 ```text
-id              uuid PK, defaultRandom()
-email           varchar(255) NOT NULL UNIQUE
-password_hash   varchar(255) NOT NULL    -- scrypt через nuxt-auth-utils hashPassword()
-created_at      timestamptz NOT NULL DEFAULT now()
-updated_at      timestamptz NOT NULL DEFAULT now()
+id                 uuid PK, defaultRandom()
+email              varchar(255) NOT NULL UNIQUE
+password_hash      varchar(255) NOT NULL                -- scrypt через nuxt-auth-utils hashPassword()
+created_at         timestamptz NOT NULL DEFAULT now()
+updated_at         timestamptz NOT NULL DEFAULT now()
 ```
 
 Глобальная учётная запись (не tenant-scoped). `email` уникален на уровне БД; lower-casing — задача сервис-слоя. Хеш пароля — **scrypt** (встроен в Node, дефолт nuxt-auth-utils); argon2id опционален при установке `@node-rs/argon2`. См. [`server/db/schema/users.ts`](../server/db/schema/users.ts).
@@ -34,11 +34,11 @@ updated_at      timestamptz NOT NULL DEFAULT now()
 ### `workspaces` — корень тенанта
 
 ```text
-id              uuid PK, defaultRandom()
-name            varchar(255) NOT NULL
-slug            varchar(64)  NOT NULL UNIQUE  -- глобально уникален
-created_at      timestamptz NOT NULL DEFAULT now()
-updated_at      timestamptz NOT NULL DEFAULT now()
+id                 uuid PK, defaultRandom()
+name               varchar(255) NOT NULL
+slug               varchar(64)  NOT NULL UNIQUE         -- глобально уникален
+created_at         timestamptz NOT NULL DEFAULT now()
+updated_at         timestamptz NOT NULL DEFAULT now()
 ```
 
 См. [`server/db/schema/workspaces.ts`](../server/db/schema/workspaces.ts).
@@ -51,10 +51,10 @@ updated_at      timestamptz NOT NULL DEFAULT now()
 ### `workspace_members` — членство пользователей в workspace (M:N)
 
 ```text
-workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
-user_id         uuid NOT NULL REFERENCES users(id)      ON DELETE CASCADE
-role            workspace_member_role NOT NULL
-created_at      timestamptz NOT NULL DEFAULT now()
+workspace_id       uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+user_id            uuid NOT NULL REFERENCES users(id)      ON DELETE CASCADE
+role               workspace_member_role NOT NULL
+created_at         timestamptz NOT NULL DEFAULT now()
 PRIMARY KEY (workspace_id, user_id)
 ```
 
@@ -65,12 +65,12 @@ Enum `workspace_member_role` имеет **5 значений**: `viewer`, `membe
 ### `boards` — доска внутри workspace
 
 ```text
-id              uuid PK, defaultRandom()
-workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
-name            varchar(255) NOT NULL
-slug            varchar(64)  NOT NULL  -- уникален в пределах workspace (UNIQUE INDEX по (workspace_id, slug))
-created_at      timestamptz NOT NULL DEFAULT now()
-updated_at      timestamptz NOT NULL DEFAULT now()
+id                 uuid PK, defaultRandom()
+workspace_id       uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+name               varchar(255) NOT NULL
+slug               varchar(64)  NOT NULL                -- уникален в пределах workspace (UNIQUE INDEX по (workspace_id, slug))
+created_at         timestamptz NOT NULL DEFAULT now()
+updated_at         timestamptz NOT NULL DEFAULT now()
 ```
 
 `workspace → board` напрямую: промежуточный `projects` сейчас отсутствует. Нет `type` (`scrumban`/`scrum`/`kanban`) — методология определяется конфигурацией колонок и наличием/отсутствием активного спринта, а не статическим полем.
@@ -80,14 +80,14 @@ updated_at      timestamptz NOT NULL DEFAULT now()
 ### `board_columns` — колонки доски
 
 ```text
-id              uuid PK, defaultRandom()
-workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
-board_id        uuid NOT NULL REFERENCES boards(id)     ON DELETE CASCADE
-name            varchar(255) NOT NULL
-position        integer NOT NULL  -- UNIQUE INDEX по (board_id, position)
-wip_limit       integer            -- nullable: null = без лимита
-column_role     column_role NOT NULL
-created_at      timestamptz NOT NULL DEFAULT now()
+id                 uuid PK, defaultRandom()
+workspace_id       uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+board_id           uuid NOT NULL REFERENCES boards(id)     ON DELETE CASCADE
+name               varchar(255) NOT NULL
+position           integer NOT NULL                     -- UNIQUE INDEX по (board_id, position)
+wip_limit          integer                              -- nullable: null = без лимита
+column_role        column_role NOT NULL
+created_at         timestamptz NOT NULL DEFAULT now()
 ```
 
 Enum `column_role` имеет **5 значений**: `backlog`, `in_progress`, `review`, `done`, `archived`. Семантика отделена от пользовательского `name` — команда может переименовать «In Progress» в «Doing», а аналитика всё равно поймёт колонку через `column_role='in_progress'`.
@@ -99,19 +99,19 @@ Enum `column_role` имеет **5 значений**: `backlog`, `in_progress`, 
 ### `tasks` — задача (центральная сущность)
 
 ```text
-id               uuid PK, defaultRandom()
-workspace_id     uuid NOT NULL REFERENCES workspaces(id)     ON DELETE CASCADE
-board_id         uuid NOT NULL REFERENCES boards(id)         ON DELETE CASCADE
-column_id        uuid NOT NULL REFERENCES board_columns(id)  ON DELETE RESTRICT
-title            varchar(255) NOT NULL
-description      text NOT NULL DEFAULT ''
-assignee_id      uuid REFERENCES users(id) ON DELETE SET NULL
-priority         task_priority NOT NULL DEFAULT 'medium'
-position         integer NOT NULL  -- сортировка внутри (board_id, column_id)
-closed_at        timestamptz       -- проставляется при входе в column_role='done'
-reopened_count   integer NOT NULL DEFAULT 0
-created_at       timestamptz NOT NULL DEFAULT now()
-updated_at       timestamptz NOT NULL DEFAULT now()
+id                 uuid PK, defaultRandom()
+workspace_id       uuid NOT NULL REFERENCES workspaces(id)    ON DELETE CASCADE
+board_id           uuid NOT NULL REFERENCES boards(id)        ON DELETE CASCADE
+column_id          uuid NOT NULL REFERENCES board_columns(id) ON DELETE RESTRICT
+title              varchar(255) NOT NULL
+description        text NOT NULL DEFAULT ''
+assignee_id        uuid REFERENCES users(id) ON DELETE SET NULL
+priority           task_priority NOT NULL DEFAULT 'medium'
+position           integer NOT NULL                     -- сортировка внутри (board_id, column_id)
+closed_at          timestamptz                          -- проставляется при входе в column_role='done'
+reopened_count     integer NOT NULL DEFAULT 0
+created_at         timestamptz NOT NULL DEFAULT now()
+updated_at         timestamptz NOT NULL DEFAULT now()
 ```
 
 Enum `task_priority` — `low`, `medium`, `high` (3 значения, **не** `low/normal/high/urgent`).
@@ -127,45 +127,47 @@ Enum `task_priority` — `low`, `medium`, `high` (3 значения, **не** `
 ### `task_events` — append-only журнал движений задач
 
 ```text
-id               uuid PK, defaultRandom()
-workspace_id     uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
-task_id          uuid NOT NULL REFERENCES tasks(id)      ON DELETE CASCADE
-event_type       task_event_type NOT NULL
-from_column_id   uuid     -- typed FK semantics на board_columns; nullable для task_created
-to_column_id    uuid      -- nullable для task_archived
-actor_id         uuid REFERENCES users(id) ON DELETE SET NULL
-payload          jsonb NOT NULL DEFAULT '{}'
-created_at       timestamptz NOT NULL DEFAULT now()
+id                 uuid PK, defaultRandom()
+workspace_id       uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+task_id            uuid NOT NULL REFERENCES tasks(id)      ON DELETE CASCADE
+event_type         task_event_type NOT NULL
+from_column_id     uuid                                 -- nullable, не FK (см. Quirks); пустой для task_created
+to_column_id       uuid                                 -- nullable, не FK (см. Quirks); пустой для task_archived
+actor_id           uuid REFERENCES users(id) ON DELETE SET NULL
+payload            jsonb NOT NULL DEFAULT '{}'
+created_at         timestamptz NOT NULL DEFAULT now()
 ```
 
 Enum `task_event_type` — `task_created`, `task_moved`, `task_closed`, `task_reopened`, `task_assigned`, `task_updated`, `task_archived` (7 значений). Это **специализированный** журнал именно по задачам, **не** универсальный `events` с `entity_type/entity_id`. См. секцию Target про `events` ниже — это сознательное архитектурное решение, а не недоделка.
 
-`from_column_id` / `to_column_id` — типизированные колонки (а не поля внутри `payload jsonb`). Это даёт SQL-аналитике (CFD, cycle time) прямые JOIN'ы без парсинга JSON.
+`from_column_id` / `to_column_id` — типизированные `uuid`-колонки **без FK-ограничения** на `board_columns` (см. Quirks). Не поля внутри `payload jsonb` — типизация вытащена наружу для индексации и аналитики без JSON-парсинга.
 
 Индексы:
 - `(workspace_id)` — для RLS.
 - `(task_id)` — лента истории конкретной задачи.
 - `(workspace_id, created_at)` — workhorse для CFD / Monte Carlo: time-ordered scan по тенанту.
 
-**Quirk:** `task_id` — `ON DELETE CASCADE`. Удаление задачи стирает её историю. Известное ограничение (зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7); в Target — либо `ON DELETE SET NULL` с сохранением `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
+**Quirks:**
+- `task_id` — `ON DELETE CASCADE`. Удаление задачи стирает её историю. Известное ограничение (зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7); в Target — либо `ON DELETE SET NULL` с сохранением `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
+- `from_column_id` / `to_column_id` — `uuid` без FK на `board_columns`. Сделано осознанно: при удалении колонки исторические события должны выживать (column-id остаётся «висячим» указателем для аналитики). Trade-off: невозможно через FK гарантировать, что значение указывает на реально существовавшую колонку — корректность отслеживается в сервис-слое (`server/services/tasks.service.ts`).
 
 См. [`server/db/schema/tasks.ts`](../server/db/schema/tasks.ts).
 
 ### `sprints` — итерация работы
 
 ```text
-id                uuid PK, defaultRandom()
-workspace_id      uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
-board_id          uuid NOT NULL REFERENCES boards(id)     ON DELETE CASCADE
-name              varchar(255) NOT NULL
-goal              text NOT NULL DEFAULT ''
-state             sprint_state NOT NULL DEFAULT 'planned'
-planned_start_at  timestamptz
-planned_end_at    timestamptz
-started_at        timestamptz
-ended_at          timestamptz
-created_at        timestamptz NOT NULL DEFAULT now()
-updated_at        timestamptz NOT NULL DEFAULT now()
+id                 uuid PK, defaultRandom()
+workspace_id       uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+board_id           uuid NOT NULL REFERENCES boards(id)     ON DELETE CASCADE
+name               varchar(255) NOT NULL
+goal               text NOT NULL DEFAULT ''
+state              sprint_state NOT NULL DEFAULT 'planned'
+planned_start_at   timestamptz
+planned_end_at     timestamptz
+started_at         timestamptz
+ended_at           timestamptz
+created_at         timestamptz NOT NULL DEFAULT now()
+updated_at         timestamptz NOT NULL DEFAULT now()
 ```
 
 Enum `sprint_state` — `planned`, `active`, `closed` (3 значения).
@@ -181,10 +183,10 @@ Enum `sprint_state` — `planned`, `active`, `closed` (3 значения).
 ### `sprint_tasks` — M:N между спринтами и задачами
 
 ```text
-sprint_id      uuid NOT NULL REFERENCES sprints(id)    ON DELETE CASCADE
-task_id        uuid NOT NULL REFERENCES tasks(id)      ON DELETE CASCADE
-workspace_id   uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
-added_at       timestamptz NOT NULL DEFAULT now()
+sprint_id          uuid NOT NULL REFERENCES sprints(id)    ON DELETE CASCADE
+task_id            uuid NOT NULL REFERENCES tasks(id)      ON DELETE CASCADE
+workspace_id       uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+added_at           timestamptz NOT NULL DEFAULT now()
 PRIMARY KEY (sprint_id, task_id)
 ```
 
@@ -222,21 +224,22 @@ ER-диаграмма Current: [`docs/uml/03-er/database.puml`](uml/03-er/databa
 ### `projects` — контейнер досок и спринтов
 
 > **Status:** не реализовано в Phase 1-3 MVP.
-> **Триггер ввода:** workspace начинает использовать ≥ 3 досок одновременно с разным набором задач, и пользователи запутываются между ними.
+> **Триггер ввода:** ≥ 3 активных досок в одном workspace одновременно (например, разделение по командам / продуктовым линиям), **или** ≥ 1 user-request на группировку и cross-board view. Сегодня workspace → board напрямую достаточно для ранних команд, использующих 1–2 доски — типичная нагрузка MVP.
 
-Ключевые поля: `id`, `workspace_id`, `name`, `key` (короткий префикс типа `SCB` для будущих task-short-id), `description`, `archived_at`. Связи: `workspace → projects → boards/sprints`. Сегодня `workspace → board` напрямую достаточно — большинство тестовых тенантов работают с 1–2 досками.
+Ключевые поля: `id`, `workspace_id`, `name`, `key` (короткий префикс типа `SCB` для будущих task-short-id), `description`, `archived_at`. Связи: `workspace → projects → boards/sprints`.
 
 ### `task_comments` — комментарии к задачам с историей изменений
 
 > **Status:** не реализовано в Phase 1-3 MVP.
-> **Триггер ввода:** первая команда, использующая Scrumban не как «личный список дел», а как orchestration tool с asynchronous discussion (≥ 5 человек, регулярные обсуждения внутри задачи).
+> **Триггер ввода:** ≥ 5 активных пользователей в одном workspace, у которых пересекаются назначения по задачам (≥ 30% задач имеют ≥ 2 разных assignee/follower за rolling 7 дней), **или** первый прямой запрос пользователя «как обсудить задачу с коллегой внутри тулзы». Сегодня обсуждения выносят в Pachca/Slack — это нормально для команды до 5 человек, но даёт цену переключения контекста при росте.
 
 Ключевые поля: `id`, `workspace_id`, `task_id`, `author_id`, `body` (markdown), `created_at`, `updated_at`, `deleted_at` (soft delete для истории редактирований). Связь: `task ←─ task_comments`.
 
 ### `task_attachments` — файловые вложения задач
 
 > **Status:** не реализовано в Phase 1-3 MVP.
-> **Триггер ввода:** реализация Object Storage (S3-совместимый / MinIO) и первый клиент, заявивший потребность в attachments.
+> **Precondition:** Object Storage в проде (S3-совместимый — Yandex Object Storage / MinIO).
+> **Триггер ввода:** ≥ 2 клиента отдельно запросили attachments как блокер adoption'а, **или** обнаружен паттерн «скриншоты багов в комментариях» (после реализации `task_comments`) у ≥ 30% задач — продукт сам показывает потребность.
 
 Ключевые поля: `id`, `workspace_id`, `task_id`, `uploaded_by`, `object_key` (путь в bucket'e), `filename`, `size_bytes`, `content_type`. Связь: `task ←─ task_attachments`. Без рабочего Object Storage введение бессмысленно — таблица будет ссылаться в никуда.
 
