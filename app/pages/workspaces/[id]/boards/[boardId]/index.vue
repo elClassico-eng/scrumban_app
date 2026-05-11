@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { pageRoutes } from '~/routing'
 import type { Task } from '#shared/types/task'
 
 const route = useRoute()
@@ -58,19 +57,9 @@ const isLoading = computed(() =>
 
 <template>
   <div class="space-y-4 h-full flex flex-col">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <NuxtLink
-          :to="pageRoutes.boards(wsId)"
-          class="text-sm text-muted hover:text-default flex items-center gap-1"
-        >
-          <UIcon name="i-lucide-arrow-left" class="size-4" />
-          К доскам
-        </NuxtLink>
-        <h1 class="text-2xl font-bold tracking-tight">
-          {{ board?.name ?? 'Доска' }}
-        </h1>
-      </div>
+    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" />
+
+    <div class="flex justify-end">
       <UButton
         v-if="canCreateColumns"
         icon="i-lucide-plus"
