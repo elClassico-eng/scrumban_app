@@ -17,6 +17,7 @@ const taskIdRef = computed(() => boardStore.openTaskId)
 
 const { list: tasksList, update, remove } = useTasksApi(wsId, bId)
 const { list: columnsList } = useColumnsApi(wsId, bId)
+const { list: membersList } = useMembersApi(wsId)
 const { list: eventsQuery } = useTaskEventsApi(wsId, bId, taskIdRef)
 
 const task = computed(() =>
@@ -24,6 +25,14 @@ const task = computed(() =>
 )
 const columns = computed(() => columnsList.data.value?.columns ?? [])
 const events = computed(() => eventsQuery.data.value?.events ?? [])
+
+const assigneeOptions = computed(() => [
+  { label: 'Не назначен', value: null },
+  ...(membersList.data.value?.members ?? []).map(m => ({
+    label: m.email,
+    value: m.userId,
+  })),
+])
 
 const PRIORITY_OPTIONS: Array<{ label: string; value: TaskPriority }> = [
   { label: 'Низкий', value: 'low' },
@@ -61,6 +70,11 @@ function onPriorityChange(v: TaskPriority) {
   if (!task.value || v === task.value.priority) return
   localPriority.value = v
   update.mutate({ taskId: task.value.id, priority: v })
+}
+
+function onAssigneeChange(v: string | null) {
+  if (!task.value || v === task.value.assigneeId) return
+  update.mutate({ taskId: task.value.id, assigneeId: v })
 }
 
 const { moveTask } = useTaskMove(wsId, bId)
@@ -133,6 +147,15 @@ async function onDelete() {
                 :items="PRIORITY_OPTIONS"
                 class="w-full"
                 @update:model-value="onPriorityChange"
+              />
+            </div>
+            <div class="col-span-2">
+              <p class="text-xs text-muted uppercase tracking-wide mb-1.5">Исполнитель</p>
+              <USelect
+                :model-value="task.assigneeId"
+                :items="assigneeOptions"
+                class="w-full"
+                @update:model-value="onAssigneeChange"
               />
             </div>
           </div>

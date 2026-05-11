@@ -140,7 +140,7 @@ const menuItems = computed(() => [[
       @change="onChange"
     >
       <template #item="{ element }">
-        <TaskCard :task="element" />
+        <TaskCard :task="element" :workspace-id="workspaceId" />
       </template>
     </draggable>
 
