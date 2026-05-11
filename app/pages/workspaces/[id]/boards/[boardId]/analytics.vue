@@ -6,12 +6,17 @@ const bId = computed(() => route.params.boardId as string)
 const workspaceStore = useWorkspaceStore()
 workspaceStore.setCurrent(wsId.value)
 
+const { list: workspacesList } = useWorkspacesApi()
 const { list: boardsList } = useBoardsApi(wsId)
 const { cfd, cycleTime, throughput, wipRecommendations } = useAnalyticsApi(wsId, bId)
 
+const workspace = computed(() =>
+  workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
+)
 const board = computed(() =>
   boardsList.data.value?.boards.find(b => b.id === bId.value),
 )
+const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 useHead({
   title: () => board.value
@@ -22,7 +27,7 @@ useHead({
 
 <template>
   <div class="space-y-4">
-    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" />
+    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" />
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <AnalyticsCfdChart

@@ -21,6 +21,7 @@ const board = computed(() =>
 const sprints = computed(() => sprintsList.data.value?.sprints ?? [])
 
 const canManage = computed(() => hasRole(workspace.value?.role, 'scrum_master'))
+const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 useHead({
   title: () => board.value
@@ -47,7 +48,7 @@ const createOpen = ref(false)
 
 <template>
   <div class="space-y-4">
-    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" />
+    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" />
 
     <div class="flex items-center justify-between">
       <USelect v-model="filter" :items="STATE_FILTERS" size="sm" class="w-48" />
