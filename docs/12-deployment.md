@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Документ описывает **целевую модель деплоя** (production / staging / on-prem) и **локальную разработку**. На момент написания продакшн-деплоя нет: разработка ведётся локально через `docker-compose.dev.yml` (Postgres + MinIO) и `pnpm dev` (Nitro в HMR-режиме). Production-артефакты (`Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`, `.github/workflows/`, `.gitflic-ci/`) в репозитории отсутствуют — это Target, см. ниже.
+Документ описывает **целевую модель деплоя** (production / staging / on-prem) и **локальную разработку**. На момент написания продакшн-деплоя нет: разработка ведётся локально через `docker-compose.dev.yml` (Postgres + MinIO) и `bun run dev` (Nitro в HMR-режиме). Production-артефакты (`Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`, `.github/workflows/`, `.gitflic-ci/`) в репозитории отсутствуют — это Target, см. ниже.
 
 Целевая идея: единый `docker-compose.yml` поднимает всю систему — локально для разработки, на staging-среде Yandex Cloud VM для демо и первых пользователей, и у клиентов при on-prem развёртывании. Одни и те же образы, разные конфигурации.
 
@@ -35,9 +35,9 @@ git clone https://gitflic.ru/project/<owner>/scrumban.git
 cd scrumban
 cp .env.example .env                 # редактируем по необходимости
 docker compose -f docker-compose.dev.yml up -d   # Postgres + MinIO
-pnpm install
-pnpm db:migrate                      # применить миграции
-pnpm dev                             # запустить Nuxt dev-сервер (frontend + Nitro backend)
+bun install
+bun run db:migrate                      # применить миграции
+bun run dev                             # запустить Nuxt dev-сервер (frontend + Nitro backend)
 ```
 
 ### Dev workflow
@@ -46,28 +46,28 @@ pnpm dev                             # запустить Nuxt dev-сервер 
 docker compose -f docker-compose.dev.yml up -d
 
 # Терминал 2: Nuxt dev-сервер с HMR (один процесс отдаёт и SPA, и API)
-pnpm dev
+bun run dev
 ```
 
 Открываем http://localhost:3000. Frontend и backend живут в одном процессе — никаких отдельных портов и proxy.
 
 ### npm scripts (вместо Makefile)
-- `pnpm dev` — Nuxt dev-сервер (HMR для frontend, hot-reload для backend).
-- `pnpm build` — production-сборка (генерит `.output/` готовый к деплою).
-- `pnpm db:generate` — `drizzle-kit generate` создаёт SQL-миграцию из изменений в schema.
-- `pnpm db:migrate` — `drizzle-kit migrate` применяет pending миграции.
-- `pnpm db:studio` — Drizzle Studio (GUI для БД).
-- `pnpm openapi:generate` — собрать `openapi/scrumban.yaml` из zod-схем.
-- `pnpm codegen` — `openapi-typescript` обновляет `shared/types/api.d.ts`.
-- `pnpm test` — `vitest run` (unit + integration + e2e).
-- `pnpm lint` — eslint + prettier check.
+- `bun run dev` — Nuxt dev-сервер (HMR для frontend, hot-reload для backend).
+- `bun run build` — production-сборка (генерит `.output/` готовый к деплою).
+- `bun run db:generate` — `drizzle-kit generate` создаёт SQL-миграцию из изменений в schema.
+- `bun run db:migrate` — `drizzle-kit migrate` применяет pending миграции.
+- `bun run db:studio` — Drizzle Studio (GUI для БД).
+- `bun run openapi:generate` — собрать `openapi/scrumban.yaml` из zod-схем.
+- `bun run codegen` — `openapi-typescript` обновляет `shared/types/api.d.ts`.
+- `bun run test` — `vitest run` (unit + integration + e2e).
+- `bun run lint` — eslint + prettier check.
 
 ## CI/CD (GitHub Actions — или GitFlic CI) — Target
 
-> CI/CD не настроен: ни `.github/workflows/`, ни `.gitflic-ci/` в репозитории нет. Тесты (`vitest` + `@testcontainers/postgresql`, ~124 теста) запускаются локально через `pnpm test`. Триггер ввода — первый внешний коллаборатор или первый продакшн-деплой.
+> CI/CD не настроен: ни `.github/workflows/`, ни `.gitflic-ci/` в репозитории нет. Тесты (`vitest` + `@testcontainers/postgresql`, ~124 теста) запускаются локально через `bun run test`. Триггер ввода — первый внешний коллаборатор или первый продакшн-деплой.
 
 ### Pipeline на PR
-1. **lint** — eslint + prettier (TS), `pnpm typecheck` (tsc --noEmit).
+1. **lint** — eslint + prettier (TS), `bun run typecheck` (tsc --noEmit).
 2. **test-unit** — vitest unit-тесты (services, utils, pure functions).
 3. **test-integration** — vitest + @testcontainers/postgresql (реальный PG в Docker).
 4. **test-e2e** — @nuxt/test-utils для HTTP handler-ов.
@@ -91,7 +91,7 @@ pnpm dev
 
 ### Local (dev) — Current
 - Postgres и MinIO в Docker (`docker-compose.dev.yml`).
-- Nuxt dev-сервер локально (один процесс на frontend + Nitro backend) с HMR (`pnpm dev`).
+- Nuxt dev-сервер локально (один процесс на frontend + Nitro backend) с HMR (`bun run dev`).
 - `.env` содержит dev-креды (см. `.env.example`).
 
 ### Staging (Yandex Cloud VM, наш SaaS для демо) — Target
@@ -150,7 +150,7 @@ DOMAIN=scrumban.local
 ## Миграции в deployment
 
 ### Подход
-- Миграции запускаются **при старте Nitro-плагина** (автоматически в MVP) или вручную через `pnpm db:migrate` перед деплоем.
+- Миграции запускаются **при старте Nitro-плагина** (автоматически в MVP) или вручную через `bun run db:migrate` перед деплоем.
 - Drizzle Kit проверяет версию БД (через `__drizzle_migrations` таблицу), применяет недостающие миграции up-ward.
 - Если стартует несколько реплик — advisory lock на уровне БД предотвращает гонки.
 

@@ -76,7 +76,7 @@ scrumban/
 
 > **Легенда аннотаций:** ✅ — реализовано в Phase 1–3 MVP (см. [`docs/05-mvp-scope-and-roadmap.md`](../../05-mvp-scope-and-roadmap.md)). ⚠️ Target — обоснованно отложено, каждое с измеримым триггером ввода. Полные Target-секции и компонентные триггеры — в сестринских документах: [`docs/06-system-architecture.md`](../../06-system-architecture.md), [`docs/07-domain-model.md`](../../07-domain-model.md), [`docs/08-backend-design.md`](../../08-backend-design.md), [`docs/11-non-functional.md`](../../11-non-functional.md).
 
-**Не используем workspace/монорепу с пакетами** — один `package.json`, один `pnpm dev`. Рефакторинг в pnpm-workspace в Phase 4+, если появится нужда (отдельный admin-frontend, worker-процесс). Это 2-3 часа работы, не блокер.
+**Не используем workspace/монорепу с пакетами** — один `package.json`, один `bun run dev`. Рефакторинг в bun-workspace в Phase 4+, если появится нужда (отдельный admin-frontend, worker-процесс). Это 2-3 часа работы, не блокер.
 
 ---
 
@@ -214,7 +214,7 @@ Code-first от zod-схем:
 
 1. `server/api/**/*.ts` определяют zod-схемы для input/output
 2. `scripts/generate-openapi.ts` собирает их через `zod-to-openapi` → `openapi/scrumban.yaml`
-3. `pnpm codegen` запускает `openapi-typescript` → `shared/types/api.d.ts`
+3. `bun run codegen` запускает `openapi-typescript` → `shared/types/api.d.ts`
 4. Frontend импортирует только из `shared/types/`, никогда из `server/`
 
 `scrumban.yaml` коммитим в git — это артефакт контракта, не временный файл.

@@ -107,7 +107,7 @@ server/
 
 1. **HTTP handler (Nitro / H3).** Файл `server/api/workspaces/[id]/boards/[boardId]/tasks/index.post.ts` экспортирует `defineEventHandler(async event => ...)`. Файл-роутинг: путь файла = URL, метод (`.post`, `.get`) — из имени; `[id]` — динамический сегмент.
 2. **Drizzle.** ORM на TypeScript. Schema в `server/db/schema/tasks.ts`. Запросы — `tx.select().from(tasks).where(eq(tasks.id, id))`. Никакого DSL, читается как SQL.
-3. **Миграции (Drizzle Kit).** Меняешь schema → `pnpm db:generate` → создаётся SQL-файл в `drizzle/migrations/`. `pnpm db:migrate` применяет. RLS-политики добавлены отдельным SQL-файлом (`0003_rls_policies.sql`, `0004_rls_nullif_fix.sql`, `0006_sprints_rls.sql`).
+3. **Миграции (Drizzle Kit).** Меняешь schema → `bun run db:generate` → создаётся SQL-файл в `drizzle/migrations/`. `bun run db:migrate` применяет. RLS-политики добавлены отдельным SQL-файлом (`0003_rls_policies.sql`, `0004_rls_nullif_fix.sql`, `0006_sprints_rls.sql`).
 4. **Sessions через nuxt-auth-utils.** При логине `setUserSession(event, { user: { id, email } })` ставит подписанный HTTP-only cookie. На запросах `getUserSession(event)` читает; `requireAuth(event)` — обёртка с throw 401.
 5. **Tenant scoping через `withTenant`.** Любой запрос к tenant-scoped таблице (`boards`, `board_columns`, `tasks`, `task_events`, `sprints`, `sprint_tasks`) — внутри `withTenant(workspaceId, async (tx) => { ... })`. RLS-политики и FORCE ROW LEVEL SECURITY включены на 6 таблицах из 9: `boards`, `board_columns`, `tasks`, `task_events`, `sprints`, `sprint_tasks`. `users` — глобальная (не tenant-scoped). `workspaces` и `workspace_members` пока без RLS — известное отставание, см. [`docs/11-non-functional.md`](11-non-functional.md) → Target → RLS на `workspaces` и `workspace_members`.
 
@@ -236,7 +236,7 @@ Codegen pipeline отсутствует. Frontend и backend не разделе
 
 В `shared/types/` лежит единственный файл — [`shared/types/auth.d.ts`](../shared/types/auth.d.ts), расширяющий `nuxt-auth-utils` интерфейс `User`. Файла `shared/types/api.d.ts` нет; папки `openapi/` нет.
 
-В `package.json` нет ни `zod-to-openapi`, ни `openapi-typescript`, ни npm-скриптов `pnpm openapi:generate` / `pnpm codegen`.
+В `package.json` нет ни `zod-to-openapi`, ни `openapi-typescript`, ни npm-скриптов `bun run openapi:generate` / `bun run codegen`.
 
 ### Target: API contract codegen
 
@@ -244,10 +244,10 @@ Codegen pipeline отсутствует. Frontend и backend не разделе
 
 Цепочка:
 1. Меняешь zod-схему в `server/api/...` (например, добавляешь поле в `BodySchema` для create-task).
-2. `pnpm openapi:generate` → `zod-to-openapi` пересобирает `openapi/scrumban.yaml`.
-3. `pnpm codegen` → `openapi-typescript` обновляет `shared/types/api.d.ts`.
+2. `bun run openapi:generate` → `zod-to-openapi` пересобирает `openapi/scrumban.yaml`.
+3. `bun run codegen` → `openapi-typescript` обновляет `shared/types/api.d.ts`.
 4. TypeScript-компилятор сразу показывает frontend-местам, где типы изменились (compile-time fail вместо runtime).
-5. (Опционально) `pnpm contract:test` — проверка реализации против spec через `schemathesis` CLI.
+5. (Опционально) `bun run contract:test` — проверка реализации против spec через `schemathesis` CLI.
 
 **Жёсткое правило:** frontend никогда не импортирует из `server/`. Граница — `openapi/scrumban.yaml` + сгенерированные TS-типы в `shared/types/api.d.ts`.
 
@@ -316,7 +316,7 @@ Owned by 07 (определение MV) и 06 (схема Aggregator-серви�
 ### Current
 
 - vitest, `@nuxt/test-utils`, `happy-dom` стоят в `devDependencies`.
-- `pnpm test` запускает vitest. Реальное тестовое покрытие — RLS-интеграционные тесты (124 теста, включая cross-tenant изоляцию; см. [`11-non-functional.md`](11-non-functional.md) → Тестирование). Юнит-тесты на сервисный слой пока минимальные — основное unit-покрытие появится с первыми регрессиями.
+- `bun run test` запускает vitest. Реальное тестовое покрытие — RLS-интеграционные тесты (124 теста, включая cross-tenant изоляцию; см. [`11-non-functional.md`](11-non-functional.md) → Тестирование). Юнит-тесты на сервисный слой пока минимальные — основное unit-покрытие появится с первыми регрессиями.
 - `@testcontainers/postgresql` — **не установлен**; integration-тестов с реальным Postgres сегодня нет.
 
 ### Target: расширенная пирамида тестов
