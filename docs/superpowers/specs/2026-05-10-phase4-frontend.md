@@ -70,7 +70,7 @@
 
 4. **Codegen на границах**:
    - Zod-схемы из бэкенда → openapi.yaml → `shared/types/api.d.ts` (через openapi-typescript). Frontend импортирует ТОЛЬКО из `shared/types/`, а не из `server/`.
-   - Для форм: тот же zod-источник используется через `@vee-validate/zod`.
+   - Для форм: тот же zod-источник используется через Nuxt UI v4 `<UForm :schema="zodSchema" :state="stateObj">` — Nuxt UI v4 принимает zod схемы напрямую и сам выкидывает `FormValidationException`, никаких сторонних adapter'ов.
 
 5. **Codegen-разрыв (важно для Step 0)**: на сегодня (2026-05-10) пайплайн `zod → openapi → ts-client` ещё **не реализован** в бэкенде. Это в Target секции `08-backend-design.md`. Поэтому в Step 0 мы временно объявляем типы вручную в `shared/types/` под endpoint, а codegen-пайплайн добавляем как Target-задачу (триггер: ≥3 сигнатуры разошлись с бэкендом → подключаем codegen).
 
@@ -85,7 +85,7 @@
 | Стили | tailwindcss | 4.x (через @nuxt/ui) | utility-first CSS |
 | State (UI) | pinia + @pinia/nuxt | latest | UI/локальное состояние |
 | State (server) | @tanstack/vue-query | 5.x | кэш серверных запросов, мутации, invalidation |
-| Forms | vee-validate + @vee-validate/zod | latest | валидация форм через те же zod-схемы |
+| Forms | `<UForm :schema :state>` (Nuxt UI v4) | — | валидация zod-схемой нативно, без сторонних adapter'ов |
 | Drag-n-drop | vuedraggable@next | 4.x для Vue 3 | перетаскивание задач между колонками |
 | Charts | echarts + vue-echarts | latest | CFD, Monte Carlo, scatter, throughput |
 | Утилиты | @vueuse/core | latest | useEventSource (SSE), useStorage, useDebounce |
@@ -351,17 +351,19 @@ bun install pinia @pinia/nuxt
 bun install @tanstack/vue-query
 bun install vuedraggable@next
 bun install echarts vue-echarts
-bun install vee-validate @vee-validate/zod
 bun install @vueuse/core
 bun install @nuxt/icon
+bun install slugify
 bun install -D @nuxtjs/google-fonts
 ```
 
 (Inspira UI / vue-bits добавим точечно позже.)
 
+> **Note (post-impl):** изначально спека предлагала `vee-validate` + `@vee-validate/zod` для валидации форм. После того, как мы убедились что `<UForm :schema :state>` Nuxt UI v4 принимает zod-схему напрямую, эти зависимости были удалены — ни одна форма проекта их не использует. См. коммит `chore: drop unused vee-validate`.
+
 **Проверка**: `bun run typecheck` зелёный, `bun run test` зелёный.
 
-**Коммит**: `chore: add frontend dependencies for Phase 4 (pinia, vue-query, vee-validate, echarts, vuedraggable)`
+**Коммит**: `chore: add frontend dependencies for Phase 4 (pinia, vue-query, echarts, vuedraggable, slugify)`
 
 ### 9.4 Скелет папок
 
@@ -789,11 +791,16 @@ export interface Task {
 
 ### 10.3 Composable: `useAuthApi.ts`
 
+> **Aligned with backend 2026-05-11:** `/api/auth/session` бросает 401 при отсутствии сессии (не возвращает `{user: null}`), а `RegisterSchema` принимает только `{email, password}` (никакого `displayName`). Поэтому `SessionResponse.user` — не-nullable, `RegisterInput` без displayName, и у `sessionQuery` стоит `retry: false`.
+
 ```ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { apiRoutes, pageRoutes } from '~/routing'
-
-interface SessionResponse { user: { id: string; email: string; displayName: string } | null }
+import type {
+  SessionResponse,
+  LoginInput,
+  RegisterInput,
+} from '#shared/types/auth'
 
 export function useAuthApi() {
   const qc = useQueryClient()
@@ -803,11 +810,12 @@ export function useAuthApi() {
     queryKey: ['auth', 'session'],
     queryFn: () => $fetch<SessionResponse>(apiRoutes.authSession),
     staleTime: 5 * 60_000,
+    retry: false, // не дёргать 401 повторно
   })
 
   const login = useMutation({
-    mutationFn: (input: { email: string; password: string }) =>
-      $fetch(apiRoutes.authLogin, { method: 'POST', body: input }),
+    mutationFn: (input: LoginInput) =>
+      $fetch<SessionResponse>(apiRoutes.authLogin, { method: 'POST', body: input }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['auth', 'session'] })
       await router.push(pageRoutes.workspaces)
@@ -815,8 +823,8 @@ export function useAuthApi() {
   })
 
   const register = useMutation({
-    mutationFn: (input: { email: string; password: string; displayName: string }) =>
-      $fetch(apiRoutes.authRegister, { method: 'POST', body: input }),
+    mutationFn: (input: RegisterInput) =>
+      $fetch<SessionResponse>(apiRoutes.authRegister, { method: 'POST', body: input }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['auth', 'session'] })
       await router.push(pageRoutes.workspaces)
@@ -826,13 +834,23 @@ export function useAuthApi() {
   const logout = useMutation({
     mutationFn: () => $fetch(apiRoutes.authLogout, { method: 'POST' }),
     onSuccess: async () => {
-      qc.clear()
+      qc.clear() // дропает кэш других user'ов, не только сессию
       await router.push(pageRoutes.login)
     },
   })
 
   return { sessionQuery, login, register, logout }
 }
+```
+
+Типы живут в `shared/types/auth.ts` (там же, где `declare module '#auth-utils'`-augmentation для серверной сессии):
+
+```ts
+// shared/types/auth.ts
+export interface SessionUser { id: string; email: string }
+export interface SessionResponse { user: SessionUser }
+export interface LoginInput { email: string; password: string }
+export interface RegisterInput { email: string; password: string }
 ```
 
 ### 10.4 Стор: `auth.store.ts`
@@ -872,40 +890,47 @@ export default defineNuxtRouteMiddleware(async (to) => {
 })
 ```
 
-### 10.6 Форма с vee-validate + zod
+### 10.6 Форма с Nuxt UI v4 + zod
+
+`<UForm :schema :state>` принимает zod-схему напрямую и сам делает валидацию + ошибки в `<UFormField>`. Серверные ошибки (401 wrong creds) показываем отдельным `<UAlert>`.
 
 ```vue
 <!-- app/components/auth/LoginForm.vue -->
 <script setup lang="ts">
 import { z } from 'zod'
-import { toTypedSchema } from '@vee-validate/zod'
-import { useForm } from 'vee-validate'
 
 const schema = z.object({
-  email: z.string().email('Неверный email'),
-  password: z.string().min(8, 'Минимум 8 символов'),
+  email: z.string().email('Введи корректный email'),
+  password: z.string().min(1, 'Введи пароль'),
 })
 
-const { handleSubmit, defineField } = useForm({ validationSchema: toTypedSchema(schema) })
-const [email] = defineField('email')
-const [password] = defineField('password')
+type LoginState = z.infer<typeof schema>
+const state = reactive<LoginState>({ email: '', password: '' })
 
 const { login } = useAuthApi()
 
-const onSubmit = handleSubmit((values) => {
-  login.mutate(values)
+const errorMessage = computed(() => {
+  if (!login.isError.value) return null
+  const err = login.error.value as { statusCode?: number } | null
+  if (err?.statusCode === 401) return 'Неверный email или пароль'
+  return 'Не удалось войти, попробуй позже'
 })
+
+function onSubmit() {
+  login.mutate(state)
+}
 </script>
 
 <template>
-  <UForm @submit="onSubmit" class="space-y-4">
-    <UFormField label="Email" name="email">
-      <UInput v-model="email" type="email" autocomplete="email" />
+  <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+    <UFormField label="Email" name="email" required>
+      <UInput v-model="state.email" type="email" autocomplete="email" class="w-full" />
     </UFormField>
-    <UFormField label="Пароль" name="password">
-      <UInput v-model="password" type="password" autocomplete="current-password" />
+    <UFormField label="Пароль" name="password" required>
+      <UInput v-model="state.password" type="password" autocomplete="current-password" class="w-full" />
     </UFormField>
-    <UButton type="submit" :loading="login.isPending.value" block>Войти</UButton>
+    <UAlert v-if="errorMessage" color="error" variant="soft" :title="errorMessage" icon="i-lucide-alert-circle" />
+    <UButton type="submit" :loading="login.isPending.value" block size="lg">Войти</UButton>
   </UForm>
 </template>
 ```
