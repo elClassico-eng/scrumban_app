@@ -100,6 +100,7 @@ const isLoading = computed(() =>
         :workspace-id="wsId"
         :board-id="bId"
         :can-create="canCreateTasks"
+        :can-manage="canCreateColumns"
       />
     </div>
 

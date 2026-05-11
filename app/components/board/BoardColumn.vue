@@ -8,12 +8,16 @@ const props = defineProps<{
   tasks: Task[]
   workspaceId: string
   boardId: string
-  canCreate: boolean
+  canCreate: boolean // member+: create tasks
+  canManage: boolean // admin+: delete/edit column
 }>()
 
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
 const { moveTask } = useTaskMove(wsId, bId)
+const { remove: removeColumn } = useColumnsApi(wsId, bId)
+const confirm = useConfirm()
+const toast = useToast()
 
 const localTasks = ref<Task[]>([])
 watch(() => props.tasks, (next) => {
@@ -49,6 +53,45 @@ const wipState = computed(() => {
     over: count > props.column.wipLimit,
   }
 })
+
+async function onDeleteColumn() {
+  const ok = await confirm({
+    title: `Удалить колонку «${props.column.name}»?`,
+    description: 'Если в колонке есть задачи, удаление будет отменено — сначала перенеси их.',
+    confirmLabel: 'Удалить',
+    confirmColor: 'error',
+  })
+  if (!ok) return
+  try {
+    await removeColumn.mutateAsync(props.column.id)
+  }
+  catch (err) {
+    const e = err as { statusCode?: number }
+    if (e?.statusCode === 422) {
+      toast.add({
+        title: 'В колонке есть задачи',
+        description: 'Сначала перенеси их в другие колонки или удали.',
+        color: 'warning',
+        icon: 'i-lucide-alert-circle',
+      })
+    }
+    else {
+      toast.add({
+        title: 'Не удалось удалить колонку',
+        color: 'error',
+        icon: 'i-lucide-alert-circle',
+      })
+    }
+  }
+}
+
+const menuItems = computed(() => [[
+  {
+    label: 'Удалить колонку',
+    icon: 'i-lucide-trash-2',
+    onSelect: onDeleteColumn,
+  },
+]])
 </script>
 
 <template>
@@ -66,14 +109,24 @@ const wipState = computed(() => {
           WIP {{ wipState.count }}/{{ wipState.limit }}
         </UBadge>
       </div>
-      <UButton
-        v-if="canCreate"
-        icon="i-lucide-plus"
-        color="neutral"
-        variant="ghost"
-        size="xs"
-        @click="createOpen = true"
-      />
+      <div class="flex items-center gap-1">
+        <UButton
+          v-if="canCreate"
+          icon="i-lucide-plus"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          @click="createOpen = true"
+        />
+        <UDropdownMenu v-if="canManage" :items="menuItems">
+          <UButton
+            icon="i-lucide-more-horizontal"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+          />
+        </UDropdownMenu>
+      </div>
     </div>
 
     <draggable
