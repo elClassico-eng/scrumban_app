@@ -161,7 +161,7 @@ async function onDelete() {
           </div>
           <div>
             <p class="text-xs text-muted uppercase tracking-wide mb-1.5">История</p>
-            <TaskEventTimeline :events="events" />
+            <TaskEventTimeline :events="events" :workspace-id="wsId" />
           </div>
         </div>
         <div class="p-6 border-t border-default flex justify-between items-center">

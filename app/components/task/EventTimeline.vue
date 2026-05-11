@@ -2,7 +2,10 @@
 import type { TaskEvent } from '#shared/types/task'
 import type { TaskEventType } from '#shared/types/domain'
 
-defineProps<{ events: TaskEvent[] }>()
+const props = defineProps<{ events: TaskEvent[]; workspaceId: string }>()
+
+const wsId = computed(() => props.workspaceId)
+const { list: membersList } = useMembersApi(wsId)
 
 const EVENT_ICON: Record<TaskEventType, string> = {
   task_created: 'i-lucide-plus-circle',
@@ -32,6 +35,12 @@ function formatDateTime(iso: string): string {
     minute: '2-digit',
   })
 }
+
+function actorEmail(actorId: string | null): string {
+  if (actorId == null) return 'удалённый пользователь'
+  const found = membersList.data.value?.members.find(m => m.userId === actorId)
+  return found?.email ?? 'неизвестный пользователь'
+}
 </script>
 
 <template>
@@ -49,7 +58,11 @@ function formatDateTime(iso: string): string {
         :class="['size-4 shrink-0 mt-0.5', EVENT_COLOR[event.eventType]]"
       />
       <div class="flex-1 min-w-0">
-        <p>{{ humanizeTaskEventType(event.eventType) }}</p>
+        <p>
+          <span class="font-medium">{{ actorEmail(event.actorId) }}</span>
+          <span class="text-muted"> — </span>
+          <span>{{ humanizeTaskEventType(event.eventType).toLowerCase() }}</span>
+        </p>
         <p class="text-xs text-muted">{{ formatDateTime(event.createdAt) }}</p>
       </div>
     </li>
