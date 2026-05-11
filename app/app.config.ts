@@ -21,5 +21,10 @@ export default defineAppConfig({
         root: 'rounded-lg',
       },
     },
+    textarea: {
+      slots: {
+        base: 'resize-none min-h-[120px]',
+      },
+    },
   },
 })

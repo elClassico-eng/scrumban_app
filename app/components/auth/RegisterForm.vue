@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import { z } from 'zod'
 
-const schema = z.object({
-  email: z.string().email('Введи корректный email'),
-  password: z.string().min(8, 'Минимум 8 символов'),
-})
+const schema = z
+  .object({
+    email: z.string().email('Введи корректный email'),
+    password: z.string().min(8, 'Минимум 8 символов'),
+    confirmPassword: z.string().min(1, 'Повтори пароль'),
+  })
+  .refine(d => d.password === d.confirmPassword, {
+    message: 'Пароли не совпадают',
+    path: ['confirmPassword'],
+  })
 
 type RegisterState = z.infer<typeof schema>
 
-const state = reactive<RegisterState>({ email: '', password: '' })
+const state = reactive<RegisterState>({ email: '', password: '', confirmPassword: '' })
 
 const { register } = useAuthApi()
 
@@ -20,7 +26,9 @@ const errorMessage = computed(() => {
 })
 
 function onSubmit() {
-  register.mutate(state)
+  // Backend RegisterSchema is {email, password} — confirmPassword is a
+  // client-side cross-field check only.
+  register.mutate({ email: state.email, password: state.password })
 }
 </script>
 
@@ -31,6 +39,9 @@ function onSubmit() {
     </UFormField>
     <UFormField label="Пароль" name="password" hint="Минимум 8 символов" required>
       <UInput v-model="state.password" type="password" autocomplete="new-password" class="w-full" />
+    </UFormField>
+    <UFormField label="Повторите пароль" name="confirmPassword" required>
+      <UInput v-model="state.confirmPassword" type="password" autocomplete="new-password" class="w-full" />
     </UFormField>
     <UAlert
       v-if="errorMessage"
