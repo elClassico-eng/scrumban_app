@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { pageRoutes } from '~/routing'
+
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
 
@@ -67,24 +69,31 @@ async function onRemove(boardId: string, name: string) {
     </UCard>
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <UCard v-for="board in boards" :key="board.id" class="group h-full">
-        <div class="space-y-3">
-          <div class="flex items-start justify-between gap-2">
-            <h2 class="font-semibold truncate">{{ board.name }}</h2>
-            <UButton
-              v-if="canDelete"
-              icon="i-lucide-trash-2"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              class="opacity-0 group-hover:opacity-100 transition-opacity"
-              :loading="removeBoard.isPending.value"
-              @click.prevent="onRemove(board.id, board.name)"
-            />
+      <NuxtLink
+        v-for="board in boards"
+        :key="board.id"
+        :to="pageRoutes.board(wsId, board.id)"
+        class="block"
+      >
+        <UCard class="group h-full hover:border-primary/50 transition-colors">
+          <div class="space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <h2 class="font-semibold truncate">{{ board.name }}</h2>
+              <UButton
+                v-if="canDelete"
+                icon="i-lucide-trash-2"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                class="opacity-0 group-hover:opacity-100 transition-opacity"
+                :loading="removeBoard.isPending.value"
+                @click.prevent="onRemove(board.id, board.name)"
+              />
+            </div>
+            <p class="text-xs text-muted font-mono">{{ board.slug }}</p>
           </div>
-          <p class="text-xs text-muted font-mono">{{ board.slug }}</p>
-        </div>
-      </UCard>
+        </UCard>
+      </NuxtLink>
     </div>
 
     <BoardCreateModal v-if="canCreate" v-model:open="createOpen" :workspace-id="wsId" />

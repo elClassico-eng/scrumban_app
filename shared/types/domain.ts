@@ -12,19 +12,3 @@ export type TaskEventType =
   | 'task_assigned'
   | 'task_updated'
   | 'task_archived'
-
-export interface Task {
-  id: string
-  workspaceId: string
-  boardId: string
-  columnId: string
-  title: string
-  description: string
-  assigneeId: string | null
-  priority: TaskPriority
-  position: number
-  closedAt: string | null
-  reopenedCount: number
-  createdAt: string
-  updatedAt: string
-}
