@@ -16,6 +16,13 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // Nuxt only auto-imports composables/*.{ts} at the top level by default.
+  // We organise composables by domain (api/, domain/, ...), so opt in
+  // to recursive scanning for both composables/ and utils/.
+  imports: {
+    dirs: ['composables/**', 'utils/**'],
+  },
+
   googleFonts: {
     families: {
       Manrope: [400, 500, 600, 700, 800],
