@@ -9,6 +9,7 @@
 - [English commits](feedback_english_commits.md) — git commits always in English (repo convention); translate Russian templates from plan files at commit time
 - [Verify concrete claims](feedback_verify_concrete_claims.md) — every concrete count/"X works" claim in audits, COMPACT, or Current docs must be re-greppable from code in the same session; memory is a hypothesis, not a fact
 - [IDE review over per-step approval](feedback_ide_review.md) — batch writes, user reviews in IDE; per-file approval prompts slow flow without adding signal
+- [Nuxt component auto-import prefix](feedback_nuxt_component_prefix.md) — components in subfolders get a folder prefix; verify in `.nuxt/components.d.ts` before first use; bit me twice in Phase 4
 - [Project core decisions](project_core_decisions.md) — scope, позиционирование, стек (Nuxt monorepo, Nitro), deployment, монетизация; обновлено 2026-04-26
 - [Architectural principles](project_architectural_principles.md) — hard rules для кодовой базы: multi-tenancy (RLS), SSE pub/sub, event-sourced analytics, SPA mode, feature flags
 - [Dual-track approach](project_dual_track_approach.md) — каждый spec документирует Current MVP + Target architecture + Evolution path
