@@ -70,9 +70,17 @@ function onColumnChange(toColumnId: string) {
   moveTask(task.value.id, toColumnId, 0)
 }
 
+const confirm = useConfirm()
+
 async function onDelete() {
   if (!task.value) return
-  if (!confirm(`Удалить задачу «${task.value.title}»?`)) return
+  const ok = await confirm({
+    title: `Удалить задачу «${task.value.title}»?`,
+    description: 'Действие необратимо.',
+    confirmLabel: 'Удалить',
+    confirmColor: 'error',
+  })
+  if (!ok) return
   await remove.mutateAsync(task.value.id)
   boardStore.closeTask()
 }

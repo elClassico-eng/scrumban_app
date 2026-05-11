@@ -54,9 +54,17 @@ async function onRoleChange(userId: string, newRole: Role) {
   }
 }
 
+const confirm = useConfirm()
+
 async function onRemove(userId: string, email: string) {
   actionError.value = null
-  if (!confirm(`Удалить ${email} из workspace?`)) return
+  const ok = await confirm({
+    title: `Удалить ${email} из workspace?`,
+    description: 'Пользователь потеряет доступ ко всем доскам этого workspace.',
+    confirmLabel: 'Удалить',
+    confirmColor: 'error',
+  })
+  if (!ok) return
   try {
     await remove.mutateAsync(userId)
   }

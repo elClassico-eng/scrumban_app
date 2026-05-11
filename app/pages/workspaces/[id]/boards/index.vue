@@ -24,9 +24,16 @@ useHead({
 })
 
 const createOpen = ref(false)
+const confirm = useConfirm()
 
 async function onRemove(boardId: string, name: string) {
-  if (!confirm(`Удалить доску «${name}»? Все её колонки и задачи будут потеряны.`)) return
+  const ok = await confirm({
+    title: `Удалить доску «${name}»?`,
+    description: 'Все её колонки и задачи будут потеряны. Действие необратимо.',
+    confirmLabel: 'Удалить',
+    confirmColor: 'error',
+  })
+  if (!ok) return
   removeBoard.mutate(boardId)
 }
 </script>
