@@ -2,251 +2,301 @@
 
 Этот файл поддерживается в актуальном состоянии. Если ты читаешь его после компакта контекста или новой сессии — здесь точка входа: что сделано, где остановились, куда двигаемся.
 
-**Обновлён:** 2026-05-10.
+**Обновлён:** 2026-05-11.
 
 ---
 
 ## Моментальный снимок состояния
 
 ### Проект на этапе
-**Backend MVP полностью готов (Phases 1-3). 124 теста зелёные. User уходит на ревью кода.**
+**Phase 4 frontend MVP смержен в `main` (`452c01c`). Full SPA от auth до analytics работает в браузере, browser e2e пройдена на каждом Step. Backend без изменений с Phase 3, 124 теста по-прежнему зелёные.**
 
 Стек:
-- Nuxt 4 monorepo (`app/` фронт + `server/` Nitro бек в одном проекте)
-- PostgreSQL 16 + Row-Level Security (две роли: `scrumban` для миграций, `scrumban_app` для рантайма)
-- Drizzle ORM + drizzle-kit (миграции в SQL)
-- nuxt-auth-utils (session cookies + scrypt)
-- zod (валидация)
-- pino (structured logs, не интегрирован в endpoints — TODO)
-- vitest + @nuxt/test-utils + testcontainers/postgresql
+- **Backend** (без изменений): Nuxt 4 monorepo (`server/` Nitro) + PostgreSQL 16 + RLS + Drizzle ORM + nuxt-auth-utils (scrypt) + zod + pino + vitest + testcontainers
+- **Frontend** (новое): Nuxt 4 SPA (`app/`) + Nuxt UI v4 (Reka UI + Tailwind 4) + Pinia + @tanstack/vue-query + ECharts (через vue-echarts) + vuedraggable + @vueuse/core + slugify
+- **Tooling**: bun + drizzle-kit + docker-compose (Postgres :5433 dev) + `scripts/codesign-natives.sh` (postinstall — macOS Tahoe Gatekeeper workaround)
 
-### Что работает end-to-end
-- **Auth**: register / login / logout / session (4 endpoint, 11 тестов)
-- **Workspaces**: CRUD + cross-tenant isolation (3 endpoint, 9 тестов)
-- **Workspace members**: list / add / patch role / delete с full RBAC matrix (4 endpoint, 13 тестов)
-- **Boards**: CRUD внутри workspace (5 endpoint, 17 тестов)
-- **Columns**: CRUD + bulk reorder + 4 default columns при создании board (5 endpoint, 14 тестов)
-- **Tasks**: CRUD + position auto-assignment в колонке (5 endpoint, 12 тестов)
-- **Move task**: state machine (closed_at / reopened_count), task_events log, WIP enforcement с force=true override (1 endpoint, 9 тестов)
-- **Sprints**: CRUD + state machine planned→active→closed + sprint_tasks M:N (10 endpoint, 16 тестов)
-- **SSE real-time**: GET /stream endpoint, in-process event bus (4 unit-теста + smoke-test вручную)
-- **Analytics**:
-  - Throughput (по дню/неделе)
-  - Cycle time (с min-sample threshold для перцентилей)
-  - CFD (Cumulative Flow Diagram)
-  - **Monte Carlo** прогноз спринтов (B+ научная новизна)
-  - **Little's Law** WIP рекомендации (B+ научная новизна)
-- **RLS**: RLS на 6 таблиц из 9 (boards, board_columns, tasks, task_events, sprints, sprint_tasks) с FORCE ROW LEVEL SECURITY + WITH CHECK; 7 RLS-isolation тестов. `workspaces` + `workspace_members` — известное отставание (см. Backlog).
-- **Multi-tenancy**: service-layer scoping + RLS как defence-in-depth
+### Что работает end-to-end (frontend, верифицировано в браузере)
+- **Auth flow**: register → auto-login → workspace; login с error mapping (401); logout очищает vue-query cache; глобальный `auth.global.ts` middleware гонит на `/login` при отсутствии сессии; reload сохраняет сессию через cookie.
+- **Workspaces**: список карточек с role badge; create modal с **auto-slug** из name (cyrillic через `slugify` lib: «Моя команда» → `moya-komanda`); switcher в sidebar с **localStorage persist** через `@vueuse/core` `useStorage`; clickable cards → `/workspaces/{id}/boards`.
+- **Members**: invite по email (только зарегистрированных), role change через USelect (только роли строго ниже актора), remove с подтверждением; error mapping (404 not registered, 409 already member, 400 last-owner-protection); RBAC в UI зеркалит backend `requireMinRole`.
+- **Boards**: список grid карточек, create modal (admin+) с auto-slug, hover-trash delete (admin+).
+- **Kanban-доска**: горизонтальный scroll колонок, **DnD через vuedraggable@4** с optimistic update (`qc.setQueryData` патчит cache до ответа сервера; на success/error — invalidate для server-renumbered позиций); WIP badge становится **красным** на превышении лимита.
+- **Task drawer (USlideover)**: inline-edit title/description через `watchDebounced` 500ms, priority/column через USelect; **audit timeline** из task_events с iconified per-event-type; delete с confirm.
+- **Realtime SSE**: подписка через `@vueuse/core` `useEventSource` на `/stream`, на любой event (`task.created/moved/updated/deleted`) **инвалидирует** `['tasks', wsId, boardId]`; две вкладки видят изменения друг друга через ~1 сек.
+- **Sprints**: state machine UI (planned → active → closed), action buttons по правам (scrum_master+) и state; 409 на конкурирующий active sprint → понятная ошибка; filter по state.
+- **Analytics dashboard** (5 ECharts визуализаций):
+  - **CFD** (stacked area) — накопленный поток задач по колонкам.
+  - **Cycle Time** (scatter + p50/p85/p95 reference lines + stats grid).
+  - **Throughput** (line, задач/день).
+  - **Monte Carlo** (P50/P85/P95 days + probability badge + histogram распределения daily throughput, user-tunable tasksRemaining/horizonDays).
+  - **WIP recommendations** (Little's Law: per-column current vs recommended с delta-arrow).
+  - Insufficient-data branches (MC и WIP возвращают `{ok: false}`) рендерятся отдельным empty state.
+  - Dark mode переключает ECharts theme через `colorMode` binding.
+- **RBAC в UI**: `hasRole(actorRole, minRole)` хелпер; кнопки create/manage скрыты / задизейблены ниже порога.
+
+### Backend (без изменений с Phase 3, как было в прошлом снимке)
+- 44 HTTP endpoint'а (auth + workspaces + members + boards + columns + tasks + sprints + analytics + healthz + stream).
+- 9 таблиц БД; RLS на 6 (boards, board_columns, tasks, task_events, sprints, sprint_tasks); `users` глобальная, `workspaces` + `workspace_members` — known gap.
+- 124 теста зелёные (12 файлов).
+- 5 RBAC ролей (viewer < member < scrum_master < admin < owner), 3-state sprint enum (planned/active/closed), 7 task_event_type.
+- Auth: scrypt через nuxt-auth-utils. Analytics: live-SQL без кэша; `MIN_DAYS_OF_HISTORY=14`, `DEFAULT_ITERATIONS=1000`, `HISTORY_LOOKBACK_DAYS=90`.
 
 ### Последнее выполненное действие
-17 коммитов реализации (Phases 1-3) за активную сессию. 124 теста проходят. User просил «продолжим backend и Phase 3, потом я буду смотреть, анализировать и давать правки».
+Phase 4 frontend MVP смержен в `main` (`452c01c`). 17 коммитов: 4 feature-Step + foundation chores + 2 follow-up. Также удалена локальная ветка `feature/phase4-frontend` (и старая `docs/code-sync-2026-05-10`).
 
 ### Следующий шаг
-**User берёт паузу для ревью кода.** Когда вернётся — вероятные направления:
-1. Frontend (Nuxt SPA) — login / dashboard / boards UI / kanban view с drag-n-drop / analytics charts
-2. Доработка по результатам ревью (refactoring, clarifications, fixes)
-3. Phase 4 hardening — pg-boss workers (когда появятся email/notifications), per-column cycle time, Postgres LISTEN/NOTIFY для multi-replica SSE
+**Phase 5 — Production-readiness.** Trigger: Phase 4 в `main`, MVP готов к демо/защите. См. [`05-mvp-scope-and-roadmap.md`](docs/05-mvp-scope-and-roadmap.md) → Phase 5 секция.
+
+Главные направления:
+1. **Dockerfile** для production (multi-stage: bun install → bun build → runtime).
+2. **docker-compose.prod.yml** — Nuxt app + Postgres 16 + Caddy reverse proxy.
+3. **Caddyfile** — TLS via Let's Encrypt, security headers (HSTS, CSP, X-Frame-Options).
+4. **pino integration в endpoints** — structured logs с requestId middleware.
+5. **Sentry** — error tracking (front + back).
+6. **GitHub Actions CI** — typecheck + vitest + build.
+7. **pg_dump** scheduled backup → Yandex Object Storage.
+8. **Rate limit** на `/auth/login`.
+9. **Deployment** на Yandex Cloud VM с docker-compose.
 
 ---
 
 ## Что сделано (commits, в порядке создания)
 
 ### Документация и pivot (до active development)
-- Project setup (`.gitignore`, `.claude/settings.json`, `CLAUDE.md`, `COMPACT.md`)
-- Полная документация (`docs/01-12-*.md`, `docs/uml/`, master spec)
-- Pivot Go → Nuxt monorepo (`docs/superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md`)
-- Docs updated under pivot (08-backend-design rewrite, system-arch, deployment, etc.)
-- Roles guide расширен с разъяснениями (роль ≠ должность)
-- README updated
+- Project setup (`.gitignore`, `.claude/settings.json`, `CLAUDE.md`, `COMPACT.md`).
+- Полная документация (`docs/01-12-*.md`, `docs/uml/`, master spec).
+- Pivot Go → Nuxt monorepo.
 
-### Phase 1 backend (steps 1-7) — auth + workspaces foundation
-- Step 1: Nuxt 4 skeleton, package.json, nuxt.config.ts, app/app.vue
-- Step 2: Drizzle, docker-compose с Postgres :5433, /api/healthz
-- Step 3: 4 auth endpoint через nuxt-auth-utils
-- Step 4: workspaces CRUD
-- Step 5: vitest + @nuxt/test-utils, 20/20 e2e тестов
-- Step 6: doc fixes (scrypt вместо argon2id, RLS отложен в Phase 2)
-- Step 7: workspace member management с RBAC
+### Phase 1 backend — auth + workspaces foundation
+- 4 auth endpoint через nuxt-auth-utils, workspaces CRUD, RBAC member management, 124 теста в pipeline.
 
-### Phase 2 backend (steps 8-13) — boards + tasks + real-time
-- Step 8: Phase 2 schema (boards, board_columns, tasks, task_events) + RLS politik + two-role Postgres setup + RLS isolation tests
-- Step 9: boards CRUD endpoints
-- Step 10: columns CRUD + reorder + default columns при создании board
-- Step 11: tasks CRUD
-- Step 12: move-task endpoint с state machine (closed_at / reopened_count) + task_events writes + WIP enforcement
-- Step 13: SSE real-time + in-process event bus
+### Phase 2 backend — boards + tasks + real-time
+- boards CRUD, columns CRUD + reorder + default 4 колонки при создании board, tasks CRUD + move state machine + WIP enforcement, task_events append-only log, SSE через in-process event bus.
 
-### Phase 3 backend (steps 15-17) — sprints + analytics
-- Step 14 SKIPPED: pg-boss workers (YAGNI без актуальных фоновых задач)
-- Step 15: sprints schema + state machine + sprint_tasks M:N + RLS
-- Step 16: throughput + cycle-time analytics + task_created event log
-- Step 17: CFD + Monte Carlo + Little's Law
+### Phase 3 backend — sprints + analytics
+- sprints state machine + sprint_tasks M:N, throughput + cycle-time, CFD + Monte Carlo + Little's Law WIP recommendations.
 
-### 2026-05-10 — Docs/code sync (план [`docs/superpowers/plans/2026-05-10-docs-code-sync.md`](docs/superpowers/plans/2026-05-10-docs-code-sync.md))
+### 2026-05-10 — Docs/code sync
+- Большой sweep: 12 numbered docs + master spec + UML reset (7 диаграмм, ER/per-role/login.puml удалены), память расширена двумя feedback'ами (English commits, verify concrete claims). Эффект: документация теперь greppable-консистентна с кодом.
 
-После аудита (`docs/audit-2026-05-10-issues.md`) обнаружено ~150 расхождений между документацией и реализацией. Стратегия: **код — реальность, документация догоняет**; всё реально нереализованное помечено как Target с измеримым триггером ввода.
+### Phase 4 frontend MVP (2026-05-11) — *новое*
+17 коммитов на `feature/phase4-frontend` → смержено в main одним merge-commit'ом.
 
-**Архив:**
-- `docs/archive/` создана; перенесены [Go-spec](docs/archive/2026-04-18-scrumban-platform-design.md) и [Phase 0 plan](docs/archive/2026-04-23-phase0-week1-nitro-starter.md) с migration header'ами как материал для главы «Эволюция архитектуры» в магистерской.
+**Step 0 — Foundation** (8 chore/setup коммитов):
+- Spec doc как единый источник Phase 4 (`docs/superpowers/specs/2026-05-10-phase4-frontend.md`).
+- `pnpm` → `bun` sweep в backend docs (08, 11, 12, pivot-spec).
+- Phase 4 deps: pinia + @pinia/nuxt, @tanstack/vue-query, vuedraggable@4, echarts + vue-echarts, @vueuse/core, @nuxt/icon, @nuxtjs/google-fonts, slugify, vue-tsc (devDep). vee-validate был установлен но позже удалён.
+- Nuxt UI v4 theme (`app.config.ts`: indigo primary, slate neutral), Manrope + JetBrains Mono fonts, vue-query plugin.
+- **Routing manifest** (`app/routing/index.ts`): 30 apiRoutes (покрывают все 44 backend endpoint'а) + 10 pageRoutes; единственное место с литералами `/api/` и frontend pages.
+- App shell layout (sidebar + header + auth layout), shared types (Role, SprintState, TaskPriority, TaskEventType), utilities (humanize, format).
+- Refactor: shell-компоненты `AppHeader`/`AppSidebar` перенесены в `components/` root (без префикса).
+- `scripts/codesign-natives.sh` postinstall — макОС Tahoe Gatekeeper SIGKILL'ит unsigned native binaries (esbuild, fsevents, lightningcss, и т.д.), скрипт ad-hoc re-sign'ит через `codesign -s -`.
 
-**Numbered docs (12 файлов):** [`07-domain-model.md`](docs/07-domain-model.md), [`06-system-architecture.md`](docs/06-system-architecture.md), [`11-non-functional.md`](docs/11-non-functional.md), [`08-backend-design.md`](docs/08-backend-design.md), [`09-frontend-design.md`](docs/09-frontend-design.md), [`10-analytics-design.md`](docs/10-analytics-design.md), [`05-mvp-scope-and-roadmap.md`](docs/05-mvp-scope-and-roadmap.md) — все переведены в формат Current (что реально работает в коде) + Target (что обоснованно отложено с триггером). Точечные правки в [`01-vision-and-goals.md`](docs/01-vision-and-goals.md), [`04-economic-rationale.md`](docs/04-economic-rationale.md), [`12-deployment.md`](docs/12-deployment.md). [`02-target-audience.md`](docs/02-target-audience.md), [`03-competitive-analysis.md`](docs/03-competitive-analysis.md) — без drift.
+**Step 1 — Auth flow** (`187f96d`):
+- `useAuthApi` composable: sessionQuery (retry:false на 401) + login/register/logout мутации. На logout — `qc.clear()` (дропает весь cache, не только сессию — следующий user не должен видеть чужие workspaces из кэша).
+- `auth.store` (Pinia setup syntax) — тонкая обёртка над sessionQuery: computed `user`, `isAuthenticated`, `isLoading`.
+- `auth.global` middleware — `.global.ts` авто-привязка ко всем routes; PUBLIC_ROUTES whitelist (home, login, register); `sessionQuery.suspense()` ждёт первый fetch перед редиректом (иначе loop на пустых данных).
+- LoginForm / RegisterForm — `<UForm :schema :state>` Nuxt UI native (zod схема напрямую, без vee-validate); 401 / 409 error mapping через computed errorMessage в `<UAlert>`.
+- AppHeader получает logout button + email юзера.
 
-**Master spec:** [pivot-spec](docs/superpowers/specs/2026-04-23-nuxt-monorepo-pivot.md) структура папок аннотирована (реализовано / Target).
+**Step 2 — Workspaces & boards navigation** (`81a98b5`):
+- `useWorkspacesApi`, `useBoardsApi(wsId)`, `useMembersApi(wsId)` composables (CRUD + invalidation).
+- `workspace.store` с `useStorage<string|null>('scrumban:current-workspace', null)` — currentId переживает reload.
+- `WorkspaceSwitcher` в sidebar через `<UDropdownMenu>` с separator + "Create workspace" footer item.
+- Create modals: auto-slug из name через `slugify` lib (с cyrillic transliteration), typed-once heuristic (после ручного редактирования slug фиксируется).
+- Members page: список с MemberRoleBadge, USelect для role change (только роли строго ниже актора), remove с confirm; error mapping 400 last-owner-protection / 409 already member / 404 not registered.
+- Sidebar links становятся context-aware: при выбранном workspace появляются Boards + Members links.
 
-**Code comments:** `users.ts`, `register.post.ts`, `db.ts` — устаревшие claims (`argon2id` → `scrypt`, `SET LOCAL` → `set_config`).
+**Step 3 — Board view + tasks + SSE + DnD** (`ed55439`):
+- `useColumnsApi`, `useTasksApi`, `useTaskEventsApi` composables.
+- `useTaskMove(wsId, boardId)` — domain composable: `qc.setQueryData` для optimistic update + `move.mutate` + invalidate на error/success (сервер может renumber позиции соседей при insert/remove).
+- `useBoardSse(wsId, boardId)` — `@vueuse/core` `useEventSource` на 4 event names (`task.created/moved/updated/deleted`) + autoReconnect; на любой event просто invalidate `['tasks', wsId, boardId]`.
+- `board.store` — `openTaskId` для drawer state (не prop-drilling, любая TaskCard может открыть).
+- `BoardColumn` (vuedraggable wrapper, обрабатывает только `added/moved` на destination — `removed` парится с `added` через cross-column drag), `TaskCard` (compact), `TaskDrawer` (USlideover с `watchDebounced` 500ms inline-edit), `TaskEventTimeline`.
+- Board page: горизонтальный grid колонок, group tasks by columnId с sort by position.
 
-**UML (7 диаграмм после reset'а):**
-- Use case (главная, без per-role) с `<<Future>>` стереотипом для нереализованных UC.
-- Class diagram (9 entities + 5 enums) — single source of truth для domain + persistence (ER папка удалена).
-- **Package diagram (NEW)** — модульная организация, acyclic dependency claim.
-- Component diagram (Current only — Target живёт в bottom-note + 06-system-architecture.md).
-- 2 sequence diagrams: create-task-SSE + Monte Carlo (login убран).
-- 2 state machines: task-lifecycle, sprint-lifecycle.
-- Удалены: `03-er/`, `05-deployment/`, `01-use-case/per-role/`, `06-sequence/login.puml`.
+**Step 4 — Sprints & analytics** (`4eb65e8`):
+- `useSprintsApi(wsId, boardId)` (CRUD + start/close transitions), `useSprintTasksApi`, `useAnalyticsApi` (4 фиксированные queries + `monteCarlo(params)` factory для caller-driven params).
+- `app/plugins/echarts.client.ts` — tree-shaken `use([CanvasRenderer, LineChart, BarChart, ScatterChart, CustomChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent, TitleComponent])`.
+- Sprint components: StateBadge, SprintCard (action buttons по state и role), CreateModal с date pickers.
+- 5 analytics chart components (см. секцию выше).
+- `BoardSubnav` — shared header для трёх sub-pages с tabs Board/Спринты/Аналитика.
+- Spec drift fix: MC errors не через 422 (как писала спека), а через `{ok: false}` discriminated union в успешном ответе.
 
-**Verified facts** (greppable в коде, согласованы word-for-word через все docs):
-- 9 таблиц БД; RLS на 6 таблиц из 9 (boards, board_columns, tasks, task_events, sprints, sprint_tasks); `users` глобальная, `workspaces` + `workspace_members` — известное отставание.
-- 5 RBAC ролей (`viewer < member < scrum_master < admin < owner`).
-- 3-state sprint enum (`planned/active/closed`, без отдельного `cancelled` состояния — отмена через shortcut `planned → closed`).
-- 7 task_event_type values; specialized event log (не универсальная `events`).
-- ~44 HTTP endpoint'ов; 124 теста зелёные.
-- Auth: scrypt (не argon2id) через nuxt-auth-utils.
-- Analytics: live-SQL без MV/cache; `MIN_DAYS_OF_HISTORY = 14`, `DEFAULT_ITERATIONS = 1000`, `HISTORY_LOOKBACK_DAYS = 90`.
-- Frontend: skeleton (`app.vue` + `pages/index.vue`); все pages/composables/stores — Phase 4.
+**Follow-ups** (после Step 4):
+- `773ea96` — `bun remove vee-validate @vee-validate/zod` (0 импортов в коде, заменили нативным `<UForm :schema :state>`).
+- `717edf3` — align spec §10 с backend реальностью (displayName drop, SessionResponse non-nullable user, retry:false, форма пример переписан под Nuxt UI native).
+- `e0f03ce`, `d03ee12`, `9d0c5c8` — memory entries: IDE-review preference, Nuxt component auto-import prefix gotcha (bit me twice), no Co-Authored-By trailer going forward.
 
-**Накопленная память** (новые feedback-записи в [`docs/memory/`](docs/memory/)):
-- [English commits convention](docs/memory/feedback_english_commits.md).
-- [Verify concrete claims with grep](docs/memory/feedback_verify_concrete_claims.md) — paid lesson после RLS-overclaim, sprint cancellation drift и Nuxt UI drift.
-
-**Эффект:** документация теперь честно отражает реализацию; всё откладываемое имеет триггер ввода. На защите комиссия может грепать кодом любой числовой claim в docs — он совпадёт.
+**Merge:** `452c01c Merge branch 'feature/phase4-frontend' into main` (no-ff, 83 files changed, 5127+/55-).
 
 ---
 
 ## Что в процессе / на паузе
 
-- ⏸ **Frontend** — Nuxt UI, vue-bits, ECharts. Полностью отложен до завершения backend ревью. Когда возвращаемся — collaborative подход (Claude предлагает, user адаптирует).
-- ⏸ **pg-boss** — фоновые задачи. Поднимем когда появится первая настоящая background-задача (email уведомления, ML агрегаты).
-- ⏸ **Postgres LISTEN/NOTIFY** — нужно для SSE при 2+ репликах. Phase 4.
-- ⏸ **per-column cycle time** для более точных WIP recommendations. Phase 4.
-- ⏸ **Email-based invitations** (с magic-link токеном). Phase 4.
-- ⏸ **OpenAPI codegen** (zod-to-openapi → openapi-typescript). Полезно когда будем писать frontend, но не блокер.
-- ⏸ **Deployment diagram** UML — был отложен по решению user.
+- ⏸ **pg-boss workers** — фоновые задачи. Поднимем когда появится первая настоящая background-задача (email уведомления, periodic aggregates).
+- ⏸ **Postgres LISTEN/NOTIFY** — нужно для SSE при 2+ репликах. Phase 5 hardening, текущий in-process event bus покрывает single-instance.
+- ⏸ **Email-based member invitations** (с magic-link токеном) — backend сейчас принимает только уже зарегистрированных по email. Phase 5+.
+- ⏸ **OpenAPI codegen pipeline** (zod-to-openapi → openapi-typescript) — триггер: ≥3 type drift'а с backend ИЛИ ручное обновление типов >1 раза в неделю. Сейчас 0 drift'ов, типы вручную в `shared/types/`.
+- ⏸ **per-column cycle time** для более точных WIP recommendations.
+- ⏸ **Deployment UML diagram** — отложен по решению user.
 
 ---
 
 ## Что дальше
 
-**Phase 4 — Frontend MVP** (триггер: docs/code sync завершён).
+**Phase 5 — Production-readiness.**
 
-Roadmap из [`09-frontend-design.md`](docs/09-frontend-design.md) → Target → Phase 4 implementation roadmap:
-1. Auth flow — `/auth/login`, `/auth/register`. `useAuth()` composable. Pinia auth-store.
-2. Workspace + Board view — drag-n-drop задач (vuedraggable), real-time SSE (`useBoardStream` поверх `@vueuse/core` `useEventSource`), WIP-индикаторы.
-3. Task detail panel.
-4. Analytics dashboard — CFD, throughput, Monte Carlo card, cycle-time scatter, Little's Law рекомендации (ECharts).
-5. Sprint planning UI.
-6. Settings + Members — RBAC management UI (5 ролей).
+Roadmap из [`docs/05-mvp-scope-and-roadmap.md`](docs/05-mvp-scope-and-roadmap.md) → Phase 5:
 
-Параллельно: подключить отсутствующие deps (Pinia, vue-query, ECharts, vuedraggable, vee-validate, Inspira UI, vue-bits, @nuxt/icon, @nuxt/google-fonts, @vueuse/core), настроить codegen pipeline (zod-to-openapi → openapi-typescript → `shared/types/api.d.ts`).
-
-**Phase 5 — Production-readiness** (триггер: Phase 4 завершена, MVP готов к показу).
-
-См. [`05-mvp-scope-and-roadmap.md`](docs/05-mvp-scope-and-roadmap.md) → Phase 5: Dockerfile, Caddyfile, docker-compose.prod, pino + requestId, Sentry, CI (typecheck + vitest + build), pg_dump → Object Storage, rate limit на /auth/login, CSP/HSTS.
+1. **Dockerfile** — multi-stage build (bun → server bundle → distroless или alpine runtime).
+2. **docker-compose.prod.yml** — Nuxt app + Postgres 16 + Caddy + (опц.) Postgres backup sidecar.
+3. **Caddyfile** — automatic TLS via Let's Encrypt, security headers (HSTS, CSP, X-Frame-Options, Referrer-Policy).
+4. **pino integration в server/api/*** — structured JSON logs с requestId middleware, integrated в каждый event handler.
+5. **Sentry** — `@sentry/nuxt` для фронта, `@sentry/node` для server-side. DSN из env.
+6. **GitHub Actions CI** — `.github/workflows/ci.yml`: typecheck + vitest (с testcontainers postgres) + build.
+7. **pg_dump scheduled backup** → Yandex Object Storage (через cron внутри docker-compose или отдельный sidecar).
+8. **Rate limit на /auth/login** — slow-down после 5 неудачных попыток, blocking после 10 (in-memory или Postgres-based).
+9. **Deployment на Yandex Cloud VM** (или MaxVM): caddy + docker compose up.
 
 ---
 
-## Backlog (mini-PRs до / во время Phase 4-5)
+## Backlog (mini-PRs — до / во время Phase 5)
 
-Обнаружено во время docs/code sync (2026-05-10) — мелкие задачи, не блокирующие Phase 4, но требующие закрытия до production.
+Обнаружено во время docs/code sync (2026-05-10) и Phase 4 — мелкие задачи, не блокирующие, но требующие закрытия до production.
 
 **Database integrity:**
-- `task_events.task_id` `ON DELETE CASCADE` → `SET NULL` + snapshot in payload. Триггер: первое hard-delete задачи в проде, потеря истории станет реальной болью. См. [`07-domain-model.md`](docs/07-domain-model.md) → Quirks → task_events.
+- `task_events.task_id` `ON DELETE CASCADE` → `SET NULL` + snapshot в payload. Триггер: первое hard-delete задачи в проде, потеря истории станет реальной болью.
 - RLS на `workspaces` и `workspace_members` (известное отставание — Phase 1 не покрыло). Триггер: первый клиент с >1 workspace, где утечка через эти таблицы — реальный риск.
 
 **Race conditions:**
-- `assertNotLastOwner` — добавить `SELECT ... FOR UPDATE` для защиты от concurrent demotion двух последних owner'ов.
-- `deleteSprint` — атомарная проверка `state != 'active'` (currently — read-then-delete без lock).
+- `assertNotLastOwner` — `SELECT ... FOR UPDATE` для защиты от concurrent demotion двух последних owner'ов.
+- `deleteSprint` — атомарная проверка `state != 'active'` (сейчас read-then-delete без lock).
 
 **Convention drift:**
-- `pnpm` vs `bun` — реально используется bun (`bun.lock` в репо), но docs (08, 11, pivot-spec, plan) пишут `pnpm`. Cross-cutting sweep — найти все упоминания `pnpm dev/test/build/install`, заменить на `bun run` / `bun test` / `bun install`. Триггер: первый коллаборатор споткнётся.
-- `archived_at` на `tasks` — Task 12 (Class diagram) обнаружил, что в коде нет колонки `archived_at`; архивирование через `column_role='archived'` + `task_archived` event. Возможно [`07-domain-model.md`](docs/07-domain-model.md) всё ещё содержит false claim — проверить и поправить.
+- Проверить `07-domain-model.md` на наличие false claim про `archived_at` колонку (архивирование через `column_role='archived'` + `task_archived` event, не stored timestamp).
 
-**Pre-Phase 4 prep:**
-- Создать `app/components/`, `app/composables/`, `app/stores/`, `app/lib/` (пустые folder structure).
-- Установить frontend deps пакетным `bun install` (Pinia + vue-query + vuedraggable + ECharts + vee-validate + @nuxt/icon + @nuxt/google-fonts + @vueuse/core + Inspira UI + vue-bits).
-- Настроить CSS palette (CSS custom properties для dark theme).
-
-**Pre-Phase 5 prep:**
-- Создать `Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`.
-- Настроить GitHub Actions (typecheck + vitest + build).
+**Frontend backlog (Phase 4 deliberate cuts):**
+- Filters на доске (search / assignee / archived) — спека просила, в MVP пропустили.
+- Drag-n-drop задач из бэклога в sprint (сейчас sprint membership через таблицу, но UI добавления через select). Можно сделать через vuedraggable group="tasks-and-sprint".
+- Sprint detail view (внутри одного спринта — список его задач, burndown chart).
+- Column rename / delete UI (сейчас только create + drag-reorder отсутствует).
+- WIP-limit visual indicator на доске (badge есть, но без подсказки «как только превысишь — backend откажется двигать туда задачу с force=false»).
+- Workspace edit / delete UI.
+- Toast notifications (сейчас все ошибки через inline UAlert).
 
 ---
 
-## Структура реального кода (после Phase 3)
+## Структура реального кода (после Phase 4)
 
 ```
 scrumban_app/
-├── app/
-│   ├── app.vue                       ← <UApp> + <NuxtPage />
-│   └── pages/index.vue               ← заглушка "Skeleton is up"
-├── server/
-│   ├── api/
-│   │   ├── auth/                     ← register, login, logout, session
-│   │   ├── healthz.get.ts
+├── app/                                  ← Nuxt 4 SPA frontend (ssr:false)
+│   ├── app.config.ts                     ← Nuxt UI v4 theme (indigo/slate)
+│   ├── app.vue                           ← <UApp><NuxtLayout><NuxtPage/></NuxtLayout></UApp>
+│   ├── assets/css/main.css               ← Tailwind 4 @theme: Manrope/JetBrains Mono
+│   ├── components/
+│   │   ├── AppHeader.vue                 ← shell (без префикса)
+│   │   ├── AppSidebar.vue                ← shell с WorkspaceSwitcher
+│   │   ├── auth/{Login,Register}Form.vue ← <UForm :schema :state>
+│   │   ├── workspace/                    ← Switcher, CreateModal, MemberRoleBadge, AddMemberModal
+│   │   ├── board/                        ← BoardColumn, BoardSubnav, CreateModal, CreateColumnModal
+│   │   ├── task/                         ← TaskCard, TaskDrawer, EventTimeline, CreateModal
+│   │   ├── sprint/                       ← SprintCard, StateBadge, CreateModal
+│   │   └── analytics/                    ← CfdChart, CycleTimeScatter, ThroughputChart, MonteCarloCard, WipRecommendationsCard
+│   ├── composables/
+│   │   ├── useApi.ts                     ← $fetch wrapper, 401 → pageRoutes.login
+│   │   ├── useBoardSse.ts                ← useEventSource → invalidate tasks query
+│   │   ├── api/                          ← useAuthApi, useWorkspacesApi, useBoardsApi, useMembersApi, useColumnsApi, useTasksApi, useTaskEventsApi, useSprintsApi, useSprintTasksApi, useAnalyticsApi
+│   │   └── domain/                       ← useTaskMove (optimistic DnD)
+│   ├── layouts/
+│   │   ├── default.vue                   ← sidebar + header + main
+│   │   └── auth.vue                      ← centered card (login/register pages)
+│   ├── middleware/
+│   │   └── auth.global.ts                ← suspense + redirect to /login
+│   ├── pages/
+│   │   ├── index.vue                     ← landing (public)
+│   │   ├── login.vue, register.vue       ← auth layout
 │   │   └── workspaces/
-│   │       ├── index.{get,post}.ts
+│   │       ├── index.vue                 ← список workspaces
 │   │       └── [id]/
-│   │           ├── members/          ← list/add/patch/delete
-│   │           ├── boards/
-│   │           │   ├── index.{get,post}.ts
-│   │           │   └── [boardId]/
-│   │           │       ├── columns/  ← CRUD + reorder
-│   │           │       ├── tasks/    ← CRUD + move + events
-│   │           │       ├── sprints/  ← CRUD + start/close + sprint_tasks
-│   │           │       ├── analytics/← throughput, cycle-time, cfd, monte-carlo, wip-recommendations
-│   │           │       └── stream.get.ts ← SSE
-│   ├── services/                     ← users, workspaces, workspace-members,
-│   │                                  boards, columns, tasks, sprints, analytics
-│   ├── db/
-│   │   └── schema/                   ← users, workspaces, boards, tasks, sprints (всё RLS-managed где tenant)
-│   ├── plugins/                      ← (пока пусто; pg-boss plugin будет тут)
+│   │           ├── index.vue             ← redirect to /boards
+│   │           ├── members.vue           ← roster + RBAC
+│   │           └── boards/
+│   │               ├── index.vue         ← список досок
+│   │               └── [boardId]/
+│   │                   ├── index.vue     ← kanban
+│   │                   ├── sprints.vue   ← state machine UI
+│   │                   └── analytics.vue ← 5 ECharts
+│   ├── plugins/
+│   │   ├── vue-query.ts                  ← QueryClient (staleTime 30s, retry 1)
+│   │   └── echarts.client.ts             ← tree-shaken ECharts
+│   ├── routing/index.ts                  ← apiRoutes + pageRoutes
+│   ├── stores/
+│   │   ├── auth.store.ts                 ← computed wrapper над sessionQuery
+│   │   ├── workspace.store.ts            ← currentId в useStorage
+│   │   └── board.store.ts                ← openTaskId для drawer
 │   └── utils/
-│       ├── auth.ts                   ← requireAuth helper
-│       ├── db.ts                     ← useDB() singleton + withTenant() для RLS
-│       ├── errors.ts                 ← domain errors + toHttpError + Zod handler
-│       ├── events.ts                 ← in-process pub/sub для SSE
-│       └── rbac.ts                   ← role hierarchy + requireMinRole / strictlyOutranks
-├── shared/types/auth.d.ts            ← #auth-utils type augmentation
-├── drizzle/migrations/               ← 7 SQL миграций (генерируемые drizzle-kit)
-├── db/init/01_app_role.sql           ← Postgres init: создаёт scrumban_app role
-├── docker-compose.dev.yml            ← Postgres 16 на :5433
-├── tests/                            ← 12 test файлов, 124 тестов
-└── docs/                             ← всё что было раньше + pivot spec
+│       ├── format.ts                     ← formatRelativeDate, formatPercentile
+│       ├── humanize.ts                   ← Role/SprintState/TaskEventType ru-labels
+│       ├── rbac.ts                       ← hasRole (mirror серверного requireMinRole)
+│       └── slugify.ts                    ← обёртка slugify-lib
+├── server/                               ← Nitro backend (без изменений с Phase 3)
+│   ├── api/                              ← 44 endpoint'а
+│   ├── services/                         ← бизнес-логика
+│   ├── db/schema/                        ← 9 таблиц
+│   └── utils/                            ← auth, db, errors, events, rbac
+├── shared/types/                         ← cross-app + cross-server типы
+│   ├── auth.ts                           ← #auth-utils augmentation + SessionUser/LoginInput/RegisterInput
+│   ├── domain.ts                         ← cross-domain enums (Role, SprintState, TaskPriority, TaskEventType)
+│   ├── workspace.ts                      ← Workspace, MemberView, inputs
+│   ├── board.ts                          ← Board, inputs
+│   ├── column.ts                         ← BoardColumn, ColumnRole, inputs
+│   ├── task.ts                           ← Task, TaskEvent, inputs
+│   ├── sprint.ts                         ← Sprint, inputs
+│   └── analytics.ts                      ← 5 report types (discriminated unions для MC и WIP)
+├── scripts/codesign-natives.sh           ← postinstall macOS Tahoe fix
+├── drizzle/migrations/                   ← 7 SQL миграций
+├── db/init/01_app_role.sql               ← двух-ролевой Postgres setup
+├── docker-compose.dev.yml                ← Postgres 16 на :5433
+├── tests/                                ← 12 файлов, 124 теста
+└── docs/                                 ← полная документация + memory + UML
 ```
 
 ---
 
 ## Ключевые архитектурные решения для ревью
 
-1. **Two-role Postgres** (`scrumban` super для миграций, `scrumban_app` non-super для рантайма) — чтобы FORCE ROW LEVEL SECURITY реально применялся (super bypassит RLS неявно).
-2. **NULLIF guard в RLS политиках** — `current_setting('app.workspace_id', true)` возвращает '' (не NULL) после `SET LOCAL`; без NULLIF получаем `''::uuid` ошибку.
-3. **withTenant() helper** — единственный путь к tenant-scoped queries; вне его RLS возвращает 0 строк (защита по дизайну).
-4. **task_events append-only log** — фундамент для аналитики; createTask пишет `task_created`, moveTask пишет `task_moved` / `task_closed` / `task_reopened` / `task_archived`.
-5. **State machine в moveTask** — closed_at и reopened_count синхронны с переходами через 'done' колонку. Reopen считается только если task был реально закрыт (closedAt != null), иначе просто move.
-6. **Reorder через парковку (PARKING_POSITION = 1_000_000)** — обходит unique constraint на (board_id, position) во время bulk обновления.
-7. **In-process event bus для SSE** — Phase 4 расширим LISTEN/NOTIFY когда появятся 2+ реплики.
-8. **Min-sample thresholds в analytics** — percentiles возвращают null при <5 образцов; Monte Carlo возвращает insufficient_data при 0 закрытых задачах.
+**Backend (Phases 1-3):**
+1. **Two-role Postgres** (`scrumban` super для миграций, `scrumban_app` non-super для рантайма) — чтобы FORCE ROW LEVEL SECURITY реально применялся.
+2. **NULLIF guard в RLS политиках** — `current_setting('app.workspace_id', true)` возвращает '' после `SET LOCAL`.
+3. **withTenant() helper** — единственный путь к tenant-scoped queries; вне его RLS возвращает 0 строк.
+4. **task_events append-only log** — фундамент для аналитики.
+5. **State machine в moveTask** — closed_at и reopened_count синхронны с переходами через 'done' колонку.
+6. **Reorder через парковку (PARKING_POSITION = 1_000_000)** — обходит unique constraint на (board_id, position).
+7. **In-process event bus для SSE** — Phase 5 расширим LISTEN/NOTIFY когда появятся 2+ реплики.
+8. **Min-sample thresholds в analytics** — percentiles null при <5 образцов; MC `{ok: false}` при <14 days history.
+
+**Frontend (Phase 4):**
+9. **vue-query как единственный server-state layer** — все API IO через `useQuery`/`useMutation`; Pinia только для UI state (currentId, openTaskId).
+10. **Optimistic DnD через `qc.setQueryData` + invalidate** — мгновенный visual feedback, refetch consistency.
+11. **SSE без payload-merge** — на любой board-event просто invalidate `['tasks', wsId, boardId]`; дешевле и надёжнее, чем patch'ить cache из payload.
+12. **`<UForm :schema :state>` Nuxt UI native** — zod схема прямо в template, FormValidationException → per-field errors в `<UFormField>` без adapter'ов.
+13. **Routing manifest** — все 30 apiRoutes + 10 pageRoutes в `app/routing/index.ts`; literal `/api/` или `/login` вне = bug.
+14. **Component naming via folder prefix** — Nuxt префиксует `components/{domain}/X.vue` → `<DomainX>`; shell-компоненты в `components/` root без префикса.
+15. **Discriminated unions для unreliable analytics** — MC и WIP возвращают `{ok: true, ...}` или `{ok: false, reason}`; UI рендерит ветку напрямую, не через try/catch.
 
 ---
 
 ## Контекст user
 
 - **Даня** — магистрант ВолГУ, делает scrumban как дипломный проект, solo.
-- **Frontend-сильный** (Nuxt/Vue/TS), backend пишет Claude.
-- **Хочет понимать**, что Claude делает в backend — через краткие комментарии и объяснения, не через самостоятельное написание.
+- **Frontend-сильный** (Nuxt/Vue/TS); backend написал Claude. **Phase 4 frontend сделан совместно** — Claude писал код в чате, user смотрел в IDE (см. memory: `feedback_ide_review.md`).
+- **Хочет понимать**, что Claude делает в backend — через краткие комментарии и объяснения.
 - **Делает senior-grade критику архитектуры** — ML был заменён на статистику не случайно.
 - **Имеет PlantUML plugin в IDE** — SVG в `learning/` не генерируем.
-- **Обращение на «ты»**, русский язык, коммиты на английском.
+- **Обращение на «ты»**, русский язык, **коммиты на английском, без `Co-Authored-By: Claude`** (см. memory: `feedback_no_coauthor_trailer.md`).
 
 ---
 
