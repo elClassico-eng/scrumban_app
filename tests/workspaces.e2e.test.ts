@@ -137,3 +137,44 @@ describe('GET /api/workspaces/:id', () => {
     expect(res.status).toBe(401)
   })
 })
+
+describe('PATCH /api/workspaces/:id', () => {
+  it('owner can rename the workspace; slug stays read-only', async () => {
+    const alice = await registerAndLogin('alice@example.com')
+    const created = await fetchWithJar<{ workspace: { id: string; slug: string } }>(
+      alice,
+      '/api/workspaces',
+      { method: 'POST', body: { name: 'Acme', slug: 'acme' } },
+    )
+
+    const res = await fetchWithJar<{ workspace: { name: string; slug: string; role: string } }>(
+      alice,
+      `/api/workspaces/${created.body.workspace.id}`,
+      { method: 'PATCH', body: { name: 'Acme Corp' } },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.workspace.name).toBe('Acme Corp')
+    expect(res.body.workspace.slug).toBe('acme')
+    expect(res.body.workspace.role).toBe('owner')
+  })
+
+  it('non-admin member cannot rename the workspace', async () => {
+    const alice = await registerAndLogin('alice@example.com')
+    const bob = await registerAndLogin('bob@example.com')
+    const created = await fetchWithJar<{ workspace: { id: string } }>(
+      alice,
+      '/api/workspaces',
+      { method: 'POST', body: { name: 'Acme', slug: 'acme' } },
+    )
+    await fetchWithJar(alice, `/api/workspaces/${created.body.workspace.id}/members`, {
+      method: 'POST',
+      body: { email: 'bob@example.com', role: 'member' },
+    })
+
+    const res = await fetchWithJar(bob, `/api/workspaces/${created.body.workspace.id}`, {
+      method: 'PATCH',
+      body: { name: 'Hacked' },
+    })
+    expect(res.status).toBe(403)
+  })
+})

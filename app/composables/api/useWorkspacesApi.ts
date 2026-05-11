@@ -4,6 +4,7 @@ import type {
   WorkspacesListResponse,
   WorkspaceResponse,
   CreateWorkspaceInput,
+  UpdateWorkspaceInput,
 } from '#shared/types/workspace'
 
 export function useWorkspacesApi() {
@@ -20,5 +21,14 @@ export function useWorkspacesApi() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['workspaces'] }),
   })
 
-  return { list, create }
+  const update = useMutation({
+    mutationFn: ({ workspaceId, ...input }: { workspaceId: string } & UpdateWorkspaceInput) =>
+      $fetch<WorkspaceResponse>(apiRoutes.workspace(workspaceId), {
+        method: 'PATCH',
+        body: input,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['workspaces'] }),
+  })
+
+  return { list, create, update }
 }
