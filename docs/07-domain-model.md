@@ -46,7 +46,7 @@ updated_at         timestamptz NOT NULL DEFAULT now()
 См. [`server/db/schema/workspaces.ts`](../server/db/schema/workspaces.ts).
 
 **Quirks:**
-- `slug` имеет **глобальный** UNIQUE (не per-tenant): два независимых заказчика не смогут оба создать `acme`. Известное ограничение, зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7. Решение — Target (либо namespacing slug'ов, либо переход на короткие коды).
+- `slug` имеет **глобальный** UNIQUE (не per-tenant): два независимых заказчика не смогут оба создать `acme`. Известное ограничение — фикс в Target (либо namespacing slug'ов, либо переход на короткие коды).
 - Поле `owner_id` отсутствует — владелец вычисляется как член `workspace_members` с `role = 'owner'`.
 - Никаких `plan`, `settings jsonb`, `archived_at` — биллинг и настройки не реализованы.
 
@@ -150,7 +150,7 @@ Enum `task_event_type` — `task_created`, `task_moved`, `task_closed`, `task_re
 - `(workspace_id, created_at)` — workhorse для CFD / Monte Carlo: time-ordered scan по тенанту.
 
 **Quirks:**
-- `task_id` — `ON DELETE CASCADE`. Удаление задачи стирает её историю. Известное ограничение (зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7); в Target — либо `ON DELETE SET NULL` с сохранением `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
+- `task_id` — `ON DELETE CASCADE`. Удаление задачи стирает её историю. Известное ограничение; в Target — либо `ON DELETE SET NULL` с сохранением `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
 - `from_column_id` / `to_column_id` — `uuid` без FK на `board_columns`. Сделано осознанно: при удалении колонки исторические события должны выживать (column-id остаётся «висячим» указателем для аналитики). Trade-off: невозможно через FK гарантировать, что значение указывает на реально существовавшую колонку — корректность отслеживается в сервис-слое (`server/services/tasks.service.ts`).
 
 См. [`server/db/schema/tasks.ts`](../server/db/schema/tasks.ts).
@@ -334,4 +334,3 @@ workspaces ──┐
 - [`10-analytics-design.md`](10-analytics-design.md) — как считаются метрики.
 - [`11-non-functional.md`](11-non-functional.md) — RLS-политики и multi-tenancy.
 - [`docs/uml/01-use-case/roles-guide.md`](uml/01-use-case/roles-guide.md) — матрица прав 5 ролей.
-- [`docs/audit-2026-05-10-issues.md`](audit-2026-05-10-issues.md) — детальный аудит расхождений docs ↔ code.

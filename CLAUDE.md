@@ -20,22 +20,10 @@
 
 ## Что ОБЯЗАТЕЛЬНО читать в начале сессии
 
-1. **`docs/memory/MEMORY.md`** — индекс накопленных feedback/preferences/решений (синхронизированная копия).
-2. **Отдельные файлы памяти в `docs/memory/`** — детали:
-   - `user_critical_thinking.md` — user критичен к hype, ценит trade-off'ы.
-   - `feedback_architectural_rigor.md` — делает senior-grade критику.
-   - `feedback_teaching_calibration.md` — осваивает TS-backend; не презентовать senior-patterns как must-have.
-   - `feedback_learning_pace.md` — хочет понимать сам, не чёрный ящик.
-   - `feedback_claim_discipline.md` — язык должен соответствовать реализации.
-   - `feedback_no_svg_in_learning.md` — SVG в `learning/` не генерировать.
-   - `feedback_latest_stack_versions.md` — latest stable, strict TS, codegen везде; Nuxt 4 (НЕ 3), Nuxt UI v4 (НЕ NextUI).
-   - `project_core_decisions.md` — зафиксированные scope/стек/монетизация (обновлено 2026-04-26).
-   - `project_architectural_principles.md` — hard rules для кодовой базы.
-   - `project_dual_track_approach.md` — Current/Target/Evolution формат.
-3. **`COMPACT.md`** — текущий прогресс, где остановились.
-4. **`docs/README.md`** — индекс всей документации.
-
-Также auto-memory читается из `/Users/danya/.claude/projects/-Users-danya--------------------scrumban-app/memory/` — это оригинал, `docs/memory/` — синхронизированная копия для git.
+1. **`/Users/danya/.claude/projects/-Users-danya--------------------scrumban-app/memory/MEMORY.md`** — индекс накопленных feedback/preferences/решений (auto-memory, не в git-репозитории).
+2. **Отдельные файлы памяти в той же папке** — детали (user role, architectural rigor, teaching calibration, learning pace, claim discipline, latest stack versions, и т.д.). Подробности — в `MEMORY.md`.
+3. **`COMPACT.md`** — текущий прогресс, где остановились. Лежит локально в корне проекта (gitignored — личная история сессий, не для публичного репо).
+4. **`docs/README.md`** — индекс публичной документации (vision, архитектура, UML, ADR-спеки).
 
 ## Принципы работы (выжимка из memory)
 
@@ -169,10 +157,7 @@ scrumban_app/
 
 ## Управление памятью
 
-Когда пишешь новую memory:
-1. **Обязательно** — в `/Users/danya/.claude/projects/-Users-danya--------------------scrumban-app/memory/` (auto-memory система).
-2. **Обязательно** — скопировать в `docs/memory/` (чтобы жило в git и переносилось).
-3. Обновить индекс в обоих `MEMORY.md`.
+Когда пишешь новую memory: писать только в auto-memory `~/.claude/projects/-Users-danya--------------------scrumban-app/memory/` + обновить там `MEMORY.md`. Никаких копий в репозитории — `docs/memory/` больше не существует как tracked путь.
 
 ## Обновление COMPACT.md
 

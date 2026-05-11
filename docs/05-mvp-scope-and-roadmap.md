@@ -139,7 +139,7 @@
 
 ## Phase 4 — Frontend MVP (предстоит)
 
-> **Триггер старта:** план [`docs/superpowers/plans/2026-05-10-docs-code-sync.md`](superpowers/plans/2026-05-10-docs-code-sync.md) завершён → переход к Phase 4 без долга в документации.
+> **Триггер старта:** docs/code sync (2026-05-10) завершён — документация выровнена с реализацией → переход к Phase 4 без долга в документации.
 
 Текущее состояние frontend: `app/app.vue` (`<UApp><NuxtPage /></UApp>` wrapper) и `app/pages/index.vue` (stub). Все pages, components, composables, stores, lib — Phase 4 work. Стек установлен на уровне `nuxt: ^4.4.2` + `@nuxt/ui: ^4.7.0`; остальные frontend-зависимости (Pinia, vue-query, ECharts, vuedraggable, Inspira UI, vue-bits, vee-validate, @nuxt/icon, @nuxt/google-fonts, @vueuse/core) — не установлены.
 
@@ -162,15 +162,16 @@ Roadmap (детали в [`09-frontend-design.md`](09-frontend-design.md) → Ta
 - **CI/CD:** GitHub Actions / GitFlic CI — typecheck + vitest + build на каждый push. См. [`11-non-functional.md`](11-non-functional.md) → Target → CI/CD.
 - **Rate limit на `/api/auth/login`** (5 попыток / 5 мин на email + IP).
 - **HTTP security headers:** CSP, HSTS, X-Frame-Options через Caddyfile.
-- **Code quality fixes** (mini-PR, см. backlog в [`COMPACT.md`](../COMPACT.md)):
+- **Code quality fixes** (mini-PR):
   - `task_events.task_id` `ON DELETE CASCADE` → `SET NULL` + `task_id_snapshot` (сохранить аналитику при hard-delete task).
   - `assertNotLastOwner`: `SELECT ... FOR UPDATE` для защиты от race condition.
   - `deleteSprint`: атомарная проверка `state != 'active'`.
   - RLS на `workspaces` + `workspace_members` (известное отставание из Phase 1).
+  - `task_events.actorId` в payload SSE-событий (нужно для self-suppression toast'ов в Phase 4.5 frontend).
 
 ## Phase 6+ (Target / по запросу)
 
-Список зафиксирован в [`docs/audit-2026-05-10-issues.md`](audit-2026-05-10-issues.md) разделы 2.2-2.3 и в Target-секциях каждого `0X-*.md` дока. Ключевые блоки:
+Список зафиксирован в Target-секциях каждого `0X-*.md` дока. Ключевые блоки:
 
 - **Multi-project workspace** (`projects` entity), `task_comments`, `task_attachments`, `task_tags`, magic-link `invitations`, server-side `sessions` с revoke. См. [`07-domain-model.md`](07-domain-model.md) → Target.
 - **2FA, SSO** (Yandex ID / GitFlic ID OAuth, SAML), **WebAuthn / Passkeys**. См. [`11-non-functional.md`](11-non-functional.md) → Target.

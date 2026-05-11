@@ -100,7 +100,7 @@ scrumban/
 
 **Nuxt 4** SPA (`ssr: false`), Vue 3, Pinia, TypeScript strict, **Tailwind CSS 4** + **Nuxt UI v4** (база; НЕ NextUI/HeroUI — это для React) + Inspira UI (wow-эффекты) + vue-bits (анимации), @tanstack/vue-query, ECharts, vuedraggable.
 
-> **Hard rule:** всегда latest stable версии стека. Codegen типов между всеми слоями обязателен (Drizzle infer / zod / openapi-typescript). Никаких `any` без явного обоснования. См. `docs/memory/feedback_latest_stack_versions.md`.
+> **Hard rule:** всегда latest stable версии стека. Codegen типов между всеми слоями обязателен (Drizzle infer / zod / openapi-typescript). Никаких `any` без явного обоснования.
 
 ### Инфраструктура (без изменений)
 
@@ -261,7 +261,6 @@ Analytics (async):
 ### Полная замена
 
 - `docs/08-backend-design.md` — Go → Nitro архитектура
-- `docs/superpowers/plans/2026-04-18-phase0-week1-notes-api.md` — Go notes-api → Nuxt+Nitro+Drizzle starter
 
 ### Существенные правки
 
@@ -276,8 +275,6 @@ Analytics (async):
 - `docs/05-mvp-scope-and-roadmap.md`
 - `docs/README.md`
 - `CLAUDE.md` — стек секция
-- `COMPACT.md` — статус и стек
-- `docs/memory/project_core_decisions.md`
 - `docs/superpowers/specs/2026-04-18-scrumban-platform-design.md` — стек секция
 
 ### Не трогаем

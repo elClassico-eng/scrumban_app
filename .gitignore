@@ -25,3 +25,11 @@ dist/
 
 # Test coverage
 coverage/
+
+/COMPACT.md
+/docs/memory/
+/docs/superpowers/plans/
+/docs/audit-*.md
+
+/docs/uml/**/learning/*.png
+/docs/uml/**/learning/*.svg

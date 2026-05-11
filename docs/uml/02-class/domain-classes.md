@@ -63,7 +63,7 @@ Composite PK `(workspaceId, userId)` — никаких отдельных `id`-
 ## Quirks (структурные особенности)
 
 1. **`task_events.from_column_id` / `to_column_id` — без FK на `board_columns`.** Сделано осознанно: при удалении колонки исторические события должны выживать как «висячие» снапшоты. Trade-off — невозможно через FK гарантировать существование колонки на момент создания события; корректность отслеживается в `server/services/tasks.service.ts`.
-2. **`task_events.task_id` ON DELETE CASCADE — известное ограничение.** Зафиксировано в `docs/audit-2026-05-10-issues.md` раздел 7. Target — либо `SET NULL` с `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
+2. **`task_events.task_id` ON DELETE CASCADE — известное ограничение.** Target — либо `SET NULL` с `payload.task_snapshot`, либо `RESTRICT` с soft-delete на самой задаче.
 
 ## Кратности (multiplicity) — важные случаи
 
