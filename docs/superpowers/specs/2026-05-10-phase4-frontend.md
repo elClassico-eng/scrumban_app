@@ -766,7 +766,7 @@ export interface Task {
 - [ ] Открытие `/` показывает layout с заглушками header/sidebar
 - [ ] Devtools видит установленную тему (indigo primary, slate neutral)
 - [ ] Toggle dark mode работает
-- [ ] `app/routing/index.ts` существует, содержит все 44 entry в `apiRoutes` + 10 entry в `pageRoutes`
+- [ ] `app/routing/index.ts` существует: 30 URL-билдеров в `apiRoutes` (покрывают все 44 backend-endpoint'а) + 10 entry в `pageRoutes`
 - [ ] grep `'/api/'` по `app/` возвращает только `app/routing/index.ts`
 
 **Коммит после Step 0**: один или несколько по логическим единицам (`chore: ...`, `feat: setup AppShell layout`, etc.).
