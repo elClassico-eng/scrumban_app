@@ -4,8 +4,9 @@ import type { Role } from '#shared/types/domain'
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
 
-const { list: workspacesList } = useWorkspacesApi()
+const { list: workspacesList, update: updateWorkspace } = useWorkspacesApi()
 const { list: membersList, updateRole, remove } = useMembersApi(wsId)
+const toast = useToast()
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -20,6 +21,43 @@ useHead({
 
 const canManage = computed(() => hasRole(workspace.value?.role, 'admin'))
 const myRole = computed(() => workspace.value?.role)
+
+// Inline-rename for the workspace label. Same dblclick + Enter/blur
+// pattern as BoardSubnav.
+const isEditingName = ref(false)
+const draftName = ref('')
+const nameInputRef = ref<HTMLInputElement | null>(null)
+
+function startEditName() {
+  if (!canManage.value || !workspace.value) return
+  draftName.value = workspace.value.name
+  isEditingName.value = true
+  nextTick(() => nameInputRef.value?.focus())
+}
+
+function cancelEditName() {
+  isEditingName.value = false
+  draftName.value = ''
+}
+
+async function commitEditName() {
+  const trimmed = draftName.value.trim()
+  if (!trimmed || !workspace.value || trimmed === workspace.value.name) {
+    cancelEditName()
+    return
+  }
+  try {
+    await updateWorkspace.mutateAsync({ workspaceId: wsId.value, name: trimmed })
+    isEditingName.value = false
+  }
+  catch {
+    toast.add({
+      title: 'Не удалось переименовать workspace',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
 
 // Roles available for assignment — only those strictly below the actor's role.
 function rolesAssignableBy(actor: Role | undefined): Array<{ label: string; value: Role }> {
@@ -54,9 +92,17 @@ async function onRoleChange(userId: string, newRole: Role) {
   }
 }
 
+const confirm = useConfirm()
+
 async function onRemove(userId: string, email: string) {
   actionError.value = null
-  if (!confirm(`Удалить ${email} из workspace?`)) return
+  const ok = await confirm({
+    title: `Удалить ${email} из workspace?`,
+    description: 'Пользователь потеряет доступ ко всем доскам этого workspace.',
+    confirmLabel: 'Удалить',
+    confirmColor: 'error',
+  })
+  if (!ok) return
   try {
     await remove.mutateAsync(userId)
   }
@@ -72,11 +118,31 @@ async function onRemove(userId: string, email: string) {
 <template>
   <div class="space-y-6 max-w-4xl">
     <div class="flex items-center justify-between">
-      <div>
+      <div class="min-w-0">
         <h1 class="text-2xl font-bold tracking-tight">Участники</h1>
-        <p class="text-sm text-muted mt-1">
-          {{ workspace?.name ? `Workspace: ${workspace.name}` : 'Кто состоит в этом workspace' }}
+        <p v-if="!workspace" class="text-sm text-muted mt-1">
+          Кто состоит в этом workspace
         </p>
+        <div v-else class="text-sm text-muted mt-1 flex items-center gap-1.5">
+          <span>Workspace:</span>
+          <input
+            v-if="isEditingName"
+            ref="nameInputRef"
+            v-model="draftName"
+            class="text-sm font-medium text-default bg-transparent border-b border-primary outline-none min-w-0"
+            :disabled="updateWorkspace.isPending.value"
+            @keyup.enter="commitEditName"
+            @keyup.esc="cancelEditName"
+            @blur="commitEditName"
+          >
+          <span
+            v-else
+            class="font-medium text-default"
+            :class="canManage ? 'cursor-text hover:text-primary transition-colors' : ''"
+            :title="canManage ? 'Двойной клик — переименовать' : ''"
+            @dblclick="startEditName"
+          >{{ workspace.name }}</span>
+        </div>
       </div>
       <UButton
         v-if="canManage"

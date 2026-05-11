@@ -11,6 +11,7 @@ import {
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { ConflictError, NotFoundError } from '../utils/errors'
+import { requireMinRole } from '../utils/rbac'
 
 const PG_UNIQUE_VIOLATION = '23505'
 
@@ -109,4 +110,28 @@ function isPgUniqueViolation(err: unknown): boolean {
     'code' in candidate &&
     candidate.code === PG_UNIQUE_VIOLATION
   )
+}
+
+// Mutate workspace metadata. Currently only `name` is editable; the slug
+// is part of every URL and renaming it would invalidate external links.
+// Admin+ required so members/viewers cannot rewrite the workspace label.
+export async function updateWorkspace(input: {
+  workspaceId: string
+  patch: { name?: string }
+  actorRole: WorkspaceMemberRole
+}): Promise<WorkspaceWithRole> {
+  requireMinRole(input.actorRole, 'admin')
+
+  const set: { name?: string; updatedAt: Date } = { updatedAt: new Date() }
+  if (input.patch.name !== undefined) set.name = input.patch.name
+
+  const [updated] = await useDB()
+    .update(workspaces)
+    .set(set)
+    .where(eq(workspaces.id, input.workspaceId))
+    .returning()
+
+  if (!updated) throw new NotFoundError('Workspace not found')
+
+  return { ...updated, role: input.actorRole }
 }

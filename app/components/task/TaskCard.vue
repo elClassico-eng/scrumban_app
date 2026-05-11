@@ -2,7 +2,7 @@
 import type { Task } from '#shared/types/task'
 import type { TaskPriority } from '#shared/types/domain'
 
-defineProps<{ task: Task }>()
+const props = defineProps<{ task: Task; workspaceId: string }>()
 
 const boardStore = useBoardStore()
 
@@ -11,6 +11,17 @@ const PRIORITY_CONFIG: Record<TaskPriority, { color: 'neutral' | 'info' | 'error
   medium: { color: 'info', label: 'Средний' },
   high: { color: 'error', label: 'Высокий' },
 }
+
+// vue-query dedupes by queryKey, so even though every card calls this
+// composable, only one HTTP request hits the members endpoint per board.
+const wsId = computed(() => props.workspaceId)
+const { list: membersList } = useMembersApi(wsId)
+
+const assigneeEmail = computed(() => {
+  if (!props.task.assigneeId) return null
+  const found = membersList.data.value?.members.find(m => m.userId === props.task.assigneeId)
+  return found?.email ?? null
+})
 </script>
 
 <template>
@@ -28,10 +39,11 @@ const PRIORITY_CONFIG: Record<TaskPriority, { color: 'neutral' | 'info' | 'error
         {{ PRIORITY_CONFIG[task.priority].label }}
       </UBadge>
       <div
-        v-if="task.assigneeId"
-        class="size-6 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center justify-center uppercase"
+        v-if="assigneeEmail"
+        class="size-6 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center justify-center uppercase shrink-0"
+        :title="assigneeEmail"
       >
-        {{ task.assigneeId.slice(0, 1) }}
+        {{ assigneeEmail.slice(0, 1) }}
       </div>
     </div>
   </div>

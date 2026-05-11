@@ -18,6 +18,7 @@ export interface BoardResponse {
 export interface CreateBoardInput {
   name: string
   slug: string
+  seedDefaults?: boolean
 }
 
 export interface UpdateBoardInput {

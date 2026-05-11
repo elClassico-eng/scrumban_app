@@ -27,9 +27,16 @@ async function onStart() {
   }
 }
 
+const confirm = useConfirm()
+
 async function onClose() {
   actionError.value = null
-  if (!confirm(`Закрыть спринт «${props.sprint.name}»?`)) return
+  const ok = await confirm({
+    title: `Закрыть спринт «${props.sprint.name}»?`,
+    description: 'Закрытый спринт больше нельзя запустить.',
+    confirmLabel: 'Закрыть спринт',
+  })
+  if (!ok) return
   try {
     await close.mutateAsync(props.sprint.id)
   }
@@ -41,7 +48,13 @@ async function onClose() {
 
 async function onRemove() {
   actionError.value = null
-  if (!confirm(`Удалить спринт «${props.sprint.name}»? Только planned-спринты можно удалять.`)) return
+  const ok = await confirm({
+    title: `Удалить спринт «${props.sprint.name}»?`,
+    description: 'Только planned-спринты можно удалять. Действие необратимо.',
+    confirmLabel: 'Удалить',
+    confirmColor: 'error',
+  })
+  if (!ok) return
   try {
     await remove.mutateAsync(props.sprint.id)
   }

@@ -17,6 +17,7 @@ const taskIdRef = computed(() => boardStore.openTaskId)
 
 const { list: tasksList, update, remove } = useTasksApi(wsId, bId)
 const { list: columnsList } = useColumnsApi(wsId, bId)
+const { list: membersList } = useMembersApi(wsId)
 const { list: eventsQuery } = useTaskEventsApi(wsId, bId, taskIdRef)
 
 const task = computed(() =>
@@ -24,6 +25,14 @@ const task = computed(() =>
 )
 const columns = computed(() => columnsList.data.value?.columns ?? [])
 const events = computed(() => eventsQuery.data.value?.events ?? [])
+
+const assigneeOptions = computed(() => [
+  { label: 'Не назначен', value: null },
+  ...(membersList.data.value?.members ?? []).map(m => ({
+    label: m.email,
+    value: m.userId,
+  })),
+])
 
 const PRIORITY_OPTIONS: Array<{ label: string; value: TaskPriority }> = [
   { label: 'Низкий', value: 'low' },
@@ -63,6 +72,11 @@ function onPriorityChange(v: TaskPriority) {
   update.mutate({ taskId: task.value.id, priority: v })
 }
 
+function onAssigneeChange(v: string | null) {
+  if (!task.value || v === task.value.assigneeId) return
+  update.mutate({ taskId: task.value.id, assigneeId: v })
+}
+
 const { moveTask } = useTaskMove(wsId, bId)
 function onColumnChange(toColumnId: string) {
   if (!task.value || toColumnId === task.value.columnId) return
@@ -70,9 +84,17 @@ function onColumnChange(toColumnId: string) {
   moveTask(task.value.id, toColumnId, 0)
 }
 
+const confirm = useConfirm()
+
 async function onDelete() {
   if (!task.value) return
-  if (!confirm(`Удалить задачу «${task.value.title}»?`)) return
+  const ok = await confirm({
+    title: `Удалить задачу «${task.value.title}»?`,
+    description: 'Действие необратимо.',
+    confirmLabel: 'Удалить',
+    confirmColor: 'error',
+  })
+  if (!ok) return
   await remove.mutateAsync(task.value.id)
   boardStore.closeTask()
 }
@@ -127,10 +149,19 @@ async function onDelete() {
                 @update:model-value="onPriorityChange"
               />
             </div>
+            <div class="col-span-2">
+              <p class="text-xs text-muted uppercase tracking-wide mb-1.5">Исполнитель</p>
+              <USelect
+                :model-value="task.assigneeId"
+                :items="assigneeOptions"
+                class="w-full"
+                @update:model-value="onAssigneeChange"
+              />
+            </div>
           </div>
           <div>
             <p class="text-xs text-muted uppercase tracking-wide mb-1.5">История</p>
-            <TaskEventTimeline :events="events" />
+            <TaskEventTimeline :events="events" :workspace-id="wsId" />
           </div>
         </div>
         <div class="p-6 border-t border-default flex justify-between items-center">

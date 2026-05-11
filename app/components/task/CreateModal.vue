@@ -19,14 +19,24 @@ const schema = z.object({
   title: z.string().trim().min(1, 'Введи название').max(255),
   description: z.string().max(20_000).optional(),
   priority: z.enum(['low', 'medium', 'high']),
+  assigneeId: z.string().nullable(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ title: '', description: '', priority: 'medium' })
+const state = reactive<State>({ title: '', description: '', priority: 'medium', assigneeId: null })
 
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
 const { create } = useTasksApi(wsId, bId)
+const { list: membersList } = useMembersApi(wsId)
+
+const assigneeOptions = computed(() => [
+  { label: 'Не назначен', value: null },
+  ...(membersList.data.value?.members ?? []).map(m => ({
+    label: m.email,
+    value: m.userId,
+  })),
+])
 
 const errorMessage = computed(() => {
   if (!create.isError.value) return null
@@ -39,6 +49,7 @@ function resetForm() {
   state.title = ''
   state.description = ''
   state.priority = 'medium'
+  state.assigneeId = null
   create.reset()
 }
 
@@ -49,6 +60,7 @@ async function onSubmit() {
       title: state.title,
       description: state.description || undefined,
       priority: state.priority,
+      assigneeId: state.assigneeId,
     })
     open.value = false
     resetForm()
@@ -75,6 +87,9 @@ watch(open, (v) => {
         </UFormField>
         <UFormField label="Приоритет" name="priority" required>
           <USelect v-model="state.priority" :items="PRIORITY_OPTIONS" class="w-full" />
+        </UFormField>
+        <UFormField label="Исполнитель" name="assigneeId">
+          <USelect v-model="state.assigneeId" :items="assigneeOptions" class="w-full" />
         </UFormField>
         <UAlert
           v-if="errorMessage"

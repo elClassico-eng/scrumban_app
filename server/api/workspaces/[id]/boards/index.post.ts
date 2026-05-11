@@ -15,6 +15,10 @@ const BodySchema = z.object({
   slug: z.string().trim().toLowerCase().min(3).max(64).regex(SLUG_RE, {
     message: 'slug must be lowercase letters, digits, and hyphens',
   }),
+  // When false, the board is created without the default 4 columns
+  // (Backlog/In Progress/Review/Done). Useful for teams that want to
+  // configure their own kanban flow from scratch.
+  seedDefaults: z.boolean().optional().default(true),
 })
 
 export default defineEventHandler(async (event) => {
@@ -28,6 +32,7 @@ export default defineEventHandler(async (event) => {
       workspaceId: id,
       name: body.name,
       slug: body.slug,
+      seedDefaults: body.seedDefaults,
       actorRole: workspace.role,
     })
     return { board }
