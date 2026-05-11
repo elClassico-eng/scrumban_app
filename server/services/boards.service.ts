@@ -59,6 +59,7 @@ export async function createBoard(input: {
   workspaceId: string
   name: string
   slug: string
+  seedDefaults?: boolean
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
   requireMinRole(input.actorRole, 'admin')
@@ -74,16 +75,19 @@ export async function createBoard(input: {
         .returning()
 
       // Seed default columns in the same transaction so a board never exists
-      // without them. If this insert fails, the board insert rolls back too.
-      await tx.insert(boardColumns).values(
-        DEFAULT_COLUMNS.map((c, position) => ({
-          workspaceId: input.workspaceId,
-          boardId: row!.id,
-          name: c.name,
-          columnRole: c.columnRole,
-          position,
-        })),
-      )
+      // without them when seedDefaults is on. If this insert fails, the board
+      // insert rolls back too. seedDefaults=false lets a team start blank.
+      if (input.seedDefaults !== false) {
+        await tx.insert(boardColumns).values(
+          DEFAULT_COLUMNS.map((c, position) => ({
+            workspaceId: input.workspaceId,
+            boardId: row!.id,
+            name: c.name,
+            columnRole: c.columnRole,
+            position,
+          })),
+        )
+      }
 
       return row!
     })

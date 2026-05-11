@@ -8,10 +8,11 @@ const schema = z.object({
   name: z.string().trim().min(1, 'Введи название').max(255),
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
+  seedDefaults: z.boolean(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: '', slug: '' })
+const state = reactive<State>({ name: '', slug: '', seedDefaults: true })
 
 const slugTouched = ref(false)
 watch(() => state.name, (name) => {
@@ -32,6 +33,7 @@ const errorMessage = computed(() => {
 function resetForm() {
   state.name = ''
   state.slug = ''
+  state.seedDefaults = true
   slugTouched.value = false
   create.reset()
 }
@@ -69,6 +71,12 @@ watch(open, (v) => {
             v-model="state.slug"
             class="w-full"
             @update:model-value="slugTouched = true"
+          />
+        </UFormField>
+        <UFormField name="seedDefaults">
+          <UCheckbox
+            v-model="state.seedDefaults"
+            label="Использовать шаблон Scrumban (Backlog / В работе / На ревью / Готово)"
           />
         </UFormField>
         <UAlert
