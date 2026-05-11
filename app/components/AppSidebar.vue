@@ -1,11 +1,27 @@
 <script setup lang="ts">
 import { pageRoutes } from '~/routing'
 
-const links = [
-  { label: 'Воркспейсы', icon: 'i-lucide-folder', to: pageRoutes.workspaces },
-  { label: 'Доски', icon: 'i-lucide-kanban-square', to: pageRoutes.home },
-  { label: 'Аналитика', icon: 'i-lucide-line-chart', to: pageRoutes.home },
-]
+const workspaceStore = useWorkspaceStore()
+const { list } = useWorkspacesApi()
+
+const workspaces = computed(() => list.data.value?.workspaces ?? [])
+const current = computed(() => {
+  const id = workspaceStore.currentId
+  return workspaces.value.find(w => w.id === id) ?? workspaces.value[0] ?? null
+})
+
+const links = computed(() => {
+  const out: Array<{ label: string; icon: string; to: string }> = [
+    { label: 'Все workspaces', icon: 'i-lucide-folder', to: pageRoutes.workspaces },
+  ]
+  if (current.value) {
+    out.push(
+      { label: 'Доски', icon: 'i-lucide-kanban-square', to: pageRoutes.boards(current.value.id) },
+      { label: 'Участники', icon: 'i-lucide-users', to: pageRoutes.workspaceMembers(current.value.id) },
+    )
+  }
+  return out
+})
 </script>
 
 <template>
@@ -15,6 +31,7 @@ const links = [
         Scrumban
       </NuxtLink>
     </div>
+    <WorkspaceSwitcher />
     <nav class="flex-1 p-3 flex flex-col gap-1">
       <NuxtLink
         v-for="link in links"

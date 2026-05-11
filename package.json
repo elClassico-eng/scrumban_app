@@ -30,6 +30,7 @@
     "pinia": "^3.0.4",
     "pino": "^10.3.1",
     "postgres": "^3.4.9",
+    "slugify": "^1.6.9",
     "vee-validate": "^4.15.1",
     "vue-echarts": "^8.0.1",
     "vuedraggable": "^4.1.0",
