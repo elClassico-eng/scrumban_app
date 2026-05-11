@@ -8,8 +8,21 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
     '@nuxt/eslint',
+    '@nuxt/icon',
+    '@nuxtjs/google-fonts',
     'nuxt-auth-utils',
+    '@pinia/nuxt',
   ],
+
+  css: ['~/assets/css/main.css'],
+
+  googleFonts: {
+    families: {
+      Manrope: [400, 500, 600, 700, 800],
+      'JetBrains Mono': [400, 500],
+    },
+    display: 'swap',
+  },
 
   runtimeConfig: {
     // Server-only secrets. Nuxt auto-overrides keys via NUXT_* env vars
