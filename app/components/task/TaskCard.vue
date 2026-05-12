@@ -55,14 +55,23 @@ const dueDateLabel = computed(() => {
 
 <template>
   <div
-    :class="[
-      'bg-default border border-default rounded-lg p-3 cursor-grab hover:border-primary/50 hover:shadow-sm transition-all space-y-2',
-      agingTier.cardClass,
-    ]"
-    :title="agingTooltip"
+    class="bg-default border border-default rounded-lg p-3 cursor-grab hover:border-primary/50 hover:shadow-sm transition-all space-y-2"
     @click="boardStore.openTask(task.id)"
   >
-    <p class="text-sm font-medium line-clamp-2">{{ task.title }}</p>
+    <div class="flex items-start justify-between gap-2">
+      <p class="text-sm font-medium line-clamp-2 flex-1">{{ task.title }}</p>
+      <span
+        v-if="agingTier.show"
+        :class="[
+          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium shrink-0 leading-none',
+          agingTier.chipClass,
+        ]"
+        :title="agingTooltip"
+      >
+        <UIcon name="i-lucide-clock" class="size-3" />
+        {{ Math.round(ageDaysFromIso(task.createdAt)) }}д
+      </span>
+    </div>
     <div class="flex items-center justify-between gap-2 min-h-6">
       <div class="flex items-center gap-1.5">
         <UBadge
