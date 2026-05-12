@@ -87,7 +87,7 @@ describe('POST /tasks', () => {
     const { boardId, columns } = await createBoardWithColumns(owner, wsId)
 
     const res = await fetchWithJar<{
-      task: { id: string; title: string; columnId: string; position: number; priority: string }
+      task: { id: string; title: string; columnId: string; position: number; serviceClass: string }
     }>(dev.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
       method: 'POST',
       body: { columnId: columns.backlog, title: 'Implement login' },
@@ -96,7 +96,7 @@ describe('POST /tasks', () => {
     expect(res.body.task.title).toBe('Implement login')
     expect(res.body.task.columnId).toBe(columns.backlog)
     expect(res.body.task.position).toBe(0)
-    expect(res.body.task.priority).toBe('medium')
+    expect(res.body.task.serviceClass).toBe('standard')
   })
 
   it('positions are appended within a column', async () => {
@@ -146,7 +146,7 @@ describe('POST /tasks', () => {
     expect(res.status).toBe(400)
   })
 
-  it('accepts assigneeId and priority', async () => {
+  it('accepts assigneeId and serviceClass=expedite', async () => {
     const owner = await registerUser('owner@example.com')
     const dev = await registerUser('dev@example.com')
     const wsId = await createWorkspace(owner)
@@ -154,19 +154,21 @@ describe('POST /tasks', () => {
     const { boardId, columns } = await createBoardWithColumns(owner, wsId)
 
     const res = await fetchWithJar<{
-      task: { assigneeId: string | null; priority: string }
+      task: { assigneeId: string | null; serviceClass: string; expeditedAt: string | null }
     }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
       method: 'POST',
       body: {
         columnId: columns.backlog,
         title: 'Important',
         assigneeId: dev.id,
-        priority: 'high',
+        serviceClass: 'expedite',
       },
     })
     expect(res.status).toBe(200)
     expect(res.body.task.assigneeId).toBe(dev.id)
-    expect(res.body.task.priority).toBe('high')
+    expect(res.body.task.serviceClass).toBe('expedite')
+    // Expedite tasks get a stamped expeditedAt — Phase 5 §2.1 rule.
+    expect(res.body.task.expeditedAt).not.toBeNull()
   })
 })
 
@@ -194,7 +196,7 @@ describe('GET /tasks', () => {
 })
 
 describe('PATCH /tasks/:taskId', () => {
-  it('member can rename and re-prioritise their tasks', async () => {
+  it('member can rename and re-classify their tasks', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)
     const { boardId, columns } = await createBoardWithColumns(owner, wsId)
@@ -204,14 +206,14 @@ describe('PATCH /tasks/:taskId', () => {
       { method: 'POST', body: { columnId: columns.backlog, title: 'old' } },
     )
 
-    const res = await fetchWithJar<{ task: { title: string; priority: string } }>(
+    const res = await fetchWithJar<{ task: { title: string; serviceClass: string } }>(
       owner.jar,
       `/api/workspaces/${wsId}/boards/${boardId}/tasks/${created.body.task.id}`,
-      { method: 'PATCH', body: { title: 'new', priority: 'low' } },
+      { method: 'PATCH', body: { title: 'new', serviceClass: 'intangible' } },
     )
     expect(res.status).toBe(200)
     expect(res.body.task.title).toBe('new')
-    expect(res.body.task.priority).toBe('low')
+    expect(res.body.task.serviceClass).toBe('intangible')
   })
 
   it('null assigneeId un-assigns', async () => {

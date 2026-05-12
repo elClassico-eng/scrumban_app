@@ -11,7 +11,8 @@ const BodySchema = z.object({
   columnId: z.uuid(),
   title: z.string().trim().min(1).max(255),
   description: z.string().max(20_000).optional(),
-  priority: z.enum(['low', 'medium', 'high']).optional(),
+  serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']).optional(),
+  dueDate: z.iso.datetime().optional().nullable(),
   assigneeId: z.uuid().nullable().optional(),
 })
 
@@ -25,7 +26,12 @@ export default defineEventHandler(async (event) => {
     const task = await createTask({
       workspaceId: id,
       boardId,
-      ...body,
+      columnId: body.columnId,
+      title: body.title,
+      description: body.description,
+      serviceClass: body.serviceClass,
+      dueDate: body.dueDate ? new Date(body.dueDate) : null,
+      assigneeId: body.assigneeId,
       actorId: user.id,
       actorRole: workspace.role,
     })
