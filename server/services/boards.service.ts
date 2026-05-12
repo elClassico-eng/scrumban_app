@@ -7,7 +7,7 @@
 //   create    → admin+
 //   update    → admin+
 //   delete    → owner (destructive: cascades to columns + tasks + events)
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import {
   boardColumns,
   boards,
@@ -102,15 +102,33 @@ export async function createBoard(input: {
 export async function updateBoard(input: {
   workspaceId: string
   boardId: string
-  patch: { name?: string; slug?: string }
+  patch: {
+    name?: string
+    slug?: string
+    sleDays?: number | null
+    sleProbability?: string
+    replenishmentPeriodDays?: number
+  }
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
   requireMinRole(input.actorRole, 'admin')
 
   // Filter out undefined keys so we never overwrite a column with NULL.
-  const set: { name?: string; slug?: string; updatedAt: Date } = { updatedAt: new Date() }
+  const set: {
+    name?: string
+    slug?: string
+    sleDays?: number | null
+    sleProbability?: string
+    replenishmentPeriodDays?: number
+    updatedAt: Date
+  } = { updatedAt: new Date() }
   if (input.patch.name !== undefined) set.name = input.patch.name
   if (input.patch.slug !== undefined) set.slug = input.patch.slug
+  if ('sleDays' in input.patch) set.sleDays = input.patch.sleDays ?? null
+  if (input.patch.sleProbability !== undefined) set.sleProbability = input.patch.sleProbability
+  if (input.patch.replenishmentPeriodDays !== undefined) {
+    set.replenishmentPeriodDays = input.patch.replenishmentPeriodDays
+  }
 
   try {
     const [row] = await withTenant(input.workspaceId, async (tx) =>
@@ -154,4 +172,89 @@ function isPgUniqueViolation(err: unknown): boolean {
     'code' in candidate &&
     candidate.code === PG_UNIQUE_VIOLATION
   )
+}
+
+// computeAndStoreSLE — re-read 90 days of closed task cycle times for the
+// given board and write the percentile value (in days) into boards.sle_days.
+// sle_probability stays as-is on the board; the computation just reads it.
+// Returns the new sle_days value (null when there are too few samples).
+//
+// Reused inside the /sle/recompute endpoint. Anyone calling this needs
+// admin+ — it mutates board configuration that downstream aging-WIP
+// visuals key off of.
+export async function computeAndStoreSLE(input: {
+  workspaceId: string
+  boardId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<{ sleDays: number | null; sampleCount: number }> {
+  requireMinRole(input.actorRole, 'admin')
+
+  // Lookback window matches the rest of analytics (Phase 3 default).
+  const now = new Date()
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+
+  const [board] = await useDB()
+    .select({ sleProbability: boards.sleProbability })
+    .from(boards)
+    .where(eq(boards.id, input.boardId))
+  if (!board) throw new NotFoundError('Board not found')
+
+  // sleProbability arrives as a string from numeric(3,2); coerce.
+  const probability = Number(board.sleProbability)
+
+  const fromIso = ninetyDaysAgo.toISOString()
+  const toIso = now.toISOString()
+  const samples = await withTenant(input.workspaceId, async (tx) => {
+    return tx.execute<{ cycleHours: string }>(sql`
+      WITH closed AS (
+        SELECT e.task_id, e.created_at AS closed_at
+        FROM task_events e
+        JOIN tasks t ON t.id = e.task_id
+        WHERE e.event_type = 'task_closed'
+          AND t.board_id = ${input.boardId}
+          AND e.created_at >= ${fromIso}::timestamptz
+          AND e.created_at <= ${toIso}::timestamptz
+      ),
+      created AS (
+        SELECT DISTINCT ON (e.task_id) e.task_id, e.created_at AS first_at
+        FROM task_events e
+        WHERE e.event_type = 'task_created'
+        ORDER BY e.task_id, e.created_at ASC
+      )
+      SELECT
+        EXTRACT(EPOCH FROM (c.closed_at - COALESCE(cr.first_at, t.created_at))) / 3600 AS "cycleHours"
+      FROM closed c
+      JOIN tasks t ON t.id = c.task_id
+      LEFT JOIN created cr ON cr.task_id = c.task_id
+      WHERE c.closed_at >= COALESCE(cr.first_at, t.created_at)
+    `)
+  })
+
+  const hoursArray = (samples as unknown as Array<{ cycleHours: string | number }>)
+    .map((r) => Number(r.cycleHours))
+    .sort((a, b) => a - b)
+
+  // Min-sample guard mirrors analytics percentile threshold. Below this
+  // count the percentile would just be noise — leave sle_days unchanged.
+  const MIN_SAMPLES = 5
+  if (hoursArray.length < MIN_SAMPLES) {
+    return { sleDays: null, sampleCount: hoursArray.length }
+  }
+
+  // Linear-interpolation percentile over the sorted sample, then convert
+  // hours → whole days, rounded up so SLE is conservative (we'd rather
+  // over-promise time than mis-flag tasks as 'aging' too early).
+  const idx = (probability * (hoursArray.length - 1))
+  const lower = Math.floor(idx)
+  const upper = Math.ceil(idx)
+  const frac = idx - lower
+  const valueHours = hoursArray[lower]! + frac * (hoursArray[upper]! - hoursArray[lower]!)
+  const valueDays = Math.max(1, Math.ceil(valueHours / 24))
+
+  await useDB()
+    .update(boards)
+    .set({ sleDays: valueDays, updatedAt: new Date() })
+    .where(eq(boards.id, input.boardId))
+
+  return { sleDays: valueDays, sampleCount: hoursArray.length }
 }

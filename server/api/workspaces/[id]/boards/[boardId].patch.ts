@@ -12,10 +12,19 @@ const BodySchema = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
     slug: z.string().trim().toLowerCase().min(3).max(64).regex(SLUG_RE).optional(),
+    sleDays: z.number().int().positive().nullable().optional(),
+    sleProbability: z.number().min(0.5).max(0.99).optional(),
+    replenishmentPeriodDays: z.number().int().positive().max(60).optional(),
   })
-  .refine((d) => d.name !== undefined || d.slug !== undefined, {
-    message: 'Provide at least one field to update',
-  })
+  .refine(
+    (d) =>
+      d.name !== undefined ||
+      d.slug !== undefined ||
+      d.sleDays !== undefined ||
+      d.sleProbability !== undefined ||
+      d.replenishmentPeriodDays !== undefined,
+    { message: 'Provide at least one field to update' },
+  )
 
 export default defineEventHandler(async (event) => {
   try {
@@ -27,7 +36,16 @@ export default defineEventHandler(async (event) => {
     const board = await updateBoard({
       workspaceId: id,
       boardId,
-      patch: body,
+      patch: {
+        name: body.name,
+        slug: body.slug,
+        ...('sleDays' in body ? { sleDays: body.sleDays } : {}),
+        // numeric(3,2) is text in postgres-js; coerce.
+        ...(body.sleProbability !== undefined
+          ? { sleProbability: body.sleProbability.toFixed(2) }
+          : {}),
+        replenishmentPeriodDays: body.replenishmentPeriodDays,
+      },
       actorRole: workspace.role,
     })
     return { board }
