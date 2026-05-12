@@ -6,6 +6,7 @@ import type {
   BoardResponse,
   CreateBoardInput,
   UpdateBoardInput,
+  SleRecomputeResponse,
 } from '#shared/types/board'
 
 export function useBoardsApi(workspaceId: MaybeRef<string>) {
@@ -35,11 +36,27 @@ export function useBoardsApi(workspaceId: MaybeRef<string>) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['boards', unref(workspaceId)] }),
   })
 
+  const recomputeSLE = useMutation({
+    mutationFn: (boardId: string) =>
+      $fetch<SleRecomputeResponse>(apiRoutes.boardSleRecompute(unref(workspaceId), boardId), {
+        method: 'POST',
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['boards', unref(workspaceId)] }),
+  })
+
+  const recordReplenishment = useMutation({
+    mutationFn: (boardId: string) =>
+      $fetch<BoardResponse>(apiRoutes.boardReplenishment(unref(workspaceId), boardId), {
+        method: 'POST',
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['boards', unref(workspaceId)] }),
+  })
+
   const remove = useMutation({
     mutationFn: (boardId: string) =>
       $fetch(apiRoutes.board(unref(workspaceId), boardId), { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['boards', unref(workspaceId)] }),
   })
 
-  return { list, create, update, remove }
+  return { list, create, update, recomputeSLE, recordReplenishment, remove }
 }

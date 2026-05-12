@@ -18,12 +18,11 @@ const state = reactive<RegisterState>({ email: '', password: '', confirmPassword
 
 const { register } = useAuthApi()
 
-const errorMessage = computed(() => {
-  if (!register.isError.value) return null
-  const err = register.error.value as { statusCode?: number } | null
-  if (err?.statusCode === 409) return 'Пользователь с таким email уже существует'
-  return 'Не удалось зарегистрироваться, попробуй позже'
-})
+const errorMessage = computed(() =>
+  register.isError.value
+    ? getErrorMessage(register.error.value, 'Не удалось зарегистрироваться, попробуй позже')
+    : null,
+)
 
 function onSubmit() {
   // Backend RegisterSchema is {email, password} — confirmPassword is a

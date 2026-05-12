@@ -22,13 +22,9 @@ watch(() => state.name, (name) => {
 const wsId = computed(() => props.workspaceId)
 const { create } = useBoardsApi(wsId)
 
-const errorMessage = computed(() => {
-  if (!create.isError.value) return null
-  const err = create.error.value as { statusCode?: number; data?: { message?: string } } | null
-  if (err?.statusCode === 409) return 'Доска с таким slug уже существует в этом workspace'
-  if (err?.statusCode === 403) return 'У тебя нет прав создавать доски в этом workspace'
-  return err?.data?.message ?? 'Не удалось создать доску'
-})
+const errorMessage = computed(() =>
+  create.isError.value ? getErrorMessage(create.error.value, 'Не удалось создать доску') : null,
+)
 
 function resetForm() {
   state.name = ''

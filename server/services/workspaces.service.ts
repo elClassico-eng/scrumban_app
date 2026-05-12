@@ -41,7 +41,7 @@ export async function createWorkspace(input: {
     })
   } catch (err) {
     if (isPgUniqueViolation(err)) {
-      throw new ConflictError('Workspace slug already taken')
+      throw new ConflictError('Этот slug уже занят другим workspace')
     }
     throw err
   }
@@ -95,7 +95,7 @@ export async function getWorkspaceForUserOrThrow(
   userId: string,
 ): Promise<WorkspaceWithRole> {
   const ws = await findWorkspaceForUser(workspaceId, userId)
-  if (!ws) throw new NotFoundError('Workspace not found')
+  if (!ws) throw new NotFoundError('Workspace не найден')
   return ws
 }
 
@@ -131,7 +131,7 @@ export async function updateWorkspace(input: {
     .where(eq(workspaces.id, input.workspaceId))
     .returning()
 
-  if (!updated) throw new NotFoundError('Workspace not found')
+  if (!updated) throw new NotFoundError('Workspace не найден')
 
   return { ...updated, role: input.actorRole }
 }

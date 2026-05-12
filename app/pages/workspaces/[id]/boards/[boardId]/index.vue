@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import draggable from 'vuedraggable'
 import type { Task } from '#shared/types/task'
+import type { BoardColumn as Column } from '#shared/types/column'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -10,7 +12,7 @@ workspaceStore.setCurrent(wsId.value)
 
 const { list: workspacesList } = useWorkspacesApi()
 const { list: boardsList } = useBoardsApi(wsId)
-const { list: columnsList } = useColumnsApi(wsId, bId)
+const { list: columnsList, reorder: reorderColumns } = useColumnsApi(wsId, bId)
 const { list: tasksList } = useTasksApi(wsId, bId)
 
 // Open the SSE subscription for realtime invalidation while this page is mounted.
@@ -24,6 +26,15 @@ const board = computed(() =>
 )
 const columns = computed(() => columnsList.data.value?.columns ?? [])
 const tasks = computed(() => tasksList.data.value?.tasks ?? [])
+
+const localColumns = ref<Column[]>([])
+watch(columns, (next) => {
+  localColumns.value = [...next]
+}, { immediate: true })
+
+function onColumnsReorder() {
+  reorderColumns.mutate({ orderedIds: localColumns.value.map(c => c.id) })
+}
 
 const tasksByColumn = computed(() => {
   const groups = new Map<string, Task[]>()
@@ -57,7 +68,7 @@ const isLoading = computed(() =>
 
 <template>
   <div class="space-y-4 h-full flex flex-col">
-    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canCreateColumns" />
+    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canCreateColumns" :board="board" />
 
     <div class="flex justify-end">
       <UButton
@@ -88,21 +99,28 @@ const isLoading = computed(() =>
       </div>
     </UCard>
 
-    <div
+    <draggable
       v-else
+      v-model="localColumns"
+      :group="{ name: 'columns' }"
+      item-key="id"
+      handle=".column-drag-handle"
+      :disabled="!canCreateColumns"
       class="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0"
+      animation="150"
+      @end="onColumnsReorder"
     >
-      <BoardColumn
-        v-for="column in columns"
-        :key="column.id"
-        :column="column"
-        :tasks="tasksByColumn.get(column.id) ?? []"
-        :workspace-id="wsId"
-        :board-id="bId"
-        :can-create="canCreateTasks"
-        :can-manage="canCreateColumns"
-      />
-    </div>
+      <template #item="{ element }">
+        <BoardColumn
+          :column="element"
+          :tasks="tasksByColumn.get(element.id) ?? []"
+          :workspace-id="wsId"
+          :board-id="bId"
+          :can-create="canCreateTasks"
+          :can-manage="canCreateColumns"
+        />
+      </template>
+    </draggable>
 
     <TaskDrawer :workspace-id="wsId" :board-id="bId" />
     <BoardCreateColumnModal

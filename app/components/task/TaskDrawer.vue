@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watchDebounced } from '@vueuse/core'
-import type { TaskPriority } from '#shared/types/domain'
+import type { ServiceClass } from '#shared/types/domain'
 
 const props = defineProps<{ workspaceId: string; boardId: string }>()
 
@@ -34,47 +34,70 @@ const assigneeOptions = computed(() => [
   })),
 ])
 
-const PRIORITY_OPTIONS: Array<{ label: string; value: TaskPriority }> = [
-  { label: 'Низкий', value: 'low' },
-  { label: 'Средний', value: 'medium' },
-  { label: 'Высокий', value: 'high' },
-]
 
 // Local refs for debounced inline edit. They sync from the canonical task
 // whenever it changes (drawer reopen, or remote SSE update mutates cache).
 const localTitle = ref('')
 const localDescription = ref('')
-const localPriority = ref<TaskPriority>('medium')
+// dueDate as YYYY-MM-DD for <input type="date">. Convert to ISO on save.
+const localDueDate = ref('')
 
 watch(task, (t) => {
   if (!t) return
   localTitle.value = t.title
   localDescription.value = t.description
-  localPriority.value = t.priority
+  localDueDate.value = t.dueDate ? t.dueDate.slice(0, 10) : ''
 }, { immediate: true })
+
+const toast = useToast()
+
+async function saveWithFeedback(patch: Record<string, unknown>) {
+  if (!task.value) return
+  try {
+    await update.mutateAsync({ taskId: task.value.id, ...patch })
+    toast.add({
+      title: 'Сохранено',
+      color: 'success',
+      icon: 'i-lucide-check',
+      duration: 1500,
+    })
+  }
+  catch {
+    toast.add({
+      title: 'Не удалось сохранить',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
 
 // Debounced auto-save for text fields. 500ms is the typical "user finished
 // typing" pause; tighter feels jittery, looser feels unresponsive.
 watchDebounced(localTitle, (v) => {
   if (!task.value || v === task.value.title || v.trim().length === 0) return
-  update.mutate({ taskId: task.value.id, title: v })
+  saveWithFeedback({ title: v })
 }, { debounce: 500 })
 
 watchDebounced(localDescription, (v) => {
   if (!task.value || v === task.value.description) return
-  update.mutate({ taskId: task.value.id, description: v })
+  saveWithFeedback({ description: v })
 }, { debounce: 500 })
 
-// Priority changes via select — instant, no debounce.
-function onPriorityChange(v: TaskPriority) {
-  if (!task.value || v === task.value.priority) return
-  localPriority.value = v
-  update.mutate({ taskId: task.value.id, priority: v })
+function onServiceClassChange(v: ServiceClass) {
+  if (!task.value || v === task.value.serviceClass) return
+  saveWithFeedback({ serviceClass: v })
 }
+
+watchDebounced(localDueDate, (v) => {
+  if (!task.value) return
+  const newIso = v ? new Date(`${v}T23:59:59Z`).toISOString() : null
+  if (newIso === task.value.dueDate) return
+  saveWithFeedback({ dueDate: newIso })
+}, { debounce: 500 })
 
 function onAssigneeChange(v: string | null) {
   if (!task.value || v === task.value.assigneeId) return
-  update.mutate({ taskId: task.value.id, assigneeId: v })
+  saveWithFeedback({ assigneeId: v })
 }
 
 const { moveTask } = useTaskMove(wsId, bId)
@@ -141,13 +164,20 @@ async function onDelete() {
               />
             </div>
             <div>
-              <p class="text-xs text-muted uppercase tracking-wide mb-1.5">Приоритет</p>
+              <p class="text-xs text-muted uppercase tracking-wide mb-1.5">Класс обслуживания</p>
               <USelect
-                :model-value="localPriority"
-                :items="PRIORITY_OPTIONS"
+                :model-value="task.serviceClass"
+                :items="SERVICE_CLASS_OPTIONS"
                 class="w-full"
-                @update:model-value="onPriorityChange"
+                @update:model-value="onServiceClassChange"
               />
+              <p class="text-xs text-muted mt-1.5">
+                {{ SERVICE_CLASS_INFO[task.serviceClass].hint }}
+              </p>
+            </div>
+            <div v-if="task.serviceClass === 'fixed_date'" class="col-span-2">
+              <p class="text-xs text-muted uppercase tracking-wide mb-1.5">Дедлайн</p>
+              <UInput v-model="localDueDate" type="date" class="w-full" />
             </div>
             <div class="col-span-2">
               <p class="text-xs text-muted uppercase tracking-wide mb-1.5">Исполнитель</p>

@@ -48,7 +48,7 @@ const createOpen = ref(false)
 
 <template>
   <div class="space-y-4">
-    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" />
+    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" :board="board" />
 
     <div class="flex items-center justify-between">
       <USelect v-model="filter" :items="STATE_FILTERS" size="sm" class="w-48" />

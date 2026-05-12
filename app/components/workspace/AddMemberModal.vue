@@ -23,14 +23,9 @@ const state = reactive<State>({ email: '', role: 'member' })
 const wsId = computed(() => props.workspaceId)
 const { add } = useMembersApi(wsId)
 
-const errorMessage = computed(() => {
-  if (!add.isError.value) return null
-  const err = add.error.value as { statusCode?: number; data?: { message?: string } } | null
-  if (err?.statusCode === 404) return 'Пользователь с таким email не найден. Сначала он должен зарегистрироваться'
-  if (err?.statusCode === 409) return 'Пользователь уже в этом workspace'
-  if (err?.statusCode === 403) return 'У тебя нет прав назначать такую роль'
-  return err?.data?.message ?? 'Не удалось добавить участника'
-})
+const errorMessage = computed(() =>
+  add.isError.value ? getErrorMessage(add.error.value, 'Не удалось добавить участника') : null,
+)
 
 function resetForm() {
   state.email = ''

@@ -56,7 +56,7 @@ export async function addMemberByEmail(input: {
 }): Promise<MemberView> {
   requireMinRole(input.actorRole, 'admin')
   if (!strictlyOutranks(input.actorRole, input.role)) {
-    throw new ForbiddenError('Cannot grant a role equal to or above your own')
+    throw new ForbiddenError('Нельзя выдать роль выше своей или равную своей')
   }
 
   const normalisedEmail = input.email.trim().toLowerCase()
@@ -66,7 +66,7 @@ export async function addMemberByEmail(input: {
     .where(eq(users.email, normalisedEmail))
 
   if (!user) {
-    throw new NotFoundError('User with that email is not registered')
+    throw new NotFoundError('Пользователь с таким email не зарегистрирован')
   }
 
   try {
@@ -82,7 +82,7 @@ export async function addMemberByEmail(input: {
     }
   } catch (err) {
     if (isPgUniqueViolation(err)) {
-      throw new ConflictError('User is already a member of this workspace')
+      throw new ConflictError('Пользователь уже состоит в этом workspace')
     }
     throw err
   }
@@ -98,11 +98,11 @@ export async function updateMemberRole(input: {
   requireMinRole(input.actorRole, 'admin')
 
   const target = await findMemberRow(input.workspaceId, input.targetUserId)
-  if (!target) throw new NotFoundError('Member not found in this workspace')
+  if (!target) throw new NotFoundError('Участник не найден в этом workspace')
 
   // You can't promote anyone (including yourself) to a role above your own.
   if (!roleAtLeast(input.actorRole, input.newRole)) {
-    throw new ForbiddenError('Cannot grant a role above your own')
+    throw new ForbiddenError('Нельзя выдать роль выше своей')
   }
 
   // For OTHER members, actor must strictly outrank the target's current role.
@@ -110,7 +110,7 @@ export async function updateMemberRole(input: {
   // bounded only by the "last remaining owner" guard below.
   const isSelf = input.actorUserId === input.targetUserId
   if (!isSelf && !strictlyOutranks(input.actorRole, target.role)) {
-    throw new ForbiddenError('Cannot modify a member of equal or higher rank')
+    throw new ForbiddenError('Нельзя изменять участника с равной или более высокой ролью')
   }
 
   // Demoting the last remaining owner would orphan the workspace.
@@ -149,7 +149,7 @@ export async function removeMember(input: {
   actorUserId: string
 }): Promise<void> {
   const target = await findMemberRow(input.workspaceId, input.targetUserId)
-  if (!target) throw new NotFoundError('Member not found in this workspace')
+  if (!target) throw new NotFoundError('Участник не найден в этом workspace')
 
   // Self-removal is always allowed (any role can leave). Removing someone
   // else requires admin+ AND strict outranking.
@@ -157,7 +157,7 @@ export async function removeMember(input: {
   if (!removingSelf) {
     requireMinRole(input.actorRole, 'admin')
     if (!strictlyOutranks(input.actorRole, target.role)) {
-      throw new ForbiddenError('Cannot remove a member of equal or higher rank')
+      throw new ForbiddenError('Нельзя удалить участника с равной или более высокой ролью')
     }
   }
   if (target.role === 'owner') {
@@ -201,7 +201,7 @@ async function assertNotLastOwner(workspaceId: string, candidateUserId: string):
   const count = rows[0]?.count ?? 0
   if (count <= 1) {
     throw new ValidationError(
-      `User ${candidateUserId} is the only owner; promote another owner first`,
+      `Это последний владелец workspace — сначала назначь другого владельца (user ${candidateUserId})`,
     )
   }
 }

@@ -18,12 +18,9 @@ const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
 const { create } = useSprintsApi(wsId, bId)
 
-const errorMessage = computed(() => {
-  if (!create.isError.value) return null
-  const err = create.error.value as { statusCode?: number; data?: { message?: string } } | null
-  if (err?.statusCode === 403) return 'Нужна роль scrum_master или выше для создания спринта'
-  return err?.data?.message ?? 'Не удалось создать спринт'
-})
+const errorMessage = computed(() =>
+  create.isError.value ? getErrorMessage(create.error.value, 'Не удалось создать спринт') : null,
+)
 
 function resetForm() {
   state.name = ''

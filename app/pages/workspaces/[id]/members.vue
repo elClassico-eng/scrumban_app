@@ -85,10 +85,7 @@ async function onRoleChange(userId: string, newRole: Role) {
     await updateRole.mutateAsync({ userId, role: newRole })
   }
   catch (err) {
-    const e = err as { statusCode?: number; data?: { message?: string } }
-    if (e?.statusCode === 400) actionError.value = e.data?.message ?? 'Нельзя понизить последнего владельца'
-    else if (e?.statusCode === 403) actionError.value = 'У тебя нет прав на это изменение'
-    else actionError.value = 'Не удалось обновить роль'
+    actionError.value = getErrorMessage(err, 'Не удалось обновить роль')
   }
 }
 
@@ -107,10 +104,7 @@ async function onRemove(userId: string, email: string) {
     await remove.mutateAsync(userId)
   }
   catch (err) {
-    const e = err as { statusCode?: number; data?: { message?: string } }
-    if (e?.statusCode === 400) actionError.value = e.data?.message ?? 'Нельзя удалить последнего владельца'
-    else if (e?.statusCode === 403) actionError.value = 'У тебя нет прав удалить этого участника'
-    else actionError.value = 'Не удалось удалить участника'
+    actionError.value = getErrorMessage(err, 'Не удалось удалить участника')
   }
 }
 </script>

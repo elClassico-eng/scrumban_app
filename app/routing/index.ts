@@ -17,6 +17,10 @@ export const apiRoutes = {
 
   boards: (wsId: string) => `/api/workspaces/${wsId}/boards`,
   board: boardBase,
+  boardSleRecompute: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/sle/recompute`,
+  boardReplenishment: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/replenishment`,
 
   columns: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/columns`,
   column: (wsId: string, boardId: string, columnId: string) =>

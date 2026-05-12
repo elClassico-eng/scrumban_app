@@ -1,9 +1,10 @@
 // TasksService: basic CRUD over the tasks table.
 //
-// Scope of THIS step (Step 11): create / list / get / update fields /
-// delete. Field updates here cover title, description, priority, and
-// assignee — NOT column. Moving tasks between columns is a separate
-// state-machine concern (Step 12) that also writes the task_events log.
+// Scope of THIS step (Step 11 + Phase 5 step 2): create / list / get /
+// update fields / delete. Field updates here cover title, description,
+// service_class (Anderson CoS), dueDate, assignee — NOT column. Moving
+// tasks between columns is a separate state-machine concern (Step 12)
+// that also writes the task_events log.
 //
 // Authorisation matrix:
 //   list / get          → viewer+
@@ -18,10 +19,10 @@ import {
   taskEvents,
   tasks,
   type ColumnRole,
+  type ServiceClass,
   type Task,
   type TaskEvent,
   type TaskEventType,
-  type TaskPriority,
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant } from '../utils/db'
@@ -53,7 +54,7 @@ export async function getTask(input: {
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.select().from(tasks).where(eq(tasks.id, input.taskId)),
   )
-  if (!row) throw new NotFoundError('Task not found')
+  if (!row) throw new NotFoundError('Задача не найдена')
   return row
 }
 
@@ -63,12 +64,21 @@ export async function createTask(input: {
   columnId: string
   title: string
   description?: string
-  priority?: TaskPriority
+  serviceClass?: ServiceClass
+  dueDate?: Date | null
   assigneeId?: string | null
   actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'member')
+
+  // Anderson rule: fixed_date class is meaningless without a deadline.
+  if (input.serviceClass === 'fixed_date' && !input.dueDate) {
+    throw new ValidationError('Для класса «Fixed date» нужен дедлайн')
+  }
+  // Expedite tasks get an expedited_at marker — useful for "how long was
+  // this urgent before it closed" analytics.
+  const expeditedAt = input.serviceClass === 'expedite' ? new Date() : null
 
   return withTenant(input.workspaceId, async (tx) => {
     // Append at the end of the column. COALESCE handles the empty-column case.
@@ -87,7 +97,9 @@ export async function createTask(input: {
         columnId: input.columnId,
         title: input.title,
         description: input.description ?? '',
-        priority: input.priority ?? 'medium',
+        serviceClass: input.serviceClass ?? 'standard',
+        dueDate: input.dueDate ?? null,
+        expeditedAt,
         assigneeId: input.assigneeId ?? null,
         position: Number(agg!.next),
       })
@@ -126,27 +138,34 @@ export async function updateTaskFields(input: {
   patch: {
     title?: string
     description?: string
-    priority?: TaskPriority
+    serviceClass?: ServiceClass
+    dueDate?: Date | null
     assigneeId?: string | null
   }
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'member')
 
-  // Build SET clause from defined keys only. assigneeId may be set to null
-  // explicitly (un-assign), so check `in` rather than truthiness.
+  // Build SET clause from defined keys only. assigneeId / dueDate may be
+  // set to null explicitly, so check `in` rather than truthiness.
   const set: Partial<typeof tasks.$inferInsert> & { updatedAt: Date } = {
     updatedAt: new Date(),
   }
   if (input.patch.title !== undefined) set.title = input.patch.title
   if (input.patch.description !== undefined) set.description = input.patch.description
-  if (input.patch.priority !== undefined) set.priority = input.patch.priority
+  if (input.patch.serviceClass !== undefined) {
+    set.serviceClass = input.patch.serviceClass
+    // Stamp expedited_at when promoting TO expedite; clear when leaving.
+    if (input.patch.serviceClass === 'expedite') set.expeditedAt = new Date()
+    else set.expeditedAt = null
+  }
+  if ('dueDate' in input.patch) set.dueDate = input.patch.dueDate ?? null
   if ('assigneeId' in input.patch) set.assigneeId = input.patch.assigneeId ?? null
 
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.update(tasks).set(set).where(eq(tasks.id, input.taskId)).returning(),
   )
-  if (!row) throw new NotFoundError('Task not found')
+  if (!row) throw new NotFoundError('Задача не найдена')
 
   publishBoardEvent({
     type: 'task.updated',
@@ -171,7 +190,7 @@ export async function deleteTask(input: {
     await tx.delete(tasks).where(eq(tasks.id, input.taskId))
     return row
   })
-  if (!before) throw new NotFoundError('Task not found')
+  if (!before) throw new NotFoundError('Задача не найдена')
 
   publishBoardEvent({
     type: 'task.deleted',
@@ -195,9 +214,12 @@ export async function deleteTask(input: {
 //   - moving to 'archived'                            → emits task_archived
 //   - everything else                                 → emits task_moved
 //
-// WIP limit: if the destination column has a wipLimit AND it's already at
-// or above the limit AND this is a cross-column move, the move is rejected
-// with 422 unless the caller passes force=true.
+// WIP limit (Phase 5 Anderson rules):
+//   - service_class='expedite' ALWAYS bypasses (queue-jumping is the
+//     defining behaviour of the class)
+//   - Any other class + force=true requires actorRole >= admin AND a
+//     non-empty forceReason (logged into task_events.payload for audit)
+//   - Otherwise, WIP-full destination → 422
 const PARKING_POSITION = 1_000_000
 
 export async function moveTask(input: {
@@ -208,12 +230,20 @@ export async function moveTask(input: {
   actorId: string
   actorRole: WorkspaceMemberRole
   force?: boolean
+  forceReason?: string
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'member')
+    
+  if (input.force) {
+    requireMinRole(input.actorRole, 'admin')
+    if (!input.forceReason || input.forceReason.trim().length === 0) {
+      throw new ValidationError('При force=true нужно указать причину (forceReason)')
+    }
+  }
 
   return withTenant(input.workspaceId, async (tx) => {
     const [task] = await tx.select().from(tasks).where(eq(tasks.id, input.taskId))
-    if (!task) throw new NotFoundError('Task not found')
+    if (!task) throw new NotFoundError('Задача не найдена')
 
     const [fromCol] = await tx
       .select()
@@ -224,23 +254,24 @@ export async function moveTask(input: {
       .from(boardColumns)
       .where(eq(boardColumns.id, input.toColumnId))
 
-    if (!toCol) throw new NotFoundError('Destination column not found')
+    if (!toCol) throw new NotFoundError('Колонка назначения не найдена')
     if (toCol.boardId !== task.boardId) {
-      throw new ValidationError('Destination column belongs to a different board')
+      throw new ValidationError('Колонка назначения относится к другой доске')
     }
 
     const isCrossColumn = task.columnId !== input.toColumnId
+    const expediteBypass = task.serviceClass === 'expedite'
 
     // WIP enforcement only on cross-column moves; reordering within the
     // same column doesn't change column population.
-    if (isCrossColumn && toCol.wipLimit !== null && !input.force) {
+    if (isCrossColumn && toCol.wipLimit !== null && !input.force && !expediteBypass) {
       const [agg] = await tx
         .select({ n: sql<number>`count(*)::int` })
         .from(tasks)
         .where(eq(tasks.columnId, input.toColumnId))
       if ((agg!.n ?? 0) >= toCol.wipLimit) {
         throw new ValidationError(
-          `Column WIP limit (${toCol.wipLimit}) reached. Pass force=true to override.`,
+          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси админа принудительно переместить её с указанием причины.`,
         )
       }
     }
@@ -351,6 +382,11 @@ export async function moveTask(input: {
         toPosition: input.toPosition,
         fromColumnRole: fromCol?.columnRole as ColumnRole | undefined,
         toColumnRole: toCol.columnRole,
+        ...(expediteBypass
+          ? { bypassedWip: 'expedite' as const }
+          : input.force
+            ? { bypassedWip: 'force' as const, forceReason: input.forceReason }
+            : {}),
       },
     })
 

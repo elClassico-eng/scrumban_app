@@ -15,9 +15,44 @@ const props = defineProps<{
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
 const { moveTask } = useTaskMove(wsId, bId)
-const { remove: removeColumn } = useColumnsApi(wsId, bId)
+const { update: updateColumn, remove: removeColumn } = useColumnsApi(wsId, bId)
 const confirm = useConfirm()
 const toast = useToast()
+
+const isEditing = ref(false)
+const draftName = ref('')
+const nameInputRef = ref<HTMLInputElement | null>(null)
+
+function startEdit() {
+  if (!props.canManage) return
+  draftName.value = props.column.name
+  isEditing.value = true
+  nextTick(() => nameInputRef.value?.focus())
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  draftName.value = ''
+}
+
+async function commitEdit() {
+  const trimmed = draftName.value.trim()
+  if (!trimmed || trimmed === props.column.name) {
+    cancelEdit()
+    return
+  }
+  try {
+    await updateColumn.mutateAsync({ columnId: props.column.id, name: trimmed })
+    isEditing.value = false
+  }
+  catch {
+    toast.add({
+      title: 'Не удалось переименовать колонку',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
 
 const localTasks = ref<Task[]>([])
 watch(() => props.tasks, (next) => {
@@ -66,45 +101,79 @@ async function onDeleteColumn() {
     await removeColumn.mutateAsync(props.column.id)
   }
   catch (err) {
-    const e = err as { statusCode?: number }
-    if (e?.statusCode === 422) {
-      toast.add({
-        title: 'В колонке есть задачи',
-        description: 'Сначала перенеси их в другие колонки или удали.',
-        color: 'warning',
-        icon: 'i-lucide-alert-circle',
-      })
-    }
-    else {
-      toast.add({
-        title: 'Не удалось удалить колонку',
-        color: 'error',
-        icon: 'i-lucide-alert-circle',
-      })
-    }
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось удалить колонку'),
+      color: getErrorStatus(err) === 422 ? 'warning' : 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
 }
 
 const menuItems = computed(() => [[
+  {
+    label: 'Переименовать',
+    icon: 'i-lucide-pencil',
+    onSelect: startEdit,
+  },
   {
     label: 'Удалить колонку',
     icon: 'i-lucide-trash-2',
     onSelect: onDeleteColumn,
   },
 ]])
+
+const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
 </script>
 
 <template>
-  <div class="w-72 shrink-0 bg-elevated rounded-lg flex flex-col max-h-full">
-    <div class="px-3 py-2.5 border-b border-default flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2 min-w-0">
-        <h3 class="font-medium text-sm truncate">{{ column.name }}</h3>
-        <span class="text-xs text-muted">{{ localTasks.length }}</span>
+  <div
+    :class="[
+      'w-72 shrink-0 rounded-lg flex flex-col max-h-full border border-default',
+      roleStyle.bodyClass,
+    ]"
+  >
+    <div class="px-2 py-2 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0 flex-1">
+        <UIcon
+          v-if="canManage"
+          name="i-lucide-grip-vertical"
+          class="column-drag-handle size-4 text-muted hover:text-default cursor-grab active:cursor-grabbing shrink-0"
+          title="Перетащи, чтобы переставить колонку"
+        />
+        <div
+          :class="[
+            'inline-flex items-center gap-1.5 px-2 py-1 rounded-md min-w-0 flex-1',
+            roleStyle.chipClass,
+          ]"
+        >
+          <span :class="['size-1.5 rounded-full shrink-0', roleStyle.dotClass]" />
+          <input
+            v-if="isEditing"
+            ref="nameInputRef"
+            v-model="draftName"
+            class="font-semibold text-xs uppercase tracking-wide bg-transparent border-b border-current outline-none min-w-0 flex-1"
+            :disabled="updateColumn.isPending.value"
+            @keyup.enter="commitEdit"
+            @keyup.esc="cancelEdit"
+            @blur="commitEdit"
+          >
+          <h3
+            v-else
+            class="font-semibold text-xs uppercase tracking-wide truncate min-w-0 flex-1"
+            :class="canManage ? 'cursor-text' : ''"
+            :title="canManage ? 'Двойной клик — переименовать' : ''"
+            @dblclick="startEdit"
+          >
+            {{ column.name }}
+          </h3>
+          <span class="text-xs font-medium opacity-70 shrink-0">{{ localTasks.length }}</span>
+        </div>
         <UBadge
           v-if="wipState"
           :color="wipState.over ? 'error' : 'neutral'"
           variant="subtle"
           size="xs"
+          class="shrink-0"
         >
           WIP {{ wipState.count }}/{{ wipState.limit }}
         </UBadge>

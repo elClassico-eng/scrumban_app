@@ -3,6 +3,10 @@ export interface Board {
   workspaceId: string
   name: string
   slug: string
+  sleDays: number | null
+  sleProbability: string 
+  lastReplenishmentAt: string | null
+  replenishmentPeriodDays: number
   createdAt: string
   updatedAt: string
 }
@@ -23,4 +27,12 @@ export interface CreateBoardInput {
 
 export interface UpdateBoardInput {
   name?: string
+  sleDays?: number | null
+  sleProbability?: number
+  replenishmentPeriodDays?: number
+}
+
+export interface SleRecomputeResponse {
+  sleDays: number | null
+  sampleCount: number
 }
