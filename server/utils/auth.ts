@@ -6,6 +6,6 @@ import { UnauthorizedError } from './errors'
 
 export async function requireAuth(event: H3Event) {
   const session = await getUserSession(event)
-  if (!session.user) throw new UnauthorizedError('Authentication required')
+  if (!session.user) throw new UnauthorizedError('Требуется авторизация')
   return session.user
 }

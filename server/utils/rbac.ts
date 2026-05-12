@@ -15,6 +15,14 @@ const ROLE_LEVEL = {
   owner: 4,
 } as const satisfies Record<WorkspaceMemberRole, number>
 
+const ROLE_LABEL: Record<WorkspaceMemberRole, string> = {
+  viewer: 'Viewer',
+  member: 'Участник',
+  scrum_master: 'Scrum Master',
+  admin: 'Администратор',
+  owner: 'Владелец',
+}
+
 export function roleAtLeast(
   actual: WorkspaceMemberRole,
   required: WorkspaceMemberRole,
@@ -27,7 +35,7 @@ export function requireMinRole(
   required: WorkspaceMemberRole,
 ): void {
   if (!roleAtLeast(actual, required)) {
-    throw new ForbiddenError(`Requires role ${required} or higher`)
+    throw new ForbiddenError(`Нужна роль «${ROLE_LABEL[required]}» или выше`)
   }
 }
 

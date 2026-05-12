@@ -20,10 +20,7 @@ async function onStart() {
     await start.mutateAsync(props.sprint.id)
   }
   catch (err) {
-    const e = err as { statusCode?: number; data?: { message?: string } }
-    if (e?.statusCode === 409) actionError.value = 'У этой доски уже есть активный спринт'
-    else if (e?.statusCode === 403) actionError.value = 'У тебя нет прав запускать спринты'
-    else actionError.value = e?.data?.message ?? 'Не удалось запустить спринт'
+    actionError.value = getErrorMessage(err, 'Не удалось запустить спринт')
   }
 }
 
@@ -41,8 +38,7 @@ async function onClose() {
     await close.mutateAsync(props.sprint.id)
   }
   catch (err) {
-    const e = err as { statusCode?: number; data?: { message?: string } }
-    actionError.value = e?.data?.message ?? 'Не удалось закрыть спринт'
+    actionError.value = getErrorMessage(err, 'Не удалось закрыть спринт')
   }
 }
 
@@ -59,9 +55,7 @@ async function onRemove() {
     await remove.mutateAsync(props.sprint.id)
   }
   catch (err) {
-    const e = err as { statusCode?: number; data?: { message?: string } }
-    if (e?.statusCode === 409) actionError.value = 'Нельзя удалить активный или закрытый спринт'
-    else actionError.value = e?.data?.message ?? 'Не удалось удалить спринт'
+    actionError.value = getErrorMessage(err, 'Не удалось удалить спринт')
   }
 }
 

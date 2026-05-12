@@ -16,7 +16,11 @@ export default defineEventHandler(async (event) => {
   const ok = user ? await verifyPassword(user.passwordHash, body.password) : false
 
   if (!user || !ok) {
-    throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' })
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'Неверный email или пароль',
+      data: { message: 'Неверный email или пароль' },
+    })
   }
 
   await setUserSession(event, { user: { id: user.id, email: user.email } })

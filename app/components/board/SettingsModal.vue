@@ -59,10 +59,11 @@ async function onRecompute() {
     }
   }
   catch (err) {
-    const e = err as { statusCode?: number }
-    if (e?.statusCode === 403) {
-      toast.add({ title: 'Только админ может пересчитывать SLE', color: 'error' })
-    }
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось пересчитать SLE'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
 }
 
@@ -76,8 +77,12 @@ async function onSave() {
     })
     open.value = false
   }
-  catch {
-    toast.add({ title: 'Не удалось сохранить', color: 'error', icon: 'i-lucide-alert-circle' })
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось сохранить'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
   }
 }
 </script>

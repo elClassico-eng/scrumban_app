@@ -56,7 +56,7 @@ export async function getSprint(input: {
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.select().from(sprints).where(eq(sprints.id, input.sprintId)),
   )
-  if (!row) throw new NotFoundError('Sprint not found')
+  if (!row) throw new NotFoundError('Спринт не найден')
   return row
 }
 
@@ -76,7 +76,7 @@ export async function createSprint(input: {
     input.plannedEndAt &&
     input.plannedStartAt >= input.plannedEndAt
   ) {
-    throw new ValidationError('plannedEndAt must be after plannedStartAt')
+    throw new ValidationError('Дата окончания должна быть позже даты начала')
   }
 
   const [row] = await withTenant(input.workspaceId, async (tx) =>
@@ -119,11 +119,11 @@ export async function updateSprint(input: {
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.update(sprints).set(set).where(eq(sprints.id, input.sprintId)).returning(),
   )
-  if (!row) throw new NotFoundError('Sprint not found')
+  if (!row) throw new NotFoundError('Спринт не найден')
 
   // Belt-and-suspenders: also enforce the date order on update.
   if (row.plannedStartAt && row.plannedEndAt && row.plannedStartAt >= row.plannedEndAt) {
-    throw new ValidationError('plannedEndAt must be after plannedStartAt')
+    throw new ValidationError('Дата окончания должна быть позже даты начала')
   }
   return row
 }
@@ -137,7 +137,7 @@ export async function deleteSprint(input: {
   const result = await withTenant(input.workspaceId, async (tx) =>
     tx.delete(sprints).where(eq(sprints.id, input.sprintId)),
   )
-  if ((result.count ?? 0) === 0) throw new NotFoundError('Sprint not found')
+  if ((result.count ?? 0) === 0) throw new NotFoundError('Спринт не найден')
 }
 
 export async function startSprint(input: {
@@ -149,10 +149,11 @@ export async function startSprint(input: {
 
   return withTenant(input.workspaceId, async (tx) => {
     const [current] = await tx.select().from(sprints).where(eq(sprints.id, input.sprintId))
-    if (!current) throw new NotFoundError('Sprint not found')
+    if (!current) throw new NotFoundError('Спринт не найден')
     if (current.state !== 'planned') {
+      const stateLabel = current.state === 'active' ? 'уже активен' : 'уже закрыт'
       throw new ValidationError(
-        `Cannot start a sprint in state '${current.state}'; only planned sprints can be started`,
+        `Нельзя стартовать спринт — он ${stateLabel}. Стартовать можно только запланированный спринт`,
       )
     }
 
@@ -167,7 +168,7 @@ export async function startSprint(input: {
       // Partial unique index "sprints_one_active_per_board_idx" enforces
       // at most one active sprint per board.
       if (isPgUniqueViolation(err)) {
-        throw new ConflictError('Another sprint is already active on this board')
+        throw new ConflictError('На этой доске уже есть активный спринт')
       }
       throw err
     }
@@ -183,9 +184,9 @@ export async function closeSprint(input: {
 
   return withTenant(input.workspaceId, async (tx) => {
     const [current] = await tx.select().from(sprints).where(eq(sprints.id, input.sprintId))
-    if (!current) throw new NotFoundError('Sprint not found')
+    if (!current) throw new NotFoundError('Спринт не найден')
     if (current.state === 'closed') {
-      throw new ValidationError('Sprint is already closed')
+      throw new ValidationError('Спринт уже закрыт')
     }
     const [row] = await tx
       .update(sprints)
@@ -210,15 +211,15 @@ export async function addTaskToSprint(input: {
 
   await withTenant(input.workspaceId, async (tx) => {
     const [sprint] = await tx.select().from(sprints).where(eq(sprints.id, input.sprintId))
-    if (!sprint) throw new NotFoundError('Sprint not found')
+    if (!sprint) throw new NotFoundError('Спринт не найден')
     if (sprint.state === 'closed') {
-      throw new ForbiddenError('Cannot modify a closed sprint')
+      throw new ForbiddenError('Нельзя изменять закрытый спринт')
     }
 
     const [task] = await tx.select().from(tasks).where(eq(tasks.id, input.taskId))
-    if (!task) throw new NotFoundError('Task not found')
+    if (!task) throw new NotFoundError('Задача не найдена')
     if (task.boardId !== sprint.boardId) {
-      throw new ValidationError('Task and sprint belong to different boards')
+      throw new ValidationError('Задача и спринт относятся к разным доскам')
     }
 
     try {
@@ -229,7 +230,7 @@ export async function addTaskToSprint(input: {
       })
     } catch (err) {
       if (isPgUniqueViolation(err)) {
-        throw new ConflictError('Task is already in this sprint')
+        throw new ConflictError('Задача уже добавлена в этот спринт')
       }
       throw err
     }
@@ -246,9 +247,9 @@ export async function removeTaskFromSprint(input: {
 
   await withTenant(input.workspaceId, async (tx) => {
     const [sprint] = await tx.select().from(sprints).where(eq(sprints.id, input.sprintId))
-    if (!sprint) throw new NotFoundError('Sprint not found')
+    if (!sprint) throw new NotFoundError('Спринт не найден')
     if (sprint.state === 'closed') {
-      throw new ForbiddenError('Cannot modify a closed sprint')
+      throw new ForbiddenError('Нельзя изменять закрытый спринт')
     }
 
     const result = await tx
@@ -256,7 +257,7 @@ export async function removeTaskFromSprint(input: {
       .where(and(eq(sprintTasks.sprintId, input.sprintId), eq(sprintTasks.taskId, input.taskId)))
 
     if ((result.count ?? 0) === 0) {
-      throw new NotFoundError('Task is not part of this sprint')
+      throw new NotFoundError('Задача не входит в этот спринт')
     }
   })
 }

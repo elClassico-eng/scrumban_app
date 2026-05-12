@@ -89,7 +89,7 @@ export async function updateColumn(input: {
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.update(boardColumns).set(set).where(eq(boardColumns.id, input.columnId)).returning(),
   )
-  if (!row) throw new NotFoundError('Column not found')
+  if (!row) throw new NotFoundError('Колонка не найдена')
   return row
 }
 
@@ -103,13 +103,13 @@ export async function deleteColumn(input: {
     const result = await withTenant(input.workspaceId, async (tx) =>
       tx.delete(boardColumns).where(eq(boardColumns.id, input.columnId)),
     )
-    if ((result.count ?? 0) === 0) throw new NotFoundError('Column not found')
+    if ((result.count ?? 0) === 0) throw new NotFoundError('Колонка не найдена')
   } catch (err) {
     // tasks.column_id is ON DELETE RESTRICT: trying to drop a non-empty
     // column raises 23503 (foreign_key_violation). Translate to 422 with
     // a user-readable message instead of leaking the raw PG error.
     if (isPgFkViolation(err)) {
-      throw new ValidationError('Cannot delete a column that still contains tasks')
+      throw new ValidationError('Нельзя удалить колонку, в которой есть задачи')
     }
     throw err
   }
@@ -127,7 +127,7 @@ export async function reorderColumns(input: {
   requireMinRole(input.actorRole, 'admin')
 
   if (new Set(input.orderedIds).size !== input.orderedIds.length) {
-    throw new ValidationError('orderedIds must not contain duplicates')
+    throw new ValidationError('Список колонок не должен содержать дубликаты')
   }
 
   return withTenant(input.workspaceId, async (tx) => {
@@ -138,11 +138,11 @@ export async function reorderColumns(input: {
     const existingIds = new Set(existing.map((r) => r.id))
 
     if (input.orderedIds.length !== existing.length) {
-      throw new ValidationError('orderedIds must include every column on the board')
+      throw new ValidationError('Список должен содержать все колонки доски')
     }
     for (const id of input.orderedIds) {
       if (!existingIds.has(id)) {
-        throw new ValidationError(`Unknown column id: ${id}`)
+        throw new ValidationError(`Неизвестный id колонки: ${id}`)
       }
     }
 

@@ -37,7 +37,7 @@ export async function createUser(input: {
     return row!
   } catch (err: unknown) {
     if (isPgUniqueViolation(err)) {
-      throw new ConflictError('Email already registered')
+      throw new ConflictError('Этот email уже зарегистрирован')
     }
     throw err
   }

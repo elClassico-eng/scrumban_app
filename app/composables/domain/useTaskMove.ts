@@ -22,23 +22,13 @@ export function useTaskMove(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
       {
         onError: (err) => {
           qc.invalidateQueries({ queryKey: queryKey.value })
-          const e = err as { statusCode?: number; data?: { message?: string } }
-          if (e?.statusCode === 422) {
-            toast.add({
-              title: 'WIP лимит достигнут',
-              description: 'Освободи слот в колонке или промоутни задачу в expedite.',
-              color: 'warning',
-              icon: 'i-lucide-alert-circle',
-            })
-          }
-          else {
-            toast.add({
-              title: 'Не удалось переместить задачу',
-              description: e?.data?.message ?? 'Попробуй ещё раз',
-              color: 'error',
-              icon: 'i-lucide-alert-circle',
-            })
-          }
+          const isWipBlock = getErrorStatus(err) === 422
+          toast.add({
+            title: isWipBlock ? 'WIP-лимит достигнут' : 'Не удалось переместить задачу',
+            description: getErrorMessage(err, 'Попробуй ещё раз'),
+            color: isWipBlock ? 'warning' : 'error',
+            icon: 'i-lucide-alert-circle',
+          })
         },
         onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
       },

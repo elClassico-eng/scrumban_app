@@ -51,7 +51,7 @@ export async function getBoard(input: {
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.select().from(boards).where(eq(boards.id, input.boardId)),
   )
-  if (!row) throw new NotFoundError('Board not found')
+  if (!row) throw new NotFoundError('Доска не найдена')
   return row
 }
 
@@ -93,7 +93,7 @@ export async function createBoard(input: {
     })
   } catch (err) {
     if (isPgUniqueViolation(err)) {
-      throw new ConflictError('Board slug already taken in this workspace')
+      throw new ConflictError('Этот slug доски уже занят в workspace')
     }
     throw err
   }
@@ -138,11 +138,11 @@ export async function updateBoard(input: {
         .where(and(eq(boards.id, input.boardId), eq(boards.workspaceId, input.workspaceId)))
         .returning(),
     )
-    if (!row) throw new NotFoundError('Board not found')
+    if (!row) throw new NotFoundError('Доска не найдена')
     return row
   } catch (err) {
     if (isPgUniqueViolation(err)) {
-      throw new ConflictError('Board slug already taken in this workspace')
+      throw new ConflictError('Этот slug доски уже занят в workspace')
     }
     throw err
   }
@@ -158,7 +158,7 @@ export async function deleteBoard(input: {
   const result = await withTenant(input.workspaceId, async (tx) =>
     tx.delete(boards).where(eq(boards.id, input.boardId)),
   )
-  if ((result.count ?? 0) === 0) throw new NotFoundError('Board not found')
+  if ((result.count ?? 0) === 0) throw new NotFoundError('Доска не найдена')
 }
 
 function isPgUniqueViolation(err: unknown): boolean {
@@ -188,7 +188,7 @@ export async function recordReplenishment(input: {
       .where(and(eq(boards.id, input.boardId), eq(boards.workspaceId, input.workspaceId)))
       .returning(),
   )
-  if (!row) throw new NotFoundError('Board not found')
+  if (!row) throw new NotFoundError('Доска не найдена')
   return row
 }
 
@@ -215,7 +215,7 @@ export async function computeAndStoreSLE(input: {
     .select({ sleProbability: boards.sleProbability })
     .from(boards)
     .where(eq(boards.id, input.boardId))
-  if (!board) throw new NotFoundError('Board not found')
+  if (!board) throw new NotFoundError('Доска не найдена')
 
   // sleProbability arrives as a string from numeric(3,2); coerce.
   const probability = Number(board.sleProbability)

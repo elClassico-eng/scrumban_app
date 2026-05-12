@@ -54,7 +54,7 @@ export async function getTask(input: {
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.select().from(tasks).where(eq(tasks.id, input.taskId)),
   )
-  if (!row) throw new NotFoundError('Task not found')
+  if (!row) throw new NotFoundError('Задача не найдена')
   return row
 }
 
@@ -74,7 +74,7 @@ export async function createTask(input: {
 
   // Anderson rule: fixed_date class is meaningless without a deadline.
   if (input.serviceClass === 'fixed_date' && !input.dueDate) {
-    throw new ValidationError('fixed_date service class requires dueDate')
+    throw new ValidationError('Для класса «Fixed date» нужен дедлайн')
   }
   // Expedite tasks get an expedited_at marker — useful for "how long was
   // this urgent before it closed" analytics.
@@ -165,7 +165,7 @@ export async function updateTaskFields(input: {
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.update(tasks).set(set).where(eq(tasks.id, input.taskId)).returning(),
   )
-  if (!row) throw new NotFoundError('Task not found')
+  if (!row) throw new NotFoundError('Задача не найдена')
 
   publishBoardEvent({
     type: 'task.updated',
@@ -190,7 +190,7 @@ export async function deleteTask(input: {
     await tx.delete(tasks).where(eq(tasks.id, input.taskId))
     return row
   })
-  if (!before) throw new NotFoundError('Task not found')
+  if (!before) throw new NotFoundError('Задача не найдена')
 
   publishBoardEvent({
     type: 'task.deleted',
@@ -237,13 +237,13 @@ export async function moveTask(input: {
   if (input.force) {
     requireMinRole(input.actorRole, 'admin')
     if (!input.forceReason || input.forceReason.trim().length === 0) {
-      throw new ValidationError('force=true requires a non-empty forceReason')
+      throw new ValidationError('При force=true нужно указать причину (forceReason)')
     }
   }
 
   return withTenant(input.workspaceId, async (tx) => {
     const [task] = await tx.select().from(tasks).where(eq(tasks.id, input.taskId))
-    if (!task) throw new NotFoundError('Task not found')
+    if (!task) throw new NotFoundError('Задача не найдена')
 
     const [fromCol] = await tx
       .select()
@@ -254,9 +254,9 @@ export async function moveTask(input: {
       .from(boardColumns)
       .where(eq(boardColumns.id, input.toColumnId))
 
-    if (!toCol) throw new NotFoundError('Destination column not found')
+    if (!toCol) throw new NotFoundError('Колонка назначения не найдена')
     if (toCol.boardId !== task.boardId) {
-      throw new ValidationError('Destination column belongs to a different board')
+      throw new ValidationError('Колонка назначения относится к другой доске')
     }
 
     const isCrossColumn = task.columnId !== input.toColumnId
@@ -271,7 +271,7 @@ export async function moveTask(input: {
         .where(eq(tasks.columnId, input.toColumnId))
       if ((agg!.n ?? 0) >= toCol.wipLimit) {
         throw new ValidationError(
-          `Column WIP limit (${toCol.wipLimit}) reached. Promote the task to expedite or have an admin force the move with a reason.`,
+          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси админа принудительно переместить её с указанием причины.`,
         )
       }
     }

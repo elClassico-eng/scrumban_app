@@ -37,23 +37,30 @@ export function isDomainError(err: unknown): err is DomainError {
 // Maps a domain error to H3's createError shape. Use at handler boundaries:
 //   try { ... } catch (e) { throw toHttpError(e) }
 //
-// Zod errors are converted to 400 with the issues list as the body so the
-// frontend can show field-level messages.
+// Convention: human-readable Russian message is always in `data.message` so
+// the frontend can show it directly. Zod issues are also passed through for
+// field-level rendering in forms.
 export function toHttpError(err: unknown) {
   if (isDomainError(err)) {
-    return createError({ statusCode: err.statusCode, statusMessage: err.message })
+    return createError({
+      statusCode: err.statusCode,
+      statusMessage: err.message,
+      data: { message: err.message },
+    })
   }
   if (isZodError(err)) {
+    const first = err.issues[0] as { message?: string } | undefined
+    const message = first?.message ?? 'Неверные данные'
     return createError({
       statusCode: 400,
-      statusMessage: 'Validation Error',
-      data: { issues: err.issues },
+      statusMessage: message,
+      data: { message, issues: err.issues },
     })
   }
   return err
 }
 
-function isZodError(err: unknown): err is { issues: unknown[]; name: string } {
+function isZodError(err: unknown): err is { issues: Array<{ message?: string }>; name: string } {
   return (
     typeof err === 'object' &&
     err !== null &&
