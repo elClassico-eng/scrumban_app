@@ -17,8 +17,8 @@ const ParamsSchema = z.object({
 const BodySchema = z.object({
   toColumnId: z.uuid(),
   toPosition: z.number().int().min(0),
-  // Caller may opt out of WIP enforcement (typically for an admin override).
   force: z.boolean().optional(),
+  forceReason: z.string().trim().max(500).optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
       actorId: user.id,
       actorRole: workspace.role,
       force: body.force,
+      forceReason: body.forceReason,
     })
     return { task }
   } catch (err) {

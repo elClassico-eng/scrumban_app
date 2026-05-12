@@ -4,6 +4,7 @@ import type { TasksListResponse } from '#shared/types/task'
 
 export function useTaskMove(workspaceId: MaybeRef<string>, boardId: MaybeRef<string>) {
   const qc = useQueryClient()
+  const toast = useToast()
   const { move, queryKey } = useTasksApi(workspaceId, boardId)
 
   function moveTask(taskId: string, toColumnId: string, toPosition: number) {
@@ -16,13 +17,29 @@ export function useTaskMove(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
       }
     })
 
-    // Server authoritatively renumbers neighbours' positions on insert/remove,
-    // so we re-fetch in both branches to pick that up. On error the refetch
-    // also serves as a rollback to truth.
     move.mutate(
       { taskId, toColumnId, toPosition },
       {
-        onError: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+        onError: (err) => {
+          qc.invalidateQueries({ queryKey: queryKey.value })
+          const e = err as { statusCode?: number; data?: { message?: string } }
+          if (e?.statusCode === 422) {
+            toast.add({
+              title: 'WIP лимит достигнут',
+              description: 'Освободи слот в колонке или промоутни задачу в expedite.',
+              color: 'warning',
+              icon: 'i-lucide-alert-circle',
+            })
+          }
+          else {
+            toast.add({
+              title: 'Не удалось переместить задачу',
+              description: e?.data?.message ?? 'Попробуй ещё раз',
+              color: 'error',
+              icon: 'i-lucide-alert-circle',
+            })
+          }
+        },
         onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
       },
     )

@@ -222,7 +222,7 @@ describe('WIP limit enforcement', () => {
     expect(res.status).toBe(422)
   })
 
-  it('force=true overrides the WIP limit', async () => {
+  it('admin force=true with reason overrides the WIP limit', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)
     const { boardId, columns } = await createBoardWithColumns(owner, wsId)
@@ -237,7 +237,96 @@ describe('WIP limit enforcement', () => {
     const res = await fetchWithJar<{ task: { columnId: string } }>(
       owner.jar,
       `/api/workspaces/${wsId}/boards/${boardId}/tasks/${newTaskId}/move`,
+      {
+        method: 'POST',
+        body: {
+          toColumnId: columns.in_progress,
+          toPosition: 0,
+          force: true,
+          forceReason: 'incident response',
+        },
+      },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.task.columnId).toBe(columns.in_progress)
+  })
+
+  it('force=true without forceReason is rejected (422)', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/columns/${columns.in_progress}`,
+      { method: 'PATCH', body: { wipLimit: 1 } },
+    )
+    await createTaskIn(owner, wsId, boardId, columns.in_progress, 'occupant')
+    const newTaskId = await createTaskIn(owner, wsId, boardId, columns.backlog, 'newcomer')
+
+    const res = await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks/${newTaskId}/move`,
       { method: 'POST', body: { toColumnId: columns.in_progress, toPosition: 0, force: true } },
+    )
+    expect(res.status).toBe(422)
+  })
+
+  it('non-admin member cannot use force=true even with a reason (403)', async () => {
+    const owner = await registerUser('owner@example.com')
+    const dev = await registerUser('dev@example.com')
+    const wsId = await createWorkspace(owner)
+    await addMember(owner, wsId, 'dev@example.com', 'member')
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/columns/${columns.in_progress}`,
+      { method: 'PATCH', body: { wipLimit: 1 } },
+    )
+    await createTaskIn(owner, wsId, boardId, columns.in_progress, 'occupant')
+    const newTaskId = await createTaskIn(dev, wsId, boardId, columns.backlog, 'newcomer')
+
+    const res = await fetchWithJar(
+      dev.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks/${newTaskId}/move`,
+      {
+        method: 'POST',
+        body: {
+          toColumnId: columns.in_progress,
+          toPosition: 0,
+          force: true,
+          forceReason: 'I really want to',
+        },
+      },
+    )
+    expect(res.status).toBe(403)
+  })
+
+  it('expedite task bypasses WIP limit without force', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/columns/${columns.in_progress}`,
+      { method: 'PATCH', body: { wipLimit: 1 } },
+    )
+    await createTaskIn(owner, wsId, boardId, columns.in_progress, 'occupant')
+    // Create the new task as expedite directly — Anderson rule: expedite
+    // bypasses WIP. No force flag required.
+    const createRes = await fetchWithJar<{ task: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks`,
+      {
+        method: 'POST',
+        body: { columnId: columns.backlog, title: 'urgent', serviceClass: 'expedite' },
+      },
+    )
+    const expediteTaskId = createRes.body.task.id
+
+    const res = await fetchWithJar<{ task: { columnId: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks/${expediteTaskId}/move`,
+      { method: 'POST', body: { toColumnId: columns.in_progress, toPosition: 0 } },
     )
     expect(res.status).toBe(200)
     expect(res.body.task.columnId).toBe(columns.in_progress)

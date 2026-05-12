@@ -214,9 +214,12 @@ export async function deleteTask(input: {
 //   - moving to 'archived'                            → emits task_archived
 //   - everything else                                 → emits task_moved
 //
-// WIP limit: if the destination column has a wipLimit AND it's already at
-// or above the limit AND this is a cross-column move, the move is rejected
-// with 422 unless the caller passes force=true.
+// WIP limit (Phase 5 Anderson rules):
+//   - service_class='expedite' ALWAYS bypasses (queue-jumping is the
+//     defining behaviour of the class)
+//   - Any other class + force=true requires actorRole >= admin AND a
+//     non-empty forceReason (logged into task_events.payload for audit)
+//   - Otherwise, WIP-full destination → 422
 const PARKING_POSITION = 1_000_000
 
 export async function moveTask(input: {
@@ -227,8 +230,16 @@ export async function moveTask(input: {
   actorId: string
   actorRole: WorkspaceMemberRole
   force?: boolean
+  forceReason?: string
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'member')
+    
+  if (input.force) {
+    requireMinRole(input.actorRole, 'admin')
+    if (!input.forceReason || input.forceReason.trim().length === 0) {
+      throw new ValidationError('force=true requires a non-empty forceReason')
+    }
+  }
 
   return withTenant(input.workspaceId, async (tx) => {
     const [task] = await tx.select().from(tasks).where(eq(tasks.id, input.taskId))
@@ -249,17 +260,18 @@ export async function moveTask(input: {
     }
 
     const isCrossColumn = task.columnId !== input.toColumnId
+    const expediteBypass = task.serviceClass === 'expedite'
 
     // WIP enforcement only on cross-column moves; reordering within the
     // same column doesn't change column population.
-    if (isCrossColumn && toCol.wipLimit !== null && !input.force) {
+    if (isCrossColumn && toCol.wipLimit !== null && !input.force && !expediteBypass) {
       const [agg] = await tx
         .select({ n: sql<number>`count(*)::int` })
         .from(tasks)
         .where(eq(tasks.columnId, input.toColumnId))
       if ((agg!.n ?? 0) >= toCol.wipLimit) {
         throw new ValidationError(
-          `Column WIP limit (${toCol.wipLimit}) reached. Pass force=true to override.`,
+          `Column WIP limit (${toCol.wipLimit}) reached. Promote the task to expedite or have an admin force the move with a reason.`,
         )
       }
     }
@@ -370,6 +382,11 @@ export async function moveTask(input: {
         toPosition: input.toPosition,
         fromColumnRole: fromCol?.columnRole as ColumnRole | undefined,
         toColumnRole: toCol.columnRole,
+        ...(expediteBypass
+          ? { bypassedWip: 'expedite' as const }
+          : input.force
+            ? { bypassedWip: 'force' as const, forceReason: input.forceReason }
+            : {}),
       },
     })
 
