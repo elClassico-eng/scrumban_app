@@ -34,12 +34,6 @@ const assigneeOptions = computed(() => [
   })),
 ])
 
-const SERVICE_CLASS_OPTIONS: Array<{ label: string; value: ServiceClass }> = [
-  { label: 'Standard', value: 'standard' },
-  { label: 'Expedite', value: 'expedite' },
-  { label: 'Fixed Date', value: 'fixed_date' },
-  { label: 'Intangible', value: 'intangible' },
-]
 
 // Local refs for debounced inline edit. They sync from the canonical task
 // whenever it changes (drawer reopen, or remote SSE update mutates cache).
@@ -55,33 +49,55 @@ watch(task, (t) => {
   localDueDate.value = t.dueDate ? t.dueDate.slice(0, 10) : ''
 }, { immediate: true })
 
+const toast = useToast()
+
+async function saveWithFeedback(patch: Record<string, unknown>) {
+  if (!task.value) return
+  try {
+    await update.mutateAsync({ taskId: task.value.id, ...patch })
+    toast.add({
+      title: 'Сохранено',
+      color: 'success',
+      icon: 'i-lucide-check',
+      duration: 1500,
+    })
+  }
+  catch {
+    toast.add({
+      title: 'Не удалось сохранить',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+
 // Debounced auto-save for text fields. 500ms is the typical "user finished
 // typing" pause; tighter feels jittery, looser feels unresponsive.
 watchDebounced(localTitle, (v) => {
   if (!task.value || v === task.value.title || v.trim().length === 0) return
-  update.mutate({ taskId: task.value.id, title: v })
+  saveWithFeedback({ title: v })
 }, { debounce: 500 })
 
 watchDebounced(localDescription, (v) => {
   if (!task.value || v === task.value.description) return
-  update.mutate({ taskId: task.value.id, description: v })
+  saveWithFeedback({ description: v })
 }, { debounce: 500 })
 
 function onServiceClassChange(v: ServiceClass) {
   if (!task.value || v === task.value.serviceClass) return
-  update.mutate({ taskId: task.value.id, serviceClass: v })
+  saveWithFeedback({ serviceClass: v })
 }
 
 watchDebounced(localDueDate, (v) => {
   if (!task.value) return
   const newIso = v ? new Date(`${v}T23:59:59Z`).toISOString() : null
   if (newIso === task.value.dueDate) return
-  update.mutate({ taskId: task.value.id, dueDate: newIso })
+  saveWithFeedback({ dueDate: newIso })
 }, { debounce: 500 })
 
 function onAssigneeChange(v: string | null) {
   if (!task.value || v === task.value.assigneeId) return
-  update.mutate({ taskId: task.value.id, assigneeId: v })
+  saveWithFeedback({ assigneeId: v })
 }
 
 const { moveTask } = useTaskMove(wsId, bId)
@@ -155,6 +171,9 @@ async function onDelete() {
                 class="w-full"
                 @update:model-value="onServiceClassChange"
               />
+              <p class="text-xs text-muted mt-1.5">
+                {{ SERVICE_CLASS_INFO[task.serviceClass].hint }}
+              </p>
             </div>
             <div v-if="task.serviceClass === 'fixed_date'" class="col-span-2">
               <p class="text-xs text-muted uppercase tracking-wide mb-1.5">Дедлайн</p>

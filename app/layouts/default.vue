@@ -1,9 +1,9 @@
 <template>
-  <div class="min-h-screen flex bg-default">
+  <div class="h-screen flex bg-default overflow-hidden">
     <AppSidebar />
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col min-w-0">
       <AppHeader />
-      <main class="flex-1 overflow-auto p-6">
+      <main class="flex-1 overflow-auto p-6 min-w-0">
         <slot />
       </main>
     </div>

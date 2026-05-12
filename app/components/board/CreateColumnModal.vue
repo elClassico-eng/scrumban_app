@@ -1,17 +1,8 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { ColumnRole } from '#shared/types/column'
 
 const props = defineProps<{ workspaceId: string; boardId: string }>()
 const open = defineModel<boolean>('open', { default: false })
-
-const ROLE_OPTIONS: Array<{ label: string; value: ColumnRole }> = [
-  { label: 'Backlog', value: 'backlog' },
-  { label: 'В работе', value: 'in_progress' },
-  { label: 'На ревью', value: 'review' },
-  { label: 'Готово', value: 'done' },
-  { label: 'Архив', value: 'archived' },
-]
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Введи название').max(255),
@@ -70,10 +61,10 @@ watch(open, (v) => {
         <UFormField
           label="Тип"
           name="columnRole"
-          hint="Используется аналитикой для классификации потока"
+          :description="COLUMN_ROLE_INFO[state.columnRole].hint"
           required
         >
-          <USelect v-model="state.columnRole" :items="ROLE_OPTIONS" class="w-full" />
+          <USelect v-model="state.columnRole" :items="COLUMN_ROLE_OPTIONS" class="w-full" />
         </UFormField>
         <UFormField
           label="WIP лимит"

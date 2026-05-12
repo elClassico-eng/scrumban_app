@@ -3,7 +3,14 @@ const store = useConfirmStore()
 </script>
 
 <template>
-  <UModal v-model:open="store.isOpen" :title="store.opts?.title ?? ''" :ui="{ content: 'max-w-md' }">
+  <UModal
+    v-model:open="store.isOpen"
+    :title="store.opts?.title ?? ''"
+    :ui="{
+      overlay: 'z-[60]',
+      content: 'max-w-md z-[60]',
+    }"
+  >
     <template #body>
       <p v-if="store.opts?.description" class="text-sm text-muted">
         {{ store.opts.description }}

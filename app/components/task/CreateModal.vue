@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { ServiceClass } from '#shared/types/domain'
 
 const props = defineProps<{
   workspaceId: string
@@ -8,13 +7,6 @@ const props = defineProps<{
   columnId: string
 }>()
 const open = defineModel<boolean>('open', { default: false })
-
-const SERVICE_CLASS_OPTIONS: Array<{ label: string; value: ServiceClass }> = [
-  { label: 'Standard — обычный поток', value: 'standard' },
-  { label: 'Expedite — срочно, обходит WIP', value: 'expedite' },
-  { label: 'Fixed Date — есть дедлайн', value: 'fixed_date' },
-  { label: 'Intangible — когда есть время', value: 'intangible' },
-]
 
 const schema = z
   .object({
@@ -51,12 +43,9 @@ const assigneeOptions = computed(() => [
   })),
 ])
 
-const errorMessage = computed(() => {
-  if (!create.isError.value) return null
-  const err = create.error.value as { statusCode?: number; data?: { message?: string } } | null
-  if (err?.statusCode === 403) return 'У тебя нет прав создавать задачи в этой доске'
-  return err?.data?.message ?? 'Не удалось создать задачу'
-})
+const errorMessage = computed(() =>
+  create.isError.value ? getErrorMessage(create.error.value, 'Не удалось создать задачу') : null,
+)
 
 function resetForm() {
   state.title = ''
@@ -103,7 +92,12 @@ watch(open, (v) => {
         <UFormField label="Описание" name="description">
           <UTextarea v-model="state.description" :rows="4" class="w-full" />
         </UFormField>
-        <UFormField label="Класс обслуживания" name="serviceClass" required>
+        <UFormField
+          label="Класс обслуживания"
+          name="serviceClass"
+          :description="SERVICE_CLASS_INFO[state.serviceClass].hint"
+          required
+        >
           <USelect v-model="state.serviceClass" :items="SERVICE_CLASS_OPTIONS" class="w-full" />
         </UFormField>
         <UFormField
