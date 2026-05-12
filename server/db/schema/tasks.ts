@@ -21,7 +21,12 @@ import { users } from './users'
 import { workspaces } from './workspaces'
 import { boardColumns, boards } from './boards'
 
-export const taskPriority = pgEnum('task_priority', ['low', 'medium', 'high'])
+export const serviceClass = pgEnum('service_class', [
+  'expedite',
+  'fixed_date',
+  'standard',
+  'intangible',
+])
 
 export const tasks = pgTable(
   'tasks',
@@ -43,7 +48,13 @@ export const tasks = pgTable(
     // set null on user delete: a deleted user shouldn't drop tasks; the
     // task survives unassigned.
     assigneeId: uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
-    priority: taskPriority('priority').notNull().default('medium'),
+    serviceClass: serviceClass('service_class').notNull().default('standard'),
+    // Target deadline for service_class='fixed_date' tasks. NULL for other
+    // classes. Service layer validates fixed_date always has a due_date.
+    dueDate: timestamp('due_date', { withTimezone: true }),
+    // Set when a task is promoted to service_class='expedite'. Lets us
+    // measure "how long did we know this was urgent before it closed".
+    expeditedAt: timestamp('expedited_at', { withTimezone: true }),
     // Sort order within (board_id, column_id). Service rebalances on move.
     position: integer('position').notNull(),
     // Set when the task enters a column with column_role='done'.
@@ -64,6 +75,8 @@ export const tasks = pgTable(
       table.position,
     ),
     index('tasks_assignee_id_idx').on(table.assigneeId),
+    // Per-CoS analytics (throughput per class, etc.) — Phase 8.
+    index('tasks_board_service_class_idx').on(table.boardId, table.serviceClass),
   ],
 )
 
@@ -109,4 +122,4 @@ export const taskEvents = pgTable(
 export type TaskEvent = typeof taskEvents.$inferSelect
 export type NewTaskEvent = typeof taskEvents.$inferInsert
 export type TaskEventType = (typeof taskEventType.enumValues)[number]
-export type TaskPriority = (typeof taskPriority.enumValues)[number]
+export type ServiceClass = (typeof serviceClass.enumValues)[number]

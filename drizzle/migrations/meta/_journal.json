@@ -50,6 +50,13 @@
       "when": 1777294759570,
       "tag": "0006_sprints_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778581040936,
+      "tag": "0007_keen_stellaris",
+      "breakpoints": true
     }
   ]
 }

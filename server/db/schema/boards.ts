@@ -9,6 +9,7 @@
 // without joining back to boards. The redundancy is checked at INSERT
 // time in services.
 import {
+  decimal,
   index,
   integer,
   pgEnum,
@@ -30,6 +31,12 @@ export const boards = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     // Slug is unique only within a workspace, not globally.
     slug: varchar('slug', { length: 64 }).notNull(),
+    sleDays: integer('sle_days'),
+    sleProbability: decimal('sle_probability', { precision: 3, scale: 2 })
+      .notNull()
+      .default('0.85'),
+    lastReplenishmentAt: timestamp('last_replenishment_at', { withTimezone: true }),
+    replenishmentPeriodDays: integer('replenishment_period_days').notNull().default(7),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
