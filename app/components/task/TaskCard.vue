@@ -24,11 +24,26 @@ const cosVisual = computed(() => COS_CONFIG[props.task.serviceClass])
 // composable, only one HTTP request hits the members endpoint per board.
 const wsId = computed(() => props.workspaceId)
 const { list: membersList } = useMembersApi(wsId)
+const { list: boardsList } = useBoardsApi(wsId)
 
 const assigneeEmail = computed(() => {
   if (!props.task.assigneeId) return null
   const found = membersList.data.value?.members.find(m => m.userId === props.task.assigneeId)
   return found?.email ?? null
+})
+
+// Aging-WIP visual signal: ages from createdAt vs board.sleDays.
+// Per-column anchor is Phase 8 work.
+const board = computed(() =>
+  boardsList.data.value?.boards.find(b => b.id === props.task.boardId) ?? null,
+)
+const agingTier = computed(() =>
+  getAgingTier(ageDaysFromIso(props.task.createdAt), board.value?.sleDays ?? null),
+)
+const agingTooltip = computed(() => {
+  if (agingTier.value.level === 'fresh') return undefined
+  const days = ageDaysFromIso(props.task.createdAt).toFixed(1)
+  return `Возраст ${days} дн (SLE ${board.value?.sleDays} дн)`
 })
 
 // Formatted due date for fixed_date tasks; null otherwise.
@@ -40,7 +55,11 @@ const dueDateLabel = computed(() => {
 
 <template>
   <div
-    class="bg-default border border-default rounded-lg p-3 cursor-grab hover:border-primary/50 hover:shadow-sm transition-all space-y-2"
+    :class="[
+      'bg-default border border-default rounded-lg p-3 cursor-grab hover:border-primary/50 hover:shadow-sm transition-all space-y-2',
+      agingTier.cardClass,
+    ]"
+    :title="agingTooltip"
     @click="boardStore.openTask(task.id)"
   >
     <p class="text-sm font-medium line-clamp-2">{{ task.title }}</p>

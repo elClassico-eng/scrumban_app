@@ -27,7 +27,7 @@ useHead({
 
 <template>
   <div class="space-y-4">
-    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" />
+    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" :board="board" />
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <AnalyticsCfdChart

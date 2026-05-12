@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { pageRoutes } from '~/routing'
+import type { Board } from '#shared/types/board'
 
 const props = defineProps<{
   workspaceId: string
   boardId: string
   boardName: string | undefined
   canRename: boolean
+  board?: Board
 }>()
 
 const wsId = computed(() => props.workspaceId)
@@ -46,6 +48,32 @@ async function commitEdit() {
     })
   }
 }
+
+const settingsOpen = ref(false)
+
+const sleLabel = computed(() => {
+  if (!props.board) return null
+  if (props.board.sleDays == null) return 'SLE не задан'
+  const pct = Math.round(Number(props.board.sleProbability) * 100)
+  return `SLE: ${pct}% за ${props.board.sleDays} дн`
+})
+
+interface ReplenishmentState {
+  daysLeft: number
+  overdue: boolean
+  label: string
+}
+const replenishmentState = computed<ReplenishmentState | null>(() => {
+  if (!props.board?.lastReplenishmentAt) return null
+  const last = new Date(props.board.lastReplenishmentAt).getTime()
+  const period = props.board.replenishmentPeriodDays * 86_400_000
+  const due = last + period
+  const daysLeft = Math.round((due - Date.now()) / 86_400_000)
+  if (daysLeft < 0) {
+    return { daysLeft, overdue: true, label: `Replenishment просрочен на ${-daysLeft} дн` }
+  }
+  return { daysLeft, overdue: false, label: `Replenishment через ${daysLeft} дн` }
+})
 </script>
 
 <template>
@@ -77,29 +105,66 @@ async function commitEdit() {
       >
         {{ boardName ?? 'Доска' }}
       </h1>
+      <UBadge
+        v-if="sleLabel"
+        color="neutral"
+        variant="subtle"
+        size="sm"
+        :class="canRename ? 'cursor-pointer hover:bg-accented' : ''"
+        @click="canRename && (settingsOpen = true)"
+      >
+        {{ sleLabel }}
+      </UBadge>
+      <UBadge
+        v-if="replenishmentState"
+        :color="replenishmentState.overdue ? 'error' : 'success'"
+        variant="subtle"
+        size="sm"
+        icon="i-lucide-calendar-clock"
+      >
+        {{ replenishmentState.label }}
+      </UBadge>
     </div>
-    <nav class="flex gap-1 shrink-0">
-      <NuxtLink
-        :to="pageRoutes.board(workspaceId, boardId)"
-        class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
-        active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-      >
-        Доска
-      </NuxtLink>
-      <NuxtLink
-        :to="pageRoutes.boardSprints(workspaceId, boardId)"
-        class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
-        active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-      >
-        Спринты
-      </NuxtLink>
-      <NuxtLink
-        :to="pageRoutes.boardAnalytics(workspaceId, boardId)"
-        class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
-        active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-      >
-        Аналитика
-      </NuxtLink>
-    </nav>
+    <div class="flex items-center gap-2 shrink-0">
+      <nav class="flex gap-1">
+        <NuxtLink
+          :to="pageRoutes.board(workspaceId, boardId)"
+          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
+          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+        >
+          Доска
+        </NuxtLink>
+        <NuxtLink
+          :to="pageRoutes.boardSprints(workspaceId, boardId)"
+          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
+          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+        >
+          Спринты
+        </NuxtLink>
+        <NuxtLink
+          :to="pageRoutes.boardAnalytics(workspaceId, boardId)"
+          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
+          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+        >
+          Аналитика
+        </NuxtLink>
+      </nav>
+      <UButton
+        v-if="canRename"
+        icon="i-lucide-settings"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        title="Настройки доски"
+        @click="settingsOpen = true"
+      />
+    </div>
+    <BoardSettingsModal
+      v-if="canRename && board"
+      v-model:open="settingsOpen"
+      :workspace-id="workspaceId"
+      :board-id="boardId"
+      :board="board"
+    />
   </div>
 </template>

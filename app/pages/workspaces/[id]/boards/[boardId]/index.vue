@@ -57,7 +57,7 @@ const isLoading = computed(() =>
 
 <template>
   <div class="space-y-4 h-full flex flex-col">
-    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canCreateColumns" />
+    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canCreateColumns" :board="board" />
 
     <div class="flex justify-end">
       <UButton
