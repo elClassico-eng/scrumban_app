@@ -174,6 +174,24 @@ function isPgUniqueViolation(err: unknown): boolean {
   )
 }
 
+export async function recordReplenishment(input: {
+  workspaceId: string
+  boardId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<Board> {
+  requireMinRole(input.actorRole, 'admin')
+
+  const [row] = await withTenant(input.workspaceId, async (tx) =>
+    tx
+      .update(boards)
+      .set({ lastReplenishmentAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(boards.id, input.boardId), eq(boards.workspaceId, input.workspaceId)))
+      .returning(),
+  )
+  if (!row) throw new NotFoundError('Board not found')
+  return row
+}
+
 // computeAndStoreSLE — re-read 90 days of closed task cycle times for the
 // given board and write the percentile value (in days) into boards.sle_days.
 // sle_probability stays as-is on the board; the computation just reads it.

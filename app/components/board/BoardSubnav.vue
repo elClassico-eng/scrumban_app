@@ -11,8 +11,34 @@ const props = defineProps<{
 }>()
 
 const wsId = computed(() => props.workspaceId)
-const { update } = useBoardsApi(wsId)
+const { update, recordReplenishment } = useBoardsApi(wsId)
 const toast = useToast()
+const confirm = useConfirm()
+
+async function onMarkReplenishment() {
+  if (!props.canRename) return
+  const ok = await confirm({
+    title: 'Отметить replenishment сейчас?',
+    description: 'Сбросит счётчик периода. Используй после реальной встречи планирования backlog\'а.',
+    confirmLabel: 'Отметить',
+  })
+  if (!ok) return
+  try {
+    await recordReplenishment.mutateAsync(props.boardId)
+    toast.add({
+      title: 'Replenishment отмечен',
+      icon: 'i-lucide-check-circle',
+      color: 'success',
+    })
+  }
+  catch {
+    toast.add({
+      title: 'Не удалось отметить',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
 
 const isEditing = ref(false)
 const draftName = ref('')
@@ -121,9 +147,24 @@ const replenishmentState = computed<ReplenishmentState | null>(() => {
         variant="subtle"
         size="sm"
         icon="i-lucide-calendar-clock"
+        :class="canRename ? 'cursor-pointer hover:opacity-80' : ''"
+        :title="canRename ? 'Клик — отметить replenishment как сделанный' : undefined"
+        @click="canRename && onMarkReplenishment()"
       >
         {{ replenishmentState.label }}
       </UBadge>
+      <UButton
+        v-else-if="canRename && board"
+        icon="i-lucide-calendar-plus"
+        color="neutral"
+        variant="soft"
+        size="xs"
+        :loading="recordReplenishment.isPending.value"
+        title="Отметить первый replenishment"
+        @click="onMarkReplenishment"
+      >
+        Запустить replenishment
+      </UButton>
     </div>
     <div class="flex items-center gap-2 shrink-0">
       <nav class="flex gap-1">
