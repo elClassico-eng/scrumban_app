@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { TaskPriority } from '#shared/types/domain'
+import type { ServiceClass } from '#shared/types/domain'
 
 const props = defineProps<{
   workspaceId: string
@@ -9,21 +9,34 @@ const props = defineProps<{
 }>()
 const open = defineModel<boolean>('open', { default: false })
 
-const PRIORITY_OPTIONS: Array<{ label: string; value: TaskPriority }> = [
-  { label: 'Низкий', value: 'low' },
-  { label: 'Средний', value: 'medium' },
-  { label: 'Высокий', value: 'high' },
+const SERVICE_CLASS_OPTIONS: Array<{ label: string; value: ServiceClass }> = [
+  { label: 'Standard — обычный поток', value: 'standard' },
+  { label: 'Expedite — срочно, обходит WIP', value: 'expedite' },
+  { label: 'Fixed Date — есть дедлайн', value: 'fixed_date' },
+  { label: 'Intangible — когда есть время', value: 'intangible' },
 ]
 
-const schema = z.object({
-  title: z.string().trim().min(1, 'Введи название').max(255),
-  description: z.string().max(20_000).optional(),
-  priority: z.enum(['low', 'medium', 'high']),
-  assigneeId: z.string().nullable(),
-})
+const schema = z
+  .object({
+    title: z.string().trim().min(1, 'Введи название').max(255),
+    description: z.string().max(20_000).optional(),
+    serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']),
+    dueDate: z.string().optional(),
+    assigneeId: z.string().nullable(),
+  })
+  .refine(d => d.serviceClass !== 'fixed_date' || (d.dueDate && d.dueDate.length > 0), {
+    message: 'Для Fixed Date задайте дедлайн',
+    path: ['dueDate'],
+  })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ title: '', description: '', priority: 'medium', assigneeId: null })
+const state = reactive<State>({
+  title: '',
+  description: '',
+  serviceClass: 'standard',
+  dueDate: '',
+  assigneeId: null,
+})
 
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
@@ -48,7 +61,8 @@ const errorMessage = computed(() => {
 function resetForm() {
   state.title = ''
   state.description = ''
-  state.priority = 'medium'
+  state.serviceClass = 'standard'
+  state.dueDate = ''
   state.assigneeId = null
   create.reset()
 }
@@ -59,7 +73,11 @@ async function onSubmit() {
       columnId: props.columnId,
       title: state.title,
       description: state.description || undefined,
-      priority: state.priority,
+      serviceClass: state.serviceClass,
+      dueDate:
+        state.serviceClass === 'fixed_date' && state.dueDate
+          ? new Date(`${state.dueDate}T23:59:59Z`).toISOString()
+          : null,
       assigneeId: state.assigneeId,
     })
     open.value = false
@@ -85,8 +103,16 @@ watch(open, (v) => {
         <UFormField label="Описание" name="description">
           <UTextarea v-model="state.description" :rows="4" class="w-full" />
         </UFormField>
-        <UFormField label="Приоритет" name="priority" required>
-          <USelect v-model="state.priority" :items="PRIORITY_OPTIONS" class="w-full" />
+        <UFormField label="Класс обслуживания" name="serviceClass" required>
+          <USelect v-model="state.serviceClass" :items="SERVICE_CLASS_OPTIONS" class="w-full" />
+        </UFormField>
+        <UFormField
+          v-if="state.serviceClass === 'fixed_date'"
+          label="Дедлайн"
+          name="dueDate"
+          required
+        >
+          <UInput v-model="state.dueDate" type="date" class="w-full" />
         </UFormField>
         <UFormField label="Исполнитель" name="assigneeId">
           <USelect v-model="state.assigneeId" :items="assigneeOptions" class="w-full" />

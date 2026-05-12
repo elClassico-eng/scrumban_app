@@ -1,4 +1,4 @@
-import type { TaskPriority, TaskEventType } from './domain'
+import type { ServiceClass, TaskEventType } from './domain'
 
 export interface Task {
   id: string
@@ -8,7 +8,9 @@ export interface Task {
   title: string
   description: string
   assigneeId: string | null
-  priority: TaskPriority
+  serviceClass: ServiceClass
+  dueDate: string | null
+  expeditedAt: string | null
   position: number
   closedAt: string | null
   reopenedCount: number
@@ -28,14 +30,16 @@ export interface CreateTaskInput {
   columnId: string
   title: string
   description?: string
-  priority?: TaskPriority
+  serviceClass?: ServiceClass
+  dueDate?: string | null
   assigneeId?: string | null
 }
 
 export interface UpdateTaskInput {
   title?: string
   description?: string
-  priority?: TaskPriority
+  serviceClass?: ServiceClass
+  dueDate?: string | null
   assigneeId?: string | null
 }
 

@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import type { Task } from '#shared/types/task'
-import type { TaskPriority } from '#shared/types/domain'
+import type { ServiceClass } from '#shared/types/domain'
 
 const props = defineProps<{ task: Task; workspaceId: string }>()
 
 const boardStore = useBoardStore()
 
-const PRIORITY_CONFIG: Record<TaskPriority, { color: 'neutral' | 'info' | 'error'; label: string }> = {
-  low: { color: 'neutral', label: 'Низкий' },
-  medium: { color: 'info', label: 'Средний' },
-  high: { color: 'error', label: 'Высокий' },
+interface CosVisual {
+  icon: string | null
+  color: 'error' | 'warning' | 'neutral' | null
+  label: string
 }
+const COS_CONFIG: Record<ServiceClass, CosVisual> = {
+  expedite: { icon: 'i-lucide-zap', color: 'error', label: 'Expedite' },
+  fixed_date: { icon: 'i-lucide-calendar-clock', color: 'warning', label: 'Fixed date' },
+  standard: { icon: null, color: null, label: 'Standard' },
+  intangible: { icon: 'i-lucide-arrow-down-narrow-wide', color: 'neutral', label: 'Intangible' },
+}
+
+const cosVisual = computed(() => COS_CONFIG[props.task.serviceClass])
 
 // vue-query dedupes by queryKey, so even though every card calls this
 // composable, only one HTTP request hits the members endpoint per board.
@@ -22,6 +30,12 @@ const assigneeEmail = computed(() => {
   const found = membersList.data.value?.members.find(m => m.userId === props.task.assigneeId)
   return found?.email ?? null
 })
+
+// Formatted due date for fixed_date tasks; null otherwise.
+const dueDateLabel = computed(() => {
+  if (props.task.serviceClass !== 'fixed_date' || !props.task.dueDate) return null
+  return new Date(props.task.dueDate).toLocaleDateString('ru', { day: '2-digit', month: 'short' })
+})
 </script>
 
 <template>
@@ -30,14 +44,19 @@ const assigneeEmail = computed(() => {
     @click="boardStore.openTask(task.id)"
   >
     <p class="text-sm font-medium line-clamp-2">{{ task.title }}</p>
-    <div class="flex items-center justify-between gap-2">
-      <UBadge
-        :color="PRIORITY_CONFIG[task.priority].color"
-        variant="subtle"
-        size="xs"
-      >
-        {{ PRIORITY_CONFIG[task.priority].label }}
-      </UBadge>
+    <div class="flex items-center justify-between gap-2 min-h-6">
+      <div class="flex items-center gap-1.5">
+        <UBadge
+          v-if="cosVisual.icon && cosVisual.color"
+          :color="cosVisual.color"
+          variant="subtle"
+          size="xs"
+          :icon="cosVisual.icon"
+          :title="cosVisual.label"
+        >
+          {{ dueDateLabel ?? cosVisual.label }}
+        </UBadge>
+      </div>
       <div
         v-if="assigneeEmail"
         class="size-6 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center justify-center uppercase shrink-0"
