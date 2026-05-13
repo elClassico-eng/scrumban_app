@@ -35,6 +35,20 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/tasks/${taskId}/move`,
   taskEvents: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/events`,
+  taskSubtasks: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/subtasks`,
+  taskDependencies: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/dependencies`,
+  taskDependency: (wsId: string, boardId: string, taskId: string, blockerTaskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/dependencies/${blockerTaskId}`,
+  boardDependencyCounts: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/dependencies`,
+  taskChecklist: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist`,
+  taskChecklistItem: (wsId: string, boardId: string, taskId: string, itemId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist/${itemId}`,
+  taskChecklistReorder: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist/reorder`,
 
   sprints: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/sprints`,
   sprint: (wsId: string, boardId: string, sprintId: string) =>
@@ -77,6 +91,10 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/analytics`,
   boardSprints: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
+  task: (wsId: string, boardId: string, taskId: string) => ({
+    path: `/workspaces/${wsId}/boards/${boardId}`,
+    query: { task: taskId },
+  }),
 } as const
 
 export type ApiRoutes = typeof apiRoutes
