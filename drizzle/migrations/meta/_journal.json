@@ -85,6 +85,13 @@
       "when": 1778614949601,
       "tag": "0011_checklist_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778685614377,
+      "tag": "0012_hot_night_thrasher",
+      "breakpoints": true
     }
   ]
 }

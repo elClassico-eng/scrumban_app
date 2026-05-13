@@ -9,6 +9,9 @@ import { toHttpError } from '../../utils/errors'
 const RegisterSchema = z.object({
   email: z.email().max(255),
   password: z.string().min(8).max(128),
+  firstName: z.string().trim().min(1).max(100).optional(),
+  lastName: z.string().trim().min(1).max(100).optional(),
+  middleName: z.string().trim().max(100).optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -16,7 +19,13 @@ export default defineEventHandler(async (event) => {
 
   try {
     const passwordHash = await hashPassword(body.password)
-    const user = await createUser({ email: body.email, passwordHash })
+    const user = await createUser({
+      email: body.email,
+      passwordHash,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      middleName: body.middleName,
+    })
 
     await setUserSession(event, { user: { id: user.id, email: user.email } })
 

@@ -7,9 +7,17 @@ import { requireAuth } from '../../utils/auth'
 import { toHttpError } from '../../utils/errors'
 
 const ParamsSchema = z.object({ id: z.uuid() })
-const BodySchema = z.object({
-  name: z.string().trim().min(1).max(255).optional(),
-})
+const BodySchema = z
+  .object({
+    name: z.string().trim().min(1).max(255).optional(),
+    description: z.string().trim().max(2000).nullable().optional(),
+    purpose: z.string().trim().max(2000).nullable().optional(),
+    industry: z.string().trim().max(100).nullable().optional(),
+    logoUrl: z.url().max(2000).nullable().optional(),
+  })
+  .refine(d => Object.keys(d).length > 0, {
+    message: 'Provide at least one field to update',
+  })
 
 export default defineEventHandler(async (event) => {
   try {

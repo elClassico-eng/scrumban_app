@@ -176,13 +176,19 @@ async function onRemove(userId: string, email: string) {
           :key="member.userId"
           class="flex items-center gap-4 py-3 first:pt-0 last:pb-0"
         >
-          <div class="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium uppercase text-sm">
-            {{ member.email.slice(0, 1) }}
+          <div class="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium text-sm shrink-0 overflow-hidden">
+            <img
+              v-if="member.avatarUrl"
+              :src="member.avatarUrl"
+              alt=""
+              class="size-full object-cover"
+            >
+            <span v-else>{{ initials(member) }}</span>
           </div>
           <div class="flex-1 min-w-0">
-            <p class="font-medium truncate">{{ member.email }}</p>
-            <p class="text-xs text-muted">
-              В workspace с {{ new Date(member.createdAt).toLocaleDateString('ru') }}
+            <p class="font-medium truncate">{{ displayName(member) }}</p>
+            <p class="text-xs text-muted truncate">
+              {{ member.jobTitle ? `${member.jobTitle} · ` : '' }}{{ member.email }}
             </p>
           </div>
           <div class="flex items-center gap-2">

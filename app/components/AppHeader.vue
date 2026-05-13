@@ -10,6 +10,9 @@ function toggleTheme() {
 function onLogout() {
   logout.mutate()
 }
+
+const userName = computed(() => authStore.user ? displayName(authStore.user) : null)
+const userInitials = computed(() => authStore.user ? initials(authStore.user) : '')
 </script>
 
 <template>
@@ -19,9 +22,23 @@ function onLogout() {
       <span class="font-semibold tracking-tight">Scrumban</span>
     </div>
     <div class="flex items-center gap-3">
-      <span v-if="authStore.user" class="text-sm text-muted hidden sm:block">
-        {{ authStore.user.email }}
-      </span>
+      <div v-if="authStore.user" class="flex items-center gap-2">
+        <div
+          class="size-7 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center shrink-0 overflow-hidden"
+          :title="userName ?? undefined"
+        >
+          <img
+            v-if="authStore.user.avatarUrl"
+            :src="authStore.user.avatarUrl"
+            alt=""
+            class="size-full object-cover"
+          >
+          <span v-else>{{ userInitials }}</span>
+        </div>
+        <span class="text-sm text-default hidden sm:block">
+          {{ userName }}
+        </span>
+      </div>
       <UButton
         :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
         color="neutral"
