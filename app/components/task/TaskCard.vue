@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Task } from '#shared/types/task'
-import type { ServiceClass } from '#shared/types/domain'
+
 const props = defineProps<{ task: Task; workspaceId: string }>()
 
 const router = useRouter()
@@ -12,22 +12,6 @@ function openTask() {
   })
 }
 
-// Visual config per CoS — icon/color stays here, labels come from the
-// shared SERVICE_CLASS_INFO source of truth (one place to translate).
-interface CosVisual {
-  icon: string | null
-  color: 'error' | 'warning' | 'neutral' | null
-}
-const COS_VISUAL: Record<ServiceClass, CosVisual> = {
-  expedite: { icon: 'i-lucide-zap', color: 'error' },
-  fixed_date: { icon: 'i-lucide-calendar-clock', color: 'warning' },
-  standard: { icon: null, color: null },
-  intangible: { icon: 'i-lucide-arrow-down-narrow-wide', color: 'neutral' },
-}
-
-const cosVisual = computed(() => COS_VISUAL[props.task.serviceClass])
-const cosLabel = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass].shortLabel)
-
 // vue-query dedupes by queryKey, so even though every card calls these
 // composables, only one HTTP request hits each endpoint per board.
 const wsId = computed(() => props.workspaceId)
@@ -36,7 +20,8 @@ const { list: membersList } = useMembersApi(wsId)
 const { list: boardsList } = useBoardsApi(wsId)
 const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 
-const depCounts = computed(() => depCountsByTaskId.value.get(props.task.id) ?? null)
+const cosInfo = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
+const blockerCount = computed(() => depCountsByTaskId.value.get(props.task.id)?.blockerCount ?? 0)
 
 const assigneeEmail = computed(() => {
   if (!props.task.assigneeId) return null
@@ -44,7 +29,7 @@ const assigneeEmail = computed(() => {
   return found?.email ?? null
 })
 
-// Aging-WIP visual signal: ages from createdAt vs board.sleDays.
+// Aging-WIP signal: age from createdAt vs board.sleDays.
 // Per-column anchor is Phase 8 work.
 const board = computed(() =>
   boardsList.data.value?.boards.find(b => b.id === props.task.boardId) ?? null,
@@ -58,8 +43,6 @@ const agingTooltip = computed(() => {
   return `Возраст ${days} дн (SLE ${board.value?.sleDays} дн)`
 })
 
-// Due date is shown on the card whenever set, regardless of CoS. Fixed-date
-// tasks REQUIRE it; other classes may have it as a soft target.
 const dueDateLabel = computed(() => {
   if (!props.task.dueDate) return null
   return new Date(props.task.dueDate).toLocaleDateString('ru', { day: '2-digit', month: 'short' })
@@ -76,20 +59,26 @@ const dueOverdue = computed(() => {
     @click="openTask"
   >
     <div class="flex items-start justify-between gap-2">
-      <div class="flex items-start gap-1.5 min-w-0 flex-1">
-        <UIcon
-          v-if="task.blockedReason"
-          name="i-lucide-lock"
-          class="size-3.5 text-warning mt-0.5 shrink-0"
-          :title="`Заблокировано: ${task.blockedReason}`"
+      <div class="flex items-start gap-2 min-w-0 flex-1">
+        <span
+          :class="['size-2 rounded-full shrink-0 mt-1.5', cosInfo.dotClass]"
+          :title="cosInfo.shortLabel"
         />
-        <UIcon
-          v-if="task.isEpic"
-          name="i-lucide-flag"
-          class="size-3.5 text-primary mt-0.5 shrink-0"
-          title="Epic"
-        />
-        <p class="text-sm font-medium line-clamp-2 flex-1 min-w-0">{{ task.title }}</p>
+        <div class="flex items-start gap-1.5 min-w-0 flex-1">
+          <UIcon
+            v-if="task.blockedReason"
+            name="i-lucide-lock"
+            class="size-3.5 text-warning mt-0.5 shrink-0"
+            :title="`Заблокировано: ${task.blockedReason}`"
+          />
+          <UIcon
+            v-if="task.isEpic"
+            name="i-lucide-flag"
+            class="size-3.5 text-primary mt-0.5 shrink-0"
+            title="Эпик"
+          />
+          <p class="text-sm font-medium line-clamp-2 flex-1 min-w-0">{{ task.title }}</p>
+        </div>
       </div>
       <span
         v-if="agingTier.show"
@@ -103,48 +92,25 @@ const dueOverdue = computed(() => {
         {{ Math.round(ageDaysFromIso(task.createdAt)) }}д
       </span>
     </div>
-    <div class="flex items-center justify-between gap-2 min-h-6">
-      <div class="flex items-center gap-1.5 flex-wrap">
-        <UBadge
-          v-if="cosVisual.icon && cosVisual.color"
-          :color="cosVisual.color"
-          variant="subtle"
-          size="xs"
-          :icon="cosVisual.icon"
-          :title="cosLabel"
-        >
-          {{ cosLabel }}
-        </UBadge>
-        <UBadge
+    <div class="flex items-center justify-between gap-2 min-h-6 pl-4">
+      <div class="flex items-center gap-3 text-xs text-muted min-w-0">
+        <span
           v-if="dueDateLabel"
-          :color="dueOverdue ? 'error' : 'neutral'"
-          variant="subtle"
-          size="xs"
-          icon="i-lucide-calendar"
+          class="inline-flex items-center gap-1 shrink-0"
+          :class="dueOverdue ? 'text-error font-medium' : ''"
           :title="dueOverdue ? 'Дедлайн просрочен' : 'Дедлайн'"
         >
+          <UIcon name="i-lucide-calendar" class="size-3.5" />
           {{ dueDateLabel }}
-        </UBadge>
-        <UBadge
-          v-if="depCounts && depCounts.blockerCount > 0"
-          color="warning"
-          variant="subtle"
-          size="xs"
-          icon="i-lucide-lock"
-          :title="`Заблокирована ${depCounts.blockerCount} задачами`"
+        </span>
+        <span
+          v-if="blockerCount > 0"
+          class="inline-flex items-center gap-1 shrink-0 text-warning"
+          :title="`Заблокирована ${blockerCount} задачами`"
         >
-          {{ depCounts.blockerCount }}
-        </UBadge>
-        <UBadge
-          v-if="depCounts && depCounts.blockedCount > 0"
-          color="neutral"
-          variant="subtle"
-          size="xs"
-          icon="i-lucide-link"
-          :title="`Блокирует ${depCounts.blockedCount} задач`"
-        >
-          {{ depCounts.blockedCount }}
-        </UBadge>
+          <UIcon name="i-lucide-lock" class="size-3.5" />
+          {{ blockerCount }}
+        </span>
       </div>
       <div
         v-if="assigneeEmail"

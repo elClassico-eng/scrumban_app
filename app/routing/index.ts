@@ -61,6 +61,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/tasks`,
   sprintTask: (wsId: string, boardId: string, sprintId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/tasks/${taskId}`,
+  boardSprintMemberships: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/sprint-memberships`,
 
   analyticsCfd: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/cfd`,

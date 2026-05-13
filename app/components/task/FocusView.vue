@@ -246,19 +246,23 @@ function clearParent() {
             </span>
             <UInput v-model="localDueDate" type="date" variant="ghost" class="w-full" />
           </div>
-          <div class="grid grid-cols-[140px_1fr] items-center gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
-            <span class="flex items-center gap-2 text-sm text-muted">
+          <div class="grid grid-cols-[140px_1fr] items-start gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
+            <span class="flex items-center gap-2 text-sm text-muted pt-1.5">
               <UIcon name="i-lucide-zap" class="size-4" />
               Класс
             </span>
-            <USelect
-              :model-value="task.serviceClass"
-              :items="SERVICE_CLASS_OPTIONS"
-              variant="ghost"
-              class="w-full"
-              :title="SERVICE_CLASS_INFO[task.serviceClass].hint"
-              @update:model-value="onServiceClassChange"
-            />
+            <div class="space-y-1">
+              <USelect
+                :model-value="task.serviceClass"
+                :items="SERVICE_CLASS_OPTIONS"
+                variant="ghost"
+                class="w-full"
+                @update:model-value="onServiceClassChange"
+              />
+              <p class="text-xs text-muted px-2">
+                {{ SERVICE_CLASS_INFO[task.serviceClass].hint }}
+              </p>
+            </div>
           </div>
           <div class="grid grid-cols-[140px_1fr] items-center gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
             <span class="flex items-center gap-2 text-sm text-muted">
