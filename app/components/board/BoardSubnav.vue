@@ -170,14 +170,32 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
       </UTooltip>
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <nav class="flex gap-1">
+      <nav class="flex gap-1 items-center">
         <NuxtLink
           :to="pageRoutes.board(workspaceId, boardId)"
-          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
+          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors inline-flex items-center gap-1.5"
           active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
         >
+          <UIcon name="i-lucide-kanban-square" class="size-4" />
           Доска
         </NuxtLink>
+        <NuxtLink
+          :to="pageRoutes.boardCalendar(workspaceId, boardId)"
+          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors inline-flex items-center gap-1.5"
+          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+        >
+          <UIcon name="i-lucide-calendar-days" class="size-4" />
+          Календарь
+        </NuxtLink>
+        <NuxtLink
+          :to="pageRoutes.boardTimeline(workspaceId, boardId)"
+          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors inline-flex items-center gap-1.5"
+          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+        >
+          <UIcon name="i-lucide-bar-chart-horizontal" class="size-4" />
+          Timeline
+        </NuxtLink>
+        <span class="w-px h-5 bg-default mx-1" />
         <NuxtLink
           :to="pageRoutes.boardSprints(workspaceId, boardId)"
           class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"

@@ -91,6 +91,10 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/analytics`,
   boardSprints: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
+  boardCalendar: (wsId: string, boardId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/calendar`,
+  boardTimeline: (wsId: string, boardId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/timeline`,
   task: (wsId: string, boardId: string, taskId: string) => ({
     path: `/workspaces/${wsId}/boards/${boardId}`,
     query: { task: taskId },
