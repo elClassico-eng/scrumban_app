@@ -6,12 +6,17 @@
 // (create, move, close, reopen, assign, archive) writes one row. Aggregates
 // (CFD, cycle time, throughput) are derived from this log, never from the
 // mutable tasks rows directly.
+import { sql } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import {
+  boolean,
+  check,
   index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -61,6 +66,11 @@ export const tasks = pgTable(
     closedAt: timestamp('closed_at', { withTimezone: true }),
     // Incremented when a task is moved out of done back into working states.
     reopenedCount: integer('reopened_count').notNull().default(0),
+    parentTaskId: uuid('parent_task_id').references((): AnyPgColumn => tasks.id, {
+      onDelete: 'set null',
+    }),
+    blockedReason: text('blocked_reason'),
+    isEpic: boolean('is_epic').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -77,6 +87,8 @@ export const tasks = pgTable(
     index('tasks_assignee_id_idx').on(table.assigneeId),
     // Per-CoS analytics (throughput per class, etc.) — Phase 8.
     index('tasks_board_service_class_idx').on(table.boardId, table.serviceClass),
+    // "Show me children of X" — Phase 6 subtask drawer.
+    index('tasks_parent_task_id_idx').on(table.parentTaskId),
   ],
 )
 
@@ -123,3 +135,30 @@ export type TaskEvent = typeof taskEvents.$inferSelect
 export type NewTaskEvent = typeof taskEvents.$inferInsert
 export type TaskEventType = (typeof taskEventType.enumValues)[number]
 export type ServiceClass = (typeof serviceClass.enumValues)[number]
+
+export const taskDependencies = pgTable(
+  'task_dependencies',
+  {
+    blockerTaskId: uuid('blocker_task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    blockedTaskId: uuid('blocked_task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.blockerTaskId, table.blockedTaskId] }),
+    index('task_dependencies_blocker_idx').on(table.blockerTaskId),
+    index('task_dependencies_blocked_idx').on(table.blockedTaskId),
+    index('task_dependencies_workspace_id_idx').on(table.workspaceId),
+    check('task_dependencies_no_self_block', sql`blocker_task_id <> blocked_task_id`),
+  ],
+)
+
+export type TaskDependency = typeof taskDependencies.$inferSelect
+export type NewTaskDependency = typeof taskDependencies.$inferInsert
