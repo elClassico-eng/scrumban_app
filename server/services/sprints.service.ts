@@ -276,6 +276,24 @@ export async function listSprintTasks(input: {
   )
 }
 
+// Flat sprint↔task pairs for an entire board. Lets the frontend render
+// per-task sprint badges (TaskCard) without fan-out fetches; vue-query
+// dedupes the call across N cards.
+export async function listBoardSprintMemberships(input: {
+  workspaceId: string
+  boardId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<{ sprintId: string; taskId: string }[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) =>
+    tx
+      .select({ sprintId: sprintTasks.sprintId, taskId: sprintTasks.taskId })
+      .from(sprintTasks)
+      .innerJoin(sprints, eq(sprints.id, sprintTasks.sprintId))
+      .where(eq(sprints.boardId, input.boardId)),
+  )
+}
+
 function isPgUniqueViolation(err: unknown): boolean {
   const candidate =
     typeof err === 'object' && err !== null && 'cause' in err

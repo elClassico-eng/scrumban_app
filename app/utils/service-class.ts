@@ -4,28 +4,36 @@ interface ServiceClassInfo {
   label: string
   shortLabel: string
   hint: string
+  // Solid colour for the small leading dot rendered on TaskCard — replaces
+  // the older full chip to keep cards scannable. Same hue family as the CoS
+  // semantic colour used elsewhere (expedite=red, fixed_date=amber, ...).
+  dotClass: string
 }
 
 export const SERVICE_CLASS_INFO: Record<ServiceClass, ServiceClassInfo> = {
   standard: {
-    label: 'Standard — обычный поток',
-    shortLabel: 'Standard',
+    label: 'Стандарт — обычный поток',
+    shortLabel: 'Стандарт',
     hint: 'Базовая очередь. Берётся в работу по FIFO, без приоритета.',
+    dotClass: 'bg-slate-400 dark:bg-slate-500',
   },
   expedite: {
-    label: 'Expedite — срочно, обходит WIP',
-    shortLabel: 'Expedite',
-    hint: 'Критическая задача: пропускает WIP-лимит и поднимается наверх. Используй для инцидентов.',
+    label: 'Срочно — обходит WIP',
+    shortLabel: 'Срочно',
+    hint: 'Критическая задача (инцидент, авария): пропускает WIP-лимит и поднимается наверх. На доске одновременно желательно держать максимум одну такую.',
+    dotClass: 'bg-red-500',
   },
   fixed_date: {
-    label: 'Fixed Date — есть дедлайн',
-    shortLabel: 'Fixed Date',
-    hint: 'Задача с обязательной датой. Берётся в работу так, чтобы успеть до дедлайна.',
+    label: 'С дедлайном — жёсткий срок',
+    shortLabel: 'С дедлайном',
+    hint: 'Задача с обязательной датой завершения. Берётся в работу так, чтобы успеть до дедлайна с запасом.',
+    dotClass: 'bg-amber-500',
   },
   intangible: {
-    label: 'Intangible — когда есть время',
-    shortLabel: 'Intangible',
-    hint: 'Техдолг и улучшения. Берётся, когда нет более срочной работы.',
+    label: 'Фоновая — когда есть время',
+    shortLabel: 'Фоновая',
+    hint: 'Техдолг, документация, улучшения. Берётся, когда нет более срочной работы.',
+    dotClass: 'bg-zinc-400 dark:bg-zinc-500',
   },
 }
 

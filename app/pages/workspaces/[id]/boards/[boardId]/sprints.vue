@@ -11,6 +11,11 @@ workspaceStore.setCurrent(wsId.value)
 const { list: workspacesList } = useWorkspacesApi()
 const { list: boardsList } = useBoardsApi(wsId)
 const { list: sprintsList } = useSprintsApi(wsId, bId)
+const { list: tasksList } = useTasksApi(wsId, bId)
+const { list: columnsList } = useColumnsApi(wsId, bId)
+
+const allTasks = computed(() => tasksList.data.value?.tasks ?? [])
+const columns = computed(() => columnsList.data.value?.columns ?? [])
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -44,6 +49,22 @@ const filteredSprints = computed(() => {
 })
 
 const createOpen = ref(false)
+
+const router = useRouter()
+const openTaskId = computed(() => {
+  const v = route.query.task
+  return typeof v === 'string' && v.length > 0 ? v : null
+})
+const taskModalOpen = computed({
+  get: () => openTaskId.value !== null,
+  set: (v) => {
+    if (!v) closeTaskModal()
+  },
+})
+function closeTaskModal() {
+  const { task: _drop, ...rest } = route.query
+  router.push({ path: route.path, query: rest })
+}
 </script>
 
 <template>
@@ -90,9 +111,29 @@ const createOpen = ref(false)
         :workspace-id="wsId"
         :board-id="bId"
         :can-manage="canManage"
+        :all-tasks="allTasks"
+        :columns="columns"
       />
     </div>
 
     <SprintCreateModal v-if="canManage" v-model:open="createOpen" :workspace-id="wsId" :board-id="bId" />
+
+    <UModal
+      v-model:open="taskModalOpen"
+      :ui="{
+        content: 'w-[95vw] max-w-[1600px] p-0',
+        overlay: 'bg-black/70',
+      }"
+    >
+      <template #content>
+        <TaskFocusView
+          v-if="openTaskId"
+          :workspace-id="wsId"
+          :board-id="bId"
+          :task-id="openTaskId"
+          @close="closeTaskModal"
+        />
+      </template>
+    </UModal>
   </div>
 </template>

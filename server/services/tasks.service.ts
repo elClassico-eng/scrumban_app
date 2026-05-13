@@ -74,7 +74,7 @@ export async function createTask(input: {
 
   // Anderson rule: fixed_date class is meaningless without a deadline.
   if (input.serviceClass === 'fixed_date' && !input.dueDate) {
-    throw new ValidationError('Для класса «Fixed date» нужен дедлайн')
+    throw new ValidationError('Для класса «С дедлайном» нужен дедлайн')
   }
   // Expedite tasks get an expedited_at marker — useful for "how long was
   // this urgent before it closed" analytics.
@@ -141,6 +141,9 @@ export async function updateTaskFields(input: {
     serviceClass?: ServiceClass
     dueDate?: Date | null
     assigneeId?: string | null
+    parentTaskId?: string | null
+    blockedReason?: string | null
+    isEpic?: boolean
   }
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
@@ -161,6 +164,19 @@ export async function updateTaskFields(input: {
   }
   if ('dueDate' in input.patch) set.dueDate = input.patch.dueDate ?? null
   if ('assigneeId' in input.patch) set.assigneeId = input.patch.assigneeId ?? null
+  if ('blockedReason' in input.patch) {
+    const trimmed = input.patch.blockedReason?.trim()
+    set.blockedReason = trimmed ? trimmed : null
+  }
+  if (input.patch.isEpic !== undefined) set.isEpic = input.patch.isEpic
+
+  // Parent change needs cycle + same-board validation; do it before the
+  // UPDATE so a bad parent never lands in the row.
+  if ('parentTaskId' in input.patch) {
+    const newParentId = input.patch.parentTaskId ?? null
+    await validateParentAssignment(input.workspaceId, input.taskId, newParentId)
+    set.parentTaskId = newParentId
+  }
 
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.update(tasks).set(set).where(eq(tasks.id, input.taskId)).returning(),
@@ -174,6 +190,69 @@ export async function updateTaskFields(input: {
     payload: row,
   })
   return row
+}
+
+// Walks the proposed parent chain to refuse a cycle. Also enforces the
+// "parent lives on the same board" invariant — cross-board hierarchies
+// confuse swimlane rendering and analytics.
+async function validateParentAssignment(
+  workspaceId: string,
+  taskId: string,
+  newParentId: string | null,
+): Promise<void> {
+  if (newParentId === null) return
+  if (newParentId === taskId) {
+    throw new ValidationError('Задача не может быть родителем самой себе')
+  }
+
+  await withTenant(workspaceId, async (tx) => {
+    const [child] = await tx
+      .select({ boardId: tasks.boardId })
+      .from(tasks)
+      .where(eq(tasks.id, taskId))
+    if (!child) throw new NotFoundError('Задача не найдена')
+
+    const [parent] = await tx
+      .select({ id: tasks.id, boardId: tasks.boardId, parentTaskId: tasks.parentTaskId })
+      .from(tasks)
+      .where(eq(tasks.id, newParentId))
+    if (!parent) throw new NotFoundError('Родительская задача не найдена')
+    if (parent.boardId !== child.boardId) {
+      throw new ValidationError('Родительская задача должна быть на той же доске')
+    }
+
+    // Climb the parent chain — if we ever reach the task we're trying to
+    // re-parent, the result would be a cycle. Bounded by row count so a
+    // corrupt chain can't spin forever.
+    let cursor: string | null = parent.parentTaskId
+    let hops = 0
+    while (cursor && hops < 100) {
+      if (cursor === taskId) {
+        throw new ValidationError('Цикл в иерархии: задача уже является потомком этого родителя')
+      }
+      const [next] = await tx
+        .select({ parentTaskId: tasks.parentTaskId })
+        .from(tasks)
+        .where(eq(tasks.id, cursor))
+      cursor = next?.parentTaskId ?? null
+      hops += 1
+    }
+  })
+}
+
+export async function listSubTasks(input: {
+  workspaceId: string
+  parentTaskId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<Task[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) =>
+    tx
+      .select()
+      .from(tasks)
+      .where(eq(tasks.parentTaskId, input.parentTaskId))
+      .orderBy(asc(tasks.position)),
+  )
 }
 
 export async function deleteTask(input: {

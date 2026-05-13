@@ -59,6 +59,10 @@ async function commitEditName() {
   }
 }
 
+const ROLE_ORDER: Record<Role, number> = {
+  viewer: 0, member: 1, scrum_master: 2, admin: 3, owner: 4,
+}
+
 // Roles available for assignment — only those strictly below the actor's role.
 function rolesAssignableBy(actor: Role | undefined): Array<{ label: string; value: Role }> {
   const all: Array<{ label: string; value: Role }> = [
@@ -69,10 +73,15 @@ function rolesAssignableBy(actor: Role | undefined): Array<{ label: string; valu
     { label: 'Владелец', value: 'owner' },
   ]
   if (!actor) return []
-  const ORDER: Record<Role, number> = {
-    viewer: 0, member: 1, scrum_master: 2, admin: 3, owner: 4,
-  }
-  return all.filter(o => ORDER[o.value] < ORDER[actor])
+  return all.filter(o => ROLE_ORDER[o.value] < ROLE_ORDER[actor])
+}
+
+// Member is editable when the actor strictly outranks them. Without this
+// guard, an admin viewing an owner would see the role rendered as the raw
+// enum value ("owner") because USelect can't find a matching item.
+function canEditMember(actor: Role | undefined, target: Role): boolean {
+  if (!actor) return false
+  return ROLE_ORDER[actor] > ROLE_ORDER[target]
 }
 
 const addOpen = ref(false)
@@ -177,7 +186,7 @@ async function onRemove(userId: string, email: string) {
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <template v-if="canManage && rolesAssignableBy(myRole).length > 0">
+            <template v-if="canManage && canEditMember(myRole, member.role)">
               <USelect
                 :model-value="member.role"
                 :items="rolesAssignableBy(myRole)"

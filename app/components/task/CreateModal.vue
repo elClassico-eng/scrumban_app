@@ -17,7 +17,7 @@ const schema = z
     assigneeId: z.string().nullable(),
   })
   .refine(d => d.serviceClass !== 'fixed_date' || (d.dueDate && d.dueDate.length > 0), {
-    message: 'Для Fixed Date задайте дедлайн',
+    message: 'Для класса «С дедлайном» нужен дедлайн',
     path: ['dueDate'],
   })
 
@@ -63,10 +63,9 @@ async function onSubmit() {
       title: state.title,
       description: state.description || undefined,
       serviceClass: state.serviceClass,
-      dueDate:
-        state.serviceClass === 'fixed_date' && state.dueDate
-          ? new Date(`${state.dueDate}T23:59:59Z`).toISOString()
-          : null,
+      dueDate: state.dueDate
+        ? new Date(`${state.dueDate}T23:59:59Z`).toISOString()
+        : null,
       assigneeId: state.assigneeId,
     })
     open.value = false
@@ -101,10 +100,9 @@ watch(open, (v) => {
           <USelect v-model="state.serviceClass" :items="SERVICE_CLASS_OPTIONS" class="w-full" />
         </UFormField>
         <UFormField
-          v-if="state.serviceClass === 'fixed_date'"
           label="Дедлайн"
           name="dueDate"
-          required
+          :required="state.serviceClass === 'fixed_date'"
         >
           <UInput v-model="state.dueDate" type="date" class="w-full" />
         </UFormField>

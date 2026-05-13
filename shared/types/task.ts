@@ -14,6 +14,9 @@ export interface Task {
   position: number
   closedAt: string | null
   reopenedCount: number
+  parentTaskId: string | null
+  blockedReason: string | null
+  isEpic: boolean
   createdAt: string
   updatedAt: string
 }
@@ -41,6 +44,22 @@ export interface UpdateTaskInput {
   serviceClass?: ServiceClass
   dueDate?: string | null
   assigneeId?: string | null
+  parentTaskId?: string | null
+  blockedReason?: string | null
+  isEpic?: boolean
+}
+
+export interface TaskDependencyView {
+  blockerTaskId: string
+  blockedTaskId: string
+  blockerTitle: string
+  blockedTitle: string
+  createdAt: string
+}
+
+export interface TaskDependenciesResponse {
+  blockers: TaskDependencyView[]
+  blocks: TaskDependencyView[]
 }
 
 export interface MoveTaskInput {

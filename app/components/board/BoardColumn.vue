@@ -89,6 +89,41 @@ const wipState = computed(() => {
   }
 })
 
+const settingsOpen = ref(false)
+const settingsDraft = reactive({
+  wipLimit: null as number | null,
+  columnRole: 'in_progress' as typeof props.column.columnRole,
+})
+
+function openSettings() {
+  if (!props.canManage) return
+  settingsDraft.wipLimit = props.column.wipLimit
+  settingsDraft.columnRole = props.column.columnRole
+  settingsOpen.value = true
+}
+
+async function onSaveSettings() {
+  const wipLimit
+    = settingsDraft.wipLimit && settingsDraft.wipLimit > 0
+      ? Math.floor(settingsDraft.wipLimit)
+      : null
+  try {
+    await updateColumn.mutateAsync({
+      columnId: props.column.id,
+      wipLimit,
+      columnRole: settingsDraft.columnRole,
+    })
+    settingsOpen.value = false
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось сохранить настройки'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+
 async function onDeleteColumn() {
   const ok = await confirm({
     title: `Удалить колонку «${props.column.name}»?`,
@@ -110,10 +145,22 @@ async function onDeleteColumn() {
 }
 
 const menuItems = computed(() => [[
+  ...(props.canCreate
+    ? [{
+        label: 'Создать задачу',
+        icon: 'i-lucide-plus',
+        onSelect: () => { createOpen.value = true },
+      }]
+    : []),
   {
     label: 'Переименовать',
     icon: 'i-lucide-pencil',
     onSelect: startEdit,
+  },
+  {
+    label: 'Настройки колонки',
+    icon: 'i-lucide-settings',
+    onSelect: openSettings,
   },
   {
     label: 'Удалить колонку',
@@ -166,36 +213,23 @@ const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
           >
             {{ column.name }}
           </h3>
-          <span class="text-xs font-medium opacity-70 shrink-0">{{ localTasks.length }}</span>
+          <span
+            class="text-xs font-semibold shrink-0 tabular-nums"
+            :class="wipState?.over ? 'text-red-700 dark:text-red-300' : 'opacity-70'"
+            :title="wipState ? `WIP-лимит ${wipState.limit}` : 'Без WIP-лимита'"
+          >
+            {{ localTasks.length }}{{ wipState ? `/${wipState.limit}` : '' }}
+          </span>
         </div>
-        <UBadge
-          v-if="wipState"
-          :color="wipState.over ? 'error' : 'neutral'"
-          variant="subtle"
-          size="xs"
-          class="shrink-0"
-        >
-          WIP {{ wipState.count }}/{{ wipState.limit }}
-        </UBadge>
       </div>
-      <div class="flex items-center gap-1">
+      <UDropdownMenu v-if="canManage" :items="menuItems">
         <UButton
-          v-if="canCreate"
-          icon="i-lucide-plus"
+          icon="i-lucide-more-horizontal"
           color="neutral"
           variant="ghost"
           size="xs"
-          @click="createOpen = true"
         />
-        <UDropdownMenu v-if="canManage" :items="menuItems">
-          <UButton
-            icon="i-lucide-more-horizontal"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-          />
-        </UDropdownMenu>
-      </div>
+      </UDropdownMenu>
     </div>
 
     <draggable
@@ -213,6 +247,16 @@ const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
       </template>
     </draggable>
 
+    <button
+      v-if="canCreate"
+      type="button"
+      class="m-2 mt-0 px-3 py-1.5 text-sm text-muted hover:text-default hover:bg-accented/60 rounded-md flex items-center gap-1.5 transition-colors"
+      @click="createOpen = true"
+    >
+      <UIcon name="i-lucide-plus" class="size-4" />
+      Добавить задачу
+    </button>
+
     <TaskCreateModal
       v-if="canCreate"
       v-model:open="createOpen"
@@ -220,5 +264,50 @@ const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
       :board-id="boardId"
       :column-id="column.id"
     />
+
+    <UModal
+      v-if="canManage"
+      v-model:open="settingsOpen"
+      :title="`Настройки колонки «${column.name}»`"
+      :ui="{ content: 'max-w-md' }"
+    >
+      <template #body>
+        <div class="space-y-4">
+          <UFormField
+            label="Тип"
+            name="columnRole"
+            :description="COLUMN_ROLE_INFO[settingsDraft.columnRole].hint"
+          >
+            <USelect
+              v-model="settingsDraft.columnRole"
+              :items="COLUMN_ROLE_OPTIONS"
+              class="w-full"
+            />
+          </UFormField>
+          <UFormField
+            label="WIP-лимит"
+            name="wipLimit"
+            description="Максимум задач в колонке. Пусто или 0 — без лимита."
+          >
+            <UInput
+              :model-value="settingsDraft.wipLimit ?? undefined"
+              type="number"
+              min="0"
+              class="w-full"
+              placeholder="Без лимита"
+              @update:model-value="(v: string | number) => (settingsDraft.wipLimit = v === '' || v == null ? null : Number(v))"
+            />
+          </UFormField>
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton variant="ghost" color="neutral" @click="settingsOpen = false">
+              Отмена
+            </UButton>
+            <UButton :loading="updateColumn.isPending.value" @click="onSaveSettings">
+              Сохранить
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

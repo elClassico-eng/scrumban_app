@@ -1,7 +1,12 @@
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import type { MaybeRef } from 'vue'
 import { apiRoutes } from '~/routing'
 import type { AddTaskToSprintInput } from '#shared/types/sprint'
+
+interface SprintTaskRef {
+  taskId: string
+  addedAt: string
+}
 
 export function useSprintTasksApi(
   workspaceId: MaybeRef<string>,
@@ -10,18 +15,37 @@ export function useSprintTasksApi(
 ) {
   const qc = useQueryClient()
 
+  const queryKey = computed(() => [
+    'sprint-tasks',
+    unref(workspaceId),
+    unref(boardId),
+    unref(sprintId),
+  ])
+
+  const list = useQuery({
+    queryKey,
+    queryFn: () =>
+      $fetch<{ items: SprintTaskRef[] }>(
+        apiRoutes.sprintTasks(unref(workspaceId), unref(boardId), unref(sprintId)),
+      ),
+    enabled: computed(() => !!unref(workspaceId) && !!unref(boardId) && !!unref(sprintId)),
+  })
+
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: queryKey.value })
+    qc.invalidateQueries({
+      queryKey: ['board-sprint-memberships', unref(workspaceId), unref(boardId)],
+    })
+    qc.invalidateQueries({ queryKey: ['sprints', unref(workspaceId), unref(boardId)] })
+  }
+
   const add = useMutation({
     mutationFn: (input: AddTaskToSprintInput) =>
       $fetch(apiRoutes.sprintTasks(unref(workspaceId), unref(boardId), unref(sprintId)), {
         method: 'POST',
         body: input,
       }),
-    // Sprint membership changes both the sprint and the board's task view
-    // (the task gets a sprint badge); invalidate both queries.
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sprints', unref(workspaceId), unref(boardId)] })
-      qc.invalidateQueries({ queryKey: ['tasks', unref(workspaceId), unref(boardId)] })
-    },
+    onSuccess: invalidate,
   })
 
   const remove = useMutation({
@@ -30,11 +54,8 @@ export function useSprintTasksApi(
         apiRoutes.sprintTask(unref(workspaceId), unref(boardId), unref(sprintId), taskId),
         { method: 'DELETE' },
       ),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sprints', unref(workspaceId), unref(boardId)] })
-      qc.invalidateQueries({ queryKey: ['tasks', unref(workspaceId), unref(boardId)] })
-    },
+    onSuccess: invalidate,
   })
 
-  return { add, remove }
+  return { list, add, remove }
 }

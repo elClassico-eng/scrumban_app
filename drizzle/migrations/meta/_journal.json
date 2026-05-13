@@ -57,6 +57,34 @@
       "when": 1778581040936,
       "tag": "0007_keen_stellaris",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778604486774,
+      "tag": "0008_sudden_blob",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778604486775,
+      "tag": "0009_phase6_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778614949600,
+      "tag": "0010_eminent_war_machine",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1778614949601,
+      "tag": "0011_checklist_rls",
+      "breakpoints": true
     }
   ]
 }

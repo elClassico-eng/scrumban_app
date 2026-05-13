@@ -3,14 +3,6 @@ import { pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth' })
 useHead({ title: 'Регистрация — Scrumban' })
-
-const authStore = useAuthStore()
-
-watchEffect(() => {
-  if (authStore.isAuthenticated) {
-    navigateTo(pageRoutes.workspaces)
-  }
-})
 </script>
 
 <template>
