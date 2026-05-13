@@ -24,6 +24,9 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
     qc.invalidateQueries({
       queryKey: ['tasks', unref(workspaceId), unref(boardId)],
     })
+    qc.invalidateQueries({
+      queryKey: ['board-dependency-counts', unref(workspaceId), unref(boardId)],
+    })
 
     // Surface only events where the visual change isn't already obvious.
     // task.moved is shown via DnD; task.updated is visible inside the

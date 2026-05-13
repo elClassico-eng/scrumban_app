@@ -79,10 +79,11 @@ const settingsOpen = ref(false)
 
 const sleLabel = computed(() => {
   if (!props.board) return null
-  if (props.board.sleDays == null) return 'SLE не задан'
+  if (props.board.sleDays == null) return 'Прогноз не задан'
   const pct = Math.round(Number(props.board.sleProbability) * 100)
-  return `SLE: ${pct}% за ${props.board.sleDays} дн`
+  return `Прогноз: ${pct}% за ${props.board.sleDays} дн`
 })
+const sleTooltip = 'Service Level Expectation — вероятностный прогноз сроков. Например, «85% задач закрываются за 10 дней». Используется для индикаторов aging WIP.'
 
 interface ReplenishmentState {
   daysLeft: number
@@ -96,10 +97,11 @@ const replenishmentState = computed<ReplenishmentState | null>(() => {
   const due = last + period
   const daysLeft = Math.round((due - Date.now()) / 86_400_000)
   if (daysLeft < 0) {
-    return { daysLeft, overdue: true, label: `Replenishment просрочен на ${-daysLeft} дн` }
+    return { daysLeft, overdue: true, label: `Пополнение просрочено на ${-daysLeft} дн` }
   }
-  return { daysLeft, overdue: false, label: `Replenishment через ${daysLeft} дн` }
+  return { daysLeft, overdue: false, label: `Пополнение через ${daysLeft} дн` }
 })
+const replenishmentTooltip = 'Пополнение бэклога — регулярная встреча планирования (replenishment). Клик отмечает её как проведённую и сбрасывает счётчик периода.'
 </script>
 
 <template>
@@ -131,40 +133,41 @@ const replenishmentState = computed<ReplenishmentState | null>(() => {
       >
         {{ boardName ?? 'Доска' }}
       </h1>
-      <UBadge
-        v-if="sleLabel"
-        color="neutral"
-        variant="subtle"
-        size="sm"
-        :class="canRename ? 'cursor-pointer hover:bg-accented' : ''"
-        @click="canRename && (settingsOpen = true)"
-      >
-        {{ sleLabel }}
-      </UBadge>
-      <UBadge
-        v-if="replenishmentState"
-        :color="replenishmentState.overdue ? 'error' : 'success'"
-        variant="subtle"
-        size="sm"
-        icon="i-lucide-calendar-clock"
-        :class="canRename ? 'cursor-pointer hover:opacity-80' : ''"
-        :title="canRename ? 'Клик — отметить replenishment как сделанный' : undefined"
-        @click="canRename && onMarkReplenishment()"
-      >
-        {{ replenishmentState.label }}
-      </UBadge>
-      <UButton
-        v-else-if="canRename && board"
-        icon="i-lucide-calendar-plus"
-        color="neutral"
-        variant="soft"
-        size="xs"
-        :loading="recordReplenishment.isPending.value"
-        title="Отметить первый replenishment"
-        @click="onMarkReplenishment"
-      >
-        Запустить replenishment
-      </UButton>
+      <UTooltip v-if="sleLabel" :text="sleTooltip">
+        <UBadge
+          color="neutral"
+          variant="subtle"
+          size="sm"
+          :class="canRename ? 'cursor-pointer hover:bg-accented' : ''"
+          @click="canRename && (settingsOpen = true)"
+        >
+          {{ sleLabel }}
+        </UBadge>
+      </UTooltip>
+      <UTooltip v-if="replenishmentState" :text="replenishmentTooltip">
+        <UBadge
+          :color="replenishmentState.overdue ? 'error' : 'success'"
+          variant="subtle"
+          size="sm"
+          icon="i-lucide-calendar-clock"
+          :class="canRename ? 'cursor-pointer hover:opacity-80' : ''"
+          @click="canRename && onMarkReplenishment()"
+        >
+          {{ replenishmentState.label }}
+        </UBadge>
+      </UTooltip>
+      <UTooltip v-else-if="canRename && board" :text="replenishmentTooltip">
+        <UButton
+          icon="i-lucide-calendar-plus"
+          color="neutral"
+          variant="soft"
+          size="xs"
+          :loading="recordReplenishment.isPending.value"
+          @click="onMarkReplenishment"
+        >
+          Запустить пополнение
+        </UButton>
+      </UTooltip>
     </div>
     <div class="flex items-center gap-2 shrink-0">
       <nav class="flex gap-1">
