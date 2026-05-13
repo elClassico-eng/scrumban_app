@@ -4,7 +4,7 @@
 // HTTP layer can map it to 409 without sniffing pg error codes itself.
 import { eq } from 'drizzle-orm'
 import { users, type User } from '../db/schema'
-import { ConflictError } from '../utils/errors'
+import { ConflictError, NotFoundError } from '../utils/errors'
 
 const PG_UNIQUE_VIOLATION = '23505'
 
@@ -25,6 +25,9 @@ export async function findUserById(id: string): Promise<User | undefined> {
 export async function createUser(input: {
   email: string
   passwordHash: string
+  firstName?: string | null
+  lastName?: string | null
+  middleName?: string | null
 }): Promise<User> {
   try {
     const [row] = await useDB()
@@ -32,6 +35,9 @@ export async function createUser(input: {
       .values({
         email: normaliseEmail(input.email),
         passwordHash: input.passwordHash,
+        firstName: input.firstName ?? null,
+        lastName: input.lastName ?? null,
+        middleName: input.middleName ?? null,
       })
       .returning()
     return row!
@@ -41,6 +47,36 @@ export async function createUser(input: {
     }
     throw err
   }
+}
+
+export async function updateUserProfile(input: {
+  userId: string
+  patch: {
+    firstName?: string | null
+    lastName?: string | null
+    middleName?: string | null
+    avatarUrl?: string | null
+    jobTitle?: string | null
+    bio?: string | null
+  }
+}): Promise<User> {
+  const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
+    updatedAt: new Date(),
+  }
+  if ('firstName' in input.patch) set.firstName = input.patch.firstName ?? null
+  if ('lastName' in input.patch) set.lastName = input.patch.lastName ?? null
+  if ('middleName' in input.patch) set.middleName = input.patch.middleName ?? null
+  if ('avatarUrl' in input.patch) set.avatarUrl = input.patch.avatarUrl ?? null
+  if ('jobTitle' in input.patch) set.jobTitle = input.patch.jobTitle ?? null
+  if ('bio' in input.patch) set.bio = input.patch.bio ?? null
+
+  const [row] = await useDB()
+    .update(users)
+    .set(set)
+    .where(eq(users.id, input.userId))
+    .returning()
+  if (!row) throw new NotFoundError('Пользователь не найден')
+  return row
 }
 
 function isPgUniqueViolation(err: unknown): boolean {

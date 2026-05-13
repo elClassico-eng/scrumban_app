@@ -7,6 +7,8 @@ export const apiRoutes = {
   authLogout: '/api/auth/logout',
   authSession: '/api/auth/session',
 
+  usersMe: '/api/users/me',
+
   healthz: '/api/healthz',
 
   workspaces: '/api/workspaces',
@@ -83,9 +85,12 @@ export const pageRoutes = {
   login: '/login',
   register: '/register',
 
+  me: '/me',
+
   workspaces: '/workspaces',
   workspace: (id: string) => `/workspaces/${id}`,
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
+  workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
 
   boards: (wsId: string) => `/workspaces/${wsId}/boards`,
   board: (wsId: string, boardId: string) => `/workspaces/${wsId}/boards/${boardId}`,

@@ -13,15 +13,13 @@ function onLogout() {
 </script>
 
 <template>
-  <header class="h-14 border-b border-default flex items-center justify-between px-6 bg-elevated">
+  <header class="glass h-14 flex items-center justify-between px-6 border-l-0 border-r-0 border-t-0">
     <div class="flex items-center gap-2">
       <UIcon name="i-lucide-layout-dashboard" class="text-primary size-5" />
       <span class="font-semibold tracking-tight">Scrumban</span>
     </div>
     <div class="flex items-center gap-3">
-      <span v-if="authStore.user" class="text-sm text-muted hidden sm:block">
-        {{ authStore.user.email }}
-      </span>
+      <WorkspaceTeamAvatars />
       <UButton
         :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
         color="neutral"

@@ -13,6 +13,9 @@ const CreateWorkspaceSchema = z.object({
   slug: z.string().trim().toLowerCase().min(3).max(64).regex(SLUG_RE, {
     message: 'slug must be lowercase letters, digits, and hyphens',
   }),
+  description: z.string().trim().max(2000).optional(),
+  purpose: z.string().trim().max(2000).optional(),
+  industry: z.string().trim().max(100).optional(),
 })
 
 export default defineEventHandler(async (event) => {

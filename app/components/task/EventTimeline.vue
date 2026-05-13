@@ -36,10 +36,10 @@ function formatDateTime(iso: string): string {
   })
 }
 
-function actorEmail(actorId: string | null): string {
+function actorName(actorId: string | null): string {
   if (actorId == null) return 'удалённый пользователь'
   const found = membersList.data.value?.members.find(m => m.userId === actorId)
-  return found?.email ?? 'неизвестный пользователь'
+  return found ? displayName(found) : 'неизвестный пользователь'
 }
 </script>
 
@@ -59,7 +59,7 @@ function actorEmail(actorId: string | null): string {
       />
       <div class="flex-1 min-w-0">
         <p>
-          <span class="font-medium">{{ actorEmail(event.actorId) }}</span>
+          <span class="font-medium">{{ actorName(event.actorId) }}</span>
           <span class="text-muted"> — </span>
           <span>{{ humanizeTaskEventType(event.eventType).toLowerCase() }}</span>
         </p>

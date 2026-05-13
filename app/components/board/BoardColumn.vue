@@ -175,7 +175,7 @@ const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
 <template>
   <div
     :class="[
-      'w-72 shrink-0 rounded-lg flex flex-col max-h-full border border-default',
+      'w-72 shrink-0 rounded-lg flex flex-col max-h-full',
       roleStyle.bodyClass,
     ]"
   >

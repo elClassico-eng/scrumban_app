@@ -11,6 +11,12 @@ declare module '#auth-utils' {
 export interface SessionUser {
   id: string
   email: string
+  firstName: string | null
+  lastName: string | null
+  middleName: string | null
+  avatarUrl: string | null
+  jobTitle: string | null
+  bio: string | null
 }
 
 export interface SessionResponse {
@@ -25,4 +31,33 @@ export interface LoginInput {
 export interface RegisterInput {
   email: string
   password: string
+  firstName?: string
+  lastName?: string
+  middleName?: string
+}
+
+export interface UserProfile {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  middleName: string | null
+  avatarUrl: string | null
+  jobTitle: string | null
+  bio: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UserProfileResponse {
+  user: UserProfile
+}
+
+export interface UpdateUserProfileInput {
+  firstName?: string | null
+  lastName?: string | null
+  middleName?: string | null
+  avatarUrl?: string | null
+  jobTitle?: string | null
+  bio?: string | null
 }

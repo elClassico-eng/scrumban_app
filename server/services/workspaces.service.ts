@@ -23,12 +23,21 @@ export async function createWorkspace(input: {
   name: string
   slug: string
   ownerId: string
+  description?: string | null
+  purpose?: string | null
+  industry?: string | null
 }): Promise<WorkspaceWithRole> {
   try {
     return await useDB().transaction(async (tx) => {
       const [ws] = await tx
         .insert(workspaces)
-        .values({ name: input.name, slug: input.slug })
+        .values({
+          name: input.name,
+          slug: input.slug,
+          description: input.description ?? null,
+          purpose: input.purpose ?? null,
+          industry: input.industry ?? null,
+        })
         .returning()
 
       await tx.insert(workspaceMembers).values({
@@ -47,16 +56,25 @@ export async function createWorkspace(input: {
   }
 }
 
+// Selects every workspace column plus the role from the join — keeps the
+// shape in sync with the schema automatically as we add fields (avoids
+// per-column listing repeated across two functions).
+const workspaceWithRoleSelect = {
+  id: workspaces.id,
+  name: workspaces.name,
+  slug: workspaces.slug,
+  description: workspaces.description,
+  purpose: workspaces.purpose,
+  industry: workspaces.industry,
+  logoUrl: workspaces.logoUrl,
+  createdAt: workspaces.createdAt,
+  updatedAt: workspaces.updatedAt,
+  role: workspaceMembers.role,
+} as const
+
 export async function listWorkspacesForUser(userId: string): Promise<WorkspaceWithRole[]> {
   return useDB()
-    .select({
-      id: workspaces.id,
-      name: workspaces.name,
-      slug: workspaces.slug,
-      createdAt: workspaces.createdAt,
-      updatedAt: workspaces.updatedAt,
-      role: workspaceMembers.role,
-    })
+    .select(workspaceWithRoleSelect)
     .from(workspaceMembers)
     .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
     .where(eq(workspaceMembers.userId, userId))
@@ -71,14 +89,7 @@ export async function findWorkspaceForUser(
   userId: string,
 ): Promise<WorkspaceWithRole | undefined> {
   const [row] = await useDB()
-    .select({
-      id: workspaces.id,
-      name: workspaces.name,
-      slug: workspaces.slug,
-      createdAt: workspaces.createdAt,
-      updatedAt: workspaces.updatedAt,
-      role: workspaceMembers.role,
-    })
+    .select(workspaceWithRoleSelect)
     .from(workspaceMembers)
     .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
     .where(
@@ -117,13 +128,25 @@ function isPgUniqueViolation(err: unknown): boolean {
 // Admin+ required so members/viewers cannot rewrite the workspace label.
 export async function updateWorkspace(input: {
   workspaceId: string
-  patch: { name?: string }
+  patch: {
+    name?: string
+    description?: string | null
+    purpose?: string | null
+    industry?: string | null
+    logoUrl?: string | null
+  }
   actorRole: WorkspaceMemberRole
 }): Promise<WorkspaceWithRole> {
   requireMinRole(input.actorRole, 'admin')
 
-  const set: { name?: string; updatedAt: Date } = { updatedAt: new Date() }
+  const set: Partial<typeof workspaces.$inferInsert> & { updatedAt: Date } = {
+    updatedAt: new Date(),
+  }
   if (input.patch.name !== undefined) set.name = input.patch.name
+  if ('description' in input.patch) set.description = input.patch.description ?? null
+  if ('purpose' in input.patch) set.purpose = input.patch.purpose ?? null
+  if ('industry' in input.patch) set.industry = input.patch.industry ?? null
+  if ('logoUrl' in input.patch) set.logoUrl = input.patch.logoUrl ?? null
 
   const [updated] = await useDB()
     .update(workspaces)

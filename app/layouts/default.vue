@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex bg-default overflow-hidden">
+  <div class="h-screen flex overflow-hidden">
     <AppSidebar />
     <div class="flex-1 flex flex-col min-w-0">
       <AppHeader />
@@ -7,5 +7,6 @@
         <slot />
       </main>
     </div>
+    <IntroduceModal />
   </div>
 </template>

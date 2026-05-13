@@ -38,7 +38,7 @@ const { list: membersList } = useMembersApi(wsId)
 const assigneeOptions = computed(() => [
   { label: 'Не назначен', value: null },
   ...(membersList.data.value?.members ?? []).map(m => ({
-    label: m.email,
+    label: displayName(m),
     value: m.userId,
   })),
 ])

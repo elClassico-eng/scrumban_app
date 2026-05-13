@@ -23,11 +23,12 @@ const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 const cosInfo = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const blockerCount = computed(() => depCountsByTaskId.value.get(props.task.id)?.blockerCount ?? 0)
 
-const assigneeEmail = computed(() => {
+const assignee = computed(() => {
   if (!props.task.assigneeId) return null
-  const found = membersList.data.value?.members.find(m => m.userId === props.task.assigneeId)
-  return found?.email ?? null
+  return membersList.data.value?.members.find(m => m.userId === props.task.assigneeId) ?? null
 })
+const assigneeName = computed(() => assignee.value ? displayName(assignee.value) : null)
+const assigneeInitials = computed(() => assignee.value ? initials(assignee.value) : '')
 
 // Aging-WIP signal: age from createdAt vs board.sleDays.
 // Per-column anchor is Phase 8 work.
@@ -113,11 +114,17 @@ const dueOverdue = computed(() => {
         </span>
       </div>
       <div
-        v-if="assigneeEmail"
-        class="size-6 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center justify-center uppercase shrink-0"
-        :title="assigneeEmail"
+        v-if="assignee"
+        class="size-6 rounded-full bg-primary/10 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0 overflow-hidden"
+        :title="assigneeName ?? undefined"
       >
-        {{ assigneeEmail.slice(0, 1) }}
+        <img
+          v-if="assignee.avatarUrl"
+          :src="assignee.avatarUrl"
+          alt=""
+          class="size-full object-cover"
+        >
+        <span v-else>{{ assigneeInitials }}</span>
       </div>
     </div>
   </div>

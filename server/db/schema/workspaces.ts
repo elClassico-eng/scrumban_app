@@ -8,6 +8,7 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  text,
   timestamp,
   uuid,
   varchar,
@@ -19,6 +20,10 @@ export const workspaces = pgTable('workspaces', {
   name: varchar('name', { length: 255 }).notNull(),
   // URL-friendly identifier (e.g. "acme"). Lowercase a-z, digits, hyphens.
   slug: varchar('slug', { length: 64 }).notNull().unique(),
+  description: text('description'),
+  purpose: text('purpose'),
+  industry: varchar('industry', { length: 100 }),
+  logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

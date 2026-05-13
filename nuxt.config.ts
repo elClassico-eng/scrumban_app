@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@nuxt/eslint',
     '@nuxt/icon',
+    '@nuxt/image',
     '@nuxtjs/google-fonts',
     'nuxt-auth-utils',
     '@pinia/nuxt',

@@ -22,12 +22,12 @@ function onSubmit() {
 </script>
 
 <template>
-  <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+  <UForm :schema="schema" :state="state" class="space-y-5" @submit="onSubmit">
     <UFormField label="Email" name="email" required>
-      <UInput v-model="state.email" type="email" autocomplete="email" class="w-full" />
+      <UInput v-model="state.email" type="email" autocomplete="email" size="lg" class="w-full" />
     </UFormField>
     <UFormField label="Пароль" name="password" required>
-      <UInput v-model="state.password" type="password" autocomplete="current-password" class="w-full" />
+      <UInput v-model="state.password" type="password" autocomplete="current-password" size="lg" class="w-full" />
     </UFormField>
     <UAlert
       v-if="errorMessage"
@@ -36,7 +36,7 @@ function onSubmit() {
       :title="errorMessage"
       icon="i-lucide-alert-circle"
     />
-    <UButton type="submit" :loading="login.isPending.value" block size="lg">
+    <UButton type="submit" :loading="login.isPending.value" block size="xl" class="font-semibold">
       Войти
     </UButton>
   </UForm>

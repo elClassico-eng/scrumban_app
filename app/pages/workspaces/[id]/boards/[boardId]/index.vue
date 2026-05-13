@@ -58,9 +58,10 @@ const lanes = computed<Lane[]>(() => {
   for (const t of tasks.value) {
     if (t.isEpic) epics.set(t.id, t.title)
   }
-  const memberEmail = (id: string | null) => {
+  const memberLabel = (id: string | null) => {
     if (!id) return 'Не назначен'
-    return membersList.data.value?.members.find(m => m.userId === id)?.email ?? id.slice(0, 6)
+    const found = membersList.data.value?.members.find(m => m.userId === id)
+    return found ? displayName(found) : id.slice(0, 6)
   }
   const laneKey = (t: Task): string => {
     if (swimlane.value === 'none') return '__all__'
@@ -75,7 +76,7 @@ const lanes = computed<Lane[]>(() => {
   const laneLabel = (key: string): string => {
     if (swimlane.value === 'none') return ''
     if (key === '__none__') return swimlane.value === 'epic' ? 'Без эпика' : 'Не назначен'
-    if (swimlane.value === 'assignee') return memberEmail(key)
+    if (swimlane.value === 'assignee') return memberLabel(key)
     if (swimlane.value === 'service_class') {
       return SERVICE_CLASS_INFO[key as keyof typeof SERVICE_CLASS_INFO]?.shortLabel ?? key
     }

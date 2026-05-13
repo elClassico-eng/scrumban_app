@@ -25,9 +25,29 @@ import { requireMinRole, roleAtLeast, strictlyOutranks } from '../utils/rbac'
 export interface MemberView {
   userId: string
   email: string
+  firstName: string | null
+  lastName: string | null
+  middleName: string | null
+  avatarUrl: string | null
+  jobTitle: string | null
   role: WorkspaceMemberRole
   createdAt: Date
 }
+
+// Profile columns are projected here so the frontend can render avatars
+// and display names everywhere members surface (cards, timelines, drawer
+// assignee picker) from a single roster query.
+const memberSelect = {
+  userId: workspaceMembers.userId,
+  email: users.email,
+  firstName: users.firstName,
+  lastName: users.lastName,
+  middleName: users.middleName,
+  avatarUrl: users.avatarUrl,
+  jobTitle: users.jobTitle,
+  role: workspaceMembers.role,
+  createdAt: workspaceMembers.createdAt,
+} as const
 
 export async function listWorkspaceMembers(
   workspaceId: string,
@@ -37,12 +57,7 @@ export async function listWorkspaceMembers(
   requireMinRole(actorRole, 'viewer')
 
   return useDB()
-    .select({
-      userId: workspaceMembers.userId,
-      email: users.email,
-      role: workspaceMembers.role,
-      createdAt: workspaceMembers.createdAt,
-    })
+    .select(memberSelect)
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(eq(workspaceMembers.workspaceId, workspaceId))
@@ -70,22 +85,35 @@ export async function addMemberByEmail(input: {
   }
 
   try {
-    const [row] = await useDB()
+    await useDB()
       .insert(workspaceMembers)
       .values({ workspaceId: input.workspaceId, userId: user.id, role: input.role })
-      .returning()
-    return {
-      userId: row!.userId,
-      email: user.email,
-      role: row!.role,
-      createdAt: row!.createdAt,
-    }
+    const view = await findMemberView(input.workspaceId, user.id)
+    if (!view) throw new NotFoundError('Не удалось прочитать добавленного участника')
+    return view
   } catch (err) {
     if (isPgUniqueViolation(err)) {
       throw new ConflictError('Пользователь уже состоит в этом workspace')
     }
     throw err
   }
+}
+
+async function findMemberView(
+  workspaceId: string,
+  userId: string,
+): Promise<MemberView | undefined> {
+  const [row] = await useDB()
+    .select(memberSelect)
+    .from(workspaceMembers)
+    .innerJoin(users, eq(users.id, workspaceMembers.userId))
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.userId, userId),
+      ),
+    )
+  return row
 }
 
 export async function updateMemberRole(input: {
@@ -118,7 +146,7 @@ export async function updateMemberRole(input: {
     await assertNotLastOwner(input.workspaceId, input.targetUserId)
   }
 
-  const [updated] = await useDB()
+  await useDB()
     .update(workspaceMembers)
     .set({ role: input.newRole })
     .where(
@@ -127,19 +155,10 @@ export async function updateMemberRole(input: {
         eq(workspaceMembers.userId, input.targetUserId),
       ),
     )
-    .returning()
 
-  const [user] = await useDB()
-    .select({ email: users.email })
-    .from(users)
-    .where(eq(users.id, input.targetUserId))
-
-  return {
-    userId: updated!.userId,
-    email: user!.email,
-    role: updated!.role,
-    createdAt: updated!.createdAt,
-  }
+  const view = await findMemberView(input.workspaceId, input.targetUserId)
+  if (!view) throw new NotFoundError('Не удалось прочитать обновлённого участника')
+  return view
 }
 
 export async function removeMember(input: {
