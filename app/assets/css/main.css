@@ -4,4 +4,67 @@
 @theme static {
   --font-sans: 'Manrope', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-brand-50: #fafafa;
+  --color-brand-100: #f4f4f5;
+  --color-brand-200: #e4e4e7;
+  --color-brand-300: #d4d4d8;
+  --color-brand-400: #71717a;
+  --color-brand-500: #000000;
+  --color-brand-600: #000000;
+  --color-brand-700: #000000;
+  --color-brand-800: #000000;
+  --color-brand-900: #000000;
+  --color-brand-950: #000000;
+}
+
+html,
+body {
+  min-height: 100vh;
+}
+
+body {
+  background-image: linear-gradient(
+    to top,
+    #f3e7e9 0%,
+    #e3eeff 99%,
+    #e3eeff 100%
+  );
+  background-attachment: fixed;
+}
+
+html.dark body {
+  background-image: linear-gradient(
+    to top,
+    #1f1830 0%,
+    #14182a 99%,
+    #14182a 100%
+  );
+}
+
+@utility glass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 30px rgba(31, 38, 135, 0.08);
+}
+
+html.dark .glass {
+  background: rgba(20, 22, 35, 0.55);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.35);
+}
+
+@utility glass-strong {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 12px 48px rgba(31, 38, 135, 0.12);
+}
+
+html.dark .glass-strong {
+  background: rgba(20, 22, 35, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
 }

@@ -88,17 +88,41 @@ const addOpen = ref(false)
 
 const actionError = ref<string | null>(null)
 
-async function onRoleChange(userId: string, newRole: Role) {
+const editingId = ref<string | null>(null)
+function startEdit(id: string) {
+  editingId.value = id
+}
+function stopEdit() {
+  editingId.value = null
+}
+
+const ROLE_LABEL: Record<Role, string> = {
+  viewer: 'Наблюдатель',
+  member: 'Участник',
+  scrum_master: 'Скрам-мастер',
+  admin: 'Администратор',
+  owner: 'Владелец',
+}
+
+const confirm = useConfirm()
+
+async function onRoleChange(userId: string, currentRole: Role, newRole: Role) {
+  if (newRole === currentRole) return
   actionError.value = null
+  const ok = await confirm({
+    title: `Изменить роль на «${ROLE_LABEL[newRole]}»?`,
+    description: `Текущая роль — «${ROLE_LABEL[currentRole]}». Пользователь получит все права новой роли.`,
+    confirmLabel: 'Изменить',
+  })
+  if (!ok) return
   try {
     await updateRole.mutateAsync({ userId, role: newRole })
+    stopEdit()
   }
   catch (err) {
     actionError.value = getErrorMessage(err, 'Не удалось обновить роль')
   }
 }
-
-const confirm = useConfirm()
 
 async function onRemove(userId: string, email: string) {
   actionError.value = null
@@ -111,6 +135,7 @@ async function onRemove(userId: string, email: string) {
   if (!ok) return
   try {
     await remove.mutateAsync(userId)
+    stopEdit()
   }
   catch (err) {
     actionError.value = getErrorMessage(err, 'Не удалось удалить участника')
@@ -150,6 +175,7 @@ async function onRemove(userId: string, email: string) {
       <UButton
         v-if="canManage"
         icon="i-lucide-user-plus"
+        class="py-2.5"
         @click="addOpen = true"
       >
         Добавить участника
@@ -169,14 +195,14 @@ async function onRemove(userId: string, email: string) {
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
       <div
         v-for="member in members"
         :key="member.userId"
-        class="bg-default border border-default rounded-lg p-5 flex flex-col gap-4 hover:border-primary/40 transition-colors"
+        class="glass-strong rounded-xl p-4 flex flex-col gap-3 transition-all hover:shadow-md"
       >
-        <div class="flex items-start gap-4">
-          <div class="size-14 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-lg shrink-0 overflow-hidden">
+        <div class="flex items-center gap-3">
+          <div class="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0 overflow-hidden">
             <img
               v-if="member.avatarUrl"
               :src="member.avatarUrl"
@@ -185,27 +211,46 @@ async function onRemove(userId: string, email: string) {
             >
             <span v-else>{{ initials(member) }}</span>
           </div>
-          <div class="flex-1 min-w-0 space-y-1">
-            <p class="font-semibold text-base truncate">{{ displayName(member) }}</p>
-            <p v-if="member.jobTitle" class="text-sm text-muted truncate">{{ member.jobTitle }}</p>
-            <p class="text-xs text-muted truncate">{{ member.email }}</p>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm truncate text-default">{{ displayName(member) }}</p>
+            <p class="text-xs text-muted truncate">
+              {{ member.jobTitle || member.email }}
+            </p>
           </div>
+          <UButton
+            v-if="canManage && canEditMember(myRole, member.role) && editingId !== member.userId"
+            icon="i-lucide-pencil"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            title="Редактировать"
+            @click="startEdit(member.userId)"
+          />
+          <UButton
+            v-else-if="editingId === member.userId"
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            title="Готово"
+            @click="stopEdit"
+          />
         </div>
 
-        <div class="flex items-center justify-between gap-2 pt-3 border-t border-default">
-          <template v-if="canManage && canEditMember(myRole, member.role)">
+        <div class="flex items-center justify-between gap-2">
+          <template v-if="editingId === member.userId && canManage && canEditMember(myRole, member.role)">
             <USelect
               :model-value="member.role"
               :items="rolesAssignableBy(myRole)"
-              size="sm"
+              size="xs"
               class="flex-1"
-              @update:model-value="(v: Role) => onRoleChange(member.userId, v)"
+              @update:model-value="(v: Role) => onRoleChange(member.userId, member.role, v)"
             />
             <UButton
               icon="i-lucide-trash-2"
-              color="neutral"
+              color="error"
               variant="ghost"
-              size="sm"
+              size="xs"
               :loading="remove.isPending.value"
               title="Удалить из workspace"
               @click="onRemove(member.userId, member.email)"
@@ -213,7 +258,7 @@ async function onRemove(userId: string, email: string) {
           </template>
           <template v-else>
             <WorkspaceMemberRoleBadge :role="member.role" />
-            <span class="text-xs text-muted">
+            <span class="text-[11px] text-muted">
               c {{ new Date(member.createdAt).toLocaleDateString('ru', { day: '2-digit', month: 'short' }) }}
             </span>
           </template>

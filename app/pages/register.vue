@@ -119,19 +119,19 @@ async function finishOnboarding() {
 </script>
 
 <template>
-  <div class="w-full max-w-lg space-y-6">
-    <div class="space-y-2">
-      <p class="text-xs uppercase tracking-wide text-muted">
+  <div class="space-y-8">
+    <div class="space-y-3">
+      <p class="text-[11px] uppercase tracking-[0.18em] text-muted font-medium">
         Шаг {{ step }} из 2
       </p>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-1.5">
         <div
           class="h-1 flex-1 rounded-full transition-colors"
-          :class="step >= 1 ? 'bg-primary' : 'bg-elevated'"
+          :class="step >= 1 ? 'bg-primary' : 'bg-default/40'"
         />
         <div
           class="h-1 flex-1 rounded-full transition-colors"
-          :class="step >= 2 ? 'bg-primary' : 'bg-elevated'"
+          :class="step >= 2 ? 'bg-primary' : 'bg-default/40'"
         />
       </div>
     </div>
@@ -140,33 +140,37 @@ async function finishOnboarding() {
       v-if="step === 1"
       :state="userState"
       :schema="userSchema"
-      class="space-y-4"
+      class="space-y-6"
       @submit.prevent="nextFromUser"
     >
-      <div class="text-center space-y-1">
-        <h1 class="text-2xl font-bold tracking-tight">Расскажите о себе</h1>
-        <p class="text-sm text-muted">Эти данные увидят коллеги в задачах и комментариях</p>
+      <div class="space-y-2">
+        <h1 class="text-3xl font-bold tracking-tight">Расскажите о себе</h1>
+        <p class="text-sm text-muted leading-relaxed">
+          Эти данные увидят коллеги в задачах и комментариях.
+        </p>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <UFormField label="Фамилия" name="lastName" required>
-          <UInput v-model="userState.lastName" class="w-full" autofocus />
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <UFormField label="Фамилия" name="lastName" required>
+            <UInput v-model="userState.lastName" size="lg" class="w-full" autofocus />
+          </UFormField>
+          <UFormField label="Имя" name="firstName" required>
+            <UInput v-model="userState.firstName" size="lg" class="w-full" />
+          </UFormField>
+        </div>
+        <UFormField label="Отчество" name="middleName">
+          <UInput v-model="userState.middleName" size="lg" class="w-full" placeholder="Можно пропустить" />
         </UFormField>
-        <UFormField label="Имя" name="firstName" required>
-          <UInput v-model="userState.firstName" class="w-full" />
+        <UFormField label="Email" name="email" required>
+          <UInput v-model="userState.email" type="email" autocomplete="email" size="lg" class="w-full" />
+        </UFormField>
+        <UFormField label="Пароль" name="password" hint="Минимум 8 символов" required>
+          <UInput v-model="userState.password" type="password" autocomplete="new-password" size="lg" class="w-full" />
+        </UFormField>
+        <UFormField label="Повторите пароль" name="confirmPassword" required>
+          <UInput v-model="userState.confirmPassword" type="password" autocomplete="new-password" size="lg" class="w-full" />
         </UFormField>
       </div>
-      <UFormField label="Отчество" name="middleName">
-        <UInput v-model="userState.middleName" class="w-full" placeholder="Можно пропустить" />
-      </UFormField>
-      <UFormField label="Email" name="email" required>
-        <UInput v-model="userState.email" type="email" autocomplete="email" class="w-full" />
-      </UFormField>
-      <UFormField label="Пароль" name="password" hint="Минимум 8 символов" required>
-        <UInput v-model="userState.password" type="password" autocomplete="new-password" class="w-full" />
-      </UFormField>
-      <UFormField label="Повторите пароль" name="confirmPassword" required>
-        <UInput v-model="userState.confirmPassword" type="password" autocomplete="new-password" class="w-full" />
-      </UFormField>
       <UAlert
         v-if="submitError"
         color="error"
@@ -174,12 +178,12 @@ async function finishOnboarding() {
         :title="submitError"
         icon="i-lucide-alert-circle"
       />
-      <UButton type="submit" block size="lg">
+      <UButton type="submit" block size="xl" class="font-semibold">
         Дальше
       </UButton>
       <p class="text-sm text-muted text-center">
         Уже есть аккаунт?
-        <NuxtLink :to="pageRoutes.login" class="text-primary hover:underline">
+        <NuxtLink :to="pageRoutes.login" class="text-primary font-medium hover:underline">
           Войти
         </NuxtLink>
       </p>
@@ -189,47 +193,52 @@ async function finishOnboarding() {
       v-else-if="step === 2"
       :state="teamState"
       :schema="teamSchema"
-      class="space-y-4"
+      class="space-y-6"
       @submit.prevent="finishOnboarding"
     >
-      <div class="text-center space-y-1">
-        <h1 class="text-2xl font-bold tracking-tight">О команде</h1>
-        <p class="text-sm text-muted">Создадим workspace, в котором будет работать команда</p>
+      <div class="space-y-2">
+        <h1 class="text-3xl font-bold tracking-tight">О команде</h1>
+        <p class="text-sm text-muted leading-relaxed">
+          Создадим workspace, в котором будет работать команда.
+        </p>
       </div>
-      <UFormField label="Название команды" name="name" required>
-        <UInput v-model="teamState.name" class="w-full" autofocus />
+      <div class="space-y-4">
+        <UFormField label="Название команды" name="name" required>
+          <UInput v-model="teamState.name" size="lg" class="w-full" autofocus />
       </UFormField>
-      <UFormField
-        label="Slug"
-        name="slug"
-        hint="URL-идентификатор: латиница, цифры и дефисы"
-        required
-      >
-        <UInput
-          v-model="teamState.slug"
-          class="w-full"
-          @update:model-value="slugTouched = true"
-        />
-      </UFormField>
-      <UFormField label="Индустрия" name="industry">
-        <UInput v-model="teamState.industry" class="w-full" placeholder="IT, агентство, промышленность..." />
-      </UFormField>
-      <UFormField label="Чем занимается команда" name="description">
-        <UTextarea
-          v-model="teamState.description"
-          :rows="2"
-          class="w-full"
-          placeholder="Кратко опишите специализацию"
-        />
-      </UFormField>
-      <UFormField label="Для чего планируете использовать" name="purpose">
-        <UTextarea
-          v-model="teamState.purpose"
-          :rows="2"
-          class="w-full"
-          placeholder="Например: трекинг задач + аналитика flow"
-        />
-      </UFormField>
+        <UFormField
+          label="Slug"
+          name="slug"
+          hint="URL-идентификатор: латиница, цифры и дефисы"
+          required
+        >
+          <UInput
+            v-model="teamState.slug"
+            size="lg"
+            class="w-full"
+            @update:model-value="slugTouched = true"
+          />
+        </UFormField>
+        <UFormField label="Индустрия" name="industry">
+          <UInput v-model="teamState.industry" size="lg" class="w-full" placeholder="IT, агентство, промышленность..." />
+        </UFormField>
+        <UFormField label="Чем занимается команда" name="description">
+          <UTextarea
+            v-model="teamState.description"
+            :rows="2"
+            class="w-full"
+            placeholder="Кратко опишите специализацию"
+          />
+        </UFormField>
+        <UFormField label="Для чего планируете использовать" name="purpose">
+          <UTextarea
+            v-model="teamState.purpose"
+            :rows="2"
+            class="w-full"
+            placeholder="Например: трекинг задач + аналитика flow"
+          />
+        </UFormField>
+      </div>
       <UAlert
         v-if="submitError"
         color="error"
@@ -237,11 +246,11 @@ async function finishOnboarding() {
         :title="submitError"
         icon="i-lucide-alert-circle"
       />
-      <div class="flex gap-2 pt-2">
-        <UButton type="button" variant="ghost" color="neutral" size="lg" @click="backToUser">
+      <div class="flex gap-3 pt-2">
+        <UButton type="button" variant="ghost" color="neutral" size="xl" @click="backToUser">
           Назад
         </UButton>
-        <UButton type="submit" :loading="submitting" size="lg" class="flex-1">
+        <UButton type="submit" :loading="submitting" size="xl" class="flex-1 font-semibold">
           Готово
         </UButton>
       </div>

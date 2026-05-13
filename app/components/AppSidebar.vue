@@ -2,6 +2,7 @@
 import { pageRoutes } from '~/routing'
 
 const workspaceStore = useWorkspaceStore()
+const authStore = useAuthStore()
 const { list } = useWorkspacesApi()
 
 const workspaces = computed(() => list.data.value?.workspaces ?? [])
@@ -29,17 +30,22 @@ const links = computed(() => {
   }
   return out
 })
+
+const userName = computed(() => authStore.user ? displayName(authStore.user) : null)
+const userInitials = computed(() => authStore.user ? initials(authStore.user) : '')
 </script>
 
 <template>
-  <aside class="w-60 border-r border-default bg-elevated flex flex-col">
-    <div class="h-14 flex items-center px-6 border-b border-default">
+  <aside class="glass w-60 flex flex-col border-r-0">
+    <div class="h-14 flex items-center px-6">
       <NuxtLink :to="pageRoutes.home" class="font-bold tracking-tight text-lg">
         Scrumban
       </NuxtLink>
     </div>
+
     <WorkspaceSwitcher />
-    <nav class="flex-1 p-3 flex flex-col gap-1">
+
+    <nav class="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
       <NuxtLink
         v-for="link in links"
         :key="link.label"
@@ -51,5 +57,29 @@ const links = computed(() => {
         {{ link.label }}
       </NuxtLink>
     </nav>
+
+    <!-- User identity card pinned at the bottom; clicking opens /me. -->
+    <NuxtLink
+      v-if="authStore.user"
+      :to="pageRoutes.me"
+      class="m-3 p-3 rounded-lg flex items-center gap-3 hover:bg-accented/60 transition-colors"
+      :title="`${userName} — личный кабинет`"
+    >
+      <div
+        class="size-9 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center shrink-0 overflow-hidden"
+      >
+        <img
+          v-if="authStore.user.avatarUrl"
+          :src="authStore.user.avatarUrl"
+          alt=""
+          class="size-full object-cover"
+        >
+        <span v-else>{{ userInitials }}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-default truncate">{{ userName }}</p>
+        <p class="text-xs text-muted truncate">Личный кабинет</p>
+      </div>
+    </NuxtLink>
   </aside>
 </template>
