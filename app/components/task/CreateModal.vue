@@ -17,7 +17,7 @@ const schema = z
     assigneeId: z.string().nullable(),
   })
   .refine(d => d.serviceClass !== 'fixed_date' || (d.dueDate && d.dueDate.length > 0), {
-    message: 'Для Fixed Date задайте дедлайн',
+    message: 'Для класса «С дедлайном» нужен дедлайн',
     path: ['dueDate'],
   })
 

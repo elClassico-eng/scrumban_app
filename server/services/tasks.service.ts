@@ -74,7 +74,7 @@ export async function createTask(input: {
 
   // Anderson rule: fixed_date class is meaningless without a deadline.
   if (input.serviceClass === 'fixed_date' && !input.dueDate) {
-    throw new ValidationError('Для класса «Fixed date» нужен дедлайн')
+    throw new ValidationError('Для класса «С дедлайном» нужен дедлайн')
   }
   // Expedite tasks get an expedited_at marker — useful for "how long was
   // this urgent before it closed" analytics.

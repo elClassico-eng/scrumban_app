@@ -12,19 +12,21 @@ function openTask() {
   })
 }
 
+// Visual config per CoS — icon/color stays here, labels come from the
+// shared SERVICE_CLASS_INFO source of truth (one place to translate).
 interface CosVisual {
   icon: string | null
   color: 'error' | 'warning' | 'neutral' | null
-  label: string
 }
-const COS_CONFIG: Record<ServiceClass, CosVisual> = {
-  expedite: { icon: 'i-lucide-zap', color: 'error', label: 'Expedite' },
-  fixed_date: { icon: 'i-lucide-calendar-clock', color: 'warning', label: 'Fixed date' },
-  standard: { icon: null, color: null, label: 'Standard' },
-  intangible: { icon: 'i-lucide-arrow-down-narrow-wide', color: 'neutral', label: 'Intangible' },
+const COS_VISUAL: Record<ServiceClass, CosVisual> = {
+  expedite: { icon: 'i-lucide-zap', color: 'error' },
+  fixed_date: { icon: 'i-lucide-calendar-clock', color: 'warning' },
+  standard: { icon: null, color: null },
+  intangible: { icon: 'i-lucide-arrow-down-narrow-wide', color: 'neutral' },
 }
 
-const cosVisual = computed(() => COS_CONFIG[props.task.serviceClass])
+const cosVisual = computed(() => COS_VISUAL[props.task.serviceClass])
+const cosLabel = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass].shortLabel)
 
 // vue-query dedupes by queryKey, so even though every card calls these
 // composables, only one HTTP request hits each endpoint per board.
@@ -109,9 +111,9 @@ const dueOverdue = computed(() => {
           variant="subtle"
           size="xs"
           :icon="cosVisual.icon"
-          :title="cosVisual.label"
+          :title="cosLabel"
         >
-          {{ cosVisual.label }}
+          {{ cosLabel }}
         </UBadge>
         <UBadge
           v-if="dueDateLabel"
