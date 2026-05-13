@@ -34,13 +34,18 @@ const items = computed(() => [
 </script>
 
 <template>
-  <div class="px-3 py-2">
+  <div class="px-3 pb-2">
     <UDropdownMenu :items="items" :ui="{ content: 'w-56' }">
-      <UButton variant="soft" color="neutral" block class="justify-between" trailing-icon="i-lucide-chevrons-up-down">
-        <span class="truncate text-left flex-1">
+      <button
+        type="button"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-[#f4f4f4] hover:bg-[#ebebeb] transition-colors text-left"
+      >
+        <UIcon name="i-lucide-folder" class="size-4 shrink-0 text-muted" />
+        <span class="flex-1 truncate text-sm font-medium text-default">
           {{ current?.name ?? 'Выбрать workspace' }}
         </span>
-      </UButton>
+        <UIcon name="i-lucide-chevrons-up-down" class="size-4 shrink-0 text-muted" />
+      </button>
     </UDropdownMenu>
     <WorkspaceCreateModal v-model:open="createOpen" />
   </div>

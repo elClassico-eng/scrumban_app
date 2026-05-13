@@ -17,7 +17,7 @@ function selectWorkspace(id: string) {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-6xl">
+  <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold tracking-tight">Воркспейсы</h1>
@@ -49,7 +49,7 @@ function selectWorkspace(id: string) {
         v-for="ws in workspaces"
         :key="ws.id"
         :to="pageRoutes.boards(ws.id)"
-        class="group glass-strong rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all hover:shadow-lg"
+        class="group surface rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all hover:shadow-md hover:border-accent-300"
         @click="selectWorkspace(ws.id)"
       >
         <div class="space-y-2">
@@ -76,7 +76,7 @@ function selectWorkspace(id: string) {
           </p>
         </div>
 
-        <div class="inline-flex items-center gap-1.5 text-xs font-medium text-default border-b border-current pb-0.5 w-fit transition-transform group-hover:translate-x-1">
+        <div class="inline-flex items-center gap-1.5 text-xs font-medium text-default group-hover:text-accent-600 border-b border-current pb-0.5 w-fit transition-all group-hover:translate-x-1">
           Открыть
           <UIcon name="i-lucide-arrow-right" class="size-3.5" />
         </div>

@@ -2,17 +2,20 @@
 import { z } from 'zod'
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth' })
+definePageMeta({ layout: 'auth', cardMaxWidth: 'max-w-xl' })
 useHead({ title: 'Регистрация — Scrumban' })
 
 type Step = 1 | 2 | 3
 const step = ref<Step>(1)
 
-const userSchema = z
+const personalSchema = z.object({
+  firstName: z.string().trim().min(1, 'Введи имя').max(100),
+  lastName: z.string().trim().min(1, 'Введи фамилию').max(100),
+  middleName: z.string().trim().max(100).optional(),
+})
+
+const credentialsSchema = z
   .object({
-    firstName: z.string().trim().min(1, 'Введи имя').max(100),
-    lastName: z.string().trim().min(1, 'Введи фамилию').max(100),
-    middleName: z.string().trim().max(100).optional(),
     email: z.email('Введи корректный email').max(255),
     password: z.string().min(8, 'Минимум 8 символов').max(128),
     confirmPassword: z.string(),
@@ -31,13 +34,17 @@ const teamSchema = z.object({
   purpose: z.string().trim().max(2000).optional(),
 })
 
-type UserState = z.infer<typeof userSchema>
+type PersonalState = z.infer<typeof personalSchema>
+type CredentialsState = z.infer<typeof credentialsSchema>
 type TeamState = z.infer<typeof teamSchema>
 
-const userState = reactive<UserState>({
+const personalState = reactive<PersonalState>({
   firstName: '',
   lastName: '',
   middleName: '',
+})
+
+const credentialsState = reactive<CredentialsState>({
   email: '',
   password: '',
   confirmPassword: '',
@@ -51,7 +58,6 @@ const teamState = reactive<TeamState>({
   purpose: '',
 })
 
-// Auto-derive slug from team name until the user manually edits it.
 const slugTouched = ref(false)
 watch(() => teamState.name, (name) => {
   if (!slugTouched.value) teamState.slug = slugify(name)
@@ -60,8 +66,8 @@ watch(() => teamState.name, (name) => {
 const submitting = ref(false)
 const submitError = ref<string | null>(null)
 
-function nextFromUser() {
-  const parsed = userSchema.safeParse(userState)
+function goToCredentials() {
+  const parsed = personalSchema.safeParse(personalState)
   if (!parsed.success) {
     submitError.value = parsed.error.issues[0]?.message ?? 'Заполни все поля'
     return
@@ -70,9 +76,20 @@ function nextFromUser() {
   step.value = 2
 }
 
-function backToUser() {
+function goToTeam() {
+  const parsed = credentialsSchema.safeParse(credentialsState)
+  if (!parsed.success) {
+    submitError.value = parsed.error.issues[0]?.message ?? 'Заполни все поля'
+    return
+  }
   submitError.value = null
-  step.value = 1
+  step.value = 3
+}
+
+function back() {
+  submitError.value = null
+  if (step.value === 3) step.value = 2
+  else if (step.value === 2) step.value = 1
 }
 
 async function finishOnboarding() {
@@ -85,18 +102,16 @@ async function finishOnboarding() {
   submitting.value = true
   submitError.value = null
   try {
-    // 1. Create user + auth session.
     await $fetch(apiRoutes.authRegister, {
       method: 'POST',
       body: {
-        email: userState.email,
-        password: userState.password,
-        firstName: userState.firstName,
-        lastName: userState.lastName,
-        middleName: userState.middleName || undefined,
+        email: credentialsState.email,
+        password: credentialsState.password,
+        firstName: personalState.firstName,
+        lastName: personalState.lastName,
+        middleName: personalState.middleName || undefined,
       },
     })
-    // 2. Create workspace. The session cookie from step 1 carries the new user.
     await $fetch(apiRoutes.workspaces, {
       method: 'POST',
       body: {
@@ -107,8 +122,6 @@ async function finishOnboarding() {
         purpose: teamState.purpose || undefined,
       },
     })
-    // 3. Hard reload — same pattern as login/logout. Wipes all client state
-    // and lets the fresh session bootstrap correctly.
     window.location.href = pageRoutes.workspaces
   }
   catch (err) {
@@ -122,26 +135,24 @@ async function finishOnboarding() {
   <div class="space-y-8">
     <div class="space-y-3">
       <p class="text-[11px] uppercase tracking-[0.18em] text-muted font-medium">
-        Шаг {{ step }} из 2
+        Шаг {{ step }} из 3
       </p>
       <div class="flex items-center gap-1.5">
         <div
+          v-for="i in 3"
+          :key="i"
           class="h-1 flex-1 rounded-full transition-colors"
-          :class="step >= 1 ? 'bg-primary' : 'bg-default/40'"
-        />
-        <div
-          class="h-1 flex-1 rounded-full transition-colors"
-          :class="step >= 2 ? 'bg-primary' : 'bg-default/40'"
+          :class="step >= i ? 'bg-primary' : 'bg-default/40'"
         />
       </div>
     </div>
 
     <UForm
       v-if="step === 1"
-      :state="userState"
-      :schema="userSchema"
+      :state="personalState"
+      :schema="personalSchema"
       class="space-y-6"
-      @submit.prevent="nextFromUser"
+      @submit.prevent="goToCredentials"
     >
       <div class="space-y-2">
         <h1 class="text-3xl font-bold tracking-tight">Расскажите о себе</h1>
@@ -152,23 +163,14 @@ async function finishOnboarding() {
       <div class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <UFormField label="Фамилия" name="lastName" required>
-            <UInput v-model="userState.lastName" size="lg" class="w-full" autofocus />
+            <UInput v-model="personalState.lastName" size="lg" class="w-full" autofocus />
           </UFormField>
           <UFormField label="Имя" name="firstName" required>
-            <UInput v-model="userState.firstName" size="lg" class="w-full" />
+            <UInput v-model="personalState.firstName" size="lg" class="w-full" />
           </UFormField>
         </div>
         <UFormField label="Отчество" name="middleName">
-          <UInput v-model="userState.middleName" size="lg" class="w-full" placeholder="Можно пропустить" />
-        </UFormField>
-        <UFormField label="Email" name="email" required>
-          <UInput v-model="userState.email" type="email" autocomplete="email" size="lg" class="w-full" />
-        </UFormField>
-        <UFormField label="Пароль" name="password" hint="Минимум 8 символов" required>
-          <UInput v-model="userState.password" type="password" autocomplete="new-password" size="lg" class="w-full" />
-        </UFormField>
-        <UFormField label="Повторите пароль" name="confirmPassword" required>
-          <UInput v-model="userState.confirmPassword" type="password" autocomplete="new-password" size="lg" class="w-full" />
+          <UInput v-model="personalState.middleName" size="lg" class="w-full" placeholder="Можно пропустить" />
         </UFormField>
       </div>
       <UAlert
@@ -191,6 +193,47 @@ async function finishOnboarding() {
 
     <UForm
       v-else-if="step === 2"
+      :state="credentialsState"
+      :schema="credentialsSchema"
+      class="space-y-6"
+      @submit.prevent="goToTeam"
+    >
+      <div class="space-y-2">
+        <h1 class="text-3xl font-bold tracking-tight">Учётные данные</h1>
+        <p class="text-sm text-muted leading-relaxed">
+          С этим email и паролем будете заходить в Scrumban.
+        </p>
+      </div>
+      <div class="space-y-4">
+        <UFormField label="Email" name="email" required>
+          <UInput v-model="credentialsState.email" type="email" autocomplete="email" size="lg" class="w-full" autofocus />
+        </UFormField>
+        <UFormField label="Пароль" name="password" hint="Минимум 8 символов" required>
+          <UInput v-model="credentialsState.password" type="password" autocomplete="new-password" size="lg" class="w-full" />
+        </UFormField>
+        <UFormField label="Повторите пароль" name="confirmPassword" required>
+          <UInput v-model="credentialsState.confirmPassword" type="password" autocomplete="new-password" size="lg" class="w-full" />
+        </UFormField>
+      </div>
+      <UAlert
+        v-if="submitError"
+        color="error"
+        variant="soft"
+        :title="submitError"
+        icon="i-lucide-alert-circle"
+      />
+      <div class="grid grid-cols-[auto_1fr] gap-3 pt-2">
+        <UButton type="button" variant="ghost" color="neutral" size="xl" @click="back">
+          Назад
+        </UButton>
+        <UButton type="submit" block size="xl" class="font-semibold">
+          Дальше
+        </UButton>
+      </div>
+    </UForm>
+
+    <UForm
+      v-else-if="step === 3"
       :state="teamState"
       :schema="teamSchema"
       class="space-y-6"
@@ -205,7 +248,7 @@ async function finishOnboarding() {
       <div class="space-y-4">
         <UFormField label="Название команды" name="name" required>
           <UInput v-model="teamState.name" size="lg" class="w-full" autofocus />
-      </UFormField>
+        </UFormField>
         <UFormField
           label="Slug"
           name="slug"
@@ -247,10 +290,10 @@ async function finishOnboarding() {
         icon="i-lucide-alert-circle"
       />
       <div class="flex gap-3 pt-2">
-        <UButton type="button" variant="ghost" color="neutral" size="xl" @click="backToUser">
+        <UButton type="button" variant="ghost" color="neutral" size="xl" @click="back">
           Назад
         </UButton>
-        <UButton type="submit" :loading="submitting" size="xl" class="flex-1 font-semibold">
+        <UButton type="submit" :loading="submitting" block size="xl" class="font-semibold">
           Готово
         </UButton>
       </div>

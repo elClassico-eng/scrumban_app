@@ -199,7 +199,7 @@ async function onRemove(userId: string, email: string) {
       <div
         v-for="member in members"
         :key="member.userId"
-        class="glass-strong rounded-xl p-4 flex flex-col gap-3 transition-all hover:shadow-md"
+        class="surface rounded-xl p-4 flex flex-col gap-3 transition-all hover:shadow-md hover:border-accent-300"
       >
         <div class="flex items-center gap-3">
           <div class="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0 overflow-hidden">
