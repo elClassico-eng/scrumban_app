@@ -17,10 +17,17 @@ const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
 const tId = computed(() => props.taskId)
 
+const { list: workspacesList } = useWorkspacesApi()
 const { list: tasksList, update, remove } = useTasksApi(wsId, bId)
 const { list: columnsList } = useColumnsApi(wsId, bId)
 const { list: membersList } = useMembersApi(wsId)
 const { list: eventsQuery } = useTaskEventsApi(wsId, bId, tId)
+
+const workspace = computed(() =>
+  workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
+)
+// Match server-side rbac: deleteTask requires admin+ (services/tasks.service.ts).
+const canDelete = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 const task = computed(() =>
   tasksList.data.value?.tasks.find(t => t.id === tId.value) ?? null,
@@ -161,7 +168,7 @@ function clearParent() {
       <span class="text-xs text-muted uppercase tracking-wide">Задача</span>
       <div class="flex items-center gap-1">
         <UButton
-          v-if="task"
+          v-if="task && canDelete"
           icon="i-lucide-trash-2"
           color="error"
           variant="ghost"
