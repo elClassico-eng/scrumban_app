@@ -106,19 +106,18 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
 
 <template>
   <div class="flex items-center justify-between gap-4 pb-3 border-b border-default">
-    <div class="flex items-center gap-3 min-w-0">
+    <div class="flex flex-col min-w-0 gap-0.5">
       <NuxtLink
         :to="pageRoutes.boards(workspaceId)"
-        class="text-sm text-muted hover:text-default flex items-center gap-1 shrink-0"
+        class="text-xs text-muted hover:text-default transition-colors w-fit"
       >
-        <UIcon name="i-lucide-arrow-left" class="size-4" />
-        К доскам
+        Доски
       </NuxtLink>
       <input
         v-if="isEditing"
         ref="inputRef"
         v-model="draftName"
-        class="text-xl font-bold tracking-tight bg-transparent border-b border-primary outline-none min-w-0 flex-1"
+        class="text-xl font-bold tracking-tight bg-transparent border-b border-primary outline-none min-w-0"
         :disabled="update.isPending.value"
         @keyup.enter="commitEdit"
         @keyup.esc="cancelEdit"
@@ -133,41 +132,51 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
       >
         {{ boardName ?? 'Доска' }}
       </h1>
-      <UTooltip v-if="sleLabel" :text="sleTooltip">
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="sm"
-          :class="canRename ? 'cursor-pointer hover:bg-accented' : ''"
-          @click="canRename && (settingsOpen = true)"
-        >
-          {{ sleLabel }}
-        </UBadge>
-      </UTooltip>
-      <UTooltip v-if="replenishmentState" :text="replenishmentTooltip">
-        <UBadge
-          :color="replenishmentState.overdue ? 'error' : 'success'"
-          variant="subtle"
-          size="sm"
-          icon="i-lucide-calendar-clock"
-          :class="canRename ? 'cursor-pointer hover:opacity-80' : ''"
-          @click="canRename && onMarkReplenishment()"
-        >
-          {{ replenishmentState.label }}
-        </UBadge>
-      </UTooltip>
-      <UTooltip v-else-if="canRename && board" :text="replenishmentTooltip">
-        <UButton
-          icon="i-lucide-calendar-plus"
-          color="neutral"
-          variant="soft"
-          size="xs"
-          :loading="recordReplenishment.isPending.value"
-          @click="onMarkReplenishment"
-        >
-          Запустить пополнение
-        </UButton>
-      </UTooltip>
+      <div
+        v-if="sleLabel || replenishmentState || (canRename && board)"
+        class="flex items-center gap-2 text-xs text-muted flex-wrap"
+      >
+        <UTooltip v-if="sleLabel" :text="sleTooltip">
+          <button
+            type="button"
+            :disabled="!canRename"
+            class="transition-colors disabled:cursor-default tabular-nums"
+            :class="canRename ? 'cursor-pointer hover:text-default' : ''"
+            @click="canRename && (settingsOpen = true)"
+          >
+            {{ sleLabel }}
+          </button>
+        </UTooltip>
+        <span
+          v-if="sleLabel && (replenishmentState || (canRename && board))"
+          class="opacity-40"
+        >·</span>
+        <UTooltip v-if="replenishmentState" :text="replenishmentTooltip">
+          <button
+            type="button"
+            :disabled="!canRename"
+            class="transition-colors disabled:cursor-default"
+            :class="[
+              replenishmentState.overdue ? 'text-accent-600' : '',
+              canRename && 'cursor-pointer',
+              canRename && (replenishmentState.overdue ? 'hover:text-accent-700' : 'hover:text-default'),
+            ]"
+            @click="canRename && onMarkReplenishment()"
+          >
+            {{ replenishmentState.label }}
+          </button>
+        </UTooltip>
+        <UTooltip v-else-if="canRename && board" :text="replenishmentTooltip">
+          <button
+            type="button"
+            :disabled="recordReplenishment.isPending.value"
+            class="transition-colors cursor-pointer hover:text-default disabled:opacity-60 disabled:cursor-default"
+            @click="onMarkReplenishment"
+          >
+            Запустить пополнение
+          </button>
+        </UTooltip>
+      </div>
     </div>
     <div class="flex items-center gap-2 shrink-0">
       <nav class="flex gap-1 items-center">

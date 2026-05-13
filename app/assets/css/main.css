@@ -4,17 +4,30 @@
 @theme static {
   --font-sans: 'Manrope', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --color-brand-50: #fafafa;
-  --color-brand-100: #f4f4f5;
-  --color-brand-200: #e4e4e7;
-  --color-brand-300: #d4d4d8;
-  --color-brand-400: #71717a;
+    
+  --color-brand-50: #f9f9f9;
+  --color-brand-100: #f4f4f4;
+  --color-brand-200: #e5e5e5;
+  --color-brand-300: #a7a7a7;
+  --color-brand-400: #646464;
   --color-brand-500: #000000;
   --color-brand-600: #000000;
   --color-brand-700: #000000;
   --color-brand-800: #000000;
   --color-brand-900: #000000;
   --color-brand-950: #000000;
+    
+  --color-accent-50: #fff4ed;
+  --color-accent-100: #ffe6d4;
+  --color-accent-200: #ffc8a8;
+  --color-accent-300: #ffa371;
+  --color-accent-400: #fb7338;
+  --color-accent-500: #e85002;
+  --color-accent-600: #d9420b;
+  --color-accent-700: #b3310c;
+  --color-accent-800: #8e2812;
+  --color-accent-900: #722312;
+  --color-accent-950: #3e0e07;
 }
 
 html,
@@ -22,49 +35,40 @@ body {
   min-height: 100vh;
 }
 
+/* Flat off-white bg replaces the pastel gradient. Surfaces (sidebar /
+   header / cards) sit on this with their own thin borders. */
 body {
-  background-image: linear-gradient(
-    to top,
-    #f3e7e9 0%,
-    #e3eeff 99%,
-    #e3eeff 100%
-  );
-  background-attachment: fixed;
+  background-color: #f9f9f9;
 }
 
-html.dark body {
-  background-image: linear-gradient(
-    to top,
-    #1f1830 0%,
-    #14182a 99%,
-    #14182a 100%
-  );
+@utility surface {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+@utility surface-elevated {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+@utility brand-gradient {
+  background: linear-gradient(135deg, #000000 0%, #c10801 35%, #f16001 70%, #d9c3ab 100%);
 }
 
 @utility glass {
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 4px 30px rgba(31, 38, 135, 0.08);
-}
-
-html.dark .glass {
-  background: rgba(20, 22, 35, 0.55);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 @utility glass-strong {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow: 0 12px 48px rgba(31, 38, 135, 0.12);
-}
-
-html.dark .glass-strong {
-  background: rgba(20, 22, 35, 0.7);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
