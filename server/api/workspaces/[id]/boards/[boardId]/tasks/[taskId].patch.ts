@@ -20,6 +20,9 @@ const BodySchema = z
     serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']).optional(),
     dueDate: z.iso.datetime().nullable().optional(),
     assigneeId: z.uuid().nullable().optional(),
+    parentTaskId: z.uuid().nullable().optional(),
+    blockedReason: z.string().max(500).nullable().optional(),
+    isEpic: z.boolean().optional(),
   })
   .refine(
     (d) =>
@@ -27,7 +30,10 @@ const BodySchema = z
       d.description !== undefined ||
       d.serviceClass !== undefined ||
       d.dueDate !== undefined ||
-      d.assigneeId !== undefined,
+      d.assigneeId !== undefined ||
+      d.parentTaskId !== undefined ||
+      d.blockedReason !== undefined ||
+      d.isEpic !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -49,6 +55,9 @@ export default defineEventHandler(async (event) => {
           ? { dueDate: body.dueDate === null ? null : new Date(body.dueDate) }
           : {}),
         ...('assigneeId' in body ? { assigneeId: body.assigneeId } : {}),
+        ...('parentTaskId' in body ? { parentTaskId: body.parentTaskId } : {}),
+        ...('blockedReason' in body ? { blockedReason: body.blockedReason } : {}),
+        ...(body.isEpic !== undefined ? { isEpic: body.isEpic } : {}),
       },
       actorRole: workspace.role,
     })
