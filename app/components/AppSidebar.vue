@@ -19,6 +19,13 @@ const links = computed(() => {
       { label: 'Доски', icon: 'i-lucide-kanban-square', to: pageRoutes.boards(current.value.id) },
       { label: 'Участники', icon: 'i-lucide-users', to: pageRoutes.workspaceMembers(current.value.id) },
     )
+    if (hasRole(current.value.role, 'admin')) {
+      out.push({
+        label: 'Настройки',
+        icon: 'i-lucide-settings',
+        to: pageRoutes.workspaceSettings(current.value.id),
+      })
+    }
   }
   return out
 })

@@ -7,5 +7,6 @@
         <slot />
       </main>
     </div>
+    <IntroduceModal />
   </div>
 </template>

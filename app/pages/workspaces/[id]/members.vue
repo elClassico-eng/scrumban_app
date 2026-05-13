@@ -119,7 +119,7 @@ async function onRemove(userId: string, email: string) {
 </script>
 
 <template>
-  <div class="space-y-6 max-w-4xl">
+  <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div class="min-w-0">
         <h1 class="text-2xl font-bold tracking-tight">Участники</h1>
@@ -169,14 +169,14 @@ async function onRemove(userId: string, email: string) {
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
     </div>
 
-    <UCard v-else>
-      <div class="divide-y divide-default">
-        <div
-          v-for="member in members"
-          :key="member.userId"
-          class="flex items-center gap-4 py-3 first:pt-0 last:pb-0"
-        >
-          <div class="size-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium text-sm shrink-0 overflow-hidden">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div
+        v-for="member in members"
+        :key="member.userId"
+        class="bg-default border border-default rounded-lg p-5 flex flex-col gap-4 hover:border-primary/40 transition-colors"
+      >
+        <div class="flex items-start gap-4">
+          <div class="size-14 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-lg shrink-0 overflow-hidden">
             <img
               v-if="member.avatarUrl"
               :src="member.avatarUrl"
@@ -185,34 +185,41 @@ async function onRemove(userId: string, email: string) {
             >
             <span v-else>{{ initials(member) }}</span>
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium truncate">{{ displayName(member) }}</p>
-            <p class="text-xs text-muted truncate">
-              {{ member.jobTitle ? `${member.jobTitle} · ` : '' }}{{ member.email }}
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <template v-if="canManage && canEditMember(myRole, member.role)">
-              <USelect
-                :model-value="member.role"
-                :items="rolesAssignableBy(myRole)"
-                size="sm"
-                @update:model-value="(v: Role) => onRoleChange(member.userId, v)"
-              />
-              <UButton
-                icon="i-lucide-trash-2"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                :loading="remove.isPending.value"
-                @click="onRemove(member.userId, member.email)"
-              />
-            </template>
-            <WorkspaceMemberRoleBadge v-else :role="member.role" />
+          <div class="flex-1 min-w-0 space-y-1">
+            <p class="font-semibold text-base truncate">{{ displayName(member) }}</p>
+            <p v-if="member.jobTitle" class="text-sm text-muted truncate">{{ member.jobTitle }}</p>
+            <p class="text-xs text-muted truncate">{{ member.email }}</p>
           </div>
         </div>
+
+        <div class="flex items-center justify-between gap-2 pt-3 border-t border-default">
+          <template v-if="canManage && canEditMember(myRole, member.role)">
+            <USelect
+              :model-value="member.role"
+              :items="rolesAssignableBy(myRole)"
+              size="sm"
+              class="flex-1"
+              @update:model-value="(v: Role) => onRoleChange(member.userId, v)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              color="neutral"
+              variant="ghost"
+              size="sm"
+              :loading="remove.isPending.value"
+              title="Удалить из workspace"
+              @click="onRemove(member.userId, member.email)"
+            />
+          </template>
+          <template v-else>
+            <WorkspaceMemberRoleBadge :role="member.role" />
+            <span class="text-xs text-muted">
+              c {{ new Date(member.createdAt).toLocaleDateString('ru', { day: '2-digit', month: 'short' }) }}
+            </span>
+          </template>
+        </div>
       </div>
-    </UCard>
+    </div>
 
     <WorkspaceAddMemberModal v-if="canManage" v-model:open="addOpen" :workspace-id="wsId" />
   </div>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { pageRoutes } from '~/routing'
+
 const colorMode = useColorMode()
 const authStore = useAuthStore()
 const { logout } = useAuthApi()
@@ -22,10 +24,14 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
       <span class="font-semibold tracking-tight">Scrumban</span>
     </div>
     <div class="flex items-center gap-3">
-      <div v-if="authStore.user" class="flex items-center gap-2">
+      <NuxtLink
+        v-if="authStore.user"
+        :to="pageRoutes.me"
+        class="flex items-center gap-2 hover:bg-accented/60 rounded-md px-2 py-1 -mx-1 transition-colors"
+        :title="`${userName ?? ''} — личный кабинет`"
+      >
         <div
           class="size-7 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center shrink-0 overflow-hidden"
-          :title="userName ?? undefined"
         >
           <img
             v-if="authStore.user.avatarUrl"
@@ -38,7 +44,7 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
         <span class="text-sm text-default hidden sm:block">
           {{ userName }}
         </span>
-      </div>
+      </NuxtLink>
       <UButton
         :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
         color="neutral"
