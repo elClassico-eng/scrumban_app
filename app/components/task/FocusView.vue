@@ -344,6 +344,14 @@ function clearParent() {
             placeholder="Почему задача заблокирована"
           />
         </section>
+
+        <section class="space-y-3 pt-6 border-t border-default">
+          <TaskCommentsSection
+            :workspace-id="wsId"
+            :board-id="bId"
+            :task-id="task.id"
+          />
+        </section>
       </main>
 
       <aside class="border-l border-default bg-elevated/30 overflow-y-auto px-6 py-6 space-y-4">

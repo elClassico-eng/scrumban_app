@@ -52,6 +52,11 @@ export const apiRoutes = {
   taskChecklistReorder: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist/reorder`,
 
+  taskComments: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/comments`,
+  taskComment: (wsId: string, boardId: string, taskId: string, commentId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/comments/${commentId}`,
+
   sprints: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/sprints`,
   sprint: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}`,
