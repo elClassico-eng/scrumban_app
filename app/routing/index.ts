@@ -83,6 +83,12 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/analytics/wip-recommendations`,
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
+
+  notifications: '/api/notifications',
+  notificationsUnreadCount: '/api/notifications/unread-count',
+  notificationRead: (id: string) => `/api/notifications/${id}/read`,
+  notificationsReadAll: '/api/notifications/read-all',
+  notificationsStream: '/api/notifications/stream',
 } as const
 
 export const pageRoutes = {

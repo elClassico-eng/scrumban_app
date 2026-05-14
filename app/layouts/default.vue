@@ -1,3 +1,7 @@
+<script setup lang="ts">
+useNotificationsSse()
+</script>
+
 <template>
   <div class="h-screen flex overflow-hidden">
     <AppSidebar />
