@@ -7,6 +7,7 @@ import { findWorkspaceForUser, listWorkspacesForUser } from '../../../../service
 const ALLOWED_TASKS = [
   'notifications:check-sle-breaches',
   'notifications:check-replenishment',
+  'notifications:check-sprint-forecast',
 ] as const
 
 const ParamsSchema = z.object({ name: z.string().min(1) })

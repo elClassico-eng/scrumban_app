@@ -1,17 +1,21 @@
-import { and, desc, eq, gte, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, gt, gte, isNotNull, isNull, sql } from 'drizzle-orm'
 import {
   boardColumns,
   boards,
   notifications,
+  sprintTasks,
+  sprints,
   taskEvents,
   tasks,
   workspaceMembers,
   workspaces,
 } from '../db/schema'
 import { setUserContext, useDB, withTenant } from '../utils/db'
+import { computeMonteCarlo } from './analytics.service'
 import { emitNotification } from './notifications.service'
 
 const SLE_BREACH_THRESHOLD = 0.85
+const SPRINT_FORECAST_THRESHOLD = 0.70
 const DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000
 const FLOW_ALERT_ROLES = ['owner', 'admin', 'scrum_master'] as const
 
@@ -197,4 +201,98 @@ async function emitIfFresh(input: {
     payload: input.payload,
   })
   return true
+}
+
+export async function checkSprintForecast(): Promise<FlowAlertResult> {
+  const wsList = await useDB().select({ id: workspaces.id }).from(workspaces)
+
+  let scanned = 0
+  let emitted = 0
+
+  for (const ws of wsList) {
+    const candidates = await withTenant(ws.id, async (tx) => {
+      const activeSprints = await tx
+        .select({
+          id: sprints.id,
+          name: sprints.name,
+          boardId: sprints.boardId,
+          plannedEndAt: sprints.plannedEndAt,
+        })
+        .from(sprints)
+        .where(and(
+          eq(sprints.state, 'active'),
+          isNotNull(sprints.plannedEndAt),
+          gt(sprints.plannedEndAt, new Date()),
+        ))
+
+      const out: { sprint: typeof activeSprints[number]; tasksRemaining: number }[] = []
+      for (const s of activeSprints) {
+        const [agg] = await tx
+          .select({ remaining: sql<number>`count(*)::int` })
+          .from(sprintTasks)
+          .innerJoin(tasks, eq(tasks.id, sprintTasks.taskId))
+          .where(and(
+            eq(sprintTasks.sprintId, s.id),
+            isNull(tasks.closedAt),
+          ))
+        out.push({ sprint: s, tasksRemaining: agg?.remaining ?? 0 })
+      }
+      return out
+    })
+
+    if (candidates.length === 0) continue
+
+    const recipients = await useDB()
+      .select({ userId: workspaceMembers.userId })
+      .from(workspaceMembers)
+      .where(and(
+        eq(workspaceMembers.workspaceId, ws.id),
+        sql`${workspaceMembers.role} IN ('owner', 'admin', 'scrum_master')`,
+      ))
+
+    if (recipients.length === 0) continue
+
+    for (const { sprint, tasksRemaining } of candidates) {
+      scanned += 1
+      if (tasksRemaining === 0) continue
+      const msLeft = new Date(sprint.plannedEndAt!).getTime() - Date.now()
+      const daysLeft = Math.ceil(msLeft / 86_400_000)
+      if (daysLeft <= 0) continue
+
+      const report = await computeMonteCarlo({
+        workspaceId: ws.id,
+        boardId: sprint.boardId,
+        tasksRemaining,
+        horizonDays: daysLeft,
+        actorRole: 'viewer',
+      })
+      if (!report.ok) continue
+      if (report.probability >= SPRINT_FORECAST_THRESHOLD) continue
+
+      await withTenant(ws.id, async (tx) => {
+        for (const r of recipients) {
+          const wasEmitted = await emitIfFresh({
+            tx,
+            workspaceId: ws.id,
+            recipientId: r.userId,
+            type: 'sprint_forecast_drop',
+            dedupeKey: `sprintId=${sprint.id}`,
+            payload: {
+              sprintId: sprint.id,
+              boardId: sprint.boardId,
+              sprintName: sprint.name,
+              probability: report.probability,
+              currentP85: report.percentileDays.p85,
+              deadline: sprint.plannedEndAt!.toISOString(),
+              daysLeft,
+              tasksRemaining,
+            },
+          })
+          if (wasEmitted) emitted += 1
+        }
+      })
+    }
+  }
+
+  return { scanned, emitted }
 }

@@ -95,7 +95,10 @@ interface TaskResult {
 
 async function runFlowTask(
   actor: UserCtx,
-  name: 'notifications:check-sle-breaches' | 'notifications:check-replenishment',
+  name:
+    | 'notifications:check-sle-breaches'
+    | 'notifications:check-replenishment'
+    | 'notifications:check-sprint-forecast',
 ): Promise<TaskResult['result']> {
   const res = await fetchWithJar<TaskResult>(
     actor.jar,
@@ -323,6 +326,170 @@ describe('flow-alerts: replenishment overdue', () => {
     const second = await runFlowTask(owner, 'notifications:check-replenishment')
     expect(first.emitted).toBe(1)
     expect(second.emitted).toBe(0)
+  })
+})
+
+async function createAndStartSprint(
+  actor: UserCtx,
+  wsId: string,
+  boardId: string,
+  daysAhead: number,
+): Promise<string> {
+  const created = await fetchWithJar<{ sprint: { id: string } }>(
+    actor.jar,
+    `/api/workspaces/${wsId}/boards/${boardId}/sprints`,
+    { method: 'POST', body: { name: 'S1' } },
+  )
+  const sprintId = created.body.sprint.id
+
+  const sql = getTestSql()
+  const endIso = new Date(Date.now() + daysAhead * 86_400_000).toISOString()
+  await sql.unsafe(
+    `UPDATE sprints SET state = 'active', started_at = now(), planned_end_at = '${endIso}' WHERE id = '${sprintId}'`,
+  )
+  return sprintId
+}
+
+async function attachTaskToSprint(
+  actor: UserCtx,
+  wsId: string,
+  boardId: string,
+  sprintId: string,
+  taskId: string,
+): Promise<void> {
+  await fetchWithJar(
+    actor.jar,
+    `/api/workspaces/${wsId}/boards/${boardId}/sprints/${sprintId}/tasks`,
+    { method: 'POST', body: { taskId } },
+  )
+}
+
+describe('flow-alerts: sprint forecast drop', () => {
+  it('emits when Monte Carlo probability falls below 70%', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+
+    const seedTaskId = await createTask(owner, wsId, boardId, columns.backlog)
+    const sql = getTestSql()
+    await sql.unsafe(
+      `INSERT INTO task_events (workspace_id, task_id, event_type, to_column_id, actor_id, created_at)
+       VALUES ('${wsId}', '${seedTaskId}', 'task_closed', '${columns.done}', '${owner.id}', now() - interval '5 days')`,
+    )
+
+    const sprintId = await createAndStartSprint(owner, wsId, boardId, 1)
+    const ids: string[] = []
+    for (let i = 0; i < 5; i++) {
+      ids.push(await createTask(owner, wsId, boardId, columns.backlog))
+    }
+    for (const id of ids) await attachTaskToSprint(owner, wsId, boardId, sprintId, id)
+
+    const result = await runFlowTask(owner, 'notifications:check-sprint-forecast')
+    expect(result.emitted).toBeGreaterThanOrEqual(1)
+
+    const res = await fetchWithJar<{
+      notifications: { type: string; payload: { sprintId: string; probability: number } }[]
+    }>(owner.jar, '/api/notifications')
+    const notif = res.body.notifications.find(n => n.type === 'sprint_forecast_drop')
+    expect(notif).toBeTruthy()
+    expect(notif!.payload.sprintId).toBe(sprintId)
+    expect(notif!.payload.probability).toBeLessThan(0.70)
+  })
+
+  it('skips sprint with no remaining tasks', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId } = await createBoardWithColumns(owner, wsId)
+    await createAndStartSprint(owner, wsId, boardId, 5)
+
+    const result = await runFlowTask(owner, 'notifications:check-sprint-forecast')
+    expect(result.emitted).toBe(0)
+  })
+
+  it('skips sprint whose deadline has passed', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const taskId = await createTask(owner, wsId, boardId, columns.backlog)
+    const sprintId = await createAndStartSprint(owner, wsId, boardId, 5)
+    await attachTaskToSprint(owner, wsId, boardId, sprintId, taskId)
+
+    const sql = getTestSql()
+    await sql.unsafe(
+      `UPDATE sprints SET planned_end_at = now() - interval '1 day' WHERE id = '${sprintId}'`,
+    )
+
+    const result = await runFlowTask(owner, 'notifications:check-sprint-forecast')
+    expect(result.emitted).toBe(0)
+  })
+
+  it('skips when board has no throughput history (insufficient_data)', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const sprintId = await createAndStartSprint(owner, wsId, boardId, 5)
+    for (let i = 0; i < 3; i++) {
+      const tid = await createTask(owner, wsId, boardId, columns.backlog)
+      await attachTaskToSprint(owner, wsId, boardId, sprintId, tid)
+    }
+
+    const result = await runFlowTask(owner, 'notifications:check-sprint-forecast')
+    expect(result.emitted).toBe(0)
+  })
+
+  it('is idempotent within 24h dedupe window', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const seedTaskId = await createTask(owner, wsId, boardId, columns.backlog)
+    const sql = getTestSql()
+    await sql.unsafe(
+      `INSERT INTO task_events (workspace_id, task_id, event_type, to_column_id, actor_id, created_at)
+       VALUES ('${wsId}', '${seedTaskId}', 'task_closed', '${columns.done}', '${owner.id}', now() - interval '5 days')`,
+    )
+    const sprintId = await createAndStartSprint(owner, wsId, boardId, 1)
+    for (let i = 0; i < 5; i++) {
+      const tid = await createTask(owner, wsId, boardId, columns.backlog)
+      await attachTaskToSprint(owner, wsId, boardId, sprintId, tid)
+    }
+
+    const first = await runFlowTask(owner, 'notifications:check-sprint-forecast')
+    const second = await runFlowTask(owner, 'notifications:check-sprint-forecast')
+    expect(first.emitted).toBeGreaterThanOrEqual(1)
+    expect(second.emitted).toBe(0)
+  })
+
+  it('only notifies owner/admin/scrum_master, not regular members', async () => {
+    const owner = await registerUser('owner@example.com')
+    const member = await registerUser('member@example.com')
+    const wsId = await createWorkspace(owner)
+    await addMember(owner, wsId, 'member@example.com', 'member')
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const seedTaskId = await createTask(owner, wsId, boardId, columns.backlog)
+    const sql = getTestSql()
+    await sql.unsafe(
+      `INSERT INTO task_events (workspace_id, task_id, event_type, to_column_id, actor_id, created_at)
+       VALUES ('${wsId}', '${seedTaskId}', 'task_closed', '${columns.done}', '${owner.id}', now() - interval '5 days')`,
+    )
+    const sprintId = await createAndStartSprint(owner, wsId, boardId, 1)
+    for (let i = 0; i < 5; i++) {
+      const tid = await createTask(owner, wsId, boardId, columns.backlog)
+      await attachTaskToSprint(owner, wsId, boardId, sprintId, tid)
+    }
+
+    await runFlowTask(owner, 'notifications:check-sprint-forecast')
+
+    const memberRes = await fetchWithJar<{ notifications: { type: string }[] }>(
+      member.jar,
+      '/api/notifications',
+    )
+    expect(memberRes.body.notifications.filter(n => n.type === 'sprint_forecast_drop').length).toBe(0)
+
+    const ownerRes = await fetchWithJar<{ notifications: { type: string }[] }>(
+      owner.jar,
+      '/api/notifications',
+    )
+    expect(ownerRes.body.notifications.filter(n => n.type === 'sprint_forecast_drop').length).toBe(1)
   })
 })
 
