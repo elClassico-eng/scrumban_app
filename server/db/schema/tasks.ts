@@ -103,6 +103,8 @@ export const taskEventType = pgEnum('task_event_type', [
   'task_assigned',
   'task_updated',
   'task_archived',
+  'task_commented',
+  'task_comment_deleted',
 ])
 
 export const taskEvents = pgTable(
