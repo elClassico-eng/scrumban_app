@@ -211,29 +211,29 @@ function targetFor(e: ActivityEvent) {
         <div class="space-y-2">
           <p class="text-xs uppercase tracking-wide text-muted">Доска</p>
           <USelect
-            :model-value="filters.board ?? ''"
+            :model-value="filters.board ?? '__all__'"
             :items="[
-              { label: 'Все доски', value: '' },
+              { label: 'Все доски', value: '__all__' },
               ...(boardsList.data.value?.boards ?? []).map(b => ({ label: b.name, value: b.id })),
             ]"
             class="w-full"
-            @update:model-value="(v: string) => updateQuery({ board: v || null })"
+            @update:model-value="(v: string) => updateQuery({ board: v === '__all__' ? null : v })"
           />
         </div>
 
         <div class="space-y-2">
           <p class="text-xs uppercase tracking-wide text-muted">Участник</p>
           <USelect
-            :model-value="filters.actor ?? ''"
+            :model-value="filters.actor ?? '__all__'"
             :items="[
-              { label: 'Все участники', value: '' },
+              { label: 'Все участники', value: '__all__' },
               ...(membersList.data.value?.members ?? []).map(m => ({
                 label: displayName(m),
                 value: m.userId,
               })),
             ]"
             class="w-full"
-            @update:model-value="(v: string) => updateQuery({ actor: v || null })"
+            @update:model-value="(v: string) => updateQuery({ actor: v === '__all__' ? null : v })"
           />
         </div>
 
