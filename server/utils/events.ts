@@ -13,6 +13,8 @@ export type BoardEventType =
   | 'task.moved'
   | 'task.updated'
   | 'task.deleted'
+  | 'task.commented'
+  | 'task.comment_deleted'
 
 export interface BoardEvent {
   type: BoardEventType
