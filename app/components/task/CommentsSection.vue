@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import type { TaskComment } from '#shared/types/comment'
+import { useQueryClient } from '@tanstack/vue-query'
+import type { TaskComment, TaskCommentListResponse } from '#shared/types/comment'
+import type { MemberView } from '#shared/types/workspace'
 
 const props = defineProps<{
   workspaceId: string
@@ -16,6 +18,7 @@ const { list: membersList } = useMembersApi(wsId)
 const { list: workspacesList } = useWorkspacesApi()
 const auth = useAuthStore()
 const toast = useToast()
+const qc = useQueryClient()
 
 const comments = computed(() => list.data.value?.comments ?? [])
 const members = computed(() => membersList.data.value?.members ?? [])
@@ -24,8 +27,10 @@ const myRole = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value)?.role,
 )
 const isAdmin = computed(() => hasRole(myRole.value, 'admin'))
+const commentsQueryKey = computed(() => ['task-comments', wsId.value, bId.value, tId.value])
 
 const EDIT_WINDOW_MS = 5 * 60 * 1000
+const UNDO_DELAY_MS = 5000
 
 function canEdit(c: TaskComment): boolean {
   if (isAdmin.value) return true
@@ -39,41 +44,59 @@ function canDelete(c: TaskComment): boolean {
 }
 
 const composerBody = ref('')
+const composerMentions = ref<Record<string, string>>({})
 const composerRef = ref<HTMLTextAreaElement | null>(null)
 
-const mentionItems = computed(() =>
-  members.value.map(m => ({
-    label: displayName(m),
-    onSelect: () => insertMention(displayName(m), m.userId),
-  })),
-)
-
-function insertMention(name: string, userId: string) {
-  const token = formatMentionToken(name, userId)
+function insertMention(member: MemberView) {
+  const name = displayName(member)
+  composerMentions.value[name] = member.userId
   const el = composerRef.value
   if (!el) {
-    composerBody.value = `${composerBody.value} ${token} `.trim()
+    composerBody.value = `${composerBody.value} @${name} `.replace(/^\s+/, '')
     return
   }
-  const start = el.selectionStart ?? composerBody.value.length
+  let start = el.selectionStart ?? composerBody.value.length
   const end = el.selectionEnd ?? composerBody.value.length
+  
+  if (start > 0 && composerBody.value[start - 1] === '@' && start === end) {
+    start -= 1
+  }
   const before = composerBody.value.slice(0, start)
   const after = composerBody.value.slice(end)
-  const insert = `${token} `
+  const insert = `@${name} `
   composerBody.value = `${before}${insert}${after}`
   nextTick(() => {
     el.focus()
-    const caret = start + insert.length
+    const caret = before.length + insert.length
     el.setSelectionRange(caret, caret)
   })
 }
 
+const mentionPickerOpen = ref(false)
+function openMentionPicker() {
+  mentionPickerOpen.value = true
+}
+
+function onComposerInput(e: Event) {
+  const el = e.target as HTMLTextAreaElement
+  const cursor = el.selectionStart ?? 0
+  if (cursor > 0 && composerBody.value[cursor - 1] === '@') {
+    mentionPickerOpen.value = true
+  }
+}
+
+function onMentionSelectForComposer(member: MemberView) {
+  insertMention(member)
+}
+
 async function submitComment() {
-  const body = composerBody.value.trim()
-  if (!body) return
+  const visible = composerBody.value.trim()
+  if (!visible) return
+  const body = serializeMentions(visible, composerMentions.value)
   try {
     await create.mutateAsync({ body })
     composerBody.value = ''
+    composerMentions.value = {}
   }
   catch (err) {
     toast.add({
@@ -85,27 +108,67 @@ async function submitComment() {
 }
 
 const editingId = ref<string | null>(null)
-const editDraft = ref('')
+const editVisible = ref('')
+const editMentions = ref<Record<string, string>>({})
+const editRef = ref<HTMLTextAreaElement | null>(null)
+const editPickerOpen = ref(false)
 
 function startEdit(c: TaskComment) {
+  const { text, mentions } = deserializeMentions(c.body)
   editingId.value = c.id
-  editDraft.value = c.body
+  editVisible.value = text
+  editMentions.value = mentions
 }
 
 function cancelEdit() {
   editingId.value = null
-  editDraft.value = ''
+  editVisible.value = ''
+  editMentions.value = {}
+}
+
+function onEditInput(e: Event) {
+  const el = e.target as HTMLTextAreaElement
+  const cursor = el.selectionStart ?? 0
+  if (cursor > 0 && editVisible.value[cursor - 1] === '@') {
+    editPickerOpen.value = true
+  }
+}
+
+function onMentionSelectForEdit(member: MemberView) {
+  const name = displayName(member)
+  editMentions.value[name] = member.userId
+  const el = editRef.value
+  if (!el) {
+    editVisible.value = `${editVisible.value} @${name} `.replace(/^\s+/, '')
+    return
+  }
+  let start = el.selectionStart ?? editVisible.value.length
+  const end = el.selectionEnd ?? editVisible.value.length
+  if (start > 0 && editVisible.value[start - 1] === '@' && start === end) {
+    start -= 1
+  }
+  const before = editVisible.value.slice(0, start)
+  const after = editVisible.value.slice(end)
+  const insert = `@${name} `
+  editVisible.value = `${before}${insert}${after}`
+  nextTick(() => {
+    el.focus()
+    const caret = before.length + insert.length
+    el.setSelectionRange(caret, caret)
+  })
 }
 
 async function commitEdit() {
   const id = editingId.value
   if (!id) return
-  const body = editDraft.value.trim()
-  if (!body) return
+  const visible = editVisible.value.trim()
+  if (!visible) return
+  const body = serializeMentions(visible, editMentions.value)
   try {
     await update.mutateAsync({ commentId: id, body })
     editingId.value = null
-    editDraft.value = ''
+    editVisible.value = ''
+    editMentions.value = {}
   }
   catch (err) {
     toast.add({
@@ -116,25 +179,47 @@ async function commitEdit() {
   }
 }
 
-const confirm = useConfirm()
-async function onRemove(c: TaskComment) {
-  const ok = await confirm({
-    title: 'Удалить комментарий?',
-    description: 'Действие необратимо.',
-    confirmLabel: 'Удалить',
-    confirmColor: 'error',
-  })
-  if (!ok) return
-  try {
-    await remove.mutateAsync(c.id)
-  }
-  catch (err) {
-    toast.add({
-      title: getErrorMessage(err, 'Не удалось удалить комментарий'),
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
+function onDelete(c: TaskComment) {
+  const prev = qc.getQueryData<TaskCommentListResponse>(commentsQueryKey.value)
+  if (prev) {
+    qc.setQueryData<TaskCommentListResponse>(commentsQueryKey.value, {
+      comments: prev.comments.filter((x: TaskComment) => x.id !== c.id),
     })
   }
+
+  let cancelled = false
+  const timer = setTimeout(async () => {
+    if (cancelled) return
+    try {
+      await remove.mutateAsync(c.id)
+    }
+    catch (err) {
+      if (prev) qc.setQueryData(commentsQueryKey.value, prev)
+      toast.add({
+        title: getErrorMessage(err, 'Не удалось удалить комментарий'),
+        color: 'error',
+        icon: 'i-lucide-alert-circle',
+      })
+    }
+  }, UNDO_DELAY_MS)
+
+  toast.add({
+    title: 'Комментарий удалён',
+    icon: 'i-lucide-trash-2',
+    duration: UNDO_DELAY_MS,
+    actions: [
+      {
+        label: 'Отменить',
+        color: 'neutral',
+        variant: 'outline',
+        onClick: () => {
+          cancelled = true
+          clearTimeout(timer)
+          if (prev) qc.setQueryData(commentsQueryKey.value, prev)
+        },
+      },
+    ],
+  })
 }
 </script>
 
@@ -175,22 +260,36 @@ async function onRemove(c: TaskComment) {
 
           <div v-if="editingId === c.id" class="mt-1 space-y-2">
             <UTextarea
-              v-model="editDraft"
+              ref="editRef"
+              v-model="editVisible"
               :rows="3"
               class="w-full"
               autofocus
+              @input="onEditInput"
             />
-            <div class="flex items-center gap-2">
+            <div class="flex items-center justify-between gap-2">
               <UButton
+                icon="i-lucide-at-sign"
                 size="xs"
-                :loading="update.isPending.value"
-                @click="commitEdit"
+                variant="ghost"
+                color="neutral"
+                @click="editPickerOpen = true"
               >
-                Сохранить
+                Упомянуть
               </UButton>
-              <UButton size="xs" variant="ghost" color="neutral" @click="cancelEdit">
-                Отмена
-              </UButton>
+              <div class="flex items-center gap-2">
+                <UButton size="xs" variant="ghost" color="neutral" @click="cancelEdit">
+                  Отмена
+                </UButton>
+                <UButton
+                  size="xs"
+                  :loading="update.isPending.value"
+                  :disabled="!editVisible.trim()"
+                  @click="commitEdit"
+                >
+                  Сохранить
+                </UButton>
+              </div>
             </div>
           </div>
 
@@ -205,29 +304,25 @@ async function onRemove(c: TaskComment) {
           </p>
         </div>
 
-        <div
+        <UDropdownMenu
           v-if="editingId !== c.id && (canEdit(c) || canDelete(c))"
-          class="opacity-0 group-hover:opacity-100 transition-opacity flex items-start gap-1 shrink-0"
+          :items="[
+            ...(canEdit(c)
+              ? [{ label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => startEdit(c) }]
+              : []),
+            ...(canDelete(c)
+              ? [{ label: 'Удалить', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => onDelete(c) }]
+              : []),
+          ]"
         >
           <UButton
-            v-if="canEdit(c)"
-            icon="i-lucide-pencil"
+            icon="i-lucide-more-horizontal"
             size="xs"
             variant="ghost"
             color="neutral"
-            title="Редактировать"
-            @click="startEdit(c)"
+            class="shrink-0"
           />
-          <UButton
-            v-if="canDelete(c)"
-            icon="i-lucide-trash-2"
-            size="xs"
-            variant="ghost"
-            color="neutral"
-            title="Удалить"
-            @click="onRemove(c)"
-          />
-        </div>
+        </UDropdownMenu>
       </div>
     </div>
 
@@ -242,18 +337,18 @@ async function onRemove(c: TaskComment) {
         :rows="3"
         placeholder="Напиши комментарий..."
         class="w-full"
+        @input="onComposerInput"
       />
       <div class="flex items-center justify-between gap-2">
-        <UDropdownMenu :items="mentionItems" :ui="{ content: 'w-56 max-h-60 overflow-y-auto' }">
-          <UButton
-            icon="i-lucide-at-sign"
-            size="xs"
-            variant="ghost"
-            color="neutral"
-          >
-            Упомянуть
-          </UButton>
-        </UDropdownMenu>
+        <UButton
+          icon="i-lucide-at-sign"
+          size="xs"
+          variant="ghost"
+          color="neutral"
+          @click="openMentionPicker"
+        >
+          Упомянуть
+        </UButton>
         <UButton
           icon="i-lucide-send"
           size="sm"
@@ -265,5 +360,16 @@ async function onRemove(c: TaskComment) {
         </UButton>
       </div>
     </div>
+
+    <TaskMentionPicker
+      v-model:open="mentionPickerOpen"
+      :members="members"
+      @select="onMentionSelectForComposer"
+    />
+    <TaskMentionPicker
+      v-model:open="editPickerOpen"
+      :members="members"
+      @select="onMentionSelectForEdit"
+    />
   </div>
 </template>
