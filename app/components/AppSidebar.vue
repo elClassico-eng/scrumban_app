@@ -22,6 +22,7 @@ const links = computed(() => {
     out.push(
       { label: 'Доски', icon: 'i-lucide-kanban-square', to: pageRoutes.boards(current.value.id) },
       { label: 'Участники', icon: 'i-lucide-users', to: pageRoutes.workspaceMembers(current.value.id) },
+      { label: 'Активность', icon: 'i-lucide-activity', to: pageRoutes.workspaceActivity(current.value.id) },
     )
     if (hasRole(current.value.role, 'admin')) {
       out.push({

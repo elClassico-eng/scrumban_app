@@ -84,6 +84,8 @@ export const apiRoutes = {
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
 
+  workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
+
   notifications: '/api/notifications',
   notificationsUnreadCount: '/api/notifications/unread-count',
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
@@ -102,6 +104,7 @@ export const pageRoutes = {
   workspace: (id: string) => `/workspaces/${id}`,
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
   workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
+  workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
 
   boards: (wsId: string) => `/workspaces/${wsId}/boards`,
   board: (wsId: string, boardId: string) => `/workspaces/${wsId}/boards/${boardId}`,
