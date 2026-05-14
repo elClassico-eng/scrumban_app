@@ -15,6 +15,8 @@ const EVENT_ICON: Record<TaskEventType, string> = {
   task_assigned: 'i-lucide-user-check',
   task_updated: 'i-lucide-pencil',
   task_archived: 'i-lucide-archive',
+  task_commented: 'i-lucide-message-square',
+  task_comment_deleted: 'i-lucide-message-square-off',
 }
 
 const EVENT_COLOR: Record<TaskEventType, string> = {
@@ -25,6 +27,8 @@ const EVENT_COLOR: Record<TaskEventType, string> = {
   task_assigned: 'text-info',
   task_updated: 'text-muted',
   task_archived: 'text-muted',
+  task_commented: 'text-info',
+  task_comment_deleted: 'text-muted',
 }
 
 function formatDateTime(iso: string): string {
