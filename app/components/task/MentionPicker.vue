@@ -19,6 +19,11 @@ const groups = computed(() => [
       id: m.userId,
       label: displayName(m),
       suffix: m.email,
+      avatar: {
+        src: m.avatarUrl ?? undefined,
+        alt: displayName(m),
+        text: initials(m),
+      },
       onSelect: () => onPick(m),
     })),
   },
@@ -36,7 +41,7 @@ function onPick(member: MemberView) {
     :overlay="true"
     title="Упомянуть участника"
     :ui="{
-      content: 'max-w-xl p-0 z-[70]',
+      content: 'max-w-sm p-0 z-[70]',
       overlay: 'bg-black/70 z-[70]',
     }"
   >

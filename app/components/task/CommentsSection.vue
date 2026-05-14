@@ -55,12 +55,8 @@ function insertMention(member: MemberView) {
     composerBody.value = `${composerBody.value} @${name} `.replace(/^\s+/, '')
     return
   }
-  let start = el.selectionStart ?? composerBody.value.length
+  const start = el.selectionStart ?? composerBody.value.length
   const end = el.selectionEnd ?? composerBody.value.length
-  
-  if (start > 0 && composerBody.value[start - 1] === '@' && start === end) {
-    start -= 1
-  }
   const before = composerBody.value.slice(0, start)
   const after = composerBody.value.slice(end)
   const insert = `@${name} `
@@ -77,10 +73,13 @@ function openMentionPicker() {
   mentionPickerOpen.value = true
 }
 
-function onComposerInput(e: Event) {
+function onComposerKeydown(e: KeyboardEvent) {
+  if (e.key !== '@') return
   const el = e.target as HTMLTextAreaElement
   const cursor = el.selectionStart ?? 0
-  if (cursor > 0 && composerBody.value[cursor - 1] === '@') {
+  const prev = composerBody.value[cursor - 1] ?? ''
+  if (cursor === 0 || /\s/.test(prev)) {
+    e.preventDefault()
     mentionPickerOpen.value = true
   }
 }
@@ -126,10 +125,13 @@ function cancelEdit() {
   editMentions.value = {}
 }
 
-function onEditInput(e: Event) {
+function onEditKeydown(e: KeyboardEvent) {
+  if (e.key !== '@') return
   const el = e.target as HTMLTextAreaElement
   const cursor = el.selectionStart ?? 0
-  if (cursor > 0 && editVisible.value[cursor - 1] === '@') {
+  const prev = editVisible.value[cursor - 1] ?? ''
+  if (cursor === 0 || /\s/.test(prev)) {
+    e.preventDefault()
     editPickerOpen.value = true
   }
 }
@@ -142,11 +144,8 @@ function onMentionSelectForEdit(member: MemberView) {
     editVisible.value = `${editVisible.value} @${name} `.replace(/^\s+/, '')
     return
   }
-  let start = el.selectionStart ?? editVisible.value.length
+  const start = el.selectionStart ?? editVisible.value.length
   const end = el.selectionEnd ?? editVisible.value.length
-  if (start > 0 && editVisible.value[start - 1] === '@' && start === end) {
-    start -= 1
-  }
   const before = editVisible.value.slice(0, start)
   const after = editVisible.value.slice(end)
   const insert = `@${name} `
@@ -265,7 +264,7 @@ function onDelete(c: TaskComment) {
               :rows="3"
               class="w-full"
               autofocus
-              @input="onEditInput"
+              @keydown="onEditKeydown"
             />
             <div class="flex items-center justify-between gap-2">
               <UButton
@@ -337,7 +336,7 @@ function onDelete(c: TaskComment) {
         :rows="3"
         placeholder="Напиши комментарий..."
         class="w-full"
-        @input="onComposerInput"
+        @keydown="onComposerKeydown"
       />
       <div class="flex items-center justify-between gap-2">
         <UButton
