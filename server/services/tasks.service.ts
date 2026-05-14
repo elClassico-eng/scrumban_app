@@ -28,6 +28,7 @@ import {
 import { withTenant } from '../utils/db'
 import { NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
+import { emitNotification } from './notifications.service'
 import { requireMinRole } from '../utils/rbac'
 
 export async function listTasksForBoard(input: {
@@ -118,6 +119,22 @@ export async function createTask(input: {
       payload: { initialPosition: row!.position },
     })
 
+    if (row!.assigneeId) {
+      await emitNotification({
+        tx,
+        workspaceId: input.workspaceId,
+        recipientId: row!.assigneeId,
+        actorId: input.actorId ?? null,
+        type: 'assigned',
+        payload: {
+          taskId: row!.id,
+          boardId: input.boardId,
+          taskTitle: row!.title,
+          actorId: input.actorId ?? null,
+        },
+      })
+    }
+
     return row!
   }).then((row) => {
     // Publish AFTER the transaction commits so a rollback never produces
@@ -145,6 +162,7 @@ export async function updateTaskFields(input: {
     blockedReason?: string | null
     isEpic?: boolean
   }
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'member')
@@ -178,10 +196,40 @@ export async function updateTaskFields(input: {
     set.parentTaskId = newParentId
   }
 
-  const [row] = await withTenant(input.workspaceId, async (tx) =>
-    tx.update(tasks).set(set).where(eq(tasks.id, input.taskId)).returning(),
-  )
-  if (!row) throw new NotFoundError('Задача не найдена')
+  const row = await withTenant(input.workspaceId, async (tx) => {
+    const [prev] = await tx
+      .select({ assigneeId: tasks.assigneeId, title: tasks.title, boardId: tasks.boardId })
+      .from(tasks)
+      .where(eq(tasks.id, input.taskId))
+    if (!prev) throw new NotFoundError('Задача не найдена')
+
+    const [updated] = await tx
+      .update(tasks)
+      .set(set)
+      .where(eq(tasks.id, input.taskId))
+      .returning()
+    if (!updated) throw new NotFoundError('Задача не найдена')
+
+    const assignmentChanged =
+      'assigneeId' in input.patch && updated.assigneeId !== prev.assigneeId
+    if (assignmentChanged && updated.assigneeId) {
+      await emitNotification({
+        tx,
+        workspaceId: input.workspaceId,
+        recipientId: updated.assigneeId,
+        actorId: input.actorId ?? null,
+        type: 'assigned',
+        payload: {
+          taskId: updated.id,
+          boardId: updated.boardId,
+          taskTitle: updated.title,
+          actorId: input.actorId ?? null,
+        },
+      })
+    }
+
+    return updated
+  })
 
   publishBoardEvent({
     type: 'task.updated',

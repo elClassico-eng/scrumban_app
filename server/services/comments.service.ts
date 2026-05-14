@@ -12,6 +12,9 @@ import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { extractMentionedUserIds } from '../utils/mentions'
 import { requireMinRole, roleAtLeast } from '../utils/rbac'
+import { emitNotification } from './notifications.service'
+
+const COMMENT_SNIPPET_LEN = 140
 
 const COMMENT_MAX_LENGTH = 5000
 const EDIT_WINDOW_MS = 5 * 60 * 1000
@@ -89,7 +92,7 @@ export async function createComment(input: {
 
   return withTenant(input.workspaceId, async (tx) => {
     const [parent] = await tx
-      .select({ boardId: tasks.boardId })
+      .select({ boardId: tasks.boardId, assigneeId: tasks.assigneeId, title: tasks.title })
       .from(tasks)
       .where(eq(tasks.id, input.taskId))
     if (!parent) throw new NotFoundError('Задача не найдена')
@@ -119,6 +122,45 @@ export async function createComment(input: {
       .where(eq(taskComments.id, inserted!.id))
 
     const view = toView(row!, mentionedUserIds)
+    const snippet = trimmed.length > COMMENT_SNIPPET_LEN
+      ? `${trimmed.slice(0, COMMENT_SNIPPET_LEN)}…`
+      : trimmed
+
+    for (const userId of mentionedUserIds) {
+      await emitNotification({
+        tx,
+        workspaceId: input.workspaceId,
+        recipientId: userId,
+        actorId: input.authorId,
+        type: 'mention',
+        payload: {
+          taskId: input.taskId,
+          boardId: parent.boardId,
+          commentId: inserted!.id,
+          actorId: input.authorId,
+          taskTitle: parent.title,
+          snippet,
+        },
+      })
+    }
+
+    if (parent.assigneeId && !mentionedUserIds.includes(parent.assigneeId)) {
+      await emitNotification({
+        tx,
+        workspaceId: input.workspaceId,
+        recipientId: parent.assigneeId,
+        actorId: input.authorId,
+        type: 'comment_on_assigned',
+        payload: {
+          taskId: input.taskId,
+          boardId: parent.boardId,
+          commentId: inserted!.id,
+          actorId: input.authorId,
+          taskTitle: parent.title,
+          snippet,
+        },
+      })
+    }
 
     publishBoardEvent({
       type: 'task.commented',

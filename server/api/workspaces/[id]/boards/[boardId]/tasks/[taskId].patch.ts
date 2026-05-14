@@ -59,6 +59,7 @@ export default defineEventHandler(async (event) => {
         ...('blockedReason' in body ? { blockedReason: body.blockedReason } : {}),
         ...(body.isEpic !== undefined ? { isEpic: body.isEpic } : {}),
       },
+      actorId: user.id,
       actorRole: workspace.role,
     })
     return { task }

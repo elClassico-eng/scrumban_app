@@ -48,3 +48,30 @@ export function subscribeBoardEvents(
 function channelFor(boardId: string): string {
   return `board:${boardId}`
 }
+
+export type UserEventType = 'notification.created'
+
+export interface UserEvent {
+  type: UserEventType
+  userId: string
+  payload: unknown
+  ts: string
+}
+
+export function publishUserEvent(event: Omit<UserEvent, 'ts'>): void {
+  const full: UserEvent = { ...event, ts: new Date().toISOString() }
+  bus.emit(userChannelFor(event.userId), full)
+}
+
+export function subscribeUserEvents(
+  userId: string,
+  handler: (event: UserEvent) => void,
+): () => void {
+  const channel = userChannelFor(userId)
+  bus.on(channel, handler)
+  return () => bus.off(channel, handler)
+}
+
+function userChannelFor(userId: string): string {
+  return `user:${userId}`
+}
