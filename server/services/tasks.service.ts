@@ -13,9 +13,10 @@
 //
 // All queries go through withTenant() so RLS at the DB enforces tenant
 // isolation as a second line of defence.
-import { and, asc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import {
   boardColumns,
+  taskAssignees,
   taskEvents,
   tasks,
   type ColumnRole,
@@ -26,6 +27,15 @@ import {
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant } from '../utils/db'
+
+const taskWithAssigneesSelect = {
+  ...getTableColumns(tasks),
+  assigneeIds: sql<string[]>`COALESCE((
+    SELECT array_agg(${taskAssignees.userId} ORDER BY ${taskAssignees.addedAt})
+    FROM ${taskAssignees}
+    WHERE ${taskAssignees.taskId} = ${tasks.id}
+  ), ARRAY[]::uuid[])`.as('assignee_ids'),
+}
 import { NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { emitNotification } from './notifications.service'
@@ -39,7 +49,7 @@ export async function listTasksForBoard(input: {
   requireMinRole(input.actorRole, 'viewer')
   return withTenant(input.workspaceId, async (tx) =>
     tx
-      .select()
+      .select(taskWithAssigneesSelect)
       .from(tasks)
       .where(eq(tasks.boardId, input.boardId))
       .orderBy(asc(tasks.columnId), asc(tasks.position)),
@@ -53,7 +63,7 @@ export async function getTask(input: {
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'viewer')
   const [row] = await withTenant(input.workspaceId, async (tx) =>
-    tx.select().from(tasks).where(eq(tasks.id, input.taskId)),
+    tx.select(taskWithAssigneesSelect).from(tasks).where(eq(tasks.id, input.taskId)),
   )
   if (!row) throw new NotFoundError('Задача не найдена')
   return row
@@ -68,21 +78,32 @@ export async function createTask(input: {
   serviceClass?: ServiceClass
   dueDate?: Date | null
   assigneeId?: string | null
+  parentTaskId?: string | null
   actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
   requireMinRole(input.actorRole, 'member')
 
-  // Anderson rule: fixed_date class is meaningless without a deadline.
   if (input.serviceClass === 'fixed_date' && !input.dueDate) {
     throw new ValidationError('Для класса «С дедлайном» нужен дедлайн')
   }
-  // Expedite tasks get an expedited_at marker — useful for "how long was
-  // this urgent before it closed" analytics.
+
+  if (input.parentTaskId) {
+    const [parent] = await withTenant(input.workspaceId, async (tx) =>
+      tx
+        .select({ id: tasks.id, boardId: tasks.boardId })
+        .from(tasks)
+        .where(eq(tasks.id, input.parentTaskId!)),
+    )
+    if (!parent) throw new NotFoundError('Родительская задача не найдена')
+    if (parent.boardId !== input.boardId) {
+      throw new ValidationError('Родительская задача должна быть на той же доске')
+    }
+  }
+
   const expeditedAt = input.serviceClass === 'expedite' ? new Date() : null
 
   return withTenant(input.workspaceId, async (tx) => {
-    // Append at the end of the column. COALESCE handles the empty-column case.
     const [agg] = await tx
       .select({
         next: sql<number>`COALESCE(MAX(${tasks.position}), -1) + 1`,
@@ -102,6 +123,7 @@ export async function createTask(input: {
         dueDate: input.dueDate ?? null,
         expeditedAt,
         assigneeId: input.assigneeId ?? null,
+        parentTaskId: input.parentTaskId ?? null,
         position: Number(agg!.next),
       })
       .returning()
@@ -120,6 +142,16 @@ export async function createTask(input: {
     })
 
     if (row!.assigneeId) {
+      await tx
+        .insert(taskAssignees)
+        .values({
+          taskId: row!.id,
+          userId: row!.assigneeId,
+          workspaceId: input.workspaceId,
+          addedBy: input.actorId ?? null,
+        })
+        .onConflictDoNothing()
+
       await emitNotification({
         tx,
         workspaceId: input.workspaceId,
@@ -212,20 +244,33 @@ export async function updateTaskFields(input: {
 
     const assignmentChanged =
       'assigneeId' in input.patch && updated.assigneeId !== prev.assigneeId
-    if (assignmentChanged && updated.assigneeId) {
-      await emitNotification({
-        tx,
-        workspaceId: input.workspaceId,
-        recipientId: updated.assigneeId,
-        actorId: input.actorId ?? null,
-        type: 'assigned',
-        payload: {
-          taskId: updated.id,
-          boardId: updated.boardId,
-          taskTitle: updated.title,
+    if (assignmentChanged) {
+      await tx.delete(taskAssignees).where(eq(taskAssignees.taskId, input.taskId))
+      if (updated.assigneeId) {
+        await tx
+          .insert(taskAssignees)
+          .values({
+            taskId: input.taskId,
+            userId: updated.assigneeId,
+            workspaceId: input.workspaceId,
+            addedBy: input.actorId ?? null,
+          })
+          .onConflictDoNothing()
+
+        await emitNotification({
+          tx,
+          workspaceId: input.workspaceId,
+          recipientId: updated.assigneeId,
           actorId: input.actorId ?? null,
-        },
-      })
+          type: 'assigned',
+          payload: {
+            taskId: updated.id,
+            boardId: updated.boardId,
+            taskTitle: updated.title,
+            actorId: input.actorId ?? null,
+          },
+        })
+      }
     }
 
     return updated
@@ -296,7 +341,7 @@ export async function listSubTasks(input: {
   requireMinRole(input.actorRole, 'viewer')
   return withTenant(input.workspaceId, async (tx) =>
     tx
-      .select()
+      .select(taskWithAssigneesSelect)
       .from(tasks)
       .where(eq(tasks.parentTaskId, input.parentTaskId))
       .orderBy(asc(tasks.position)),

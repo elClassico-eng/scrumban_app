@@ -1,6 +1,7 @@
 import type { ServiceClass, TaskEventType } from './domain'
 
 export interface Task {
+  assigneeIds: string[]
   id: string
   workspaceId: string
   boardId: string
@@ -36,6 +37,7 @@ export interface CreateTaskInput {
   serviceClass?: ServiceClass
   dueDate?: string | null
   assigneeId?: string | null
+  parentTaskId?: string | null
 }
 
 export interface UpdateTaskInput {
