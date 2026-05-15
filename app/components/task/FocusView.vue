@@ -3,6 +3,7 @@ import { watchDebounced } from '@vueuse/core'
 import { useQueryClient } from '@tanstack/vue-query'
 import type { ServiceClass } from '#shared/types/domain'
 import type { TasksListResponse } from '#shared/types/task'
+import type { FocusTab } from './focus/types'
 import { pageRoutes } from '~/routing'
 
 const props = defineProps<{
@@ -20,17 +21,25 @@ const bId = computed(() => props.boardId)
 const tId = computed(() => props.taskId)
 
 const { list: workspacesList } = useWorkspacesApi()
+const { list: boardsList } = useBoardsApi(wsId)
 const { list: tasksList, update, remove, queryKey: tasksKey } = useTasksApi(wsId, bId)
 const { list: columnsList } = useColumnsApi(wsId, bId)
 const { list: membersList } = useMembersApi(wsId)
 const { list: eventsQuery } = useTaskEventsApi(wsId, bId, tId)
+const { list: commentsQuery } = useTaskCommentsApi(wsId, bId, tId)
+const { list: checklistQuery } = useTaskChecklistApi(wsId, bId, tId)
+const { list: depsQuery } = useTaskDependenciesApi(wsId, bId, tId)
+const { list: subtasksQuery } = useTaskSubtasksApi(wsId, bId, tId)
+const { list: assigneesQuery, add: addAssignee, remove: removeAssignee } = useTaskAssigneesApi(wsId, bId, tId)
 const qc = useQueryClient()
 const { defer } = useDeferredAction()
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
 )
-// Match server-side rbac: deleteTask requires admin+ (services/tasks.service.ts).
+const board = computed(() =>
+  boardsList.data.value?.boards.find(b => b.id === bId.value),
+)
 const canDelete = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 const task = computed(() =>
@@ -39,31 +48,30 @@ const task = computed(() =>
 const columns = computed(() => columnsList.data.value?.columns ?? [])
 const allTasks = computed(() => tasksList.data.value?.tasks ?? [])
 const events = computed(() => eventsQuery.data.value?.events ?? [])
+const comments = computed(() => commentsQuery.data.value?.comments ?? [])
+const checklistItems = computed(() => checklistQuery.data.value?.items ?? [])
+const blockers = computed(() => depsQuery.data.value?.blockers ?? [])
+const dependencies = computed(() => depsQuery.data.value?.blocks ?? [])
+const subtasks = computed(() => subtasksQuery.data.value?.tasks ?? [])
+const assignees = computed(() => assigneesQuery.data.value?.assignees ?? [])
+const members = computed(() => membersList.data.value?.members ?? [])
 
 const parentTask = computed(() => {
   if (!task.value?.parentTaskId) return null
   return allTasks.value.find(t => t.id === task.value!.parentTaskId) ?? null
 })
 
-const assigneeOptions = computed(() => [
-  { label: 'Не назначен', value: null },
-  ...(membersList.data.value?.members ?? []).map(m => ({
-    label: displayName(m),
-    value: m.userId,
-  })),
-])
+const currentColumn = computed(() =>
+  columns.value.find(c => c.id === task.value?.columnId) ?? null,
+)
 
-const localTitle = ref('')
-const localDescription = ref('')
+const shortId = computed(() => task.value ? task.value.id.slice(0, 8).toUpperCase() : '')
+
 const localDueDate = ref('')
-const localBlockedReason = ref('')
 
 watch(task, (t) => {
   if (!t) return
-  localTitle.value = t.title
-  localDescription.value = t.description
   localDueDate.value = t.dueDate ? t.dueDate.slice(0, 10) : ''
-  localBlockedReason.value = t.blockedReason ?? ''
 }, { immediate: true })
 
 const toast = useToast()
@@ -72,12 +80,6 @@ async function saveWithFeedback(patch: Record<string, unknown>) {
   if (!task.value) return
   try {
     await update.mutateAsync({ taskId: task.value.id, ...patch })
-    toast.add({
-      title: 'Сохранено',
-      color: 'success',
-      icon: 'i-lucide-check',
-      duration: 1500,
-    })
   }
   catch (err) {
     toast.add({
@@ -88,29 +90,12 @@ async function saveWithFeedback(patch: Record<string, unknown>) {
   }
 }
 
-watchDebounced(localTitle, (v) => {
-  if (!task.value || v === task.value.title || v.trim().length === 0) return
-  saveWithFeedback({ title: v })
-}, { debounce: 500 })
-
-watchDebounced(localDescription, (v) => {
-  if (!task.value || v === task.value.description) return
-  saveWithFeedback({ description: v })
-}, { debounce: 500 })
-
 watchDebounced(localDueDate, (v) => {
   if (!task.value) return
   const newIso = v ? new Date(`${v}T23:59:59Z`).toISOString() : null
   if (newIso === task.value.dueDate) return
   saveWithFeedback({ dueDate: newIso })
-}, { debounce: 500 })
-
-watchDebounced(localBlockedReason, (v) => {
-  if (!task.value) return
-  const next = v.trim() === '' ? null : v.trim()
-  if (next === task.value.blockedReason) return
-  saveWithFeedback({ blockedReason: next })
-}, { debounce: 500 })
+}, { debounce: 600 })
 
 function saveDeferred(
   patch: Record<string, unknown>,
@@ -140,41 +125,68 @@ function saveDeferred(
   })
 }
 
+function onTitleChange(next: string) {
+  if (!task.value || next === task.value.title) return
+  saveWithFeedback({ title: next })
+}
+
 function onServiceClassChange(v: ServiceClass) {
   if (!task.value || v === task.value.serviceClass) return
-  const label = SERVICE_CLASS_INFO[v].label
+  const label = SERVICE_CLASS_INFO[v].shortLabel
   saveDeferred(
     { serviceClass: v },
     { title: `Класс изменён на «${label}»`, icon: 'i-lucide-zap' },
     'serviceClass',
   )
 }
-function onAssigneeChange(v: string | null) {
-  if (!task.value || v === task.value.assigneeId) return
-  const member = membersList.data.value?.members.find(m => m.userId === v)
-  const title = v == null
-    ? 'Снят исполнитель'
-    : `Назначен ${member ? displayName(member) : 'участник'}`
-  saveDeferred(
-    { assigneeId: v },
-    { title, icon: 'i-lucide-user-check' },
-    'assignee',
-  )
+
+async function onAssigneeAdd(userId: string) {
+  if (!task.value) return
+  const member = membersList.data.value?.members.find(m => m.userId === userId)
+  try {
+    await addAssignee.mutateAsync({ userId })
+    toast.add({
+      title: `Назначен ${member ? displayName(member) : 'участник'}`,
+      icon: 'i-lucide-user-check',
+      duration: 1500,
+    })
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось назначить'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
 }
-function onParentChange(v: string | null) {
-  if (!task.value || v === task.value.parentTaskId) return
-  saveWithFeedback({ parentTaskId: v })
+
+async function onAssigneeRemove(userId: string) {
+  if (!task.value) return
+  try {
+    await removeAssignee.mutateAsync(userId)
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось снять исполнителя'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
 }
-function onEpicToggle(v: boolean | 'indeterminate') {
-  const next = v === true
-  if (!task.value || next === task.value.isEpic) return
-  saveWithFeedback({ isEpic: next })
+
+function onEpicToggle() {
+  if (!task.value) return
+  saveWithFeedback({ isEpic: !task.value.isEpic })
 }
 
 const { moveTask } = useTaskMove(wsId, bId)
 function onColumnChange(toColumnId: string) {
   if (!task.value || toColumnId === task.value.columnId) return
   moveTask(task.value.id, toColumnId, 0)
+}
+
+function onDueDateChange(iso: string) {
+  localDueDate.value = iso
 }
 
 const confirm = useConfirm()
@@ -192,53 +204,107 @@ async function onDelete() {
   emit('close')
 }
 
+async function onCopyLink() {
+  if (!task.value) return
+  const url = `${window.location.origin}${pageRoutes.task(wsId.value, bId.value, task.value.id).path}?task=${task.value.id}`
+  try {
+    await navigator.clipboard.writeText(url)
+    toast.add({ title: 'Ссылка скопирована', icon: 'i-lucide-link', duration: 1500 })
+  }
+  catch {
+    toast.add({ title: 'Не удалось скопировать', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
+}
+
 const isLoading = computed(() => tasksList.isLoading.value && !task.value)
 const isMissing = computed(() => !tasksList.isLoading.value && !task.value)
+
+const tab = ref<FocusTab>('desc')
+
+const tabCounts = computed(() => ({
+  checks: checklistItems.value.length,
+  deps: dependencies.value.length + blockers.value.length,
+  comments: comments.value.length,
+  activity: events.value.length,
+}))
+const hasBlocker = computed(() => blockers.value.length > 0 || !!task.value?.blockedReason)
 
 const parentPickerOpen = ref(false)
 const parentPickerExcludeIds = computed(() =>
   task.value ? [task.value.id] : [],
 )
 function onParentPick(taskId: string) {
-  onParentChange(taskId)
+  if (!task.value) return
+  saveWithFeedback({ parentTaskId: taskId })
 }
 function clearParent() {
-  onParentChange(null)
+  saveWithFeedback({ parentTaskId: null })
 }
+
+const subtaskCreateOpen = ref(false)
+const subtaskLinkOpen = ref(false)
+const backlogColumnId = computed(() => {
+  const backlog = columns.value.find(c => c.columnRole === 'backlog')
+  return backlog?.id ?? columns.value[0]?.id ?? ''
+})
+
+const subtaskLinkExcludeIds = computed(() => {
+  const ids = new Set<string>()
+  if (task.value) ids.add(task.value.id)
+  for (const s of subtasks.value) ids.add(s.id)
+  if (task.value?.parentTaskId) ids.add(task.value.parentTaskId)
+  return Array.from(ids)
+})
+
+async function onLinkExistingSubtask(pickedTaskId: string) {
+  await update.mutateAsync({ taskId: pickedTaskId, parentTaskId: task.value?.id ?? null })
+}
+
+const router = useRouter()
+const route = useRoute()
+function openSubtask(taskId: string) {
+  router.replace({
+    path: route.path,
+    query: { ...route.query, task: taskId },
+  })
+}
+
+const deadlineMeta = computed(() => {
+  if (!task.value?.dueDate) return null
+  const due = new Date(task.value.dueDate)
+  const now = new Date()
+  const days = Math.ceil((due.getTime() - now.getTime()) / 86_400_000)
+  const overdue = days < 0
+  const formatted = due.toLocaleDateString('ru', { day: '2-digit', month: 'short' })
+  const weekday = due.toLocaleDateString('ru', { weekday: 'short' })
+  let countdown: string
+  if (overdue) countdown = `просрочено ${Math.abs(days)} дн.`
+  else if (days === 0) countdown = 'сегодня'
+  else if (days === 1) countdown = 'завтра'
+  else countdown = `через ${days} дн.`
+  return { date: `${formatted}, ${weekday}`, countdown, overdue }
+})
+
+const watching = ref(true)
+function toggleWatch() {
+  watching.value = !watching.value
+}
+
+onMounted(() => {
+  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') emit('close') }
+  window.addEventListener('keydown', onKey)
+  onUnmounted(() => window.removeEventListener('keydown', onKey))
+})
 </script>
 
 <template>
-  <div class="flex flex-col h-[90vh] bg-default">
-    <header class="flex items-center justify-between gap-4 px-8 py-3 border-b border-default shrink-0">
-      <span class="text-xs text-muted uppercase tracking-wide">Задача</span>
-      <div class="flex items-center gap-1">
-        <UButton
-          v-if="task && canDelete"
-          icon="i-lucide-trash-2"
-          color="error"
-          variant="ghost"
-          size="sm"
-          :loading="remove.isPending.value"
-          @click="onDelete"
-        >
-          Удалить
-        </UButton>
-        <UButton
-          icon="i-lucide-x"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          @click="emit('close')"
-        />
-      </div>
-    </header>
-
-    <div v-if="isLoading" class="text-center py-12 text-muted flex-1">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+  <div class="grid grid-rows-[44px_1fr] h-[90vh] max-h-[920px] bg-white text-default rounded-2xl overflow-hidden">
+    <div v-if="isLoading" class="row-span-2 grid place-items-center p-6">
+      <UIcon name="i-lucide-loader" class="animate-spin size-6 text-muted" />
     </div>
 
-    <div v-else-if="isMissing" class="flex-1 flex items-center justify-center">
-      <div class="text-center space-y-3 px-6">
+    <div v-else-if="isMissing" class="row-span-2 grid place-items-center p-6">
+      <div class="text-center space-y-3">
         <UIcon name="i-lucide-alert-circle" class="size-12 text-muted mx-auto" />
         <p class="font-medium">Задача не найдена</p>
         <p class="text-sm text-muted">Возможно, её удалили или у тебя нет доступа.</p>
@@ -246,175 +312,98 @@ function clearParent() {
       </div>
     </div>
 
-    <div
-      v-else-if="task"
-      class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_400px] overflow-hidden"
-    >
-      <main class="overflow-y-auto px-10 py-8 space-y-8 min-w-0">
-        <input
-          v-model="localTitle"
-          class="w-full text-3xl font-bold bg-transparent outline-none border-b border-transparent focus:border-default pb-2 -mx-1 px-1"
-          placeholder="Название задачи"
-        >
+    <template v-else-if="task">
+      <TaskFocusTopBar
+        :short-id="shortId"
+        :workspace-name="workspace?.name"
+        :board-name="board?.name"
+        :parent-task="parentTask"
+        :can-delete="canDelete"
+        :watching="watching"
+        @close="emit('close')"
+        @toggle-watch="toggleWatch"
+        @copy-link="onCopyLink"
+        @delete="onDelete"
+        @open-parent-picker="parentPickerOpen = true"
+      />
 
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-1">
-          <div class="grid grid-cols-[140px_1fr] items-center gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
-            <span class="flex items-center gap-2 text-sm text-muted">
-              <UIcon name="i-lucide-columns-3" class="size-4" />
-              Колонка
-            </span>
-            <USelect
-              :model-value="task.columnId"
-              :items="columns.map(c => ({ label: c.name, value: c.id }))"
-              variant="ghost"
-              class="w-full"
-              @update:model-value="onColumnChange"
-            />
-          </div>
-          <div class="grid grid-cols-[140px_1fr] items-center gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
-            <span class="flex items-center gap-2 text-sm text-muted">
-              <UIcon name="i-lucide-user" class="size-4" />
-              Исполнитель
-            </span>
-            <USelect
-              :model-value="task.assigneeId"
-              :items="assigneeOptions"
-              variant="ghost"
-              class="w-full"
-              @update:model-value="onAssigneeChange"
-            />
-          </div>
-          <div class="grid grid-cols-[140px_1fr] items-center gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
-            <span class="flex items-center gap-2 text-sm text-muted">
-              <UIcon name="i-lucide-calendar" class="size-4" />
-              Дедлайн
-            </span>
-            <UInput v-model="localDueDate" type="date" variant="ghost" class="w-full" />
-          </div>
-          <div class="grid grid-cols-[140px_1fr] items-start gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
-            <span class="flex items-center gap-2 text-sm text-muted pt-1.5">
-              <UIcon name="i-lucide-zap" class="size-4" />
-              Класс
-            </span>
-            <div class="space-y-1">
-              <USelect
-                :model-value="task.serviceClass"
-                :items="SERVICE_CLASS_OPTIONS"
-                variant="ghost"
-                class="w-full"
-                @update:model-value="onServiceClassChange"
-              />
-              <p class="text-xs text-muted px-2">
-                {{ SERVICE_CLASS_INFO[task.serviceClass].hint }}
-              </p>
-            </div>
-          </div>
-          <div class="grid grid-cols-[140px_1fr] items-center gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
-            <span class="flex items-center gap-2 text-sm text-muted">
-              <UIcon name="i-lucide-corner-up-left" class="size-4" />
-              Родитель
-            </span>
-            <div class="flex items-center gap-2 min-w-0">
-              <button
-                type="button"
-                class="flex-1 text-left text-sm px-3 py-1.5 rounded hover:bg-elevated transition-colors truncate"
-                :class="parentTask ? '' : 'text-muted'"
-                @click="parentPickerOpen = true"
-              >
-                {{ parentTask ? parentTask.title : 'Выбрать родителя...' }}
-              </button>
-              <UButton
-                v-if="parentTask"
-                icon="i-lucide-x"
-                size="xs"
-                variant="ghost"
-                color="neutral"
-                title="Открепить от родителя"
-                @click="clearParent"
-              />
-            </div>
-          </div>
-          <div class="grid grid-cols-[140px_1fr] items-center gap-3 py-2 px-2 rounded hover:bg-elevated/50 transition-colors">
-            <span class="flex items-center gap-2 text-sm text-muted">
-              <UIcon name="i-lucide-flag" class="size-4" />
-              Эпик
-            </span>
-            <UCheckbox
-              :model-value="task.isEpic"
-              @update:model-value="onEpicToggle"
-            />
-          </div>
-        </section>
-
-        <section class="space-y-2 pt-6 border-t border-default">
-          <h3 class="flex items-center gap-2 text-xs uppercase tracking-wide text-muted">
-            <UIcon name="i-lucide-align-left" class="size-3.5" />
-            Описание
-          </h3>
-          <UTextarea
-            v-model="localDescription"
-            :rows="5"
-            class="w-full"
-            placeholder="Добавь описание..."
-          />
-        </section>
-
-        <section class="space-y-3 pt-6 border-t border-default">
-          <TaskChecklistSection
-            :workspace-id="wsId"
-            :board-id="bId"
-            :task-id="task.id"
-          />
-        </section>
-
-        <section class="space-y-3 pt-6 border-t border-default">
-          <TaskDependenciesSection
-            :workspace-id="wsId"
-            :board-id="bId"
-            :task-id="task.id"
-            :board-tasks="allTasks"
+      <div class="grid grid-cols-[1fr_340px] min-h-0 overflow-hidden">
+        <main class="flex flex-col min-w-0 min-h-0 border-r border-default">
+          <TaskFocusHeader
+            :task="task"
+            :current-column="currentColumn"
             :columns="columns"
+            @column-change="onColumnChange"
+            @class-change="onServiceClassChange"
+            @title-change="onTitleChange"
           />
-        </section>
 
-        <section class="space-y-2 pt-6 border-t border-default">
-          <h3 class="flex items-center gap-2 text-xs uppercase tracking-wide text-muted">
-            <UIcon name="i-lucide-lock" class="size-3.5" />
-            Причина блокировки
-          </h3>
-          <UTextarea
-            v-model="localBlockedReason"
-            :rows="2"
-            class="w-full"
-            placeholder="Почему задача заблокирована"
+          <TaskFocusTabs
+            v-model:current="tab"
+            :counts="tabCounts"
+            :has-blocker="hasBlocker"
           />
-        </section>
 
-        <section class="space-y-3 pt-6 border-t border-default">
-          <TaskCommentsSection
-            :workspace-id="wsId"
-            :board-id="bId"
-            :task-id="task.id"
-          />
-        </section>
-      </main>
+          <div class="overflow-y-auto px-7 py-[22px] pb-20 min-h-0 flex-1">
+            <TaskFocusDescriptionTab
+              v-if="tab === 'desc'"
+              :description="task.description"
+              @save="(v: string) => saveWithFeedback({ description: v })"
+            />
+            <TaskFocusChecklistTab
+              v-else-if="tab === 'checks'"
+              :workspace-id="wsId"
+              :board-id="bId"
+              :task-id="task.id"
+            />
+            <TaskFocusDepsTab
+              v-else-if="tab === 'deps'"
+              :workspace-id="wsId"
+              :board-id="bId"
+              :task-id="task.id"
+              :task="task"
+              :board-tasks="allTasks"
+              :columns="columns"
+            />
+            <TaskFocusCommentsTab
+              v-else-if="tab === 'comments'"
+              :workspace-id="wsId"
+              :board-id="bId"
+              :task-id="task.id"
+            />
+            <TaskFocusActivityTab
+              v-else-if="tab === 'activity'"
+              :events="events"
+              :workspace-id="wsId"
+              :board-id="bId"
+            />
+          </div>
+        </main>
 
-      <aside class="border-l border-default bg-elevated/30 overflow-y-auto px-6 py-6 space-y-4">
-        <h3 class="text-xs uppercase tracking-wide text-muted">История</h3>
-        <TaskEventTimeline :events="events" :workspace-id="wsId" />
-        <p class="text-xs text-muted pt-2">
-          Создана {{ formatRelativeDate(task.createdAt) }}
-        </p>
-        <NuxtLink
-          v-if="parentTask"
-          :to="pageRoutes.task(wsId, bId, parentTask.id)"
-          class="text-sm text-primary hover:underline inline-flex items-center gap-1"
-        >
-          <UIcon name="i-lucide-corner-up-left" class="size-3.5" />
-          Открыть родителя
-        </NuxtLink>
-      </aside>
-    </div>
+        <TaskFocusSidebar
+          :task="task"
+          :current-column="currentColumn"
+          :columns="columns"
+          :assignees="assignees"
+          :members="members"
+          :parent-task="parentTask"
+          :subtasks="subtasks"
+          :due-date="localDueDate"
+          :deadline-meta="deadlineMeta"
+          @column-change="onColumnChange"
+          @class-change="onServiceClassChange"
+          @assignee-add="onAssigneeAdd"
+          @assignee-remove="onAssigneeRemove"
+          @epic-toggle="onEpicToggle"
+          @due-date-change="onDueDateChange"
+          @open-parent-picker="parentPickerOpen = true"
+          @clear-parent="clearParent"
+          @open-subtask-create="subtaskCreateOpen = true"
+          @open-subtask-link="subtaskLinkOpen = true"
+          @open-subtask="openSubtask"
+        />
+      </div>
+    </template>
 
     <TaskPickerModal
       v-if="task"
@@ -423,8 +412,29 @@ function clearParent() {
       :columns="columns"
       :exclude-ids="parentPickerExcludeIds"
       title="Выбрать родительскую задачу"
-      placeholder="Найди задачу..."
+      placeholder="Найди задачу…"
       @select="onParentPick"
+    />
+
+    <TaskPickerModal
+      v-if="task"
+      v-model:open="subtaskLinkOpen"
+      :tasks="allTasks"
+      :columns="columns"
+      :exclude-ids="subtaskLinkExcludeIds"
+      title="Привязать как подзадачу"
+      placeholder="Найди задачу…"
+      @select="onLinkExistingSubtask"
+    />
+
+    <TaskCreateModal
+      v-if="task && backlogColumnId"
+      v-model:open="subtaskCreateOpen"
+      :workspace-id="wsId"
+      :board-id="bId"
+      :column-id="backlogColumnId"
+      :parent-task-id="task.id"
+      :parent-title="task.title"
     />
   </div>
 </template>

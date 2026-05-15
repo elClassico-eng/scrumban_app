@@ -5,6 +5,8 @@ const props = defineProps<{
   workspaceId: string
   boardId: string
   columnId: string
+  parentTaskId?: string | null
+  parentTitle?: string | null
 }>()
 const open = defineModel<boolean>('open', { default: false })
 
@@ -67,6 +69,7 @@ async function onSubmit() {
         ? new Date(`${state.dueDate}T23:59:59Z`).toISOString()
         : null,
       assigneeId: state.assigneeId,
+      parentTaskId: props.parentTaskId ?? null,
     })
     open.value = false
     resetForm()
@@ -82,9 +85,21 @@ watch(open, (v) => {
 </script>
 
 <template>
-  <UModal v-model:open="open" title="Новая задача" :ui="{ content: 'max-w-md' }">
+  <UModal
+    v-model:open="open"
+    :title="parentTaskId ? 'Новая подзадача' : 'Новая задача'"
+    :ui="{ content: 'max-w-md' }"
+  >
     <template #body>
       <UForm :schema="schema" :state="state" class="space-y-4" :on-submit="onSubmit">
+        <div
+          v-if="parentTaskId && parentTitle"
+          class="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-zinc-100 text-[12.5px] text-default"
+        >
+          <UIcon name="i-lucide-corner-down-right" class="size-3.5 text-muted shrink-0" />
+          <span class="text-muted shrink-0">Родитель:</span>
+          <span class="truncate">{{ parentTitle }}</span>
+        </div>
         <UFormField label="Название" name="title" required>
           <UInput v-model="state.title" class="w-full" autofocus />
         </UFormField>

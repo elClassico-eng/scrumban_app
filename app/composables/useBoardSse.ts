@@ -44,6 +44,7 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
     qc.invalidateQueries({
       queryKey: ['board-sprint-memberships', unref(workspaceId), unref(boardId)],
     })
+    qc.invalidateQueries({ queryKey: ['task-subtasks'] })
 
     // Surface only events where the visual change isn't already obvious.
     // task.moved is shown via DnD; task.updated is visible inside the

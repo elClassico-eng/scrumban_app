@@ -23,12 +23,22 @@ const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 const cosInfo = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const blockerCount = computed(() => depCountsByTaskId.value.get(props.task.id)?.blockerCount ?? 0)
 
-const assignee = computed(() => {
-  if (!props.task.assigneeId) return null
-  return membersList.data.value?.members.find(m => m.userId === props.task.assigneeId) ?? null
+const memberById = computed(() => {
+  const m = new Map<string, NonNullable<typeof membersList.data.value>['members'][number]>()
+  for (const member of membersList.data.value?.members ?? []) m.set(member.userId, member)
+  return m
 })
-const assigneeName = computed(() => assignee.value ? displayName(assignee.value) : null)
-const assigneeInitials = computed(() => assignee.value ? initials(assignee.value) : '')
+
+const assigneeIds = computed(() => props.task.assigneeIds ?? [])
+const visibleAssignees = computed(() =>
+  assigneeIds.value
+    .slice(0, 3)
+    .map(id => memberById.value.get(id))
+    .filter((x): x is NonNullable<typeof x> => !!x),
+)
+const hiddenAssigneesCount = computed(() =>
+  Math.max(0, assigneeIds.value.length - visibleAssignees.value.length),
+)
 
 // Aging-WIP signal: age from createdAt vs board.sleDays.
 // Per-column anchor is Phase 8 work.
@@ -113,12 +123,23 @@ const dueOverdue = computed(() => {
           {{ blockerCount }}
         </span>
       </div>
-      <UserAvatar
-        v-if="assignee"
-        :user="assignee"
-        size="sm"
-        tooltip
-      />
+      <div v-if="visibleAssignees.length > 0" class="flex items-center -space-x-1.5">
+        <UserAvatar
+          v-for="member in visibleAssignees"
+          :key="member.userId"
+          :user="member"
+          size="sm"
+          tooltip
+          ring
+        />
+        <div
+          v-if="hiddenAssigneesCount > 0"
+          class="size-6 rounded-full bg-elevated text-muted text-[10px] font-medium flex items-center justify-center shrink-0 ring-2 ring-white"
+          :title="`Ещё ${hiddenAssigneesCount}`"
+        >
+          +{{ hiddenAssigneesCount }}
+        </div>
+      </div>
     </div>
   </div>
 </template>

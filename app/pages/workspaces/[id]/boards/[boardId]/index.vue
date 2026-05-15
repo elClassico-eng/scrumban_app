@@ -247,8 +247,8 @@ const isLoading = computed(() =>
     <UModal
       v-model:open="taskModalOpen"
       :ui="{
-        content: 'w-[95vw] max-w-[1600px] p-0',
-        overlay: 'bg-black/70',
+        content: 'w-[95vw] max-w-[1180px] p-0 rounded-2xl',
+        overlay: 'bg-black/75 backdrop-blur-sm',
       }"
     >
       <template #content>
