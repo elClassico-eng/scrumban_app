@@ -9,20 +9,42 @@ export interface DeferredAction<T> {
   rollback: (ctx: T) => void
   onCommitError?: (err: unknown, ctx: T) => void
   delayMs?: number
+  coalesceKey?: string
+}
+
+interface PendingState {
+  cancelled: { value: boolean }
+  timer: ReturnType<typeof setTimeout>
+  toastId: string | number
+  ctx: unknown
 }
 
 const DEFAULT_DELAY = 5000
+const pending = new Map<string, PendingState>()
 
 export function useDeferredAction() {
   const toast = useToast()
 
   function defer<T>(action: DeferredAction<T>): void {
-    const ctx = action.apply()
-    let cancelled = false
+    const key = action.coalesceKey
+    const existing = key ? pending.get(key) : undefined
+
+    const newCtx = action.apply()
+    const ctx: T = existing ? (existing.ctx as T) : newCtx
+
+    if (existing) {
+      clearTimeout(existing.timer)
+      existing.cancelled.value = true
+      try { toast.remove(existing.toastId) }
+      catch { /* toast already auto-dismissed */ }
+    }
+
+    const cancelled = { value: false }
     const delay = action.delayMs ?? DEFAULT_DELAY
 
     const timer = setTimeout(() => {
-      if (cancelled) return
+      if (cancelled.value) return
+      if (key) pending.delete(key)
       action.commit().catch((err) => {
         action.rollback(ctx)
         if (action.onCommitError) action.onCommitError(err, ctx)
@@ -37,7 +59,7 @@ export function useDeferredAction() {
       })
     }, delay)
 
-    toast.add({
+    const t = toast.add({
       title: action.toast.title,
       description: action.toast.description,
       icon: action.toast.icon ?? 'i-lucide-undo-2',
@@ -48,13 +70,24 @@ export function useDeferredAction() {
           color: 'neutral',
           variant: 'outline',
           onClick: () => {
-            cancelled = true
+            if (cancelled.value) return
+            cancelled.value = true
             clearTimeout(timer)
             action.rollback(ctx)
+            if (key) pending.delete(key)
           },
         },
       ],
     })
+
+    if (key) {
+      pending.set(key, {
+        cancelled,
+        timer,
+        toastId: t.id,
+        ctx: ctx as unknown,
+      })
+    }
   }
 
   return { defer }

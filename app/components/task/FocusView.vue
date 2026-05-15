@@ -112,11 +112,16 @@ watchDebounced(localBlockedReason, (v) => {
   saveWithFeedback({ blockedReason: next })
 }, { debounce: 500 })
 
-function saveDeferred(patch: Record<string, unknown>, toastConfig: { title: string; icon?: string }) {
+function saveDeferred(
+  patch: Record<string, unknown>,
+  toastConfig: { title: string; icon?: string },
+  coalesceField: string,
+) {
   if (!task.value) return
   const tid = task.value.id
   const prev = qc.getQueryData<TasksListResponse>(tasksKey.value)
   defer({
+    coalesceKey: `${coalesceField}:${tid}`,
     toast: toastConfig,
     apply: () => {
       qc.setQueryData<TasksListResponse>(tasksKey.value, (old) => {
@@ -138,10 +143,11 @@ function saveDeferred(patch: Record<string, unknown>, toastConfig: { title: stri
 function onServiceClassChange(v: ServiceClass) {
   if (!task.value || v === task.value.serviceClass) return
   const label = SERVICE_CLASS_INFO[v].label
-  saveDeferred({ serviceClass: v }, {
-    title: `Класс изменён на «${label}»`,
-    icon: 'i-lucide-zap',
-  })
+  saveDeferred(
+    { serviceClass: v },
+    { title: `Класс изменён на «${label}»`, icon: 'i-lucide-zap' },
+    'serviceClass',
+  )
 }
 function onAssigneeChange(v: string | null) {
   if (!task.value || v === task.value.assigneeId) return
@@ -149,7 +155,11 @@ function onAssigneeChange(v: string | null) {
   const title = v == null
     ? 'Снят исполнитель'
     : `Назначен ${member ? displayName(member) : 'участник'}`
-  saveDeferred({ assigneeId: v }, { title, icon: 'i-lucide-user-check' })
+  saveDeferred(
+    { assigneeId: v },
+    { title, icon: 'i-lucide-user-check' },
+    'assignee',
+  )
 }
 function onParentChange(v: string | null) {
   if (!task.value || v === task.value.parentTaskId) return

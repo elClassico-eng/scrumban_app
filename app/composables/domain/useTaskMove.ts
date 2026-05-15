@@ -20,6 +20,7 @@ export function useTaskMove(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
     const prev = qc.getQueryData<TasksListResponse>(queryKey.value)
 
     defer({
+      coalesceKey: `move:${taskId}`,
       toast: {
         title: `Задача перенесена в «${columnName}»`,
         icon: 'i-lucide-arrow-right',
