@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { watchDebounced } from '@vueuse/core'
+import { useQueryClient } from '@tanstack/vue-query'
 import type { ServiceClass } from '#shared/types/domain'
+import type { TasksListResponse } from '#shared/types/task'
 import { pageRoutes } from '~/routing'
 
 const props = defineProps<{
@@ -18,10 +20,12 @@ const bId = computed(() => props.boardId)
 const tId = computed(() => props.taskId)
 
 const { list: workspacesList } = useWorkspacesApi()
-const { list: tasksList, update, remove } = useTasksApi(wsId, bId)
+const { list: tasksList, update, remove, queryKey: tasksKey } = useTasksApi(wsId, bId)
 const { list: columnsList } = useColumnsApi(wsId, bId)
 const { list: membersList } = useMembersApi(wsId)
 const { list: eventsQuery } = useTaskEventsApi(wsId, bId, tId)
+const qc = useQueryClient()
+const { defer } = useDeferredAction()
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -108,13 +112,44 @@ watchDebounced(localBlockedReason, (v) => {
   saveWithFeedback({ blockedReason: next })
 }, { debounce: 500 })
 
+function saveDeferred(patch: Record<string, unknown>, toastConfig: { title: string; icon?: string }) {
+  if (!task.value) return
+  const tid = task.value.id
+  const prev = qc.getQueryData<TasksListResponse>(tasksKey.value)
+  defer({
+    toast: toastConfig,
+    apply: () => {
+      qc.setQueryData<TasksListResponse>(tasksKey.value, (old) => {
+        if (!old) return old
+        return {
+          tasks: old.tasks.map(t => (t.id === tid ? { ...t, ...patch } : t)),
+        }
+      })
+      return prev
+    },
+    commit: () => update.mutateAsync({ taskId: tid, ...patch }),
+    rollback: (snapshot) => {
+      if (snapshot) qc.setQueryData(tasksKey.value, snapshot)
+      else qc.invalidateQueries({ queryKey: tasksKey.value })
+    },
+  })
+}
+
 function onServiceClassChange(v: ServiceClass) {
   if (!task.value || v === task.value.serviceClass) return
-  saveWithFeedback({ serviceClass: v })
+  const label = SERVICE_CLASS_INFO[v].label
+  saveDeferred({ serviceClass: v }, {
+    title: `Класс изменён на «${label}»`,
+    icon: 'i-lucide-zap',
+  })
 }
 function onAssigneeChange(v: string | null) {
   if (!task.value || v === task.value.assigneeId) return
-  saveWithFeedback({ assigneeId: v })
+  const member = membersList.data.value?.members.find(m => m.userId === v)
+  const title = v == null
+    ? 'Снят исполнитель'
+    : `Назначен ${member ? displayName(member) : 'участник'}`
+  saveDeferred({ assigneeId: v }, { title, icon: 'i-lucide-user-check' })
 }
 function onParentChange(v: string | null) {
   if (!task.value || v === task.value.parentTaskId) return
