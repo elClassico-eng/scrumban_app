@@ -113,19 +113,12 @@ const dueOverdue = computed(() => {
           {{ blockerCount }}
         </span>
       </div>
-      <div
+      <UserAvatar
         v-if="assignee"
-        class="size-6 rounded-full bg-primary/10 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0 overflow-hidden"
-        :title="assigneeName ?? undefined"
-      >
-        <img
-          v-if="assignee.avatarUrl"
-          :src="assignee.avatarUrl"
-          alt=""
-          class="size-full object-cover"
-        >
-        <span v-else>{{ assigneeInitials }}</span>
-      </div>
+        :user="assignee"
+        size="sm"
+        tooltip
+      />
     </div>
   </div>
 </template>

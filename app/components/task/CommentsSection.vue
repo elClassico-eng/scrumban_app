@@ -238,17 +238,7 @@ function onDelete(c: TaskComment) {
         :key="c.id"
         class="group flex gap-3 px-2 py-2 rounded hover:bg-elevated/40"
       >
-        <div
-          class="size-8 rounded-full bg-elevated flex items-center justify-center text-xs font-medium shrink-0 overflow-hidden"
-        >
-          <img
-            v-if="c.author?.avatarUrl"
-            :src="c.author.avatarUrl"
-            :alt="displayName(c.author)"
-            class="size-full object-cover"
-          >
-          <span v-else>{{ initials(c.author) }}</span>
-        </div>
+        <UserAvatar :user="c.author" size="md" />
 
         <div class="flex-1 min-w-0">
           <div class="flex items-baseline gap-2">

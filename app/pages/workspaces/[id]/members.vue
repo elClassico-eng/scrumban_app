@@ -202,15 +202,7 @@ async function onRemove(userId: string, email: string) {
         class="surface rounded-xl p-4 flex flex-col gap-3 transition-all hover:shadow-md hover:border-accent-300"
       >
         <div class="flex items-center gap-3">
-          <div class="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm shrink-0 overflow-hidden">
-            <img
-              v-if="member.avatarUrl"
-              :src="member.avatarUrl"
-              alt=""
-              class="size-full object-cover"
-            >
-            <span v-else>{{ initials(member) }}</span>
-          </div>
+          <UserAvatar :user="member" size="lg" />
           <div class="flex-1 min-w-0">
             <p class="font-semibold text-sm truncate text-default">{{ displayName(member) }}</p>
             <p class="text-xs text-muted truncate">
