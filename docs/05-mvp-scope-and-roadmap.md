@@ -151,42 +151,73 @@
 
 ---
 
-### Phase 7 — Collaboration & notifications (T3) — **DONE (2026-05-14)**
+### Phase 7 — Collaboration, sprint depth, redesigns (T3) — **DONE (merge `35d6607`, 2026-05-16)**
 
-**§1 Vision pillars advanced:** Pillar **B+** через flow-aware алерты (push-форма Phase 5 percentile-метрик). Comments / generic notifications — usability enabler, не thesis-content (зафиксировано в spec'е). Без Phase 7 «percentile-based alerts на застрявшие задачи» из vision-doc были только пассивной диаграммой; теперь добираются до scrum-мастера активным сигналом.
+**§1 Vision pillars advanced:** Pillar **B+** через flow-aware алерты (push-форма Phase 5 percentile-метрик). Comments / generic notifications — usability enabler, не thesis-content (зафиксировано в spec'е). Без Phase 7 «percentile-based alerts на застрявшие задачи» из vision-doc были только пассивной диаграммой; теперь добираются до scrum-мастера активным сигналом. Sprint-backend depth (story points + capacity + burndown) — input-инфра для Phase 8 calibration.
 
-**§2 Что сделано (отклонения от изначального plan'а):**
+**§2 Что сделано:**
+
+*Collaboration block (изначальный §2):*
 1. **Comments per task**: `task_comments (id, workspace_id, task_id, author_id, body, edited_at, created_at)`. Plain text + `@[Name](uuid)` mentions с sidecar UI. Edit-5min для автора, admin override, hard-delete с audit в `task_events`.
-2. **In-app notifications**: `notifications (id, workspace_id, user_id, type, payload jsonb, read_at, created_at)` с **user-scoped RLS** (cross-workspace bell — single query). SSE per-user channel (`/api/notifications/stream`) для real-time. Бell в AppHeader + USlideover panel.
+2. **In-app notifications**: `notifications (id, workspace_id, user_id, type, payload jsonb, read_at, created_at)` с **user-scoped RLS** (cross-workspace bell — single query). SSE per-user channel (`/api/notifications/stream`) для real-time. Bell в AppHeader + USlideover panel.
 3. **Flow-aware scheduled tasks (Nitro experimental tasks):**
    - `notifications:check-sle-breaches` — hourly, age vs `boards.sle_days` > 85%
    - `notifications:check-replenishment` — daily 09:00, `last_replenishment_at + period < now`
    - `notifications:check-sprint-forecast` — every 6h, Monte Carlo wrapper над `computeMonteCarlo` (Phase 5), P < 70%
    - 24h dedupe через `NOT EXISTS` на payload-key.
+   - Dev-trigger `POST /api/_dev/tasks/[name]/run` для ручного запуска (admin+, non-prod).
 4. **Activity feed** на уровне workspace (`/workspaces/[id]/activity`) с фильтрами в querystring (board / actor / event-types / date range).
-5. ~~Attachments~~ → deferred в Phase 7.5 (нет infra Object Storage).
-6. ~~Email digest~~ → deferred в Phase 7.5 (нет pg-boss; Nitro tasks хватило для периодических сканов).
+
+*Hierarchy block (доехал в Phase 7 — был частично в Phase 6):*
+
+1. **Multi-assignee + subtasks UI**: `task_assignees` M:N + RLS; `tasks.assignee_id` сохранён как denormalized primary. Tabbed `<TaskFocusView>` (Описание / Чек-листы / Связи / Комментарии / Активность) с per-tab компонентами в `app/components/task/focus/`.
+
+*Sprint backend depth (новый, под Phase 8 calibration):*
+
+1. **Story Points + capacity + burndown endpoint**: `tasks.story_points int`, `sprints.capacity int`. `GET /sprints/:id/burndown` → `BurndownReport { totalDays, totalSp, doneSp, points[] }` (daily SP-remaining vs ideal linear, derives из `task_events.eventType = 'task_closed'`). `listBoardSprintMemberships` возвращает `addedAt` для UI-флага «added after start».
+
+*Page redesigns (новый, под единые дизайн-токены — brand-500 black + accent-500 #E85002):*
+
+1. **Sprints page redesign**: hero `ActiveCard` (1.4fr / 1fr grid), planned/closed grids, SP-or-count metric fallback, slide-over `AddTasksPanel` для bulk-add из backlog, inline `Burndown` SVG-chart. Новые компоненты: `sprint/{ActiveCard,SprintCard,AddTasksPanel,Burndown,TaskRow}.vue`.
+2. **Kanban page redesign**: `<BoardFilterBar>` (grouping dropdown + search + assignee chip avatars + expedite/blocker filter chips + «Новая задача»), `<BoardColumn>` restyled (dot + uppercase + count/limit + 3px WIP progress bar), `<TaskCard>` rewrite (левая class-stripe, parent-epic chip, class & SP pills, color-coded due rendering), `<BoardSubnav>` SLE/replenishment как chip-пилюли. SP-picker (Fibonacci 1..21) в `<TaskFocusSidebar>`.
 
 **§3 Что НЕ сделали (Phase 7.5 / 8):**
-- File attachments + Object Storage integration.
-- pg-boss durable queue + SMTP (`@yandex-cloud/email`?). Триггер — реальный need в email-уведомлениях.
-- Web Push API / PWA notifications.
-- Markdown / rich-text в комментариях (по feedback).
-- Invite-by-link / magic-link onboarding.
+- File attachments + Object Storage integration → Phase 7.5.
+- pg-boss durable queue + SMTP для email digest → Phase 7.5.
+- Web Push API / PWA notifications → Phase 7.5 или 8.
+- Markdown / rich-text в комментариях → Phase 8 по feedback.
+- Reactions на комменты, invite-by-link onboarding → Phase 8 по feedback.
+- Tabs «Список / Календарь / Timeline» внутри kanban-доски (есть отдельные pages) → backlog.
+- Throughput insight-chip в `<BoardSubnav>` (требует board-level analytics запрос) → Phase 8.
+- Per-workspace TZ для cron'ов → Phase 8+.
 
 **§4 DoD (verified):**
 - 185 тестов зелёные (+56 новых: 12 comments + 11 notifications + 8 activity + 19 flow-alerts (включая sprint forecast) + 6 cross-workspace isolation).
 - RLS leakage защита подтверждена тестом (user в 2 workspace не может прочитать чужие task_comments через свой URL).
 - Cascade-delete workspace → comments + notifications уходят атомарно.
 - Все 3 типа flow-alerts emit'ятся в e2e через dev-trigger endpoint.
+- Typecheck зелёный после каждого блока; sprint/kanban redesigns верифицированы в браузере (golden path + edge cases).
 
-**§5 Зачем:** результат — продукт стал юзабельным для команды (collaboration table-stakes) И thesis pillar B+ закрылся end-to-end (статистика → доставка до пользователя активным сигналом). Без push-канала «percentile alerts» из vision-doc были только диаграммой, которую никто не смотрит.
+**§5 Метрики:** 24 коммита под no-ff merge `35d6607`; 119 файлов изменено (+23 056 / −805); ~80 endpoint'ов суммарно; 22 миграции; 12 schema-файлов.
+
+**§6 Зачем:** результат — продукт стал юзабельным для команды (collaboration table-stakes), thesis pillar B+ закрылся end-to-end (статистика → доставка активным сигналом), и появилась числовая основа (SP, capacity, burndown) для Phase 8 calibration работы. Без push-канала «percentile alerts» из vision-doc были только диаграммой, которую никто не смотрит; без SP — sprint-forecast cron не мог validateся.
 
 ---
 
-### Phase 8 — Analytics depth & calibration (T4) — *thesis math*
+### Phase 8 — Analytics depth & calibration (T4) — *thesis math, next up*
 
 **§1 Vision pillars advanced:** Главное — pillar **B+** (statistical forecasting). Закрываем оставшиеся 50% B+ — percentile alerts + calibration. Также pillar **B** (process-mining-style variant analysis).
+
+**§0 Current resources (что уже есть и переиспользуется):**
+- **`computeMonteCarlo` service-функция** (Phase 5) + `notifications:check-sprint-forecast` обёртка (Phase 7). Phase 8 calibration оборачивает её в back-testing driver.
+- **`computeCfd`, `computeCycleTime`, `computeThroughput`, `computeWipRecommendations`** (Phase 3) — per-CoS breakdown добавляется через `WHERE` фильтр по `task.service_class`.
+- **`task_events` append-only log** с 9 типами событий (включая `task_closed`, `task_blocked`, `task_unblocked`) — основа для variant analysis и calibration history.
+- **Story Points + sprint capacity + burndown endpoint** (Phase 7 closure) — numerical input для calibration P50/P85/P95.
+- **`tasks.story_points` + `task_events.eventType = 'task_closed'`** даёт прямой signal для cycle time per-SP analysis.
+- **Pattern «service-функция + Nitro scheduled task + dev-trigger endpoint»** (Phase 7) — percentile-alert scanner идёт тем же шаблоном.
+- **Aging-WIP tier helper** (`getAgingTier` в `app/utils`) — UI percentile-indicator уже есть, нужен только server-side endpoint для агрегата по доске.
+- **`notifications` infra с user-scoped RLS + SSE bell** — alerts panel доставляется через тот же канал, что Phase 7 flow-alerts.
+- **`/api/_dev/tasks/[name]/run`** — admin-gated endpoint для ручного запуска scan'ов в браузере (Phase 7 паттерн, удобен для thesis-demo).
 
 **§2 Что делаем:**
 1. **Percentile-based stuck-task alerts** *(обещано в vision B+, до сих пор не сделано)*
