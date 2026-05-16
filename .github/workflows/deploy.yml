@@ -13,7 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: SSH into VM, pull, deploy
+      - name: SSH into VM, pull, rebuild
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -24,27 +24,7 @@ jobs:
           script: |
             set -e
             cd ~/scrumban_app
-
-            PREV=$(git rev-parse HEAD)
             git pull --ff-only
-            CURR=$(git rev-parse HEAD)
-
-            if [ "$PREV" = "$CURR" ]; then
-              CHANGED=""
-              echo "[deploy] HEAD unchanged — recreating containers without build"
-            else
-              CHANGED=$(git diff --name-only "$PREV" "$CURR")
-              echo "[deploy] changed files:"
-              echo "$CHANGED" | sed 's/^/  /'
-            fi
-
-            if [ -n "$CHANGED" ] && echo "$CHANGED" | grep -qE '^(Dockerfile|package\.json|bun\.lock|nuxt\.config\.ts|tsconfig\.json|app/|server/|shared/|scripts/|drizzle/|db/)'; then
-              echo "[deploy] runtime artefacts touched → rebuilding image"
-              docker compose -f docker-compose.prod.yml up -d --build
-            else
-              echo "[deploy] config-only change → recreating without build"
-              docker compose -f docker-compose.prod.yml up -d
-            fi
-
+            docker compose -f docker-compose.prod.yml up -d --build
             docker image prune -f
             docker compose -f docker-compose.prod.yml ps
