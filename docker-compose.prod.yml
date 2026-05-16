@@ -28,7 +28,11 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
+      # DATABASE_URL is read directly by scripts/migrate.mjs.
+      # NUXT_DATABASE_URL overrides runtimeConfig.databaseUrl at runtime
+      # (Nuxt auto-maps NUXT_* env vars onto matching runtimeConfig keys).
       DATABASE_URL: postgresql://scrumban:${POSTGRES_PASSWORD}@db:5432/scrumban_prod
+      NUXT_DATABASE_URL: postgresql://scrumban:${POSTGRES_PASSWORD}@db:5432/scrumban_prod
       NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
     networks:
       - backend
