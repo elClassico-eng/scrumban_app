@@ -39,6 +39,13 @@ export default defineNuxtConfig({
       '0 9 * * *': ['notifications:check-replenishment'],
       '0 */6 * * *': ['notifications:check-sprint-forecast'],
     },
+    // Inline zod so subpath imports like `zod/v4/locales/ru` (used in the
+    // Nitro plugin to localise validation errors) end up in the build output.
+    // Without this, Nitro leaves zod external and the locale subpath is
+    // missing from .output/server/node_modules.
+    externals: {
+      inline: ['zod'],
+    },
   },
 
   runtimeConfig: {
