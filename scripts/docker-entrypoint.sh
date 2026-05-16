@@ -1,11 +1,11 @@
 #!/bin/sh
-# Production entrypoint: run drizzle migrations against the admin role,
-# then exec the actual server. Migrations are idempotent — drizzle-kit
-# tracks applied migrations in its own meta table.
+# Production entrypoint: run drizzle migrations via the embedded migrator
+# from drizzle-orm/postgres-js (no drizzle-kit CLI), then exec the server.
+# Migrations are tracked in the __drizzle_migrations meta table.
 set -e
 
-echo "[entrypoint] Running drizzle migrations..."
-npx drizzle-kit migrate
+echo "[entrypoint] Running migrations..."
+node /app/scripts/migrate.mjs
 
 echo "[entrypoint] Starting Nitro server..."
 exec "$@"

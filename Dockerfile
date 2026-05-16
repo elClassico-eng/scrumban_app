@@ -32,17 +32,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # (no node_modules required for the app itself).
 COPY --from=builder /app/.output ./.output
 
-# Drizzle migrations: copy migration SQL + config + schema (drizzle.config.ts
-# references the schema path). Install just drizzle-kit + drizzle-orm + postgres
-# driver into an isolated package.json — avoids inheriting devDeps/omit rules
-# from the main package.json that would skip drizzle-kit at install time.
+# Drizzle migrations: copy migration SQL files + the embedded migrator script.
+# We call drizzle-orm's migrator directly instead of the drizzle-kit CLI —
+# the CLI was silently exiting in headless containers with the postgres driver,
+# and the embedded migrator is the recommended path for production deploys.
 COPY --from=builder /app/drizzle ./drizzle
-COPY --from=builder /app/drizzle.config.ts ./
-COPY --from=builder /app/server/db/schema ./server/db/schema
 RUN echo '{"name":"scrumban-runner","private":true}' > package.json \
  && npm install --no-package-lock --legacy-peer-deps \
-    drizzle-kit drizzle-orm postgres
+    drizzle-orm postgres
 
+COPY scripts/migrate.mjs /app/scripts/migrate.mjs
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
