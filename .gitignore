@@ -28,10 +28,6 @@ dist/
 coverage/
 
 /COMPACT.md
-/docs/memory/
-/docs/superpowers/plans/
-/docs/superpowers/specs/
-/docs/audit-*.md
 
-/docs/uml/**/learning/*.png
-/docs/uml/**/learning/*.svg
+# Documentation lives locally for thesis writing; not published to the repo.
+/docs/
