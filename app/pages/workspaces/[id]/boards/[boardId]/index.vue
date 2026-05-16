@@ -16,8 +16,8 @@ const { list: boardsList } = useBoardsApi(wsId)
 const { list: columnsList, reorder: reorderColumns } = useColumnsApi(wsId, bId)
 const { list: tasksList } = useTasksApi(wsId, bId)
 const { list: membersList } = useMembersApi(wsId)
+const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 
-// Open the SSE subscription for realtime invalidation while this page is mounted.
 useBoardSse(wsId, bId)
 
 const workspace = computed(() =>
@@ -28,6 +28,7 @@ const board = computed(() =>
 )
 const columns = computed(() => columnsList.data.value?.columns ?? [])
 const tasks = computed(() => tasksList.data.value?.tasks ?? [])
+const members = computed(() => membersList.data.value?.members ?? [])
 
 const localColumns = ref<Column[]>([])
 watch(columns, (next) => {
@@ -39,13 +40,52 @@ function onColumnsReorder() {
 }
 
 type SwimlaneMode = 'none' | 'assignee' | 'service_class' | 'epic'
+type ClassFilter = 'all' | 'expedite' | 'blocker'
+
 const swimlane = ref<SwimlaneMode>('none')
-const SWIMLANE_OPTIONS: Array<{ label: string; value: SwimlaneMode }> = [
-  { label: 'Без группировки', value: 'none' },
-  { label: 'По исполнителю', value: 'assignee' },
-  { label: 'По классу обслуживания', value: 'service_class' },
-  { label: 'По эпикам', value: 'epic' },
-]
+const query = ref('')
+const selectedAssignees = ref<Set<string>>(new Set())
+const classFilter = ref<ClassFilter>('all')
+
+function toggleAssignee(userId: string | null) {
+  if (userId === null) {
+    selectedAssignees.value = new Set()
+    return
+  }
+  const next = new Set(selectedAssignees.value)
+  if (next.has(userId)) next.delete(userId)
+  else next.add(userId)
+  selectedAssignees.value = next
+}
+
+const expediteCount = computed(() =>
+  tasks.value.filter(t => t.serviceClass === 'expedite').length,
+)
+const blockerCount = computed(() =>
+  tasks.value.filter((t) => {
+    if (t.blockedReason) return true
+    return (depCountsByTaskId.value.get(t.id)?.blockerCount ?? 0) > 0
+  }).length,
+)
+
+const filteredTasks = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  return tasks.value.filter((t) => {
+    if (classFilter.value === 'expedite' && t.serviceClass !== 'expedite') return false
+    if (classFilter.value === 'blocker') {
+      const hasBlocker = !!t.blockedReason || (depCountsByTaskId.value.get(t.id)?.blockerCount ?? 0) > 0
+      if (!hasBlocker) return false
+    }
+    if (selectedAssignees.value.size > 0) {
+      const ids = t.assigneeIds ?? []
+      if (!ids.some(id => selectedAssignees.value.has(id))) return false
+    }
+    if (q && !t.title.toLowerCase().includes(q) && !t.id.toLowerCase().startsWith(q)) {
+      return false
+    }
+    return true
+  })
+})
 
 interface Lane {
   key: string
@@ -60,7 +100,7 @@ const lanes = computed<Lane[]>(() => {
   }
   const memberLabel = (id: string | null) => {
     if (!id) return 'Не назначен'
-    const found = membersList.data.value?.members.find(m => m.userId === id)
+    const found = members.value.find(m => m.userId === id)
     return found ? displayName(found) : id.slice(0, 6)
   }
   const laneKey = (t: Task): string => {
@@ -85,9 +125,7 @@ const lanes = computed<Lane[]>(() => {
   }
 
   const buckets = new Map<string, Task[]>()
-  for (const t of tasks.value) {
-    // In epic mode the epic task itself sits at the top of its lane; don't
-    // also drop it into «Без эпика».
+  for (const t of filteredTasks.value) {
     if (swimlane.value === 'epic' && t.isEpic) continue
     const key = laneKey(t)
     const arr = buckets.get(key) ?? []
@@ -147,6 +185,14 @@ useHead({
 })
 
 const createColumnOpen = ref(false)
+const createTaskOpen = ref(false)
+const createTaskColumnId = computed(() => {
+  const backlog = localColumns.value.find(c => c.columnRole === 'backlog')
+  return backlog?.id ?? localColumns.value[0]?.id ?? null
+})
+function openCreateTask() {
+  if (createTaskColumnId.value) createTaskOpen.value = true
+}
 
 const isLoading = computed(() =>
   columnsList.isLoading.value || tasksList.isLoading.value,
@@ -154,18 +200,38 @@ const isLoading = computed(() =>
 </script>
 
 <template>
-  <div class="space-y-4 h-full flex flex-col">
-    <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canCreateColumns" :board="board" />
+  <div class="flex flex-col h-full min-h-0">
+    <BoardSubnav
+      :workspace-id="wsId"
+      :board-id="bId"
+      :board-name="board?.name"
+      :can-rename="canCreateColumns"
+      :board="board"
+    />
 
-    <div class="flex items-center justify-between gap-3">
-      <USelect v-model="swimlane" :items="SWIMLANE_OPTIONS" size="sm" class="w-56" />
-    </div>
+    <BoardFilterBar
+      v-if="columns.length > 0"
+      :swimlane="swimlane"
+      :query="query"
+      :selected-assignees="selectedAssignees"
+      :class-filter="classFilter"
+      :members="members"
+      :expedite-count="expediteCount"
+      :blocker-count="blockerCount"
+      :can-create="canCreateTasks"
+      class="-mx-4 sm:-mx-6 mt-3"
+      @update:swimlane="swimlane = $event"
+      @update:query="query = $event"
+      @toggle-assignee="toggleAssignee"
+      @update:class-filter="classFilter = $event"
+      @create-task="openCreateTask"
+    />
 
     <div v-if="isLoading" class="text-center py-12 text-muted">
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
     </div>
 
-    <UCard v-else-if="columns.length === 0" class="text-center py-12">
+    <UCard v-else-if="columns.length === 0" class="text-center py-12 mt-4">
       <div class="space-y-3">
         <UIcon name="i-lucide-columns-3" class="size-12 text-muted mx-auto" />
         <div>
@@ -180,14 +246,14 @@ const isLoading = computed(() =>
       </div>
     </UCard>
 
-    <div v-else-if="swimlane === 'none'" class="flex gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
+    <div v-else-if="swimlane === 'none'" class="flex-1 min-h-0 overflow-x-auto overflow-y-hidden pt-4 pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6">
       <draggable
         v-model="localColumns"
         :group="{ name: 'columns' }"
         item-key="id"
         handle=".column-drag-handle"
         :disabled="!canCreateColumns"
-        class="flex gap-4"
+        class="flex gap-3 h-full"
         animation="150"
         @end="onColumnsReorder"
       >
@@ -201,19 +267,21 @@ const isLoading = computed(() =>
             :can-manage="canCreateColumns"
           />
         </template>
+        <template #footer>
+          <button
+            v-if="canCreateColumns"
+            type="button"
+            class="w-[312px] shrink-0 rounded-xl border border-dashed border-default hover:border-accent-500 hover:bg-accent-50 text-muted hover:text-accent-600 flex items-center justify-center gap-2 text-[13px] transition-colors cursor-pointer self-start min-h-32"
+            @click="createColumnOpen = true"
+          >
+            <UIcon name="i-lucide-plus" class="size-4" />
+            Добавить колонку
+          </button>
+        </template>
       </draggable>
-      <button
-        v-if="canCreateColumns"
-        type="button"
-        class="w-72 shrink-0 rounded-lg border border-dashed border-default hover:border-primary/60 hover:bg-accented/40 text-muted hover:text-primary flex items-center justify-center gap-2 text-sm transition-colors min-h-32"
-        @click="createColumnOpen = true"
-      >
-        <UIcon name="i-lucide-plus" class="size-4" />
-        Добавить колонку
-      </button>
     </div>
 
-    <div v-else class="flex-1 min-h-0 overflow-y-auto space-y-4 pb-4">
+    <div v-else class="flex-1 min-h-0 overflow-y-auto space-y-4 pt-4 pb-4">
       <div v-for="lane in lanes" :key="lane.key" class="space-y-2">
         <button
           type="button"
@@ -229,7 +297,7 @@ const isLoading = computed(() =>
             {{ Array.from(lane.tasksByColumn.values()).reduce((n, arr) => n + arr.length, 0) }}
           </span>
         </button>
-        <div v-if="!collapsedLanes.has(lane.key)" class="flex gap-4 overflow-x-auto pb-2">
+        <div v-if="!collapsedLanes.has(lane.key)" class="flex gap-3 overflow-x-auto pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6">
           <BoardColumn
             v-for="column in localColumns"
             :key="`${lane.key}:${column.id}`"
@@ -267,6 +335,14 @@ const isLoading = computed(() =>
       v-model:open="createColumnOpen"
       :workspace-id="wsId"
       :board-id="bId"
+    />
+
+    <TaskCreateModal
+      v-if="canCreateTasks && createTaskColumnId"
+      v-model:open="createTaskOpen"
+      :workspace-id="wsId"
+      :board-id="bId"
+      :column-id="createTaskColumnId"
     />
   </div>
 </template>

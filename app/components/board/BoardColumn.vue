@@ -170,66 +170,87 @@ const menuItems = computed(() => [[
 ]])
 
 const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
+
+const wipBarState = computed(() => {
+  const limit = props.column.wipLimit
+  if (limit == null || limit === 0) return null
+  const count = localTasks.value.length
+  let tone: 'normal' | 'warn' | 'over' = 'normal'
+  if (count > limit) tone = 'over'
+  else if (count === limit) tone = 'warn'
+  return {
+    limit,
+    count,
+    tone,
+    pct: Math.min(100, (count / limit) * 100),
+  }
+})
 </script>
 
 <template>
-  <div
-    :class="[
-      'w-72 shrink-0 rounded-lg flex flex-col max-h-full',
-      roleStyle.bodyClass,
-    ]"
-  >
-    <div class="px-2 py-2 flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2 min-w-0 flex-1">
+  <div class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full bg-white border border-default">
+    <div class="px-3 pt-3 pb-2.5">
+      <div class="flex items-center gap-2 mb-1.5">
         <UIcon
           v-if="canManage"
           name="i-lucide-grip-vertical"
-          class="column-drag-handle size-4 text-muted hover:text-default cursor-grab active:cursor-grabbing shrink-0"
+          class="column-drag-handle size-3.5 text-zinc-300 hover:text-default cursor-grab active:cursor-grabbing shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
           title="Перетащи, чтобы переставить колонку"
         />
+        <span :class="['size-2.5 rounded-full shrink-0', roleStyle.dotClass]" />
+        <input
+          v-if="isEditing"
+          ref="nameInputRef"
+          v-model="draftName"
+          class="font-semibold text-[11.5px] uppercase tracking-[0.05em] text-default bg-transparent border-b border-zinc-400 outline-none min-w-0 flex-1"
+          :disabled="updateColumn.isPending.value"
+          @keyup.enter="commitEdit"
+          @keyup.esc="cancelEdit"
+          @blur="commitEdit"
+        >
+        <h3
+          v-else
+          class="font-semibold text-[11.5px] uppercase tracking-[0.05em] truncate min-w-0 flex-1 text-default"
+          :class="canManage ? 'cursor-text' : ''"
+          :title="canManage ? 'Двойной клик — переименовать' : ''"
+          @dblclick="startEdit"
+        >
+          {{ column.name }}
+        </h3>
+        <span
+          :class="[
+            'text-[12px] font-mono tabular-nums shrink-0 whitespace-nowrap',
+            wipBarState?.tone === 'over' ? 'text-red-600' : 'text-muted',
+          ]"
+          :title="wipBarState ? `WIP-лимит ${wipBarState.limit}` : 'Без WIP-лимита'"
+        >
+          <b
+            :class="[
+              'font-semibold',
+              wipBarState?.tone === 'over' ? 'text-red-600' : wipBarState?.tone === 'warn' ? 'text-accent-600' : 'text-default',
+            ]"
+          >{{ localTasks.length }}</b>
+          <template v-if="wipBarState"> / {{ wipBarState.limit }}</template>
+        </span>
+        <UDropdownMenu v-if="canManage" :items="menuItems" :ui="{ content: 'w-44' }">
+          <button
+            type="button"
+            class="size-6 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default transition-colors cursor-pointer"
+            title="Действия"
+          >
+            <UIcon name="i-lucide-more-horizontal" class="size-3.5" />
+          </button>
+        </UDropdownMenu>
+      </div>
+      <div v-if="wipBarState" class="h-[3px] rounded-full bg-zinc-100 overflow-hidden">
         <div
           :class="[
-            'inline-flex items-center gap-1.5 px-2 py-1 rounded-md min-w-0 flex-1',
-            roleStyle.chipClass,
+            'h-full rounded-full transition-[width] duration-300',
+            wipBarState.tone === 'over' ? 'bg-red-500' : wipBarState.tone === 'warn' ? 'bg-accent-500' : 'bg-brand-500',
           ]"
-        >
-          <span :class="['size-1.5 rounded-full shrink-0', roleStyle.dotClass]" />
-          <input
-            v-if="isEditing"
-            ref="nameInputRef"
-            v-model="draftName"
-            class="font-semibold text-xs uppercase tracking-wide bg-transparent border-b border-current outline-none min-w-0 flex-1"
-            :disabled="updateColumn.isPending.value"
-            @keyup.enter="commitEdit"
-            @keyup.esc="cancelEdit"
-            @blur="commitEdit"
-          >
-          <h3
-            v-else
-            class="font-semibold text-xs uppercase tracking-wide truncate min-w-0 flex-1"
-            :class="canManage ? 'cursor-text' : ''"
-            :title="canManage ? 'Двойной клик — переименовать' : ''"
-            @dblclick="startEdit"
-          >
-            {{ column.name }}
-          </h3>
-          <span
-            class="text-xs font-semibold shrink-0 tabular-nums"
-            :class="wipState?.over ? 'text-red-700 dark:text-red-300' : 'opacity-70'"
-            :title="wipState ? `WIP-лимит ${wipState.limit}` : 'Без WIP-лимита'"
-          >
-            {{ localTasks.length }}{{ wipState ? `/${wipState.limit}` : '' }}
-          </span>
-        </div>
-      </div>
-      <UDropdownMenu v-if="canManage" :items="menuItems">
-        <UButton
-          icon="i-lucide-more-horizontal"
-          color="neutral"
-          variant="ghost"
-          size="xs"
+          :style="{ width: `${wipBarState.pct}%` }"
         />
-      </UDropdownMenu>
+      </div>
     </div>
 
     <draggable
@@ -250,10 +271,10 @@ const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
     <button
       v-if="canCreate"
       type="button"
-      class="m-2 mt-0 px-3 py-1.5 text-sm text-muted hover:text-default hover:bg-accented/60 rounded-md flex items-center gap-1.5 transition-colors"
+      class="mx-2 mb-2 mt-0 px-3 py-2 rounded-md text-[13px] text-muted hover:text-accent-600 hover:bg-accent-50 border border-dashed border-transparent hover:border-accent-500 flex items-center gap-2 transition-colors cursor-pointer"
       @click="createOpen = true"
     >
-      <UIcon name="i-lucide-plus" class="size-4" />
+      <UIcon name="i-lucide-plus" class="size-3.5" />
       Добавить задачу
     </button>
 

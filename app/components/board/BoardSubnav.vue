@@ -105,64 +105,65 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
 </script>
 
 <template>
-  <div class="flex items-center justify-between gap-4 pb-3 border-b border-default">
-    <div class="flex flex-col min-w-0 gap-0.5">
+  <div class="flex items-start justify-between gap-4 pb-3 border-b border-default">
+    <div class="flex flex-col min-w-0 gap-1">
       <NuxtLink
         :to="pageRoutes.boards(workspaceId)"
-        class="text-xs text-muted hover:text-default transition-colors w-fit"
+        class="text-[12px] text-muted hover:text-default transition-colors w-fit"
       >
         Доски
       </NuxtLink>
-      <input
-        v-if="isEditing"
-        ref="inputRef"
-        v-model="draftName"
-        class="text-xl font-bold tracking-tight bg-transparent border-b border-primary outline-none min-w-0"
-        :disabled="update.isPending.value"
-        @keyup.enter="commitEdit"
-        @keyup.esc="cancelEdit"
-        @blur="commitEdit"
-      >
-      <h1
-        v-else
-        class="text-xl font-bold tracking-tight truncate"
-        :class="canRename ? 'cursor-text hover:text-primary transition-colors' : ''"
-        :title="canRename ? 'Двойной клик — переименовать' : ''"
-        @dblclick="startEdit"
-      >
-        {{ boardName ?? 'Доска' }}
-      </h1>
+      <div class="flex items-center gap-2 min-w-0">
+        <input
+          v-if="isEditing"
+          ref="inputRef"
+          v-model="draftName"
+          class="text-[22px] font-semibold tracking-tight bg-transparent border-b border-accent-500 outline-none min-w-0"
+          :disabled="update.isPending.value"
+          @keyup.enter="commitEdit"
+          @keyup.esc="cancelEdit"
+          @blur="commitEdit"
+        >
+        <h1
+          v-else
+          class="text-[22px] font-semibold tracking-tight truncate"
+          :class="canRename ? 'cursor-text hover:text-accent-600 transition-colors' : ''"
+          :title="canRename ? 'Двойной клик — переименовать' : ''"
+          @dblclick="startEdit"
+        >
+          {{ boardName ?? 'Доска' }}
+        </h1>
+      </div>
       <div
         v-if="sleLabel || replenishmentState || (canRename && board)"
-        class="flex items-center gap-2 text-xs text-muted flex-wrap"
+        class="flex items-center gap-1.5 flex-wrap mt-1"
       >
         <UTooltip v-if="sleLabel" :text="sleTooltip">
           <button
             type="button"
             :disabled="!canRename"
-            class="transition-colors disabled:cursor-default tabular-nums"
-            :class="canRename ? 'cursor-pointer hover:text-default' : ''"
+            class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-accent-50 text-accent-600 text-[11.5px] font-medium tabular-nums transition-colors disabled:cursor-default"
+            :class="canRename ? 'cursor-pointer hover:bg-accent-100' : ''"
             @click="canRename && (settingsOpen = true)"
           >
+            <UIcon name="i-lucide-sparkles" class="size-3" />
             {{ sleLabel }}
           </button>
         </UTooltip>
-        <span
-          v-if="sleLabel && (replenishmentState || (canRename && board))"
-          class="opacity-40"
-        >·</span>
         <UTooltip v-if="replenishmentState" :text="replenishmentTooltip">
           <button
             type="button"
             :disabled="!canRename"
-            class="transition-colors disabled:cursor-default"
             :class="[
-              replenishmentState.overdue ? 'text-accent-600' : '',
+              'inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full text-[11.5px] font-medium transition-colors disabled:cursor-default',
+              replenishmentState.overdue
+                ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                : 'bg-zinc-100 text-muted hover:bg-zinc-200',
               canRename && 'cursor-pointer',
-              canRename && (replenishmentState.overdue ? 'hover:text-accent-700' : 'hover:text-default'),
             ]"
             @click="canRename && onMarkReplenishment()"
           >
+            <UIcon name="i-lucide-calendar" class="size-3" />
             {{ replenishmentState.label }}
           </button>
         </UTooltip>
@@ -170,9 +171,10 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
           <button
             type="button"
             :disabled="recordReplenishment.isPending.value"
-            class="transition-colors cursor-pointer hover:text-default disabled:opacity-60 disabled:cursor-default"
+            class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-zinc-100 text-muted hover:bg-zinc-200 text-[11.5px] font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
             @click="onMarkReplenishment"
           >
+            <UIcon name="i-lucide-calendar" class="size-3" />
             Запустить пополнение
           </button>
         </UTooltip>
