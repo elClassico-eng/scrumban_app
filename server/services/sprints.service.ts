@@ -12,10 +12,11 @@
 //
 // Once a sprint enters `closed`, its task membership is frozen so velocity
 // and burndown analytics for that sprint stay reproducible.
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm'
 import {
   sprintTasks,
   sprints,
+  taskEvents,
   tasks,
   type Sprint,
   type SprintState,
@@ -67,6 +68,7 @@ export async function createSprint(input: {
   goal?: string
   plannedStartAt?: Date | null
   plannedEndAt?: Date | null
+  capacity?: number | null
   actorRole: WorkspaceMemberRole
 }): Promise<Sprint> {
   requireMinRole(input.actorRole, 'scrum_master')
@@ -89,6 +91,7 @@ export async function createSprint(input: {
         goal: input.goal ?? '',
         plannedStartAt: input.plannedStartAt ?? null,
         plannedEndAt: input.plannedEndAt ?? null,
+        capacity: input.capacity ?? null,
       })
       .returning(),
   )
@@ -103,6 +106,7 @@ export async function updateSprint(input: {
     goal?: string
     plannedStartAt?: Date | null
     plannedEndAt?: Date | null
+    capacity?: number | null
   }
   actorRole: WorkspaceMemberRole
 }): Promise<Sprint> {
@@ -115,6 +119,7 @@ export async function updateSprint(input: {
   if (input.patch.goal !== undefined) set.goal = input.patch.goal
   if ('plannedStartAt' in input.patch) set.plannedStartAt = input.patch.plannedStartAt ?? null
   if ('plannedEndAt' in input.patch) set.plannedEndAt = input.patch.plannedEndAt ?? null
+  if ('capacity' in input.patch) set.capacity = input.patch.capacity ?? null
 
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.update(sprints).set(set).where(eq(sprints.id, input.sprintId)).returning(),
@@ -283,11 +288,15 @@ export async function listBoardSprintMemberships(input: {
   workspaceId: string
   boardId: string
   actorRole: WorkspaceMemberRole
-}): Promise<{ sprintId: string; taskId: string }[]> {
+}): Promise<{ sprintId: string; taskId: string; addedAt: Date }[]> {
   requireMinRole(input.actorRole, 'viewer')
   return withTenant(input.workspaceId, async (tx) =>
     tx
-      .select({ sprintId: sprintTasks.sprintId, taskId: sprintTasks.taskId })
+      .select({
+        sprintId: sprintTasks.sprintId,
+        taskId: sprintTasks.taskId,
+        addedAt: sprintTasks.addedAt,
+      })
       .from(sprintTasks)
       .innerJoin(sprints, eq(sprints.id, sprintTasks.sprintId))
       .where(eq(sprints.boardId, input.boardId)),
@@ -305,4 +314,107 @@ function isPgUniqueViolation(err: unknown): boolean {
     'code' in candidate &&
     candidate.code === PG_UNIQUE_VIOLATION
   )
+}
+
+const DAY_MS = 86_400_000
+
+export interface BurndownPoint {
+  day: number
+  date: string
+  ideal: number
+  actual: number | null
+}
+
+export interface BurndownReport {
+  totalDays: number
+  totalSp: number
+  doneSp: number
+  points: BurndownPoint[]
+}
+
+export async function computeBurndown(input: {
+  workspaceId: string
+  sprintId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<BurndownReport> {
+  requireMinRole(input.actorRole, 'viewer')
+
+  return withTenant(input.workspaceId, async (tx) => {
+    const [sprint] = await tx.select().from(sprints).where(eq(sprints.id, input.sprintId))
+    if (!sprint) throw new NotFoundError('Спринт не найден')
+
+    const start = sprint.startedAt ?? sprint.plannedStartAt
+    const end = sprint.endedAt ?? sprint.plannedEndAt
+    if (!start || !end) {
+      return { totalDays: 0, totalSp: 0, doneSp: 0, points: [] }
+    }
+
+    const sprintTaskRows = await tx
+      .select({
+        taskId: sprintTasks.taskId,
+        addedAt: sprintTasks.addedAt,
+        storyPoints: tasks.storyPoints,
+      })
+      .from(sprintTasks)
+      .innerJoin(tasks, eq(tasks.id, sprintTasks.taskId))
+      .where(eq(sprintTasks.sprintId, input.sprintId))
+
+    const startMs = start.getTime()
+    const totalSp = sprintTaskRows.reduce((acc, r) => acc + (r.storyPoints ?? 0), 0)
+    const committedSp = sprintTaskRows
+      .filter(r => r.addedAt.getTime() <= startMs)
+      .reduce((acc, r) => acc + (r.storyPoints ?? 0), 0)
+
+    const closedEvents = sprintTaskRows.length > 0
+      ? await tx
+          .select({
+            taskId: taskEvents.taskId,
+            createdAt: taskEvents.createdAt,
+          })
+          .from(taskEvents)
+          .where(and(
+            eq(taskEvents.eventType, 'task_closed'),
+            inArray(taskEvents.taskId, sprintTaskRows.map(r => r.taskId)),
+            gte(taskEvents.createdAt, start),
+          ))
+          .orderBy(asc(taskEvents.createdAt))
+      : []
+
+    const spByTask = new Map<string, number>()
+    for (const r of sprintTaskRows) spByTask.set(r.taskId, r.storyPoints ?? 0)
+
+    const closureByDay = new Map<number, number>()
+    for (const e of closedEvents) {
+      const dayIdx = Math.floor((e.createdAt.getTime() - startMs) / DAY_MS)
+      if (dayIdx < 0) continue
+      const sp = spByTask.get(e.taskId) ?? 0
+      closureByDay.set(dayIdx, (closureByDay.get(dayIdx) ?? 0) + sp)
+    }
+
+    const totalDays = Math.max(1, Math.ceil((end.getTime() - startMs) / DAY_MS))
+    const todayDay = Math.floor((Date.now() - startMs) / DAY_MS)
+    const lastActualDay = sprint.state === 'closed'
+      ? totalDays
+      : Math.min(totalDays, Math.max(0, todayDay))
+
+    const points: BurndownPoint[] = []
+    let cumulativeClosed = 0
+    for (let d = 0; d <= totalDays; d++) {
+      cumulativeClosed += closureByDay.get(d - 1) ?? 0
+      const ideal = Math.max(0, committedSp - (committedSp / totalDays) * d)
+      const actual = d <= lastActualDay ? Math.max(0, committedSp - cumulativeClosed) : null
+      points.push({
+        day: d,
+        date: new Date(startMs + d * DAY_MS).toISOString(),
+        ideal: Math.round(ideal * 10) / 10,
+        actual,
+      })
+    }
+
+    const doneSp = sprintTaskRows
+      .filter(r => closedEvents.some(e => e.taskId === r.taskId))
+      .reduce((acc, r) => acc + (r.storyPoints ?? 0), 0)
+
+    return { totalDays, totalSp, doneSp, points }
+  })
 }

@@ -17,13 +17,15 @@ const BodySchema = z
     goal: z.string().max(10_000).optional(),
     plannedStartAt: z.iso.datetime().nullable().optional(),
     plannedEndAt: z.iso.datetime().nullable().optional(),
+    capacity: z.number().int().min(0).max(10_000).nullable().optional(),
   })
   .refine(
     (d) =>
       d.name !== undefined ||
       d.goal !== undefined ||
       d.plannedStartAt !== undefined ||
-      d.plannedEndAt !== undefined,
+      d.plannedEndAt !== undefined ||
+      d.capacity !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -52,6 +54,7 @@ export default defineEventHandler(async (event) => {
             : body.plannedEndAt === null
               ? null
               : new Date(body.plannedEndAt),
+        ...('capacity' in body ? { capacity: body.capacity } : {}),
       },
       actorRole: workspace.role,
     })

@@ -11,6 +11,7 @@ export interface Sprint {
   plannedEndAt: string | null
   startedAt: string | null
   endedAt: string | null
+  capacity: number | null
   createdAt: string
   updatedAt: string
 }
@@ -28,6 +29,7 @@ export interface CreateSprintInput {
   goal?: string
   plannedStartAt?: string | null
   plannedEndAt?: string | null
+  capacity?: number | null
 }
 
 export interface UpdateSprintInput {
@@ -35,8 +37,23 @@ export interface UpdateSprintInput {
   goal?: string
   plannedStartAt?: string | null
   plannedEndAt?: string | null
+  capacity?: number | null
 }
 
 export interface AddTaskToSprintInput {
   taskId: string
+}
+
+export interface BurndownPoint {
+  day: number
+  date: string
+  ideal: number
+  actual: number | null
+}
+
+export interface BurndownReport {
+  totalDays: number
+  totalSp: number
+  doneSp: number
+  points: BurndownPoint[]
 }

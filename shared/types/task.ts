@@ -18,6 +18,7 @@ export interface Task {
   parentTaskId: string | null
   blockedReason: string | null
   isEpic: boolean
+  storyPoints: number | null
   createdAt: string
   updatedAt: string
 }
@@ -38,6 +39,7 @@ export interface CreateTaskInput {
   dueDate?: string | null
   assigneeId?: string | null
   parentTaskId?: string | null
+  storyPoints?: number | null
 }
 
 export interface UpdateTaskInput {
@@ -49,6 +51,7 @@ export interface UpdateTaskInput {
   parentTaskId?: string | null
   blockedReason?: string | null
   isEpic?: boolean
+  storyPoints?: number | null
 }
 
 export interface TaskDependencyView {

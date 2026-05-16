@@ -71,6 +71,7 @@ export const tasks = pgTable(
     }),
     blockedReason: text('blocked_reason'),
     isEpic: boolean('is_epic').notNull().default(false),
+    storyPoints: integer('story_points'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

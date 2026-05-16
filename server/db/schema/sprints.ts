@@ -9,6 +9,7 @@
 // workspace_id is duplicated on both tables so RLS policies stay flat.
 import {
   index,
+  integer,
   pgEnum,
   pgTable,
   primaryKey,
@@ -47,6 +48,7 @@ export const sprints = pgTable(
     plannedEndAt: timestamp('planned_end_at', { withTimezone: true }),
     startedAt: timestamp('started_at', { withTimezone: true }),
     endedAt: timestamp('ended_at', { withTimezone: true }),
+    capacity: integer('capacity'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

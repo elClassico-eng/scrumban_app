@@ -13,6 +13,7 @@ const BodySchema = z.object({
   goal: z.string().max(10_000).optional(),
   plannedStartAt: z.iso.datetime().optional().nullable(),
   plannedEndAt: z.iso.datetime().optional().nullable(),
+  capacity: z.number().int().min(0).max(10_000).nullable().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -29,6 +30,7 @@ export default defineEventHandler(async (event) => {
       goal: body.goal,
       plannedStartAt: body.plannedStartAt ? new Date(body.plannedStartAt) : null,
       plannedEndAt: body.plannedEndAt ? new Date(body.plannedEndAt) : null,
+      capacity: body.capacity,
       actorRole: workspace.role,
     })
     return { sprint }

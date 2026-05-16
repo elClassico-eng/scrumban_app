@@ -79,6 +79,7 @@ export async function createTask(input: {
   dueDate?: Date | null
   assigneeId?: string | null
   parentTaskId?: string | null
+  storyPoints?: number | null
   actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
@@ -124,6 +125,7 @@ export async function createTask(input: {
         expeditedAt,
         assigneeId: input.assigneeId ?? null,
         parentTaskId: input.parentTaskId ?? null,
+        storyPoints: input.storyPoints ?? null,
         position: Number(agg!.next),
       })
       .returning()
@@ -193,6 +195,7 @@ export async function updateTaskFields(input: {
     parentTaskId?: string | null
     blockedReason?: string | null
     isEpic?: boolean
+    storyPoints?: number | null
   }
   actorId?: string
   actorRole: WorkspaceMemberRole
@@ -219,6 +222,7 @@ export async function updateTaskFields(input: {
     set.blockedReason = trimmed ? trimmed : null
   }
   if (input.patch.isEpic !== undefined) set.isEpic = input.patch.isEpic
+  if ('storyPoints' in input.patch) set.storyPoints = input.patch.storyPoints ?? null
 
   // Parent change needs cycle + same-board validation; do it before the
   // UPDATE so a bad parent never lands in the row.
