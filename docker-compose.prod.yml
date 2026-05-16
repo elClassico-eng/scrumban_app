@@ -34,6 +34,13 @@ services:
       DATABASE_URL: postgresql://scrumban:${POSTGRES_PASSWORD}@db:5432/scrumban_prod
       NUXT_DATABASE_URL: postgresql://scrumban:${POSTGRES_PASSWORD}@db:5432/scrumban_prod
       NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
     networks:
       - backend
 
@@ -41,7 +48,8 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
