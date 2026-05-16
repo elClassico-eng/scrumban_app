@@ -41,26 +41,17 @@ const hiddenCount = computed(() =>
     :to="pageRoutes.workspaceMembers(current.id)"
     class="flex items-center -space-x-2 hover:opacity-90 transition-opacity"
   >
-    <UTooltip
+    <UserAvatar
       v-for="member in visibleMembers"
       :key="member.userId"
-      :text="displayName(member)"
-    >
-      <div
-        class="size-8 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-zinc-800"
-      >
-        <img
-          v-if="member.avatarUrl"
-          :src="member.avatarUrl"
-          alt=""
-          class="size-full object-cover"
-        >
-        <span v-else>{{ initials(member) }}</span>
-      </div>
-    </UTooltip>
+      :user="member"
+      size="md"
+      tooltip
+      ring
+    />
     <div
       v-if="hiddenCount > 0"
-      class="size-8 rounded-full bg-elevated text-muted text-xs font-medium flex items-center justify-center shrink-0 border-2 border-white dark:border-zinc-800"
+      class="size-8 rounded-full bg-elevated text-muted text-xs font-medium flex items-center justify-center shrink-0 ring-2 ring-white dark:ring-zinc-800"
       :title="`Ещё ${hiddenCount}`"
     >
       +{{ hiddenCount }}

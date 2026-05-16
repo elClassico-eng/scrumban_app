@@ -71,6 +71,7 @@ export const tasks = pgTable(
     }),
     blockedReason: text('blocked_reason'),
     isEpic: boolean('is_epic').notNull().default(false),
+    storyPoints: integer('story_points'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -103,6 +104,8 @@ export const taskEventType = pgEnum('task_event_type', [
   'task_assigned',
   'task_updated',
   'task_archived',
+  'task_commented',
+  'task_comment_deleted',
 ])
 
 export const taskEvents = pgTable(

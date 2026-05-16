@@ -12,3 +12,5 @@ export type TaskEventType =
   | 'task_assigned'
   | 'task_updated'
   | 'task_archived'
+  | 'task_commented'
+  | 'task_comment_deleted'

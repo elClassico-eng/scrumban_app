@@ -9,10 +9,11 @@ const schema = z.object({
   goal: z.string().max(10_000).optional(),
   plannedStartAt: z.string().optional(),
   plannedEndAt: z.string().optional(),
+  capacity: z.string().optional(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: '', goal: '', plannedStartAt: '', plannedEndAt: '' })
+const state = reactive<State>({ name: '', goal: '', plannedStartAt: '', plannedEndAt: '', capacity: '' })
 
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
@@ -27,6 +28,7 @@ function resetForm() {
   state.goal = ''
   state.plannedStartAt = ''
   state.plannedEndAt = ''
+  state.capacity = ''
   create.reset()
 }
 
@@ -38,11 +40,13 @@ function toIsoOrNull(value: string | undefined): string | null {
 
 async function onSubmit() {
   try {
+    const capacityNum = state.capacity ? Number(state.capacity) : null
     await create.mutateAsync({
       name: state.name,
       goal: state.goal || undefined,
       plannedStartAt: toIsoOrNull(state.plannedStartAt),
       plannedEndAt: toIsoOrNull(state.plannedEndAt),
+      capacity: capacityNum && Number.isFinite(capacityNum) ? capacityNum : null,
     })
     open.value = false
     resetForm()
@@ -75,6 +79,20 @@ watch(open, (v) => {
             <UInput v-model="state.plannedEndAt" type="date" class="w-full" />
           </UFormField>
         </div>
+        <UFormField
+          label="Capacity (SP)"
+          name="capacity"
+          hint="Целевой бюджет story points команды на спринт. Можно оставить пустым."
+        >
+          <UInput
+            v-model="state.capacity"
+            type="number"
+            min="0"
+            max="10000"
+            placeholder="например, 32"
+            class="w-full"
+          />
+        </UFormField>
         <UAlert
           v-if="errorMessage"
           color="error"

@@ -29,6 +29,8 @@ export function humanizeTaskEventType(type: TaskEventType): string {
     task_assigned: 'Назначена',
     task_updated: 'Обновлена',
     task_archived: 'Архивирована',
+    task_commented: 'Прокомментирована',
+    task_comment_deleted: 'Удалён комментарий',
   }
   return map[type]
 }

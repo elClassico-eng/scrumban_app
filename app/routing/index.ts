@@ -45,12 +45,22 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/tasks/${taskId}/dependencies/${blockerTaskId}`,
   boardDependencyCounts: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/dependencies`,
+  taskAssignees: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/assignees`,
+  taskAssignee: (wsId: string, boardId: string, taskId: string, userId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/assignees/${userId}`,
+
   taskChecklist: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist`,
   taskChecklistItem: (wsId: string, boardId: string, taskId: string, itemId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist/${itemId}`,
   taskChecklistReorder: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist/reorder`,
+
+  taskComments: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/comments`,
+  taskComment: (wsId: string, boardId: string, taskId: string, commentId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/comments/${commentId}`,
 
   sprints: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/sprints`,
   sprint: (wsId: string, boardId: string, sprintId: string) =>
@@ -59,6 +69,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/start`,
   sprintClose: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/close`,
+  sprintBurndown: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/burndown`,
   sprintTasks: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/tasks`,
   sprintTask: (wsId: string, boardId: string, sprintId: string, taskId: string) =>
@@ -78,6 +90,14 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/analytics/wip-recommendations`,
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
+
+  workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
+
+  notifications: '/api/notifications',
+  notificationsUnreadCount: '/api/notifications/unread-count',
+  notificationRead: (id: string) => `/api/notifications/${id}/read`,
+  notificationsReadAll: '/api/notifications/read-all',
+  notificationsStream: '/api/notifications/stream',
 } as const
 
 export const pageRoutes = {
@@ -91,6 +111,7 @@ export const pageRoutes = {
   workspace: (id: string) => `/workspaces/${id}`,
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
   workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
+  workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
 
   boards: (wsId: string) => `/workspaces/${wsId}/boards`,
   board: (wsId: string, boardId: string) => `/workspaces/${wsId}/boards/${boardId}`,

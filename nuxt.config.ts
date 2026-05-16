@@ -32,6 +32,15 @@ export default defineNuxtConfig({
     display: 'swap',
   },
 
+  nitro: {
+    experimental: { tasks: true },
+    scheduledTasks: {
+      '0 * * * *': ['notifications:check-sle-breaches'],
+      '0 9 * * *': ['notifications:check-replenishment'],
+      '0 */6 * * *': ['notifications:check-sprint-forecast'],
+    },
+  },
+
   runtimeConfig: {
     // Server-only secrets. Nuxt auto-overrides keys via NUXT_* env vars
     // (NUXT_SESSION_PASSWORD); for unprefixed names like DATABASE_URL we map

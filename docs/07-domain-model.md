@@ -194,6 +194,47 @@ PRIMARY KEY (sprint_id, task_id)
 
 Задача может попадать в несколько спринтов (carry-over между итерациями), но обычно живёт в одном. Composite PK предотвращает дубликаты. См. [`server/db/schema/sprints.ts`](../server/db/schema/sprints.ts).
 
+### `task_comments` — обсуждения задач (Phase 7)
+
+```text
+id              uuid PK DEFAULT gen_random_uuid()
+workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+task_id         uuid NOT NULL REFERENCES tasks(id)      ON DELETE CASCADE
+author_id       uuid REFERENCES users(id) ON DELETE SET NULL
+body            text NOT NULL
+edited_at       timestamptz                           -- null = never edited
+created_at      timestamptz NOT NULL DEFAULT now()
+```
+
+`onDelete: SET NULL` для автора — удалённый аккаунт не сносит исторические комментарии. Тело — plain text + `@[Name](uuid)`-токены mentions (uuid стабильно ссылается на аккаунт; UI рендерит как `@Name` chip). Hard-delete сопровождается `task_comment_deleted` событием в `task_events` со снэпшотом body в payload — историю можно восстановить из audit log. RLS — стандартный workspace-scoped (`USING workspace_id = current_setting('app.workspace_id')`). См. [`server/db/schema/comments.ts`](../server/db/schema/comments.ts).
+
+### `notifications` — пользовательские нотификации (Phase 7)
+
+```text
+id              uuid PK DEFAULT gen_random_uuid()
+workspace_id    uuid NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE
+user_id         uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE
+type            notification_type NOT NULL
+                -- mention | assigned | comment_on_assigned
+                -- sle_breach | replenishment_overdue | sprint_forecast_drop
+payload         jsonb NOT NULL DEFAULT '{}'
+read_at         timestamptz
+created_at      timestamptz NOT NULL DEFAULT now()
+INDEX (user_id, read_at, created_at)
+```
+
+**User-scoped RLS** (отклонение от стандартного workspace-scoped паттерна):
+
+```sql
+USING (user_id = NULLIF(current_setting('app.user_id', true), '')::uuid)
+```
+
+Зачем: bell должен показывать unread из всех workspace одной выборкой; workspace-scoped RLS требовал бы N запросов через `withTenant` по каждому workspace. Параллельный GUC `app.user_id` ставится через `withUser(userId, fn)` или `setUserContext(tx, userId)`. Workspace_id остаётся на таблице для cascade-delete при удалении workspace (verified в Phase 7 isolation тестах). См. [`server/db/schema/notifications.ts`](../server/db/schema/notifications.ts).
+
+Категории:
+- **User-action** (synchronous emit из сервисов): `mention`, `assigned`, `comment_on_assigned`. Self-target skipped.
+- **Flow-aware** (asynchronous emit из Nitro scheduled tasks): `sle_breach` (aging WIP > 85% SLE), `replenishment_overdue` (cycle missed), `sprint_forecast_drop` (Monte Carlo P < 70%). Idempotency через 24h dedupe `WHERE payload->>'X' = ...`.
+
 ### Связи (Current)
 
 ```
@@ -203,17 +244,22 @@ users ──┐
 workspaces ──┐
              ├─► boards ──► board_columns
              │      │
-             │      └─► tasks ──► task_events
+             │      └─► tasks ──┬─► task_events
+             │              │   └─► task_comments
              │              │
              └─► sprints ◄──┴──► sprint_tasks
                   (1 active per board enforced)
+
+users ──► notifications (user-scoped RLS, cross-workspace)
 ```
 
 - `users ↔ workspaces` — M:N через `workspace_members` (роль на каждое членство).
 - `workspaces → boards → board_columns` — иерархия workspace → board → column.
 - `boards → tasks` — задачи живут на доске; их состояние определяется колонкой (`tasks.column_id`), отдельного `status` нет.
 - `tasks → task_events` — append-only history; от движений между колонками выводится вся flow-аналитика.
+- `tasks → task_comments` — обсуждение задачи, mentions через token-формат `@[Name](uuid)`. Phase 7.
 - `boards → sprints` — каждый спринт принадлежит одной доске; `sprint_tasks` связывает M:N со задачами доски.
+- `users → notifications` — нотификации persona-scoped (user-scoped RLS вместо workspace), чтобы bell-feed аггрегировал unread cross-workspace одной выборкой. Phase 7.
 
 Источник истины по физической схеме — Drizzle SQL-миграции в `drizzle/migrations/` + Drizzle schema в `server/db/schema.ts`. Отдельная ER-диаграмма не ведётся: её роль выполняет class diagram ([`docs/uml/02-class/`](uml/02-class/)) для логической модели и SQL-миграции — для физической.
 
@@ -229,13 +275,6 @@ workspaces ──┐
 > **Триггер ввода:** ≥ 3 активных досок в одном workspace одновременно (например, разделение по командам / продуктовым линиям), **или** ≥ 1 user-request на группировку и cross-board view. Сегодня workspace → board напрямую достаточно для ранних команд, использующих 1–2 доски — типичная нагрузка MVP.
 
 Ключевые поля: `id`, `workspace_id`, `name`, `key` (короткий префикс типа `SCB` для будущих task-short-id), `description`, `archived_at`. Связи: `workspace → projects → boards/sprints`.
-
-### `task_comments` — комментарии к задачам с историей изменений
-
-> **Status:** не реализовано в Phase 1-3 MVP.
-> **Триггер ввода:** ≥ 5 активных пользователей в одном workspace, у которых пересекаются назначения по задачам (≥ 30% задач имеют ≥ 2 разных assignee/follower за rolling 7 дней), **или** первый прямой запрос пользователя «как обсудить задачу с коллегой внутри тулзы». Сегодня обсуждения выносят в Pachca/Slack — это нормально для команды до 5 человек, но даёт цену переключения контекста при росте.
-
-Ключевые поля: `id`, `workspace_id`, `task_id`, `author_id`, `body` (markdown), `created_at`, `updated_at`, `deleted_at` (soft delete для истории редактирований). Связь: `task ←─ task_comments`.
 
 ### `task_attachments` — файловые вложения задач
 

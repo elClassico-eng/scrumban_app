@@ -151,26 +151,36 @@
 
 ---
 
-### Phase 7 — Collaboration & notifications (T3)
+### Phase 7 — Collaboration & notifications (T3) — **DONE (2026-05-14)**
 
-**§1 Vision pillars advanced:** Базовый функциональный фитнес. Без этого продукт нельзя реально пользоваться в команде.
+**§1 Vision pillars advanced:** Pillar **B+** через flow-aware алерты (push-форма Phase 5 percentile-метрик). Comments / generic notifications — usability enabler, не thesis-content (зафиксировано в spec'е). Без Phase 7 «percentile-based alerts на застрявшие задачи» из vision-doc были только пассивной диаграммой; теперь добираются до scrum-мастера активным сигналом.
 
-**§2 Что делаем:**
-1. **Comments per task**: новая таблица `task_comments (id, task_id, author_id, body markdown, created_at)`
-2. **In-app notifications**: новая таблица `notifications (id, user_id, type, payload jsonb, read_at)`; полл через query (или SSE per-user channel). Triggers: assignee changed → notify new assignee; mention `@email` в комментарии → notify mentioned; blocker resolved → notify blocked-task assignee.
-3. **Email digest** (daily, опционально): почасовый pg-boss job собирает unread notifications → отправляет одно письмо.
-4. **Attachments** (S3/MinIO upload): `task_attachments (id, task_id, url, filename, size, uploaded_by, uploaded_at)`. Upload через signed URL.
+**§2 Что сделано (отклонения от изначального plan'а):**
+1. **Comments per task**: `task_comments (id, workspace_id, task_id, author_id, body, edited_at, created_at)`. Plain text + `@[Name](uuid)` mentions с sidecar UI. Edit-5min для автора, admin override, hard-delete с audit в `task_events`.
+2. **In-app notifications**: `notifications (id, workspace_id, user_id, type, payload jsonb, read_at, created_at)` с **user-scoped RLS** (cross-workspace bell — single query). SSE per-user channel (`/api/notifications/stream`) для real-time. Бell в AppHeader + USlideover panel.
+3. **Flow-aware scheduled tasks (Nitro experimental tasks):**
+   - `notifications:check-sle-breaches` — hourly, age vs `boards.sle_days` > 85%
+   - `notifications:check-replenishment` — daily 09:00, `last_replenishment_at + period < now`
+   - `notifications:check-sprint-forecast` — every 6h, Monte Carlo wrapper над `computeMonteCarlo` (Phase 5), P < 70%
+   - 24h dedupe через `NOT EXISTS` на payload-key.
+4. **Activity feed** на уровне workspace (`/workspaces/[id]/activity`) с фильтрами в querystring (board / actor / event-types / date range).
+5. ~~Attachments~~ → deferred в Phase 7.5 (нет infra Object Storage).
+6. ~~Email digest~~ → deferred в Phase 7.5 (нет pg-boss; Nitro tasks хватило для периодических сканов).
 
-**§3 Deliverables:**
-- Comment thread UI в TaskDrawer (markdown + mentions с автокомплитом из членов workspace)
-- Notification bell в header с unread badge + dropdown last 20
-- Attachment uploader в drawer
-- pg-boss queue setup для emails (это первая background job в проекте)
-- SMTP integration (Yandex Mail / SES / Mailgun — какой настроишь)
+**§3 Что НЕ сделали (Phase 7.5 / 8):**
+- File attachments + Object Storage integration.
+- pg-boss durable queue + SMTP (`@yandex-cloud/email`?). Триггер — реальный need в email-уведомлениях.
+- Web Push API / PWA notifications.
+- Markdown / rich-text в комментариях (по feedback).
+- Invite-by-link / magic-link onboarding.
 
-**§4 DoD:** комментарий с упоминанием создает notification у упомянутого; assignee change создает notification; attachment загружается и скачивается; email digest отправляется (можно тестировать с MailHog локально).
+**§4 DoD (verified):**
+- 185 тестов зелёные (+56 новых: 12 comments + 11 notifications + 8 activity + 19 flow-alerts (включая sprint forecast) + 6 cross-workspace isolation).
+- RLS leakage защита подтверждена тестом (user в 2 workspace не может прочитать чужие task_comments через свой URL).
+- Cascade-delete workspace → comments + notifications уходят атомарно.
+- Все 3 типа flow-alerts emit'ятся в e2e через dev-trigger endpoint.
 
-**§5 Зачем:** без comments / notifications в команде 30 человек никто не узнает что задачи назначены. Базовый функциональный требование. ~1.5-2 недели.
+**§5 Зачем:** результат — продукт стал юзабельным для команды (collaboration table-stakes) И thesis pillar B+ закрылся end-to-end (статистика → доставка до пользователя активным сигналом). Без push-канала «percentile alerts» из vision-doc были только диаграммой, которую никто не смотрит.
 
 ---
 

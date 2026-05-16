@@ -14,6 +14,8 @@ const BodySchema = z.object({
   serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']).optional(),
   dueDate: z.iso.datetime().optional().nullable(),
   assigneeId: z.uuid().nullable().optional(),
+  parentTaskId: z.uuid().nullable().optional(),
+  storyPoints: z.number().int().min(0).max(1000).nullable().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -32,6 +34,8 @@ export default defineEventHandler(async (event) => {
       serviceClass: body.serviceClass,
       dueDate: body.dueDate ? new Date(body.dueDate) : null,
       assigneeId: body.assigneeId,
+      parentTaskId: body.parentTaskId,
+      storyPoints: body.storyPoints,
       actorId: user.id,
       actorRole: workspace.role,
     })

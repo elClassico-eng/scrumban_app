@@ -12,26 +12,38 @@ function openTask() {
   })
 }
 
-// vue-query dedupes by queryKey, so even though every card calls these
-// composables, only one HTTP request hits each endpoint per board.
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.task.boardId)
 const { list: membersList } = useMembersApi(wsId)
 const { list: boardsList } = useBoardsApi(wsId)
+const { list: tasksList } = useTasksApi(wsId, bId)
 const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 
 const cosInfo = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const blockerCount = computed(() => depCountsByTaskId.value.get(props.task.id)?.blockerCount ?? 0)
 
-const assignee = computed(() => {
-  if (!props.task.assigneeId) return null
-  return membersList.data.value?.members.find(m => m.userId === props.task.assigneeId) ?? null
+const memberById = computed(() => {
+  const m = new Map<string, NonNullable<typeof membersList.data.value>['members'][number]>()
+  for (const member of membersList.data.value?.members ?? []) m.set(member.userId, member)
+  return m
 })
-const assigneeName = computed(() => assignee.value ? displayName(assignee.value) : null)
-const assigneeInitials = computed(() => assignee.value ? initials(assignee.value) : '')
 
-// Aging-WIP signal: age from createdAt vs board.sleDays.
-// Per-column anchor is Phase 8 work.
+const assigneeIds = computed(() => props.task.assigneeIds ?? [])
+const visibleAssignees = computed(() =>
+  assigneeIds.value
+    .slice(0, 3)
+    .map(id => memberById.value.get(id))
+    .filter((x): x is NonNullable<typeof x> => !!x),
+)
+const hiddenAssigneesCount = computed(() =>
+  Math.max(0, assigneeIds.value.length - visibleAssignees.value.length),
+)
+
+const parentTask = computed(() => {
+  if (!props.task.parentTaskId) return null
+  return tasksList.data.value?.tasks.find(t => t.id === props.task.parentTaskId) ?? null
+})
+
 const board = computed(() =>
   boardsList.data.value?.boards.find(b => b.id === props.task.boardId) ?? null,
 )
@@ -44,47 +56,159 @@ const agingTooltip = computed(() => {
   return `Возраст ${days} дн (SLE ${board.value?.sleDays} дн)`
 })
 
-const dueDateLabel = computed(() => {
+interface DueState {
+  label: string
+  tone: 'overdue' | 'today' | 'soon' | 'normal'
+}
+const dueState = computed<DueState | null>(() => {
   if (!props.task.dueDate) return null
-  return new Date(props.task.dueDate).toLocaleDateString('ru', { day: '2-digit', month: 'short' })
+  const d = new Date(props.task.dueDate)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDay = new Date(d)
+  dueDay.setHours(0, 0, 0, 0)
+  const diff = Math.round((dueDay.getTime() - today.getTime()) / 86_400_000)
+  const fmt = d.toLocaleDateString('ru', { day: '2-digit', month: 'short' })
+  if (diff < 0) return { label: `просрочена на ${-diff}д`, tone: 'overdue' }
+  if (diff === 0) return { label: 'сегодня', tone: 'today' }
+  if (diff === 1) return { label: 'завтра', tone: 'soon' }
+  if (diff <= 3) return { label: `${fmt} · через ${diff}д`, tone: 'soon' }
+  return { label: fmt, tone: 'normal' }
 })
-const dueOverdue = computed(() => {
-  if (!props.task.dueDate) return false
-  return new Date(props.task.dueDate).getTime() < Date.now()
+
+const stripeColor = computed(() => {
+  if (props.task.blockedReason || blockerCount.value > 0) return 'bg-red-500'
+  if (props.task.serviceClass === 'expedite') return 'bg-accent-500'
+  if (props.task.serviceClass === 'fixed_date') return 'bg-amber-500'
+  if (props.task.serviceClass === 'intangible') return 'bg-zinc-300'
+  return 'bg-zinc-400'
 })
+
+const shortId = computed(() => props.task.id.slice(0, 6).toUpperCase())
+const isDone = computed(() => props.task.closedAt != null)
 </script>
 
 <template>
   <div
-    class="bg-default border border-default rounded-lg p-3 cursor-grab hover:border-primary/50 hover:shadow-sm transition-all space-y-2"
+    class="group relative bg-white border border-default rounded-lg pl-4 pr-3 py-2.5 cursor-pointer hover:border-zinc-400 hover:shadow-sm transition-all overflow-hidden"
+    :class="[
+      isDone ? 'bg-zinc-50/60' : '',
+      task.blockedReason || blockerCount > 0 ? 'border-red-200' : '',
+    ]"
     @click="openTask"
   >
-    <div class="flex items-start justify-between gap-2">
-      <div class="flex items-start gap-2 min-w-0 flex-1">
-        <span
-          :class="['size-2 rounded-full shrink-0 mt-1.5', cosInfo.dotClass]"
-          :title="cosInfo.shortLabel"
+    <span :class="['absolute left-0 top-0 bottom-0 w-[3px]', stripeColor]" />
+
+    <div class="flex items-center gap-1.5 min-w-0 mb-1.5">
+      <span class="font-mono text-[11px] text-muted shrink-0">{{ shortId }}</span>
+      <span
+        v-if="parentTask"
+        class="inline-flex items-center gap-1 px-1.5 h-[18px] rounded bg-zinc-100 font-mono text-[10.5px] text-muted truncate min-w-0"
+        :title="parentTask.title"
+      >
+        <UIcon
+          v-if="parentTask.isEpic"
+          name="i-lucide-crown"
+          class="size-3 text-accent-500 shrink-0"
         />
-        <div class="flex items-start gap-1.5 min-w-0 flex-1">
-          <UIcon
-            v-if="task.blockedReason"
-            name="i-lucide-lock"
-            class="size-3.5 text-warning mt-0.5 shrink-0"
-            :title="`Заблокировано: ${task.blockedReason}`"
-          />
-          <UIcon
-            v-if="task.isEpic"
-            name="i-lucide-flag"
-            class="size-3.5 text-primary mt-0.5 shrink-0"
-            title="Эпик"
-          />
-          <p class="text-sm font-medium line-clamp-2 flex-1 min-w-0">{{ task.title }}</p>
-        </div>
-      </div>
+        <UIcon
+          v-else
+          name="i-lucide-corner-left-up"
+          class="size-3 shrink-0"
+        />
+        <span class="truncate">{{ parentTask.id.slice(0, 6).toUpperCase() }}</span>
+      </span>
+      <div class="flex-1" />
+      <span
+        v-if="task.serviceClass === 'expedite'"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 text-accent-600 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
+      >
+        <UIcon name="i-lucide-zap" class="size-3" />
+        Срочная
+      </span>
+      <span
+        v-if="task.serviceClass === 'fixed_date'"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
+      >
+        <UIcon name="i-lucide-calendar-clock" class="size-3" />
+        Дедлайн
+      </span>
+      <span
+        v-if="task.isEpic"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 text-accent-600 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
+        title="Эпик"
+      >
+        <UIcon name="i-lucide-crown" class="size-3" />
+        Эпик
+      </span>
+      <span
+        v-if="task.storyPoints != null"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded-full bg-zinc-100 text-default text-[11px] font-semibold tabular-nums shrink-0"
+        title="Story points"
+      >
+        <span class="size-1.5 rounded-full bg-zinc-400" />
+        {{ task.storyPoints }}
+      </span>
+    </div>
+
+    <p
+      class="text-[13px] font-medium leading-snug break-words line-clamp-3 mb-1.5"
+      :class="isDone ? 'text-muted line-through' : 'text-default'"
+    >
+      {{ task.title }}
+    </p>
+
+    <div
+      v-if="task.blockedReason"
+      class="flex items-start gap-1.5 px-2 py-1 mb-1.5 rounded bg-red-50 text-red-600 text-[11.5px] font-medium leading-snug"
+    >
+      <UIcon name="i-lucide-alert-triangle" class="size-3.5 shrink-0 mt-px" />
+      <span class="line-clamp-2">{{ task.blockedReason }}</span>
+    </div>
+
+    <div class="flex items-center gap-2 min-h-[22px]">
+      <span
+        v-if="dueState && dueState.tone === 'overdue'"
+        class="inline-flex items-center gap-1 h-[20px] px-2 rounded-full bg-red-500 text-white text-[10.5px] font-semibold tabular-nums"
+      >
+        <UIcon name="i-lucide-calendar" class="size-3" />
+        {{ dueState.label }}
+      </span>
+      <span
+        v-else-if="dueState && dueState.tone === 'today'"
+        class="inline-flex items-center gap-1 h-[20px] px-2 rounded-full bg-accent-500 text-white text-[10.5px] font-semibold tabular-nums"
+      >
+        <UIcon name="i-lucide-calendar" class="size-3" />
+        {{ dueState.label }}
+      </span>
+      <span
+        v-else-if="dueState && dueState.tone === 'soon'"
+        class="inline-flex items-center gap-1 text-[11px] font-semibold text-accent-600 tabular-nums"
+      >
+        <UIcon name="i-lucide-calendar" class="size-3 text-accent-500" />
+        {{ dueState.label }}
+      </span>
+      <span
+        v-else-if="dueState"
+        class="inline-flex items-center gap-1 text-[11px] text-muted tabular-nums"
+      >
+        <UIcon name="i-lucide-calendar" class="size-3 text-zinc-400" />
+        {{ dueState.label }}
+      </span>
+
+      <span
+        v-if="blockerCount > 0"
+        class="inline-flex items-center gap-1 text-[11px] text-red-600 font-medium"
+        :title="`Заблокирована ${blockerCount} задачами`"
+      >
+        <UIcon name="i-lucide-lock" class="size-3" />
+        {{ blockerCount }}
+      </span>
+
       <span
         v-if="agingTier.show"
         :class="[
-          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium shrink-0 leading-none',
+          'inline-flex items-center gap-1 px-1.5 h-[18px] rounded text-[10.5px] font-medium leading-none',
           agingTier.chipClass,
         ]"
         :title="agingTooltip"
@@ -92,39 +216,34 @@ const dueOverdue = computed(() => {
         <UIcon name="i-lucide-clock" class="size-3" />
         {{ Math.round(ageDaysFromIso(task.createdAt)) }}д
       </span>
-    </div>
-    <div class="flex items-center justify-between gap-2 min-h-6 pl-4">
-      <div class="flex items-center gap-3 text-xs text-muted min-w-0">
+
+      <div class="flex-1" />
+
+      <div class="flex items-center">
+        <template v-if="visibleAssignees.length > 0">
+          <div class="flex items-center -space-x-1.5">
+            <UserAvatar
+              v-for="member in visibleAssignees"
+              :key="member.userId"
+              :user="member"
+              size="sm"
+              tooltip
+              ring
+            />
+            <div
+              v-if="hiddenAssigneesCount > 0"
+              class="size-6 rounded-full bg-zinc-100 text-muted text-[10px] font-semibold flex items-center justify-center shrink-0 ring-2 ring-white"
+              :title="`Ещё ${hiddenAssigneesCount}`"
+            >
+              +{{ hiddenAssigneesCount }}
+            </div>
+          </div>
+        </template>
         <span
-          v-if="dueDateLabel"
-          class="inline-flex items-center gap-1 shrink-0"
-          :class="dueOverdue ? 'text-error font-medium' : ''"
-          :title="dueOverdue ? 'Дедлайн просрочен' : 'Дедлайн'"
-        >
-          <UIcon name="i-lucide-calendar" class="size-3.5" />
-          {{ dueDateLabel }}
-        </span>
-        <span
-          v-if="blockerCount > 0"
-          class="inline-flex items-center gap-1 shrink-0 text-warning"
-          :title="`Заблокирована ${blockerCount} задачами`"
-        >
-          <UIcon name="i-lucide-lock" class="size-3.5" />
-          {{ blockerCount }}
-        </span>
-      </div>
-      <div
-        v-if="assignee"
-        class="size-6 rounded-full bg-primary/10 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0 overflow-hidden"
-        :title="assigneeName ?? undefined"
-      >
-        <img
-          v-if="assignee.avatarUrl"
-          :src="assignee.avatarUrl"
-          alt=""
-          class="size-full object-cover"
-        >
-        <span v-else>{{ assigneeInitials }}</span>
+          v-else
+          class="size-6 rounded-full border border-dashed border-zinc-300 text-zinc-400 grid place-items-center text-[10px]"
+          title="Не назначено"
+        >·</span>
       </div>
     </div>
   </div>

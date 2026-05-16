@@ -23,6 +23,7 @@ const BodySchema = z
     parentTaskId: z.uuid().nullable().optional(),
     blockedReason: z.string().max(500).nullable().optional(),
     isEpic: z.boolean().optional(),
+    storyPoints: z.number().int().min(0).max(1000).nullable().optional(),
   })
   .refine(
     (d) =>
@@ -33,7 +34,8 @@ const BodySchema = z
       d.assigneeId !== undefined ||
       d.parentTaskId !== undefined ||
       d.blockedReason !== undefined ||
-      d.isEpic !== undefined,
+      d.isEpic !== undefined ||
+      d.storyPoints !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -58,7 +60,9 @@ export default defineEventHandler(async (event) => {
         ...('parentTaskId' in body ? { parentTaskId: body.parentTaskId } : {}),
         ...('blockedReason' in body ? { blockedReason: body.blockedReason } : {}),
         ...(body.isEpic !== undefined ? { isEpic: body.isEpic } : {}),
+        ...('storyPoints' in body ? { storyPoints: body.storyPoints } : {}),
       },
+      actorId: user.id,
       actorRole: workspace.role,
     })
     return { task }

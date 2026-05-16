@@ -41,6 +41,7 @@ function onLogout() {
     </div>
     <div class="flex items-center gap-3">
       <WorkspaceTeamAvatars />
+      <NotificationBell v-if="authStore.isAuthenticated" />
       <UButton
         :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
         color="neutral"

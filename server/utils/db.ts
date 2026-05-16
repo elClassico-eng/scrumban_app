@@ -47,3 +47,17 @@ export async function withTenant<T>(
     return fn(tx)
   })
 }
+
+export async function withUser<T>(
+  userId: string,
+  fn: (tx: DbTransaction) => Promise<T>,
+): Promise<T> {
+  return useDB().transaction(async (tx) => {
+    await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`)
+    return fn(tx)
+  })
+}
+
+export async function setUserContext(tx: DbTransaction, userId: string): Promise<void> {
+  await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`)
+}

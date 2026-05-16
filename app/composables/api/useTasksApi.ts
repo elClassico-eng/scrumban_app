@@ -20,13 +20,18 @@ export function useTasksApi(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
     enabled: computed(() => !!unref(workspaceId) && !!unref(boardId)),
   })
 
+  function invalidateAll() {
+    qc.invalidateQueries({ queryKey: queryKey.value })
+    qc.invalidateQueries({ queryKey: ['task-subtasks'] })
+  }
+
   const create = useMutation({
     mutationFn: (input: CreateTaskInput) =>
       $fetch<TaskResponse>(apiRoutes.tasks(unref(workspaceId), unref(boardId)), {
         method: 'POST',
         body: input,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: invalidateAll,
   })
 
   const update = useMutation({
@@ -35,13 +40,13 @@ export function useTasksApi(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
         method: 'PATCH',
         body: input,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: invalidateAll,
   })
 
   const remove = useMutation({
     mutationFn: (taskId: string) =>
       $fetch(apiRoutes.task(unref(workspaceId), unref(boardId), taskId), { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: invalidateAll,
   })
 
   const move = useMutation({

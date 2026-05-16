@@ -13,12 +13,26 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
 
   const { data, event, status, close } = useEventSource(
     url,
-    ['task.created', 'task.moved', 'task.updated', 'task.deleted'],
+    ['task.created', 'task.moved', 'task.updated', 'task.deleted', 'task.commented', 'task.comment_deleted'],
     { autoReconnect: { retries: 3, delay: 2_000 } },
   )
 
   watch(data, (next) => {
     if (next == null) return
+
+    if (event.value === 'task.commented' || event.value === 'task.comment_deleted') {
+      try {
+        const parsed = JSON.parse(next) as { payload?: { taskId?: string } }
+        const taskId = parsed.payload?.taskId
+        if (taskId) {
+          qc.invalidateQueries({
+            queryKey: ['task-comments', unref(workspaceId), unref(boardId), taskId],
+          })
+        }
+      }
+      catch { /* ignore malformed event */ }
+      return
+    }
 
     // Re-fetch authoritative state for any event.
     qc.invalidateQueries({
@@ -30,6 +44,7 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
     qc.invalidateQueries({
       queryKey: ['board-sprint-memberships', unref(workspaceId), unref(boardId)],
     })
+    qc.invalidateQueries({ queryKey: ['task-subtasks'] })
 
     // Surface only events where the visual change isn't already obvious.
     // task.moved is shown via DnD; task.updated is visible inside the
