@@ -179,6 +179,16 @@ function onEpicToggle() {
   saveWithFeedback({ isEpic: !task.value.isEpic })
 }
 
+function onStoryPointsChange(value: number | null) {
+  if (!task.value || value === task.value.storyPoints) return
+  const title = value == null ? 'Оценка снята' : `Оценка: ${value} SP`
+  saveDeferred(
+    { storyPoints: value },
+    { title, icon: 'i-lucide-zap' },
+    'storyPoints',
+  )
+}
+
 const { moveTask } = useTaskMove(wsId, bId)
 function onColumnChange(toColumnId: string) {
   if (!task.value || toColumnId === task.value.columnId) return
@@ -396,6 +406,7 @@ onMounted(() => {
           @assignee-remove="onAssigneeRemove"
           @epic-toggle="onEpicToggle"
           @due-date-change="onDueDateChange"
+          @story-points-change="onStoryPointsChange"
           @open-parent-picker="parentPickerOpen = true"
           @clear-parent="clearParent"
           @open-subtask-create="subtaskCreateOpen = true"

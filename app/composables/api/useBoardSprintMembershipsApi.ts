@@ -5,6 +5,7 @@ import { apiRoutes } from '~/routing'
 interface Membership {
   sprintId: string
   taskId: string
+  addedAt: string
 }
 
 interface Response {

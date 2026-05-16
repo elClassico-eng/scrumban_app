@@ -24,12 +24,28 @@ const emit = defineEmits<{
   'assignee-remove': [userId: string]
   'epic-toggle': []
   'due-date-change': [iso: string]
+  'story-points-change': [value: number | null]
   'open-parent-picker': []
   'clear-parent': []
   'open-subtask-create': []
   'open-subtask-link': []
   'open-subtask': [taskId: string]
 }>()
+
+const SP_OPTIONS: number[] = [1, 2, 3, 5, 8, 13, 21]
+
+const storyPointsMenu = computed(() => [
+  ...SP_OPTIONS.map(n => ({
+    label: String(n),
+    icon: props.task.storyPoints === n ? 'i-lucide-check' : undefined,
+    onSelect: () => emit('story-points-change', n),
+  })),
+  {
+    label: 'Снять оценку',
+    icon: 'i-lucide-x',
+    onSelect: () => emit('story-points-change', null),
+  },
+])
 
 const columnNameMap = computed(() => {
   const m: Record<string, BoardColumn> = {}
@@ -143,6 +159,28 @@ const assigneeMenu = computed(() =>
               {{ deadlineMeta.countdown }}
             </span>
           </span>
+        </TaskFocusPropRow>
+
+        <TaskFocusPropRow icon="i-lucide-zap" label="Story Points">
+          <UDropdownMenu :items="storyPointsMenu" :ui="{ content: 'w-28' }">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] border cursor-pointer transition-colors"
+              :class="task.storyPoints != null
+                ? 'bg-zinc-100 text-default border-default'
+                : 'bg-transparent text-muted border-dashed border-zinc-300 hover:border-accent-500 hover:text-accent-500'"
+            >
+              <template v-if="task.storyPoints != null">
+                <span class="tabular-nums font-semibold">{{ task.storyPoints }}</span>
+                <span class="text-[10.5px] text-muted">SP</span>
+              </template>
+              <template v-else>
+                <UIcon name="i-lucide-plus" class="size-3" />
+                <span>Оценить</span>
+              </template>
+              <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+            </button>
+          </UDropdownMenu>
         </TaskFocusPropRow>
 
         <TaskFocusPropRow icon="i-lucide-crown" label="Эпик">

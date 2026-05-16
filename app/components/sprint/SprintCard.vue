@@ -2,286 +2,280 @@
 import type { Sprint } from '#shared/types/sprint'
 import type { Task } from '#shared/types/task'
 import type { BoardColumn } from '#shared/types/column'
+import type { MemberView } from '#shared/types/workspace'
+
+interface SprintTaskWithMeta {
+  task: Task
+  addedAfterStart: boolean
+}
 
 const props = defineProps<{
   sprint: Sprint
-  workspaceId: string
-  boardId: string
-  canManage: boolean
-  // Task / column context is passed in so the card can resolve sprint
-  // membership against the same data the kanban view uses (single source
-  // of truth: tasksList query).
-  allTasks: Task[]
+  tasks: SprintTaskWithMeta[]
   columns: BoardColumn[]
+  members: MemberView[]
+  canManage: boolean
 }>()
 
-const wsId = computed(() => props.workspaceId)
-const bId = computed(() => props.boardId)
-const sId = computed(() => props.sprint.id)
-const { start, close, remove } = useSprintsApi(wsId, bId)
-const { list: sprintTasksQuery, add: addTask, remove: removeTask } = useSprintTasksApi(wsId, bId, sId)
-const toast = useToast()
-
-const actionError = ref<string | null>(null)
-
-const sprintTaskIds = computed(() => new Set(sprintTasksQuery.data.value?.items.map(i => i.taskId) ?? []))
-const sprintTasks = computed(() =>
-  props.allTasks.filter(t => sprintTaskIds.value.has(t.id)),
-)
-const doneColumnIds = computed(() => {
-  const s = new Set<string>()
-  for (const c of props.columns) {
-    if (c.columnRole === 'done' || c.columnRole === 'archived') s.add(c.id)
-  }
-  return s
-})
-const progress = computed(() => {
-  const total = sprintTasks.value.length
-  if (total === 0) return null
-  const done = sprintTasks.value.filter(t => doneColumnIds.value.has(t.columnId)).length
-  return { done, total, percent: Math.round((done / total) * 100) }
-})
+const emit = defineEmits<{
+  'add-task': []
+  start: []
+  close: []
+  delete: []
+}>()
 
 const expanded = ref(false)
-const pickerOpen = ref(false)
 
-async function onAddTasks(taskIds: string[]) {
-  try {
-    await Promise.all(taskIds.map(id => addTask.mutateAsync({ taskId: id })))
-  }
-  catch (err) {
-    toast.add({
-      title: getErrorMessage(err, 'Не удалось добавить задачи в спринт'),
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
-  }
+const columnById = computed(() => {
+  const m = new Map<string, BoardColumn>()
+  for (const c of props.columns) m.set(c.id, c)
+  return m
+})
+
+function isDoneTask(task: Task): boolean {
+  return columnById.value.get(task.columnId)?.columnRole === 'done'
 }
 
-async function onRemoveTask(taskId: string) {
-  try {
-    await removeTask.mutateAsync(taskId)
-  }
-  catch (err) {
-    toast.add({
-      title: getErrorMessage(err, 'Не удалось убрать задачу из спринта'),
-      color: 'error',
-      icon: 'i-lucide-alert-circle',
-    })
-  }
+const totalSp = computed(() =>
+  props.tasks.reduce((acc, t) => acc + (t.task.storyPoints ?? 0), 0),
+)
+const doneSp = computed(() =>
+  props.tasks
+    .filter(t => isDoneTask(t.task))
+    .reduce((acc, t) => acc + (t.task.storyPoints ?? 0), 0),
+)
+const doneCount = computed(() =>
+  props.tasks.filter(t => isDoneTask(t.task)).length,
+)
+const completionRate = computed(() =>
+  props.tasks.length > 0 ? Math.round((doneCount.value / props.tasks.length) * 100) : 0,
+)
+const useSp = computed(() => totalSp.value > 0 || props.sprint.capacity != null)
+const planValue = computed(() => useSp.value ? totalSp.value : props.tasks.length)
+const planUnit = computed(() => useSp.value ? 'SP' : 'задач')
+const progressDone = computed(() => useSp.value ? doneSp.value : doneCount.value)
+const progressTotal = computed(() => useSp.value ? totalSp.value : props.tasks.length)
+
+const teamMembers = computed(() => {
+  const ids = new Set<string>()
+  for (const t of props.tasks) for (const id of t.task.assigneeIds) ids.add(id)
+  return props.members.filter(m => ids.has(m.userId)).slice(0, 4)
+})
+
+const statusLabel = computed(() => {
+  if (props.sprint.state === 'planned') return 'Запланирован'
+  if (props.sprint.state === 'closed') return 'Закрыт'
+  return 'Активный'
+})
+
+const statusClasses = computed(() => {
+  if (props.sprint.state === 'planned') return 'bg-zinc-100 text-zinc-600'
+  if (props.sprint.state === 'closed') return 'bg-emerald-50 text-emerald-700'
+  return 'bg-accent-50 text-accent-700'
+})
+
+const statusDotClasses = computed(() => {
+  if (props.sprint.state === 'planned') return 'bg-zinc-400'
+  if (props.sprint.state === 'closed') return 'bg-emerald-500'
+  return 'bg-accent-500'
+})
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('ru', { day: '2-digit', month: 'short' })
 }
 
-const router = useRouter()
-const route = useRoute()
-function openTaskModal(taskId: string) {
-  router.push({ path: route.path, query: { ...route.query, task: taskId } })
+const dateRangeDays = computed(() => {
+  if (!props.sprint.plannedStartAt || !props.sprint.plannedEndAt) return null
+  const start = new Date(props.sprint.plannedStartAt).getTime()
+  const end = new Date(props.sprint.plannedEndAt).getTime()
+  return Math.max(1, Math.round((end - start) / 86_400_000))
+})
+
+const sprintDescription = computed(() => props.sprint.goal?.trim() || '')
+
+function onCardExpandToggle() {
+  expanded.value = !expanded.value
 }
 
-async function onStart() {
-  actionError.value = null
-  try {
-    await start.mutateAsync(props.sprint.id)
-  }
-  catch (err) {
-    actionError.value = getErrorMessage(err, 'Не удалось запустить спринт')
-  }
-}
-
-const confirm = useConfirm()
-
-async function onClose() {
-  actionError.value = null
-  const ok = await confirm({
-    title: `Закрыть спринт «${props.sprint.name}»?`,
-    description: 'Закрытый спринт больше нельзя запустить.',
-    confirmLabel: 'Закрыть спринт',
-  })
-  if (!ok) return
-  try {
-    await close.mutateAsync(props.sprint.id)
-  }
-  catch (err) {
-    actionError.value = getErrorMessage(err, 'Не удалось закрыть спринт')
-  }
-}
-
-async function onRemove() {
-  actionError.value = null
-  const ok = await confirm({
-    title: `Удалить спринт «${props.sprint.name}»?`,
-    description: 'Только planned-спринты можно удалять. Действие необратимо.',
-    confirmLabel: 'Удалить',
-    confirmColor: 'error',
-  })
-  if (!ok) return
-  try {
-    await remove.mutateAsync(props.sprint.id)
-  }
-  catch (err) {
-    actionError.value = getErrorMessage(err, 'Не удалось удалить спринт')
-  }
-}
-
-function formatDateRange(): string | null {
-  const s = props.sprint.plannedStartAt
-  const e = props.sprint.plannedEndAt
-  if (!s && !e) return null
-  const fmt = (iso: string) => new Date(iso).toLocaleDateString('ru', { day: '2-digit', month: 'short' })
-  if (s && e) return `${fmt(s)} → ${fmt(e)}`
-  if (s) return `с ${fmt(s)}`
-  if (e) return `до ${fmt(e!)}`
-  return null
+function onAddClick(e: Event) {
+  e.stopPropagation()
+  emit('add-task')
 }
 </script>
 
 <template>
-  <UCard>
-    <div class="space-y-3">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0 flex-1">
-          <h3 class="font-semibold truncate">{{ sprint.name }}</h3>
-          <p v-if="sprint.goal" class="text-sm text-muted mt-1 line-clamp-2">{{ sprint.goal }}</p>
-        </div>
-        <SprintStateBadge :state="sprint.state" />
-      </div>
-      <div class="flex items-center gap-3 text-xs text-muted">
-        <span v-if="formatDateRange()" class="flex items-center gap-1">
-          <UIcon name="i-lucide-calendar" class="size-3.5" />
-          {{ formatDateRange() }}
-        </span>
-        <span v-if="sprint.startedAt" class="flex items-center gap-1">
-          <UIcon name="i-lucide-play" class="size-3.5" />
-          Стартовал {{ new Date(sprint.startedAt).toLocaleDateString('ru') }}
-        </span>
-        <span v-if="sprint.endedAt" class="flex items-center gap-1">
-          <UIcon name="i-lucide-check" class="size-3.5" />
-          Закрыт {{ new Date(sprint.endedAt).toLocaleDateString('ru') }}
-        </span>
-      </div>
-      <UAlert
-        v-if="actionError"
-        color="error"
-        variant="soft"
-        :title="actionError"
-        icon="i-lucide-alert-circle"
-        :close="{ onClick: () => { actionError = null } }"
-      />
+  <div class="bg-white border border-default rounded-2xl p-5 flex flex-col gap-3">
+    <div class="flex items-start gap-3">
+      <h3 class="flex-1 text-[16px] font-semibold tracking-tight text-default leading-snug">
+        {{ sprint.name }}
+      </h3>
+      <span
+        class="inline-flex items-center gap-1.5 h-[22px] px-2 rounded-full text-[10.5px] font-semibold uppercase tracking-[0.04em] shrink-0"
+        :class="statusClasses"
+      >
+        <span class="size-1.5 rounded-full" :class="statusDotClasses" />
+        {{ statusLabel }}
+      </span>
+    </div>
 
-      <div class="space-y-2">
-        <div class="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            class="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
-            @click="expanded = !expanded"
-          >
-            <UIcon
-              :name="expanded ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
-              class="size-4"
-            />
-            <span>Задачи</span>
-            <span v-if="progress" class="text-xs text-muted font-normal">
-              {{ progress.done }} / {{ progress.total }} готово
-            </span>
-            <span v-else class="text-xs text-muted font-normal">пусто</span>
-          </button>
-          <UButton
-            v-if="canManage && sprint.state !== 'closed'"
-            icon="i-lucide-plus"
+    <p v-if="sprintDescription" class="text-[13px] text-muted leading-relaxed -mt-1">
+      {{ sprintDescription }}
+    </p>
+
+    <div class="flex flex-wrap items-center gap-3 text-[12px] text-muted">
+      <span class="inline-flex items-center gap-1.5">
+        <UIcon name="i-lucide-calendar" class="size-3.5" />
+        <b class="text-default">{{ formatDate(sprint.plannedStartAt) }}</b>
+        →
+        <b class="text-default">{{ formatDate(sprint.plannedEndAt) }}</b>
+        <span v-if="dateRangeDays">· {{ dateRangeDays }}д</span>
+      </span>
+      <span
+        v-if="sprint.state === 'closed' && useSp && doneSp > 0"
+        class="inline-flex items-center gap-1.5"
+      >
+        <UIcon name="i-lucide-zap" class="size-3.5" />
+        velocity <b class="text-default">{{ doneSp }} SP</b>
+      </span>
+      <span
+        v-else-if="sprint.state === 'closed' && doneCount > 0"
+        class="inline-flex items-center gap-1.5"
+      >
+        <UIcon name="i-lucide-zap" class="size-3.5" />
+        закрыто <b class="text-default">{{ doneCount }}</b> задач
+      </span>
+      <span v-if="sprint.endedAt && sprint.state === 'closed'" class="inline-flex items-center gap-1.5">
+        <UIcon name="i-lucide-check" class="size-3.5" />
+        закрыт {{ formatDate(sprint.endedAt) }}
+      </span>
+    </div>
+
+    <div v-if="tasks.length > 0" class="grid grid-cols-3 gap-2">
+      <div class="bg-zinc-50 rounded-lg px-3 py-2">
+        <div class="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-muted">Задач</div>
+        <div class="text-[18px] font-semibold tracking-tight text-default">{{ tasks.length }}</div>
+      </div>
+      <div class="bg-zinc-50 rounded-lg px-3 py-2">
+        <div class="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-muted">
+          {{ sprint.state === 'closed' ? 'Завершено' : 'План' }}
+        </div>
+        <div class="text-[18px] font-semibold tracking-tight text-default">
+          <template v-if="sprint.state === 'closed'">
+            {{ completionRate }}<span class="text-[12px] text-muted font-normal ml-0.5">%</span>
+          </template>
+          <template v-else>
+            {{ planValue }}<span class="text-[12px] text-muted font-normal ml-0.5">{{ planUnit }}</span>
+          </template>
+        </div>
+      </div>
+      <div class="bg-zinc-50 rounded-lg px-3 py-2">
+        <div class="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-muted">Команда</div>
+        <div class="flex items-center -space-x-1.5 h-[22px] mt-1">
+          <UserAvatar
+            v-for="m in teamMembers"
+            :key="m.userId"
+            :user="m"
             size="xs"
-            variant="ghost"
-            color="neutral"
-            @click="pickerOpen = true"
-          >
-            Добавить
-          </UButton>
-        </div>
-
-        <div v-if="progress" class="h-1.5 rounded-full bg-elevated overflow-hidden">
-          <div
-            class="h-full bg-success transition-all"
-            :style="{ width: `${progress.percent}%` }"
+            ring
+            tooltip
           />
+          <span
+            v-if="teamMembers.length === 0"
+            class="text-[12px] text-muted"
+          >—</span>
         </div>
-
-        <div v-if="expanded" class="space-y-1 pl-6">
-          <div
-            v-for="task in sprintTasks"
-            :key="task.id"
-            class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-elevated/60 group"
-          >
-            <UIcon
-              :name="doneColumnIds.has(task.columnId) ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
-              :class="['size-3.5 shrink-0', doneColumnIds.has(task.columnId) ? 'text-success' : 'text-muted']"
-            />
-            <button
-              type="button"
-              class="text-sm flex-1 text-left truncate hover:text-primary"
-              :class="doneColumnIds.has(task.columnId) ? 'line-through text-muted' : ''"
-              @click="openTaskModal(task.id)"
-            >
-              {{ task.title }}
-            </button>
-            <UButton
-              v-if="canManage && sprint.state !== 'closed'"
-              icon="i-lucide-x"
-              size="xs"
-              variant="ghost"
-              color="neutral"
-              class="opacity-0 group-hover:opacity-100 transition-opacity"
-              title="Убрать из спринта"
-              @click="onRemoveTask(task.id)"
-            />
-          </div>
-          <p v-if="sprintTasks.length === 0" class="text-xs text-muted px-2 py-1.5">
-            В спринте пока нет задач.
-          </p>
-        </div>
-      </div>
-
-      <div v-if="canManage && sprint.state !== 'closed'" class="flex gap-2 pt-1">
-        <UButton
-          v-if="sprint.state === 'planned'"
-          icon="i-lucide-play"
-          size="sm"
-          :loading="start.isPending.value"
-          @click="onStart"
-        >
-          Запустить
-        </UButton>
-        <UButton
-          v-if="sprint.state === 'active' || sprint.state === 'planned'"
-          icon="i-lucide-check"
-          color="neutral"
-          variant="soft"
-          size="sm"
-          :loading="close.isPending.value"
-          @click="onClose"
-        >
-          Закрыть
-        </UButton>
-        <UButton
-          v-if="sprint.state === 'planned'"
-          icon="i-lucide-trash-2"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          :loading="remove.isPending.value"
-          class="ml-auto"
-          @click="onRemove"
-        />
       </div>
     </div>
 
-    <TaskPickerModal
-      v-if="canManage"
-      v-model:open="pickerOpen"
-      :tasks="allTasks"
-      :columns="columns"
-      :exclude-ids="Array.from(sprintTaskIds)"
-      title="Добавить задачи в спринт"
-      placeholder="Найди задачи..."
-      multiple
-      @select-many="onAddTasks"
-    />
-  </UCard>
+    <div
+      v-else
+      class="flex items-center gap-2 px-3 py-3 rounded-lg bg-zinc-50 border border-dashed border-zinc-200 text-[12.5px] text-muted"
+    >
+      <UIcon name="i-lucide-plus" class="size-3.5" />
+      <span class="flex-1">В спринте пока нет задач</span>
+      <button
+        v-if="canManage"
+        type="button"
+        class="inline-flex items-center gap-1 text-[12px] text-accent-600 font-medium hover:text-accent-700 cursor-pointer"
+        @click="emit('add-task')"
+      >
+        <UIcon name="i-lucide-plus" class="size-3" />
+        Добавить
+      </button>
+    </div>
+
+    <button
+      v-if="tasks.length > 0"
+      type="button"
+      class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 transition-colors text-[12.5px] text-default cursor-pointer"
+      @click="onCardExpandToggle"
+    >
+      <UIcon
+        name="i-lucide-chevron-right"
+        class="size-3.5 transition-transform"
+        :class="expanded ? 'rotate-90' : ''"
+      />
+      <span class="font-medium">Задачи</span>
+      <span class="text-muted">
+        {{ sprint.state === 'closed' ? `${doneCount}/${tasks.length} закрыто` : `${progressDone}/${progressTotal} ${planUnit}` }}
+      </span>
+      <span
+        v-if="sprint.state !== 'closed' && progressTotal > 0"
+        class="ml-auto h-1 w-16 bg-zinc-200 rounded-full overflow-hidden"
+      >
+        <span
+          class="block h-full bg-accent-500 transition-all"
+          :style="{ width: `${(progressDone / progressTotal) * 100}%` }"
+        />
+      </span>
+      <span
+        v-if="canManage && sprint.state !== 'closed'"
+        class="inline-flex items-center gap-1 text-[11.5px] text-accent-600 font-medium hover:text-accent-700 cursor-pointer"
+        @click="onAddClick"
+      >
+        <UIcon name="i-lucide-plus" class="size-3" />
+        Добавить
+      </span>
+    </button>
+
+    <div
+      v-if="expanded && tasks.length > 0"
+      class="border border-default rounded-lg overflow-hidden bg-white"
+    >
+      <SprintTaskRow
+        v-for="t in tasks.slice(0, 6)"
+        :key="t.task.id"
+        :task="t.task"
+        :column="columnById.get(t.task.columnId) ?? null"
+        :members="members"
+        :added-after-start="t.addedAfterStart"
+      />
+      <div
+        v-if="tasks.length > 6"
+        class="px-3 py-2 text-center text-[11.5px] text-muted border-t border-zinc-100"
+      >
+        + ещё {{ tasks.length - 6 }} задач(и)
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1.5 pt-1">
+      <template v-if="sprint.state === 'planned' && canManage">
+        <UButton size="xs" icon="i-lucide-play" @click="emit('start')">Запустить</UButton>
+        <UButton
+          size="xs"
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-trash-2"
+          @click="emit('delete')"
+        >Удалить</UButton>
+      </template>
+      <template v-else-if="sprint.state === 'closed'">
+        <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-eye">
+          Отчёт
+        </UButton>
+        <UButton size="xs" variant="ghost" color="neutral">Ретроспектива</UButton>
+      </template>
+    </div>
+  </div>
 </template>
