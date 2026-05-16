@@ -2,7 +2,7 @@
 // readValidatedBody / parse() arrive in Russian without per-schema customisation.
 // Runs once at Nitro startup.
 import { z } from 'zod'
-import ruLocale from 'zod/v4/locales/ru'
+import ruLocale from 'zod/v4/locales/ru.js'
 
 export default defineNitroPlugin(() => {
   z.config(ruLocale())
