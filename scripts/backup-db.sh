@@ -1,11 +1,11 @@
 #!/bin/bash
 # Daily Postgres backup → YC Object Storage. Reads credentials from
-# /etc/scrumban-backup.env (BACKUP_BUCKET, AWS_ACCESS_KEY_ID,
+# ~/.scrumban-backup.env (BACKUP_BUCKET, AWS_ACCESS_KEY_ID,
 # AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION). Run via cron from the
 # host (not inside a container). Retention: 14 days.
 set -euo pipefail
 
-ENV_FILE="${BACKUP_ENV_FILE:-/etc/scrumban-backup.env}"
+ENV_FILE="${BACKUP_ENV_FILE:-$HOME/.scrumban-backup.env}"
 if [[ ! -r "$ENV_FILE" ]]; then
   echo "[backup] missing env file: $ENV_FILE" >&2
   exit 1
