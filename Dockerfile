@@ -8,14 +8,21 @@
 FROM oven/bun:1 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --ignore-scripts
+# BuildKit cache mount keeps the bun package store between builds so a
+# minor package.json change reuses unchanged packages instead of
+# refetching everything from the registry.
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile --ignore-scripts
 
 # Stage 2: build Nuxt — produces self-contained .output/
 FROM oven/bun:1 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN bunx nuxt build
+# Vite/Rollup cache survives between builds so unchanged modules don't
+# get re-transformed (~30-60s saved on typical app-code-only changes).
+RUN --mount=type=cache,target=/app/node_modules/.cache \
+    bunx nuxt build
 
 # Stage 3: production runtime (slim).
 FROM node:22-slim AS runner
@@ -37,7 +44,8 @@ COPY --from=builder /app/.output ./.output
 # the CLI was silently exiting in headless containers with the postgres driver,
 # and the embedded migrator is the recommended path for production deploys.
 COPY --from=builder /app/drizzle ./drizzle
-RUN echo '{"name":"scrumban-runner","private":true}' > package.json \
+RUN --mount=type=cache,target=/root/.npm \
+    echo '{"name":"scrumban-runner","private":true}' > package.json \
  && npm install --no-package-lock --legacy-peer-deps \
     drizzle-orm postgres
 
