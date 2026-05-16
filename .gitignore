@@ -18,10 +18,11 @@ node_modules/
 dist/
 *.log
 
-# Env (only commit .env.example, never the real .env)
+# Env (only commit *.example, never the real .env)
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # Test coverage
 coverage/
