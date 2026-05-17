@@ -7,6 +7,17 @@ import type {
 } from '#shared/types/auth'
 
 export function useAuthApi() {
+  const route = useRoute()
+
+  // Only allow same-origin relative paths to prevent open-redirect via ?next=.
+  function pickRedirectTarget(): string {
+    const n = route.query.next
+    if (typeof n === 'string' && n.startsWith('/') && !n.startsWith('//') && !n.includes('://')) {
+      return n
+    }
+    return pageRoutes.workspaces
+  }
+
   const sessionQuery = useQuery({
     queryKey: ['auth', 'session'],
     queryFn: () => $fetch<SessionResponse>(apiRoutes.authSession),
@@ -27,7 +38,7 @@ export function useAuthApi() {
     mutationFn: (input: LoginInput) =>
       $fetch<SessionResponse>(apiRoutes.authLogin, { method: 'POST', body: input }),
     onSuccess: () => {
-      window.location.href = pageRoutes.workspaces
+      window.location.href = pickRedirectTarget()
     },
   })
 
@@ -35,7 +46,7 @@ export function useAuthApi() {
     mutationFn: (input: RegisterInput) =>
       $fetch<SessionResponse>(apiRoutes.authRegister, { method: 'POST', body: input }),
     onSuccess: () => {
-      window.location.href = pageRoutes.workspaces
+      window.location.href = pickRedirectTarget()
     },
   })
 

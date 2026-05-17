@@ -123,7 +123,9 @@ async function finishOnboarding() {
         purpose: teamState.purpose || undefined,
       },
     })
-    window.location.href = pageRoutes.workspaces
+    const nextParam = (useRoute().query.next as string | undefined) ?? ''
+    const isSafeNext = nextParam.startsWith('/') && !nextParam.startsWith('//') && !nextParam.includes('://')
+    window.location.href = isSafeNext ? nextParam : pageRoutes.workspaces
   }
   catch (err) {
     submitError.value = getErrorMessage(err, 'Не удалось завершить регистрацию')

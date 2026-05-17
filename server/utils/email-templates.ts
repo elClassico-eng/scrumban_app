@@ -76,6 +76,44 @@ ${opts.resetUrl}
   return { subject, html, text }
 }
 
+export function workspaceInvitationTemplate(opts: {
+  workspaceName: string
+  inviterName: string
+  role: string
+  acceptUrl: string
+}): RenderedEmail {
+  const subject = `Приглашение в ${opts.workspaceName} — Scrumban`
+  const text = `${opts.inviterName ? opts.inviterName + ' приглашает' : 'Вас приглашают'} присоединиться к workspace «${opts.workspaceName}» в Scrumban в роли ${opts.role}.
+
+Перейдите по ссылке, чтобы принять приглашение:
+${opts.acceptUrl}
+
+Ссылка действует 7 дней.`
+
+  const html = baseTemplate({
+    preheader: `Приглашение в workspace ${opts.workspaceName}`,
+    body: `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#111827;">
+        Приглашение в workspace
+      </h1>
+      <p style="margin:0 0 24px;color:#4b5563;">
+        ${opts.inviterName ? escapeHtml(opts.inviterName) + ' приглашает' : 'Вас приглашают'}
+        присоединиться к workspace <strong>${escapeHtml(opts.workspaceName)}</strong>
+        в Scrumban в роли <strong>${escapeHtml(opts.role)}</strong>.
+      </p>
+      ${ctaButton('Принять приглашение', opts.acceptUrl)}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">
+        Или скопируйте ссылку в браузер:<br>
+        <span style="word-break:break-all;color:#6366f1;">${escapeHtml(opts.acceptUrl)}</span>
+      </p>
+      <p style="margin:16px 0 0;font-size:13px;color:#6b7280;">
+        Ссылка действует 7 дней. Если приглашение было отправлено по ошибке — просто проигнорируйте письмо.
+      </p>
+    `,
+  })
+  return { subject, html, text }
+}
+
 function baseTemplate(opts: { preheader: string, body: string }): string {
   return `<!doctype html>
 <html lang="ru">

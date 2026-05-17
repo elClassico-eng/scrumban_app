@@ -5,7 +5,11 @@ const AUTH_ROUTES: ReadonlyArray<string> = [
   pageRoutes.register,
   pageRoutes.forgotPassword,
 ]
-const PUBLIC_PREFIXES: ReadonlyArray<string> = ['/verify-email/', '/reset-password/']
+const PUBLIC_PREFIXES: ReadonlyArray<string> = [
+  '/verify-email/',
+  '/reset-password/',
+  '/invite/',
+]
 
 function isPublicRoute(path: string): boolean {
   return AUTH_ROUTES.includes(path) || PUBLIC_PREFIXES.some(p => path.startsWith(p))
@@ -28,5 +32,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (isPublicRoute(to.path)) return
-  if (!authenticated) return navigateTo(pageRoutes.login)
+  if (!authenticated) {
+    return navigateTo({
+      path: pageRoutes.login,
+      query: to.fullPath === '/' ? undefined : { next: to.fullPath },
+    })
+  }
 })

@@ -1,5 +1,9 @@
 import { sendEmail } from './email'
-import { emailVerificationTemplate, passwordResetTemplate } from './email-templates'
+import {
+  emailVerificationTemplate,
+  passwordResetTemplate,
+  workspaceInvitationTemplate,
+} from './email-templates'
 
 function getAppUrl(): string {
   const raw = process.env.APP_URL ?? 'http://localhost:3000'
@@ -28,6 +32,23 @@ export async function sendPasswordResetEmail(opts: {
   const { subject, html, text } = passwordResetTemplate({
     recipientName: opts.recipientName,
     resetUrl,
+  })
+  await sendEmail({ to: opts.to, subject, html, text })
+}
+
+export async function sendWorkspaceInvitationEmail(opts: {
+  to: string
+  workspaceName: string
+  inviterName: string
+  role: string
+  token: string
+}): Promise<void> {
+  const acceptUrl = `${getAppUrl()}/invite/${opts.token}`
+  const { subject, html, text } = workspaceInvitationTemplate({
+    workspaceName: opts.workspaceName,
+    inviterName: opts.inviterName,
+    role: opts.role,
+    acceptUrl,
   })
   await sendEmail({ to: opts.to, subject, html, text })
 }

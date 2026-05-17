@@ -28,6 +28,8 @@ function selectWorkspace(id: string) {
       </UButton>
     </div>
 
+    <WorkspaceMyInvitationsSection />
+
     <div v-if="list.isLoading.value" class="text-center py-12 text-muted">
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
     </div>

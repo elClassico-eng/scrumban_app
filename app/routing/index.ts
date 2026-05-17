@@ -22,6 +22,13 @@ export const apiRoutes = {
   members: (wsId: string) => `/api/workspaces/${wsId}/members`,
   member: (wsId: string, userId: string) => `/api/workspaces/${wsId}/members/${userId}`,
 
+  workspaceInvitations: (wsId: string) => `/api/workspaces/${wsId}/invitations`,
+  workspaceInvitation: (wsId: string, invId: string) => `/api/workspaces/${wsId}/invitations/${invId}`,
+  invitationInspect: (token: string) => `/api/invitations/${token}`,
+  invitationAccept: (token: string) => `/api/invitations/${token}/accept`,
+  myInvitations: '/api/me/invitations',
+  myInvitationAccept: (id: string) => `/api/me/invitations/${id}/accept`,
+
   boards: (wsId: string) => `/api/workspaces/${wsId}/boards`,
   board: boardBase,
   boardSleRecompute: (wsId: string, boardId: string) =>
@@ -112,6 +119,7 @@ export const pageRoutes = {
   verifyEmail: (token: string) => `/verify-email/${token}`,
   forgotPassword: '/forgot-password',
   resetPassword: (token: string) => `/reset-password/${token}`,
+  invite: (token: string) => `/invite/${token}`,
 
   me: '/me',
 

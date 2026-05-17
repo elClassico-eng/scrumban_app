@@ -1,14 +1,7 @@
 import type { Role, SprintState, TaskEventType } from '#shared/types/domain'
 
 export function humanizeRole(role: Role): string {
-  const map: Record<Role, string> = {
-    viewer: 'Наблюдатель',
-    member: 'Участник',
-    scrum_master: 'Скрам-мастер',
-    admin: 'Администратор',
-    owner: 'Владелец',
-  }
-  return map[role]
+  return ROLE_LABEL[role]
 }
 
 export function humanizeSprintState(state: SprintState): string {

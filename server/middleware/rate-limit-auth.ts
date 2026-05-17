@@ -55,13 +55,12 @@ export default defineEventHandler(async (event) => {
   if (bucket.count >= MAX_ATTEMPTS) {
     const retryAfter = Math.ceil((bucket.resetAt - now) / 1000)
     setResponseHeader(event, 'Retry-After', String(retryAfter))
+    const message = 'Слишком много попыток. Попробуйте через несколько минут.'
     throw createError({
       statusCode: 429,
-      statusMessage: 'Too many attempts',
-      data: {
-        message: 'Слишком много попыток. Попробуйте через несколько минут.',
-        retryAfter,
-      },
+      statusMessage: message,
+      message,
+      data: { message, retryAfter },
     })
   }
 
