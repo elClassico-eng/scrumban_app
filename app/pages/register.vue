@@ -111,16 +111,13 @@ async function finishOnboarding() {
         firstName: personalState.firstName,
         lastName: personalState.lastName,
         middleName: personalState.middleName || undefined,
-      },
-    })
-    await $fetch(apiRoutes.workspaces, {
-      method: 'POST',
-      body: {
-        name: teamState.name,
-        slug: teamState.slug,
-        industry: teamState.industry || undefined,
-        description: teamState.description || undefined,
-        purpose: teamState.purpose || undefined,
+        workspace: {
+          name: teamState.name,
+          slug: teamState.slug,
+          industry: teamState.industry || undefined,
+          description: teamState.description || undefined,
+          purpose: teamState.purpose || undefined,
+        },
       },
     })
     const nextParam = (useRoute().query.next as string | undefined) ?? ''

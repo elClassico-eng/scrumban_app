@@ -22,15 +22,19 @@ export async function findUserById(id: string): Promise<User | undefined> {
   return row
 }
 
-export async function createUser(input: {
+export interface CreateUserInput {
   email: string
   passwordHash: string
   firstName?: string | null
   lastName?: string | null
   middleName?: string | null
-}): Promise<User> {
+}
+
+type UsersTx = Parameters<Parameters<ReturnType<typeof useDB>['transaction']>[0]>[0]
+
+export async function createUserInTx(tx: UsersTx, input: CreateUserInput): Promise<User> {
   try {
-    const [row] = await useDB()
+    const [row] = await tx
       .insert(users)
       .values({
         email: normaliseEmail(input.email),
@@ -47,6 +51,10 @@ export async function createUser(input: {
     }
     throw err
   }
+}
+
+export async function createUser(input: CreateUserInput): Promise<User> {
+  return useDB().transaction(tx => createUserInTx(tx, input))
 }
 
 export async function updateUserProfile(input: {

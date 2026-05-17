@@ -17,34 +17,43 @@ export interface WorkspaceWithRole extends Workspace {
   role: WorkspaceMemberRole
 }
 
-export async function createWorkspace(input: {
+type Tx = Parameters<Parameters<ReturnType<typeof useDB>['transaction']>[0]>[0]
+
+export interface CreateWorkspaceInput {
   name: string
   slug: string
   ownerId: string
   description?: string | null
   purpose?: string | null
   industry?: string | null
-}): Promise<WorkspaceWithRole> {
-  return useDB().transaction(async (tx) => {
-    const [ws] = await tx
-      .insert(workspaces)
-      .values({
-        name: input.name,
-        slug: input.slug,
-        description: input.description ?? null,
-        purpose: input.purpose ?? null,
-        industry: input.industry ?? null,
-      })
-      .returning()
+}
 
-    await tx.insert(workspaceMembers).values({
-      workspaceId: ws!.id,
-      userId: input.ownerId,
-      role: 'owner',
+export async function createWorkspaceInTx(
+  tx: Tx,
+  input: CreateWorkspaceInput,
+): Promise<WorkspaceWithRole> {
+  const [ws] = await tx
+    .insert(workspaces)
+    .values({
+      name: input.name,
+      slug: input.slug,
+      description: input.description ?? null,
+      purpose: input.purpose ?? null,
+      industry: input.industry ?? null,
     })
+    .returning()
 
-    return { ...ws!, role: 'owner' as const }
+  await tx.insert(workspaceMembers).values({
+    workspaceId: ws!.id,
+    userId: input.ownerId,
+    role: 'owner',
   })
+
+  return { ...ws!, role: 'owner' as const }
+}
+
+export async function createWorkspace(input: CreateWorkspaceInput): Promise<WorkspaceWithRole> {
+  return useDB().transaction(tx => createWorkspaceInTx(tx, input))
 }
 
 // Selects every workspace column plus the role from the join — keeps the
