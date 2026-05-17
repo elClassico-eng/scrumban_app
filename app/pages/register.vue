@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { passwordSchema } from '#shared/validation/password'
 import { apiRoutes, pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth', cardMaxWidth: 'max-w-xl' })
@@ -17,7 +18,7 @@ const personalSchema = z.object({
 const credentialsSchema = z
   .object({
     email: z.email('Введи корректный email').max(255),
-    password: z.string().min(8, 'Минимум 8 символов').max(128),
+    password: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine(d => d.password === d.confirmPassword, {
@@ -208,9 +209,10 @@ async function finishOnboarding() {
         <UFormField label="Email" name="email" required>
           <UInput v-model="credentialsState.email" type="email" autocomplete="email" size="lg" class="w-full" autofocus />
         </UFormField>
-        <UFormField label="Пароль" name="password" hint="Минимум 8 символов" required>
+        <UFormField label="Пароль" name="password" required>
           <UInput v-model="credentialsState.password" type="password" autocomplete="new-password" size="lg" class="w-full" />
         </UFormField>
+        <AuthPasswordStrengthChecklist :password="credentialsState.password" class="pl-1" />
         <UFormField label="Повторите пароль" name="confirmPassword" required>
           <UInput v-model="credentialsState.confirmPassword" type="password" autocomplete="new-password" size="lg" class="w-full" />
         </UFormField>

@@ -50,10 +50,17 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Server-only secrets. Nuxt auto-overrides keys via NUXT_* env vars
-    // (NUXT_SESSION_PASSWORD); for unprefixed names like DATABASE_URL we map
-    // explicitly so that .env keeps the standard variable name.
+    // (NUXT_SESSION_PASSWORD → session.password); for unprefixed names
+    // like DATABASE_URL we map explicitly.
     databaseUrl: process.env.DATABASE_URL || '',
-    sessionPassword: process.env.NUXT_SESSION_PASSWORD || '',
+    // nuxt-auth-utils config slot. 30-day persistent cookie — without
+    // maxAge the module writes a session-scoped cookie that dies on
+    // browser close. password is required by the type; the empty
+    // default is replaced at runtime by NUXT_SESSION_PASSWORD.
+    session: {
+      password: '',
+      maxAge: 60 * 60 * 24 * 30,
+    },
   },
 
   typescript: {

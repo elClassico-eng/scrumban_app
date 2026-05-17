@@ -3,12 +3,13 @@
 // hashPassword() — scrypt (Node-native, library default) — persists the
 // user, and writes a signed session cookie.
 import { z } from 'zod'
+import { passwordSchema } from '#shared/validation/password'
 import { createUser } from '../../services/users.service'
 import { toHttpError } from '../../utils/errors'
 
 const RegisterSchema = z.object({
   email: z.email().max(255),
-  password: z.string().min(8).max(128),
+  password: passwordSchema,
   firstName: z.string().trim().min(1).max(100).optional(),
   lastName: z.string().trim().min(1).max(100).optional(),
   middleName: z.string().trim().max(100).optional(),
