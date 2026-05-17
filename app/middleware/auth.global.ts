@@ -1,7 +1,11 @@
 import { pageRoutes } from '~/routing'
 
-const AUTH_ROUTES: ReadonlyArray<string> = [pageRoutes.login, pageRoutes.register]
-const PUBLIC_PREFIXES: ReadonlyArray<string> = ['/verify-email/']
+const AUTH_ROUTES: ReadonlyArray<string> = [
+  pageRoutes.login,
+  pageRoutes.register,
+  pageRoutes.forgotPassword,
+]
+const PUBLIC_PREFIXES: ReadonlyArray<string> = ['/verify-email/', '/reset-password/']
 
 function isPublicRoute(path: string): boolean {
   return AUTH_ROUTES.includes(path) || PUBLIC_PREFIXES.some(p => path.startsWith(p))

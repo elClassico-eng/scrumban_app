@@ -8,6 +8,9 @@ export const apiRoutes = {
   authSession: '/api/auth/session',
   authVerifyEmail: (token: string) => `/api/auth/verify-email/${token}`,
   authResendVerification: '/api/auth/resend-verification',
+  authForgotPassword: '/api/auth/password/forgot',
+  authResetPassword: '/api/auth/password/reset',
+  authResetPasswordStatus: (token: string) => `/api/auth/password/reset/${token}`,
 
   usersMe: '/api/users/me',
 
@@ -107,6 +110,8 @@ export const pageRoutes = {
   login: '/login',
   register: '/register',
   verifyEmail: (token: string) => `/verify-email/${token}`,
+  forgotPassword: '/forgot-password',
+  resetPassword: (token: string) => `/reset-password/${token}`,
 
   me: '/me',
 

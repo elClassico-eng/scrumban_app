@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { pageRoutes } from '~/routing'
 
 const schema = z.object({
   email: z.string().email('Введи корректный email'),
@@ -28,6 +29,11 @@ function onSubmit() {
     </UFormField>
     <UFormField label="Пароль" name="password" required>
       <UInput v-model="state.password" type="password" autocomplete="current-password" size="lg" class="w-full" />
+      <template #hint>
+        <NuxtLink :to="pageRoutes.forgotPassword" class="text-xs text-muted hover:text-default hover:underline">
+          Забыли пароль?
+        </NuxtLink>
+      </template>
     </UFormField>
     <UAlert
       v-if="errorMessage"

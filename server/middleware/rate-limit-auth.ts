@@ -4,7 +4,12 @@ type Bucket = { count: number, resetAt: number }
 
 const WINDOW_MS = 15 * 60 * 1000
 const MAX_ATTEMPTS = 5
-const TARGET_PATHS = new Set(['/api/auth/login', '/api/auth/register'])
+const TARGET_PATHS = new Set([
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/password/forgot',
+  '/api/auth/password/reset',
+])
 const buckets = new Map<string, Bucket>()
 
 function getClientIp(event: H3Event): string {

@@ -39,6 +39,43 @@ ${opts.verifyUrl}
   return { subject, html, text }
 }
 
+export function passwordResetTemplate(opts: {
+  recipientName: string
+  resetUrl: string
+}): RenderedEmail {
+  const subject = 'Сброс пароля — Scrumban'
+  const text = `Привет${opts.recipientName ? `, ${opts.recipientName}` : ''}!
+
+Кто-то запросил сброс пароля для вашего аккаунта в Scrumban.
+Если это были вы — установите новый пароль по ссылке:
+${opts.resetUrl}
+
+Ссылка действует 1 час. Если это были не вы — просто проигнорируйте письмо, ваш пароль не изменится.`
+
+  const html = baseTemplate({
+    preheader: 'Установите новый пароль для Scrumban',
+    body: `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#111827;">
+        Сброс пароля
+      </h1>
+      <p style="margin:0 0 24px;color:#4b5563;">
+        Привет${opts.recipientName ? `, ${escapeHtml(opts.recipientName)}` : ''}!
+        Кто-то запросил сброс пароля для вашего аккаунта. Если это были вы —
+        установите новый пароль по кнопке ниже.
+      </p>
+      ${ctaButton('Установить новый пароль', opts.resetUrl)}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">
+        Или скопируйте ссылку в браузер:<br>
+        <span style="word-break:break-all;color:#6366f1;">${escapeHtml(opts.resetUrl)}</span>
+      </p>
+      <p style="margin:16px 0 0;font-size:13px;color:#6b7280;">
+        Ссылка действует 1 час. Если вы не запрашивали сброс — просто проигнорируйте письмо.
+      </p>
+    `,
+  })
+  return { subject, html, text }
+}
+
 function baseTemplate(opts: { preheader: string, body: string }): string {
   return `<!doctype html>
 <html lang="ru">
