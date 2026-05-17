@@ -1,9 +1,50 @@
 import nodemailer, { type Transporter } from 'nodemailer'
+import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2'
 
-function buildTransporter(): Transporter {
+export type SendEmailOptions = {
+  to: string
+  subject: string
+  html: string
+  text?: string
+}
+
+let sesClient: SESv2Client | null = null
+
+function getSESClient(): SESv2Client {
+  if (sesClient) return sesClient
+  const accessKeyId = process.env.SES_ACCESS_KEY_ID
+  const secretAccessKey = process.env.SES_SECRET_ACCESS_KEY
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error('SES_ACCESS_KEY_ID / SES_SECRET_ACCESS_KEY are not set')
+  }
+  sesClient = new SESv2Client({
+    region: process.env.SES_REGION ?? 'ru-central1',
+    endpoint: process.env.SES_ENDPOINT ?? 'https://postbox.cloud.yandex.net',
+    credentials: { accessKeyId, secretAccessKey },
+  })
+  return sesClient
+}
+
+async function sendViaSES(options: SendEmailOptions, from: string): Promise<void> {
+  await getSESClient().send(new SendEmailCommand({
+    FromEmailAddress: from,
+    Destination: { ToAddresses: [options.to] },
+    Content: {
+      Simple: {
+        Subject: { Data: options.subject, Charset: 'UTF-8' },
+        Body: {
+          Html: { Data: options.html, Charset: 'UTF-8' },
+          Text: { Data: options.text ?? stripHtml(options.html), Charset: 'UTF-8' },
+        },
+      },
+    },
+  }))
+}
+
+function buildSMTPTransporter(): Transporter {
   const host = process.env.SMTP_HOST
   if (!host) {
-    throw new Error('SMTP_HOST is not set. Configure email transport in .env.')
+    throw new Error('SMTP_HOST is not set and SES credentials are missing — configure one transport in .env')
   }
   const port = Number(process.env.SMTP_PORT ?? 1025)
   const secure = process.env.SMTP_SECURE === 'true'
@@ -25,16 +66,8 @@ function buildTransporter(): Transporter {
   })
 }
 
-export type SendEmailOptions = {
-  to: string
-  subject: string
-  html: string
-  text?: string
-}
-
-export async function sendEmail(options: SendEmailOptions): Promise<void> {
-  const from = process.env.SMTP_FROM ?? 'Scrumban <noreply@scrumban-thesis.ru>'
-  const transporter = buildTransporter()
+async function sendViaSMTP(options: SendEmailOptions, from: string): Promise<void> {
+  const transporter = buildSMTPTransporter()
   try {
     await transporter.sendMail({
       from,
@@ -47,6 +80,14 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
   finally {
     transporter.close()
   }
+}
+
+export async function sendEmail(options: SendEmailOptions): Promise<void> {
+  const from = process.env.SMTP_FROM ?? 'Scrumban <noreply@scrumban-thesis.ru>'
+  if (process.env.SES_ACCESS_KEY_ID) {
+    return sendViaSES(options, from)
+  }
+  return sendViaSMTP(options, from)
 }
 
 function stripHtml(html: string): string {

@@ -17,6 +17,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1048.0",
     "@nuxt/icon": "^2.2.2",
     "@nuxt/image": "^2.0.0",
     "@nuxt/ui": "^4.7.0",

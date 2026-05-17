@@ -41,6 +41,10 @@ services:
       NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD}
       SENTRY_DSN: ${SENTRY_DSN:-}
       APP_URL: ${APP_URL:-https://${DOMAIN}}
+      SES_ACCESS_KEY_ID: ${SES_ACCESS_KEY_ID:-}
+      SES_SECRET_ACCESS_KEY: ${SES_SECRET_ACCESS_KEY:-}
+      SES_REGION: ${SES_REGION:-ru-central1}
+      SES_ENDPOINT: ${SES_ENDPOINT:-https://postbox.cloud.yandex.net}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
       SMTP_SECURE: ${SMTP_SECURE:-true}
