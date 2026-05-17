@@ -1,10 +1,48 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { apiRoutes } from '~/routing'
 
 useHead({ title: 'Личный кабинет — Scrumban' })
 
 const { me, update } = useProfileApi()
 const toast = useToast()
+
+const verifiedAt = computed(() => me.data.value?.user.emailVerifiedAt ?? null)
+const isVerified = computed(() => verifiedAt.value !== null)
+const verifiedDateLabel = computed(() => {
+  if (!verifiedAt.value) return null
+  return new Date(verifiedAt.value).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+})
+
+const resending = ref(false)
+const resendSent = ref(false)
+const resendError = ref<string | null>(null)
+
+async function resendVerification() {
+  if (resending.value) return
+  resending.value = true
+  resendError.value = null
+  try {
+    await $fetch(apiRoutes.authResendVerification, { method: 'POST' })
+    resendSent.value = true
+    toast.add({
+      title: 'Письмо отправлено',
+      color: 'success',
+      icon: 'i-lucide-check',
+      duration: 2000,
+    })
+  }
+  catch (err) {
+    resendError.value = getErrorMessage(err, 'Не удалось отправить письмо')
+  }
+  finally {
+    resending.value = false
+  }
+}
 
 const schema = z.object({
   firstName: z.string().trim().max(100),
@@ -114,6 +152,51 @@ const previewInitials = computed(() => initials({
             <p v-if="state.jobTitle" class="text-sm text-muted truncate">{{ state.jobTitle }}</p>
           </div>
         </div>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <h2 class="font-semibold">Email</h2>
+        </template>
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0 space-y-1">
+            <p class="text-sm font-medium text-default truncate">
+              {{ me.data.value.user.email }}
+            </p>
+            <div class="flex items-center gap-1.5">
+              <UIcon
+                :name="isVerified ? 'i-lucide-check-circle-2' : 'i-lucide-circle-dashed'"
+                :class="[
+                  'size-3.5 shrink-0',
+                  isVerified ? 'text-success-600' : 'text-muted',
+                ]"
+              />
+              <span
+                class="text-xs"
+                :class="isVerified ? 'text-success-700' : 'text-muted'"
+              >
+                {{ isVerified ? `Подтверждён ${verifiedDateLabel}` : 'Не подтверждён' }}
+              </span>
+            </div>
+          </div>
+          <UButton
+            v-if="!isVerified"
+            size="sm"
+            variant="outline"
+            color="neutral"
+            :loading="resending"
+            :disabled="resendSent"
+            @click="resendVerification"
+          >
+            {{ resendSent ? 'Письмо отправлено' : 'Отправить письмо' }}
+          </UButton>
+        </div>
+        <p v-if="!isVerified && !resendSent" class="text-xs text-muted mt-3">
+          Письмо со ссылкой действительно 24 часа. Подтверждение нужно, чтобы принимать приглашения в чужие workspace'ы.
+        </p>
+        <p v-if="resendError" class="text-xs text-error-600 mt-3">
+          {{ resendError }}
+        </p>
       </UCard>
 
       <UCard>

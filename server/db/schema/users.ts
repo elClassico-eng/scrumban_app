@@ -15,6 +15,7 @@ export const users = pgTable('users', {
   avatarUrl: text('avatar_url'),
   jobTitle: varchar('job_title', { length: 150 }),
   bio: text('bio'),
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

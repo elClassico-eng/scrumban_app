@@ -1,0 +1,87 @@
+type RenderedEmail = {
+  subject: string
+  html: string
+  text: string
+}
+
+export function emailVerificationTemplate(opts: {
+  recipientName: string
+  verifyUrl: string
+}): RenderedEmail {
+  const subject = 'Подтвердите email — Scrumban'
+  const text = `Привет${opts.recipientName ? `, ${opts.recipientName}` : ''}!
+
+Подтвердите ваш email, перейдя по ссылке:
+${opts.verifyUrl}
+
+Ссылка действует 24 часа. Если вы не регистрировались — проигнорируйте это письмо.`
+
+  const html = baseTemplate({
+    preheader: 'Подтвердите ваш email-адрес для Scrumban',
+    body: `
+      <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#111827;">
+        Подтвердите ваш email
+      </h1>
+      <p style="margin:0 0 24px;color:#4b5563;">
+        Привет${opts.recipientName ? `, ${escapeHtml(opts.recipientName)}` : ''}!
+        Спасибо за регистрацию в Scrumban. Чтобы продолжить, подтвердите свой email-адрес.
+      </p>
+      ${ctaButton('Подтвердить email', opts.verifyUrl)}
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">
+        Или скопируйте ссылку в браузер:<br>
+        <span style="word-break:break-all;color:#6366f1;">${escapeHtml(opts.verifyUrl)}</span>
+      </p>
+      <p style="margin:16px 0 0;font-size:13px;color:#6b7280;">
+        Ссылка действует 24 часа. Если вы не регистрировались — проигнорируйте это письмо.
+      </p>
+    `,
+  })
+  return { subject, html, text }
+}
+
+function baseTemplate(opts: { preheader: string, body: string }): string {
+  return `<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Scrumban</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;">
+    ${escapeHtml(opts.preheader)}
+  </span>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f4f5;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;background:#ffffff;border-radius:14px;padding:40px;">
+          <tr><td>
+            <div style="font-size:18px;font-weight:700;color:#111827;margin-bottom:32px;">Scrumban</div>
+            ${opts.body}
+          </td></tr>
+        </table>
+        <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;">
+          Scrumban · scrumban-thesis.ru
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
+function ctaButton(label: string, href: string): string {
+  return `<a href="${escapeHtml(href)}"
+    style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;
+    padding:12px 24px;border-radius:10px;font-weight:600;font-size:15px;">
+    ${escapeHtml(label)}
+  </a>`
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}

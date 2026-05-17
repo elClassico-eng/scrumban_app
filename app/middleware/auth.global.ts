@@ -1,6 +1,11 @@
 import { pageRoutes } from '~/routing'
 
 const AUTH_ROUTES: ReadonlyArray<string> = [pageRoutes.login, pageRoutes.register]
+const PUBLIC_PREFIXES: ReadonlyArray<string> = ['/verify-email/']
+
+function isPublicRoute(path: string): boolean {
+  return AUTH_ROUTES.includes(path) || PUBLIC_PREFIXES.some(p => path.startsWith(p))
+}
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const { sessionQuery } = useAuthApi()
@@ -18,6 +23,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo(pageRoutes.workspaces)
   }
 
-  if (AUTH_ROUTES.includes(to.path)) return
+  if (isPublicRoute(to.path)) return
   if (!authenticated) return navigateTo(pageRoutes.login)
 })

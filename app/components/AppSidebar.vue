@@ -139,26 +139,39 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
             : 'p-3 gap-3 hover:bg-[#f4f4f4]',
         ]"
       >
-        <div
-          :class="[
-            'size-9 rounded-full text-xs font-semibold flex items-center justify-center shrink-0 overflow-hidden transition-colors',
-            collapsed ? 'bg-white/10 text-white' : 'bg-[#f4f4f4] text-default',
-          ]"
-        >
-          <img
-            v-if="authStore.user.avatarUrl"
-            :src="authStore.user.avatarUrl"
-            alt=""
-            class="size-full object-cover"
+        <div class="relative shrink-0">
+          <div
+            :class="[
+              'size-9 rounded-full text-xs font-semibold flex items-center justify-center overflow-hidden transition-colors',
+              collapsed ? 'bg-white/10 text-white' : 'bg-[#f4f4f4] text-default',
+            ]"
           >
-          <span v-else>{{ userInitials }}</span>
+            <img
+              v-if="authStore.user.avatarUrl"
+              :src="authStore.user.avatarUrl"
+              alt=""
+              class="size-full object-cover"
+            >
+            <span v-else>{{ userInitials }}</span>
+          </div>
+          <span
+            v-if="!authStore.user.emailVerifiedAt"
+            class="absolute top-0 right-0 size-2.5 rounded-full bg-warning-500 ring-2"
+            :class="collapsed ? 'ring-zinc-900' : 'ring-white'"
+            title="Email не подтверждён"
+          />
         </div>
         <div
           v-if="!collapsed"
           class="flex-1 min-w-0 transition-opacity duration-200"
         >
           <p class="text-sm font-medium text-default truncate">{{ userName }}</p>
-          <p class="text-xs text-muted truncate">Личный кабинет</p>
+          <p
+            class="text-xs truncate"
+            :class="authStore.user.emailVerifiedAt ? 'text-muted' : 'text-warning-600'"
+          >
+            {{ authStore.user.emailVerifiedAt ? 'Личный кабинет' : 'Подтвердите email' }}
+          </p>
         </div>
       </NuxtLink>
     </UTooltip>

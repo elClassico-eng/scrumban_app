@@ -17,6 +17,7 @@ export interface SessionUser {
   avatarUrl: string | null
   jobTitle: string | null
   bio: string | null
+  emailVerifiedAt: string | null
 }
 
 export interface SessionResponse {
@@ -45,6 +46,7 @@ export interface UserProfile {
   avatarUrl: string | null
   jobTitle: string | null
   bio: string | null
+  emailVerifiedAt: string | null
   createdAt: string
   updatedAt: string
 }

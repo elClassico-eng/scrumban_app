@@ -5,7 +5,9 @@
 import { z } from 'zod'
 import { passwordSchema } from '#shared/validation/password'
 import { createUser } from '../../services/users.service'
+import { createVerification } from '../../services/email-verifications.service'
 import { toHttpError } from '../../utils/errors'
+import { sendVerificationEmail } from '../../utils/auth-emails'
 
 const RegisterSchema = z.object({
   email: z.email().max(255),
@@ -29,6 +31,20 @@ export default defineEventHandler(async (event) => {
     })
 
     await setUserSession(event, { user: { id: user.id, email: user.email } })
+
+    // Verification email is best-effort: registration must not 500 if SMTP
+    // is down. The user can request a resend via /api/auth/resend-verification.
+    try {
+      const { plainToken } = await createVerification(user.id)
+      await sendVerificationEmail({
+        to: user.email,
+        recipientName: user.firstName ?? '',
+        token: plainToken,
+      })
+    }
+    catch (mailErr) {
+      console.error('[register] failed to send verification email:', mailErr)
+    }
 
     return { user: { id: user.id, email: user.email } }
   } catch (err) {

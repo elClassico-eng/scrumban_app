@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
         avatarUrl: user.avatarUrl,
         jobTitle: user.jobTitle,
         bio: user.bio,
+        emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
       },
     }
   } catch (err) {

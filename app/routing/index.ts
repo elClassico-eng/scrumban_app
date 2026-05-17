@@ -6,6 +6,8 @@ export const apiRoutes = {
   authLogin: '/api/auth/login',
   authLogout: '/api/auth/logout',
   authSession: '/api/auth/session',
+  authVerifyEmail: (token: string) => `/api/auth/verify-email/${token}`,
+  authResendVerification: '/api/auth/resend-verification',
 
   usersMe: '/api/users/me',
 
@@ -104,6 +106,7 @@ export const pageRoutes = {
   home: '/',
   login: '/login',
   register: '/register',
+  verifyEmail: (token: string) => `/verify-email/${token}`,
 
   me: '/me',
 

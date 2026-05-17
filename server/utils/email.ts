@@ -1,22 +1,28 @@
 import nodemailer, { type Transporter } from 'nodemailer'
 
-let cachedTransporter: Transporter | null = null
-
-function getTransporter(): Transporter {
-  if (cachedTransporter) return cachedTransporter
+function buildTransporter(): Transporter {
   const host = process.env.SMTP_HOST
   if (!host) {
     throw new Error('SMTP_HOST is not set. Configure email transport in .env.')
   }
-  cachedTransporter = nodemailer.createTransport({
+  const port = Number(process.env.SMTP_PORT ?? 1025)
+  const secure = process.env.SMTP_SECURE === 'true'
+  const user = process.env.SMTP_USER?.trim()
+  const pass = process.env.SMTP_PASS ?? ''
+  const isLocalDev = host === 'localhost' || host === '127.0.0.1'
+
+  return nodemailer.createTransport({
     host,
-    port: Number(process.env.SMTP_PORT ?? 1025),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS ?? '' }
-      : undefined,
+    port,
+    secure,
+    auth: user ? { user, pass } : undefined,
+    ignoreTLS: isLocalDev,
+    name: isLocalDev ? 'localhost' : undefined,
+    connectionTimeout: 8000,
+    greetingTimeout: 5000,
+    logger: process.env.NODE_ENV !== 'production',
+    debug: process.env.NODE_ENV !== 'production',
   })
-  return cachedTransporter
 }
 
 export type SendEmailOptions = {
@@ -28,13 +34,19 @@ export type SendEmailOptions = {
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
   const from = process.env.SMTP_FROM ?? 'Scrumban <noreply@scrumban-thesis.ru>'
-  await getTransporter().sendMail({
-    from,
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-    text: options.text ?? stripHtml(options.html),
-  })
+  const transporter = buildTransporter()
+  try {
+    await transporter.sendMail({
+      from,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text ?? stripHtml(options.html),
+    })
+  }
+  finally {
+    transporter.close()
+  }
 }
 
 function stripHtml(html: string): string {
