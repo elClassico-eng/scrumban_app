@@ -10,10 +10,8 @@ import {
   type Workspace,
   type WorkspaceMemberRole,
 } from '../db/schema'
-import { ConflictError, NotFoundError } from '../utils/errors'
+import { NotFoundError } from '../utils/errors'
 import { requireMinRole } from '../utils/rbac'
-
-const PG_UNIQUE_VIOLATION = '23505'
 
 export interface WorkspaceWithRole extends Workspace {
   role: WorkspaceMemberRole
@@ -27,33 +25,26 @@ export async function createWorkspace(input: {
   purpose?: string | null
   industry?: string | null
 }): Promise<WorkspaceWithRole> {
-  try {
-    return await useDB().transaction(async (tx) => {
-      const [ws] = await tx
-        .insert(workspaces)
-        .values({
-          name: input.name,
-          slug: input.slug,
-          description: input.description ?? null,
-          purpose: input.purpose ?? null,
-          industry: input.industry ?? null,
-        })
-        .returning()
-
-      await tx.insert(workspaceMembers).values({
-        workspaceId: ws!.id,
-        userId: input.ownerId,
-        role: 'owner',
+  return useDB().transaction(async (tx) => {
+    const [ws] = await tx
+      .insert(workspaces)
+      .values({
+        name: input.name,
+        slug: input.slug,
+        description: input.description ?? null,
+        purpose: input.purpose ?? null,
+        industry: input.industry ?? null,
       })
+      .returning()
 
-      return { ...ws!, role: 'owner' as const }
+    await tx.insert(workspaceMembers).values({
+      workspaceId: ws!.id,
+      userId: input.ownerId,
+      role: 'owner',
     })
-  } catch (err) {
-    if (isPgUniqueViolation(err)) {
-      throw new ConflictError('Этот slug уже занят другим workspace')
-    }
-    throw err
-  }
+
+    return { ...ws!, role: 'owner' as const }
+  })
 }
 
 // Selects every workspace column plus the role from the join — keeps the
@@ -108,19 +99,6 @@ export async function getWorkspaceForUserOrThrow(
   const ws = await findWorkspaceForUser(workspaceId, userId)
   if (!ws) throw new NotFoundError('Workspace не найден')
   return ws
-}
-
-function isPgUniqueViolation(err: unknown): boolean {
-  const candidate =
-    typeof err === 'object' && err !== null && 'cause' in err
-      ? (err as { cause?: unknown }).cause
-      : err
-  return (
-    typeof candidate === 'object' &&
-    candidate !== null &&
-    'code' in candidate &&
-    candidate.code === PG_UNIQUE_VIOLATION
-  )
 }
 
 // Mutate workspace metadata. Currently only `name` is editable; the slug

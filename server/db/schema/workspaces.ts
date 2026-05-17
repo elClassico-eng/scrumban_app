@@ -19,7 +19,9 @@ export const workspaces = pgTable('workspaces', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
   // URL-friendly identifier (e.g. "acme"). Lowercase a-z, digits, hyphens.
-  slug: varchar('slug', { length: 64 }).notNull().unique(),
+  // Not globally unique — current routing uses UUID, not slug, so two
+  // workspaces in different tenants can share the same slug freely.
+  slug: varchar('slug', { length: 64 }).notNull(),
   description: text('description'),
   purpose: text('purpose'),
   industry: varchar('industry', { length: 100 }),
