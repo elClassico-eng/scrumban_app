@@ -15,6 +15,25 @@ useBoardSse(wsId, bId)
 const { list: workspacesList } = useWorkspacesApi()
 const { list: boardsList } = useBoardsApi(wsId)
 const { list: tasksList } = useTasksApi(wsId, bId)
+const { list: sprintsList } = useSprintsApi(wsId, bId)
+
+const activeSprintId = computed(() =>
+  sprintsList.data.value?.sprints.find(s => s.state === 'active')?.id ?? '',
+)
+const { report: networkReport } = useSprintNetworkApi(wsId, bId, activeSprintId)
+
+const criticalIds = computed(() => {
+  const r = networkReport.data.value
+  return new Set(r?.ok ? r.criticalPathIds : [])
+})
+const slackById = computed(() => {
+  const r = networkReport.data.value
+  const map = new Map<string, number>()
+  if (r?.ok) {
+    for (const t of r.tasks) map.set(t.taskId, t.slackDays)
+  }
+  return map
+})
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -53,7 +72,7 @@ const option = computed(() => {
     const end = t.closedAt ? new Date(t.closedAt).getTime() : now
     return {
       name: t.title,
-      value: [idx, start, end, t.id, !!t.closedAt],
+      value: [idx, start, end, t.id, !!t.closedAt, criticalIds.value.has(t.id) ? 1 : 0],
       itemStyle: { color: COS_COLOR[t.serviceClass] },
     }
   })
@@ -61,11 +80,15 @@ const option = computed(() => {
 
   return {
     tooltip: {
-      formatter: (p: { data: { name: string; value: [number, number, number, string, boolean] } }) => {
-        const [, start, end, , closed] = p.data.value
+      formatter: (p: { data: { name: string; value: [number, number, number, string, boolean, number] } }) => {
+        const [, start, end, taskId, closed] = p.data.value
         const days = (end - start) / 86_400_000
         const status = closed ? 'закрыта' : 'в работе'
-        return `${p.data.name}<br/>${new Date(start).toLocaleDateString('ru')} → ${new Date(end).toLocaleDateString('ru')}<br/>${days.toFixed(1)} дн (${status})`
+        const slack = slackById.value.get(taskId)
+        const slackLine = slack === undefined
+          ? ''
+          : `<br/>${criticalIds.value.has(taskId) ? 'критический путь спринта' : `резерв: ${slack} дн`}`
+        return `${p.data.name}<br/>${new Date(start).toLocaleDateString('ru')} → ${new Date(end).toLocaleDateString('ru')}<br/>${days.toFixed(1)} дн (${status})${slackLine}`
       },
     },
     grid: { top: 16, left: 32, right: 24, bottom: 50 },
@@ -101,6 +124,7 @@ const option = computed(() => {
         const start = api.value(1)
         const end = api.value(2)
         const closed = api.value(4)
+        const critical = api.value(5) === 1
         const [x0, y0] = api.coord([start, yIdx])
         const [x1] = api.coord([end, yIdx])
         const [, h] = api.size([0, 1])
@@ -112,8 +136,8 @@ const option = computed(() => {
           style: {
             ...baseStyle,
             opacity: closed ? 1 : 0.45,
-            stroke: closed ? 'transparent' : (baseStyle.fill as string),
-            lineWidth: closed ? 0 : 1.5,
+            stroke: critical ? '#E85002' : (closed ? 'transparent' : (baseStyle.fill as string)),
+            lineWidth: critical ? 2.5 : (closed ? 0 : 1.5),
           },
         }
       },
@@ -125,7 +149,7 @@ const option = computed(() => {
 
 // ECharts click events come with `data: OptionDataItem`; narrow to our shape.
 function onChartClick(e: { data?: unknown }) {
-  const data = e.data as { value?: [number, number, number, string, boolean] } | null
+  const data = e.data as { value?: [number, number, number, string, boolean, number] } | null
   const taskId = data?.value?.[3]
   if (taskId) {
     router.push({ path: route.path, query: { ...route.query, task: taskId } })
@@ -170,6 +194,9 @@ const isEmpty = computed(() => orderedTasks.value.length === 0)
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="size-3 rounded bg-zinc-400" />{{ SERVICE_CLASS_INFO.intangible.shortLabel }}
+        </span>
+        <span v-if="criticalIds.size > 0" class="inline-flex items-center gap-1.5">
+          <span class="size-3 rounded border-2 border-accent-500" />Критический путь
         </span>
       </div>
     </div>

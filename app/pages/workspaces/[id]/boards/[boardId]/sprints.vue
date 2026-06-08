@@ -374,6 +374,13 @@ const isFilteredEmpty = computed(() =>
           @add-task="addTaskPanel = { sprint: s }"
           @close="onClose(s)"
         />
+
+        <SprintNetworkForecastCard
+          v-if="activeSprintForBurndown"
+          :workspace-id="wsId"
+          :board-id="bId"
+          :sprint-id="activeSprintForBurndown.id"
+        />
       </section>
 
       <section v-if="plannedSprints.length > 0" class="space-y-3">
