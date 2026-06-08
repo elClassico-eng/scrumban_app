@@ -96,11 +96,9 @@ const assigneeMenu = computed(() =>
     const isAssigned = assigneeIdSet.value.has(m.userId)
     return {
       label: displayName(m),
-      icon: isAssigned ? 'i-lucide-check' : undefined,
-      onSelect: () => {
-        if (isAssigned) emit('assignee-remove', m.userId)
-        else emit('assignee-add', m.userId)
-      },
+      avatar: m.avatarUrl ? { src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
+      disabled: isAssigned,
+      onSelect: () => emit('assignee-add', m.userId),
     }
   }),
 )

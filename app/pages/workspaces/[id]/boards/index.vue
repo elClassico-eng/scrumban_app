@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { pageRoutes } from '~/routing'
+import type { Board } from '#shared/types/board'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -8,14 +9,14 @@ const workspaceStore = useWorkspaceStore()
 workspaceStore.setCurrent(wsId.value)
 
 const { list: workspacesList } = useWorkspacesApi()
-const { list: boardsList, remove: removeBoard } = useBoardsApi(wsId)
+const { list: boardsList, update: updateBoard, remove: removeBoard } = useBoardsApi(wsId)
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
 )
 const boards = computed(() => boardsList.data.value?.boards ?? [])
 const canCreate = computed(() => hasRole(workspace.value?.role, 'admin'))
-const canDelete = canCreate
+const canManage = canCreate
 
 useHead({
   title: () => workspace.value
@@ -25,16 +26,50 @@ useHead({
 
 const createOpen = ref(false)
 const confirm = useConfirm()
+const toast = useToast()
 
-async function onRemove(boardId: string, name: string) {
+const renameTarget = ref<Board | null>(null)
+const renameOpen = computed({
+  get: () => renameTarget.value !== null,
+  set: (v) => { if (!v) renameTarget.value = null },
+})
+
+function menuItems(board: Board) {
+  return [
+    {
+      label: 'Переименовать',
+      icon: 'i-lucide-pencil',
+      onSelect: () => { renameTarget.value = board },
+    },
+    {
+      label: 'Удалить',
+      icon: 'i-lucide-trash-2',
+      color: 'error' as const,
+      onSelect: () => onRemove(board),
+    },
+  ]
+}
+
+async function onRename(name: string) {
+  if (!renameTarget.value) return
+  try {
+    await updateBoard.mutateAsync({ boardId: renameTarget.value.id, name })
+    renameTarget.value = null
+  }
+  catch {
+    toast.add({ title: 'Не удалось переименовать', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
+}
+
+async function onRemove(board: Board) {
   const ok = await confirm({
-    title: `Удалить доску «${name}»?`,
+    title: `Удалить доску «${board.name}»?`,
     description: 'Все её колонки и задачи будут потеряны. Действие необратимо.',
     confirmLabel: 'Удалить',
     confirmColor: 'error',
   })
   if (!ok) return
-  removeBoard.mutate(boardId)
+  removeBoard.mutate(board.id)
 }
 </script>
 
@@ -88,16 +123,17 @@ async function onRemove(boardId: string, name: string) {
             <h2 class="text-lg font-semibold tracking-tight truncate text-default">
               {{ board.name }}
             </h2>
-            <UButton
-              v-if="canDelete"
-              icon="i-lucide-trash-2"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              class="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              :loading="removeBoard.isPending.value"
-              @click.prevent="onRemove(board.id, board.name)"
-            />
+            <div v-if="canManage" class="shrink-0" @click.prevent.stop>
+              <UDropdownMenu :items="menuItems(board)" :ui="{ content: 'w-48' }">
+                <button
+                  type="button"
+                  class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default transition-colors cursor-pointer"
+                  title="Действия"
+                >
+                  <UIcon name="i-lucide-more-horizontal" class="size-4" />
+                </button>
+              </UDropdownMenu>
+            </div>
           </div>
           <p class="text-xs text-muted font-mono">{{ board.slug }}</p>
         </div>
@@ -110,5 +146,14 @@ async function onRemove(boardId: string, name: string) {
     </div>
 
     <BoardCreateModal v-if="canCreate" v-model:open="createOpen" :workspace-id="wsId" />
+
+    <CommonRenameModal
+      v-if="renameTarget"
+      v-model:open="renameOpen"
+      entity-label="доску"
+      :current-name="renameTarget.name"
+      :loading="updateBoard.isPending.value"
+      @submit="onRename"
+    />
   </div>
 </template>

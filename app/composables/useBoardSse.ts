@@ -59,7 +59,7 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
         toast.add({
           title: 'Появилась новая задача',
           icon: 'i-lucide-plus-circle',
-          color: 'info',
+          color: 'accent',
         })
         break
       case 'task.deleted':

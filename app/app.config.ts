@@ -8,6 +8,7 @@ export default defineAppConfig({
       info: 'sky',
       warning: 'amber',
       error: 'red',
+      accent: 'accent',
     },
     button: {
       defaultVariants: {

@@ -169,6 +169,20 @@
       "when": 1779025420060,
       "tag": "0023_marvelous_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1780936925969,
+      "tag": "0024_dapper_rachel_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1780936935345,
+      "tag": "0025_workspace_labels_rls",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  ui: {
+    theme: {
+      colors: ['primary', 'secondary', 'success', 'info', 'warning', 'error', 'accent'],
+    },
+  },
+
   // Nuxt only auto-imports composables/*.{ts} at the top level by default.
   // We organise composables by domain (api/, domain/, ...), so opt in
   // to recursive scanning for both composables/ and utils/.

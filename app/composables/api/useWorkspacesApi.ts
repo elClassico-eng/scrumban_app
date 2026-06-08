@@ -30,5 +30,20 @@ export function useWorkspacesApi() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['workspaces'] }),
   })
 
-  return { list, create, update }
+  const remove = useMutation({
+    mutationFn: (workspaceId: string) =>
+      $fetch<{ ok: boolean }>(apiRoutes.workspace(workspaceId), { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['workspaces'] }),
+  })
+
+  const setLabel = useMutation({
+    mutationFn: ({ workspaceId, label }: { workspaceId: string; label: string | null }) =>
+      $fetch<{ label: string | null }>(apiRoutes.workspaceLabel(workspaceId), {
+        method: 'PUT',
+        body: { label },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['workspaces'] }),
+  })
+
+  return { list, create, update, remove, setLabel }
 }
