@@ -19,7 +19,15 @@ beforeEach(async () => {
   await resetDb()
 })
 
-const credentials = { email: 'alice@example.com', password: 'correct horse battery' }
+const credentials = {
+  email: 'alice@example.com',
+  password: 'correct horse battery 1',
+  workspace: { name: 'Alice WS', slug: 'alice-ws' },
+}
+
+function uniqueIp(): Record<string, string> {
+  return { 'x-forwarded-for': `10.1.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200)}` }
+}
 
 describe('POST /api/auth/register', () => {
   it('creates a user, starts a session, returns the public user', async () => {
@@ -27,7 +35,7 @@ describe('POST /api/auth/register', () => {
     const res = await fetchWithJar<{ user: { id: string; email: string } }>(
       jar,
       '/api/auth/register',
-      { method: 'POST', body: credentials },
+      { method: 'POST', body: credentials, headers: uniqueIp() },
     )
 
     expect(res.status).toBe(200)
@@ -41,6 +49,7 @@ describe('POST /api/auth/register', () => {
     const res = await fetchWithJar(jar, '/api/auth/register', {
       method: 'POST',
       body: { ...credentials, email: 'not-an-email' },
+      headers: uniqueIp(),
     })
     expect(res.status).toBe(400)
   })
@@ -50,26 +59,29 @@ describe('POST /api/auth/register', () => {
     const res = await fetchWithJar(jar, '/api/auth/register', {
       method: 'POST',
       body: { ...credentials, password: 'short' },
+      headers: uniqueIp(),
     })
     expect(res.status).toBe(400)
   })
 
   it('rejects duplicate email with 409', async () => {
     const jar = new CookieJar()
-    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials })
+    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials, headers: uniqueIp() })
     const res = await fetchWithJar(new CookieJar(), '/api/auth/register', {
       method: 'POST',
       body: credentials,
+      headers: uniqueIp(),
     })
     expect(res.status).toBe(409)
   })
 
   it('treats email as case-insensitive on duplicate check', async () => {
     const jar = new CookieJar()
-    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials })
+    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials, headers: uniqueIp() })
     const res = await fetchWithJar(new CookieJar(), '/api/auth/register', {
       method: 'POST',
       body: { ...credentials, email: credentials.email.toUpperCase() },
+      headers: uniqueIp(),
     })
     expect(res.status).toBe(409)
   })
@@ -80,6 +92,7 @@ describe('POST /api/auth/login', () => {
     await fetchWithJar(new CookieJar(), '/api/auth/register', {
       method: 'POST',
       body: credentials,
+      headers: uniqueIp(),
     })
   })
 
@@ -88,6 +101,7 @@ describe('POST /api/auth/login', () => {
     const res = await fetchWithJar<{ user: { email: string } }>(jar, '/api/auth/login', {
       method: 'POST',
       body: credentials,
+      headers: uniqueIp(),
     })
     expect(res.status).toBe(200)
     expect(res.body.user.email).toBe(credentials.email)
@@ -99,6 +113,7 @@ describe('POST /api/auth/login', () => {
     const res = await fetchWithJar(jar, '/api/auth/login', {
       method: 'POST',
       body: { ...credentials, password: 'wrong' },
+      headers: uniqueIp(),
     })
     expect(res.status).toBe(401)
   })
@@ -108,6 +123,7 @@ describe('POST /api/auth/login', () => {
     const res = await fetchWithJar(jar, '/api/auth/login', {
       method: 'POST',
       body: { email: 'nobody@example.com', password: credentials.password },
+      headers: uniqueIp(),
     })
     expect(res.status).toBe(401)
   })
@@ -116,7 +132,7 @@ describe('POST /api/auth/login', () => {
 describe('GET /api/auth/session', () => {
   it('returns the current user when authenticated', async () => {
     const jar = new CookieJar()
-    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials })
+    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials, headers: uniqueIp() })
     const res = await fetchWithJar<{ user: { email: string } }>(jar, '/api/auth/session')
     expect(res.status).toBe(200)
     expect(res.body.user.email).toBe(credentials.email)
@@ -132,7 +148,7 @@ describe('GET /api/auth/session', () => {
 describe('POST /api/auth/logout', () => {
   it('clears the session so subsequent /session returns 401', async () => {
     const jar = new CookieJar()
-    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials })
+    await fetchWithJar(jar, '/api/auth/register', { method: 'POST', body: credentials, headers: uniqueIp() })
 
     const logout = await fetchWithJar<{ ok: boolean }>(jar, '/api/auth/logout', { method: 'POST' })
     expect(logout.status).toBe(200)
