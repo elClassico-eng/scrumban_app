@@ -114,14 +114,14 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
         </h4>
         <span
           v-if="blockers.length > 0 || task.blockedReason"
-          class="h-5 px-1.5 rounded text-[11px] font-medium inline-flex items-center bg-red-50 text-red-600"
+          class="h-5 px-1.5 rounded text-[11px] font-medium inline-flex items-center bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300"
         >
           {{ blockers.length + (task.blockedReason ? 1 : 0) }} активный
         </span>
         <div class="flex-1" />
         <button
           type="button"
-          class="h-6 px-2 rounded-md border border-dashed border-zinc-300 text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
+          class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           @click="blockerPickerOpen = true"
         >
           <UIcon name="i-lucide-plus" class="size-3" />
@@ -185,7 +185,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
           rows="2"
           autofocus
           placeholder="Опиши, почему задача заблокирована"
-          class="w-full bg-white border border-red-200 rounded-md px-2.5 py-1.5 text-[13px] text-default leading-snug outline-none focus:border-red-500"
+          class="w-full bg-default border border-red-200 rounded-md px-2.5 py-1.5 text-[13px] text-default leading-snug outline-none focus:border-red-500"
           @blur="commitEditReason"
           @keyup.esc="isEditingReason = false"
         />
@@ -218,7 +218,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
         <div class="flex-1" />
         <button
           type="button"
-          class="h-6 px-2 rounded-md border border-dashed border-zinc-300 text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
+          class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           @click="dependencyPickerOpen = true"
         >
           <UIcon name="i-lucide-plus" class="size-3" />
@@ -234,9 +234,9 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
         <div
           v-for="dep in blockers"
           :key="`bl-${dep.blockerTaskId}`"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-md border border-default bg-white hover:border-zinc-400 transition-colors"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-md border border-default bg-default hover:border-zinc-400 transition-colors"
         >
-          <span class="text-[11px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded bg-accent-50 text-accent-600 whitespace-nowrap">
+          <span class="text-[11px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-300 whitespace-nowrap">
             Блокируется
           </span>
           <NuxtLink
@@ -248,9 +248,9 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
           <span
             class="text-[11px] px-1.5 py-0.5 rounded-full"
             :class="{
-              'bg-emerald-50 text-emerald-700': statusOf(dep.blockerTaskId).tone === 'done',
-              'bg-blue-50 text-blue-700': statusOf(dep.blockerTaskId).tone === 'progress',
-              'bg-zinc-100 text-muted': statusOf(dep.blockerTaskId).tone === 'default',
+              'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300': statusOf(dep.blockerTaskId).tone === 'done',
+              'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300': statusOf(dep.blockerTaskId).tone === 'progress',
+              'bg-elevated text-muted': statusOf(dep.blockerTaskId).tone === 'default',
             }"
           >
             {{ statusOf(dep.blockerTaskId).label }}
@@ -260,9 +260,9 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
         <div
           v-for="dep in blocks"
           :key="`bk-${dep.blockedTaskId}`"
-          class="flex items-center gap-2.5 px-3 py-2 rounded-md border border-default bg-white hover:border-zinc-400 transition-colors"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-md border border-default bg-default hover:border-zinc-400 transition-colors"
         >
-          <span class="text-[11px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded bg-red-50 text-red-600 whitespace-nowrap">
+          <span class="text-[11px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300 whitespace-nowrap">
             Блокирует
           </span>
           <NuxtLink
@@ -274,9 +274,9 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
           <span
             class="text-[11px] px-1.5 py-0.5 rounded-full"
             :class="{
-              'bg-emerald-50 text-emerald-700': statusOf(dep.blockedTaskId).tone === 'done',
-              'bg-blue-50 text-blue-700': statusOf(dep.blockedTaskId).tone === 'progress',
-              'bg-zinc-100 text-muted': statusOf(dep.blockedTaskId).tone === 'default',
+              'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300': statusOf(dep.blockedTaskId).tone === 'done',
+              'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300': statusOf(dep.blockedTaskId).tone === 'progress',
+              'bg-elevated text-muted': statusOf(dep.blockedTaskId).tone === 'default',
             }"
           >
             {{ statusOf(dep.blockedTaskId).label }}

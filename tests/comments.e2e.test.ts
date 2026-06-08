@@ -26,7 +26,15 @@ async function registerUser(email: string): Promise<UserCtx> {
   const res = await fetchWithJar<{ user: { id: string; email: string } }>(
     jar,
     '/api/auth/register',
-    { method: 'POST', body: { email, password: 'correct horse battery' } },
+    {
+      method: 'POST',
+      body: {
+        email,
+        password: 'correct horse battery 1',
+        workspace: { name: 'Reg WS', slug: 'reg-ws' },
+      },
+      headers: { 'x-forwarded-for': `10.0.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200)}` },
+    },
   )
   return { email, jar, id: res.body.user.id }
 }

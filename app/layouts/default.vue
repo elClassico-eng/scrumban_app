@@ -3,7 +3,8 @@ useNotificationsSse()
 </script>
 
 <template>
-  <div class="h-screen flex overflow-hidden">
+  <div class="relative h-screen flex overflow-hidden">
+    <div class="pointer-events-none absolute -top-40 -right-24 size-[40rem] rounded-full dark:bg-accent-500/15 blur-[130px]" />
     <AppSidebar />
     <div class="flex-1 flex flex-col min-w-0">
       <AppHeader />

@@ -18,6 +18,7 @@ export const apiRoutes = {
 
   workspaces: '/api/workspaces',
   workspace: (id: string) => `/api/workspaces/${id}`,
+  workspaceLabel: (wsId: string) => `/api/workspaces/${wsId}/label`,
 
   members: (wsId: string) => `/api/workspaces/${wsId}/members`,
   member: (wsId: string, userId: string) => `/api/workspaces/${wsId}/members/${userId}`,

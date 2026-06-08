@@ -69,9 +69,9 @@ const statusLabel = computed(() => {
 })
 
 const statusClasses = computed(() => {
-  if (props.sprint.state === 'planned') return 'bg-zinc-100 text-zinc-600'
-  if (props.sprint.state === 'closed') return 'bg-emerald-50 text-emerald-700'
-  return 'bg-accent-50 text-accent-700'
+  if (props.sprint.state === 'planned') return 'bg-elevated text-default'
+  if (props.sprint.state === 'closed') return 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+  return 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'
 })
 
 const statusDotClasses = computed(() => {
@@ -105,7 +105,7 @@ function onAddClick(e: Event) {
 </script>
 
 <template>
-  <div class="bg-white border border-default rounded-2xl p-5 flex flex-col gap-3">
+  <div class="bg-default border border-default rounded-2xl p-5 flex flex-col gap-3">
     <div class="flex items-start gap-3">
       <h3 class="flex-1 text-[16px] font-semibold tracking-tight text-default leading-snug">
         {{ sprint.name }}
@@ -152,11 +152,11 @@ function onAddClick(e: Event) {
     </div>
 
     <div v-if="tasks.length > 0" class="grid grid-cols-3 gap-2">
-      <div class="bg-zinc-50 rounded-lg px-3 py-2">
+      <div class="bg-muted rounded-lg px-3 py-2">
         <div class="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-muted">Задач</div>
         <div class="text-[18px] font-semibold tracking-tight text-default">{{ tasks.length }}</div>
       </div>
-      <div class="bg-zinc-50 rounded-lg px-3 py-2">
+      <div class="bg-muted rounded-lg px-3 py-2">
         <div class="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-muted">
           {{ sprint.state === 'closed' ? 'Завершено' : 'План' }}
         </div>
@@ -169,7 +169,7 @@ function onAddClick(e: Event) {
           </template>
         </div>
       </div>
-      <div class="bg-zinc-50 rounded-lg px-3 py-2">
+      <div class="bg-muted rounded-lg px-3 py-2">
         <div class="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-muted">Команда</div>
         <div class="flex items-center -space-x-1.5 h-[22px] mt-1">
           <UserAvatar
@@ -190,7 +190,7 @@ function onAddClick(e: Event) {
 
     <div
       v-else
-      class="flex items-center gap-2 px-3 py-3 rounded-lg bg-zinc-50 border border-dashed border-zinc-200 text-[12.5px] text-muted"
+      class="flex items-center gap-2 px-3 py-3 rounded-lg bg-muted border border-dashed border-default text-[12.5px] text-muted"
     >
       <UIcon name="i-lucide-plus" class="size-3.5" />
       <span class="flex-1">В спринте пока нет задач</span>
@@ -208,7 +208,7 @@ function onAddClick(e: Event) {
     <button
       v-if="tasks.length > 0"
       type="button"
-      class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 transition-colors text-[12.5px] text-default cursor-pointer"
+      class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-muted hover:bg-elevated transition-colors text-[12.5px] text-default cursor-pointer"
       @click="onCardExpandToggle"
     >
       <UIcon
@@ -222,7 +222,7 @@ function onAddClick(e: Event) {
       </span>
       <span
         v-if="sprint.state !== 'closed' && progressTotal > 0"
-        class="ml-auto h-1 w-16 bg-zinc-200 rounded-full overflow-hidden"
+        class="ml-auto h-1 w-16 bg-accented rounded-full overflow-hidden"
       >
         <span
           class="block h-full bg-accent-500 transition-all"
@@ -241,7 +241,7 @@ function onAddClick(e: Event) {
 
     <div
       v-if="expanded && tasks.length > 0"
-      class="border border-default rounded-lg overflow-hidden bg-white"
+      class="border border-default rounded-lg overflow-hidden bg-default"
     >
       <SprintTaskRow
         v-for="t in tasks.slice(0, 6)"
@@ -253,7 +253,7 @@ function onAddClick(e: Event) {
       />
       <div
         v-if="tasks.length > 6"
-        class="px-3 py-2 text-center text-[11.5px] text-muted border-t border-zinc-100"
+        class="px-3 py-2 text-center text-[11.5px] text-muted border-t border-default"
       >
         + ещё {{ tasks.length - 6 }} задач(и)
       </div>

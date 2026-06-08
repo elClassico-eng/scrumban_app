@@ -16,8 +16,10 @@ export interface WorkspaceWithRole extends Workspace {
   role: Role
 }
 
+export type WorkspaceListItem = WorkspaceWithRole & { myLabel: string | null }
+
 export interface WorkspacesListResponse {
-  workspaces: WorkspaceWithRole[]
+  workspaces: WorkspaceListItem[]
 }
 
 export interface WorkspaceResponse {

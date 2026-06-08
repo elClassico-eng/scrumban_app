@@ -268,7 +268,7 @@ watch(open, (v) => {
               v-else
               class="flex items-center gap-3 p-3 rounded-lg border border-default bg-elevated/40"
             >
-              <span class="inline-flex size-7 items-center justify-center rounded-md bg-success-50 text-success-600 shrink-0">
+              <span class="inline-flex size-7 items-center justify-center rounded-md bg-success-50 dark:bg-success-950 text-success-600 dark:text-success-400 shrink-0">
                 <UIcon name="i-lucide-check" class="size-4" />
               </span>
               <div class="flex-1 min-w-0">
@@ -298,8 +298,8 @@ watch(open, (v) => {
               type="button"
               class="flex items-start gap-2.5 p-3 rounded-lg border-[1.5px] text-left transition-colors"
               :class="role === opt.value
-                ? 'border-accent-500 bg-accent-50/60'
-                : 'border-default bg-default hover:border-neutral-300'"
+                ? 'border-accent-500 bg-accent-50/60 dark:bg-accent-950/40'
+                : 'border-default bg-default hover:border-default'"
               @click="role = opt.value"
             >
               <span

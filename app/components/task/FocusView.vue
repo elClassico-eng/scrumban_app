@@ -308,7 +308,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="grid grid-rows-[44px_1fr] h-[90vh] max-h-[920px] bg-white text-default rounded-2xl overflow-hidden">
+  <div class="grid grid-rows-[44px_1fr] h-[90vh] max-h-[920px] bg-default text-default rounded-2xl overflow-hidden">
     <div v-if="isLoading" class="row-span-2 grid place-items-center p-6">
       <UIcon name="i-lucide-loader" class="animate-spin size-6 text-muted" />
     </div>

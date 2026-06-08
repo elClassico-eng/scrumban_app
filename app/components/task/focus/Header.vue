@@ -23,10 +23,10 @@ const CLASS_ICON: Record<ServiceClass, string> = {
 }
 
 const CLASS_VARIANT: Record<ServiceClass, string> = {
-  standard: 'bg-white text-default border-default',
+  standard: 'bg-default text-default border-default',
   expedite: 'bg-accent-500 text-white border-accent-500',
-  intangible: 'bg-white text-muted border-default',
-  fixed_date: 'bg-white text-amber-700 border-amber-300',
+  intangible: 'bg-default text-muted border-default',
+  fixed_date: 'bg-default text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
 }
 
 const classOptions = computed(() =>
@@ -49,12 +49,12 @@ function onTitleBlur(e: FocusEvent) {
 </script>
 
 <template>
-  <div class="px-7 pt-[22px] pb-3.5 border-b border-zinc-100">
+  <div class="px-7 pt-[22px] pb-3.5 border-b border-default">
     <div class="flex items-center gap-2 mb-3.5 flex-wrap">
       <UDropdownMenu :items="columnOptions">
         <button
           type="button"
-          class="inline-flex items-center gap-2 h-7 pl-2.5 pr-3 rounded-md bg-brand-500 text-white text-[12.5px] font-medium cursor-pointer"
+          class="inline-flex items-center gap-2 h-7 pl-2.5 pr-3 rounded-md bg-inverted text-inverted text-[12.5px] font-medium cursor-pointer"
         >
           <span class="size-1.5 rounded-full bg-accent-500" />
           {{ currentColumn?.name ?? '—' }}
@@ -76,7 +76,7 @@ function onTitleBlur(e: FocusEvent) {
 
       <span
         v-if="task.isEpic"
-        class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-brand-500 text-accent-500 text-[12px] font-semibold uppercase tracking-[0.04em] border border-brand-500"
+        class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-inverted text-accent-500 text-[12px] font-semibold uppercase tracking-[0.04em] border border-inverted"
       >
         <UIcon name="i-lucide-crown" class="size-3.5" />
         Epic
@@ -84,7 +84,7 @@ function onTitleBlur(e: FocusEvent) {
     </div>
 
     <h1
-      class="font-semibold tracking-tight text-default leading-tight outline-none rounded-md py-1 px-1.5 -mx-1.5 hover:bg-zinc-100 focus:bg-zinc-100 focus:ring-2 focus:ring-accent-100 transition-colors"
+      class="font-semibold tracking-tight text-default leading-tight outline-none rounded-md py-1 px-1.5 -mx-1.5 hover:bg-elevated focus:bg-elevated focus:ring-2 focus:ring-accent-100 transition-colors"
       :class="task.isEpic ? 'text-[26px]' : 'text-2xl'"
       :contenteditable="true"
       spellcheck="false"

@@ -120,7 +120,7 @@ const sprintGoals = computed(() => {
 </script>
 
 <template>
-  <div class="bg-white border border-default rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
+  <div class="bg-default border border-default rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
     <div class="px-6 py-6 lg:border-r border-default flex flex-col gap-4 min-w-0">
       <div class="flex items-start gap-3">
         <div class="flex-1 min-w-0">
@@ -141,7 +141,7 @@ const sprintGoals = computed(() => {
         >
           <button
             type="button"
-            class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default transition-colors cursor-pointer"
+            class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
             title="Действия"
           >
             <UIcon name="i-lucide-more-horizontal" class="size-4" />
@@ -154,13 +154,13 @@ const sprintGoals = computed(() => {
       </p>
 
       <div class="space-y-2">
-        <div class="relative h-2 rounded-full bg-zinc-100 overflow-hidden flex">
+        <div class="relative h-2 rounded-full bg-elevated overflow-hidden flex">
           <div
             class="h-full bg-emerald-500 transition-all"
             :style="{ width: `${(doneValue / capacity) * 100}%` }"
           />
           <div
-            class="h-full bg-brand-500 transition-all"
+            class="h-full bg-inverted transition-all"
             :style="{ width: `${Math.max(0, (committedValue - doneValue) / capacity) * 100}%` }"
           />
           <div
@@ -180,7 +180,7 @@ const sprintGoals = computed(() => {
             <b class="text-default">{{ doneValue }}</b> готово
           </span>
           <span class="inline-flex items-center gap-1.5">
-            <span class="size-2 rounded-full bg-brand-500" />
+            <span class="size-2 rounded-full bg-inverted" />
             <b class="text-default">{{ Math.max(0, committedValue - doneValue) }}</b> в работе
           </span>
           <span v-if="addedValue > 0" class="inline-flex items-center gap-1.5">
@@ -192,14 +192,14 @@ const sprintGoals = computed(() => {
       </div>
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <div class="bg-zinc-50 rounded-lg px-3 py-2.5">
+        <div class="bg-muted rounded-lg px-3 py-2.5">
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Прогресс</div>
           <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
             {{ progressPct }}<span class="text-[12px] text-muted font-normal ml-0.5">%</span>
           </div>
           <div class="text-[11px] text-muted mt-0.5">{{ doneValue }} из {{ committedValue }} {{ unitLabel }}</div>
         </div>
-        <div class="bg-zinc-50 rounded-lg px-3 py-2.5">
+        <div class="bg-muted rounded-lg px-3 py-2.5">
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Осталось</div>
           <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
             {{ daysLeft }}<span class="text-[12px] text-muted font-normal ml-0.5">дн</span>
@@ -208,7 +208,7 @@ const sprintGoals = computed(() => {
         </div>
         <div
           class="rounded-lg px-3 py-2.5"
-          :class="addedValue > 0 ? 'bg-accent-50' : 'bg-zinc-50'"
+          :class="addedValue > 0 ? 'bg-accent-50' : 'bg-muted'"
         >
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Скоуп креп</div>
           <div
@@ -221,7 +221,7 @@ const sprintGoals = computed(() => {
             {{ addedCount }} задач после старта
           </div>
         </div>
-        <div class="bg-zinc-50 rounded-lg px-3 py-2.5">
+        <div class="bg-muted rounded-lg px-3 py-2.5">
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">{{ totalLabel }}</div>
           <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
             {{ totalValue }}<span class="text-[12px] text-muted font-normal ml-0.5">{{ unitLabel }}</span>
@@ -239,14 +239,14 @@ const sprintGoals = computed(() => {
           :key="idx"
           class="flex items-start gap-2 text-[13px] text-default"
         >
-          <span class="size-3.5 rounded-full border-[1.5px] border-zinc-300 shrink-0 mt-0.5" />
+          <span class="size-3.5 rounded-full border-[1.5px] border-default shrink-0 mt-0.5" />
           <span>{{ goal }}</span>
         </div>
       </div>
     </div>
 
-    <div class="px-6 py-6 flex flex-col gap-4 min-w-0 bg-zinc-50/40">
-      <div class="bg-white border border-default rounded-lg p-4">
+    <div class="px-6 py-6 flex flex-col gap-4 min-w-0 bg-muted">
+      <div class="bg-default border border-default rounded-lg p-4">
         <div class="flex items-center gap-2 mb-2">
           <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0">
             Burndown
@@ -254,7 +254,7 @@ const sprintGoals = computed(() => {
           <div class="flex-1" />
           <span
             class="text-[10.5px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded"
-            :class="isOnTrack ? 'bg-emerald-50 text-emerald-700' : 'bg-accent-50 text-accent-700'"
+            :class="isOnTrack ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'"
           >
             {{ isOnTrack ? 'По графику' : 'Отстаём' }}
           </span>
@@ -284,11 +284,11 @@ const sprintGoals = computed(() => {
             Распределение по доске
           </h4>
           <div class="flex-1" />
-          <span class="text-[11px] font-medium text-default bg-zinc-100 px-1.5 py-0.5 rounded-full">
+          <span class="text-[11px] font-medium text-default bg-elevated px-1.5 py-0.5 rounded-full">
             {{ totalValue }} {{ unitLabel }}
           </span>
         </div>
-        <div v-if="distributionTotal > 0" class="h-2 rounded-full overflow-hidden flex bg-zinc-100">
+        <div v-if="distributionTotal > 0" class="h-2 rounded-full overflow-hidden flex bg-elevated">
           <div
             v-for="seg in distribution"
             :key="seg.key"
@@ -298,7 +298,7 @@ const sprintGoals = computed(() => {
             :title="`${seg.label}: ${seg.value} ${unitLabel}`"
           />
         </div>
-        <div v-else class="h-2 rounded-full bg-zinc-100" />
+        <div v-else class="h-2 rounded-full bg-elevated" />
         <div class="grid grid-cols-3 gap-2 mt-2">
           <div v-for="seg in distribution" :key="seg.key" class="text-[11px]">
             <div class="inline-flex items-center gap-1 text-muted">
@@ -327,13 +327,13 @@ const sprintGoals = computed(() => {
         <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0">
           Задачи спринта
         </h4>
-        <span class="text-[11px] font-medium text-default bg-zinc-100 px-1.5 py-0.5 rounded-full">
+        <span class="text-[11px] font-medium text-default bg-elevated px-1.5 py-0.5 rounded-full">
           {{ tasks.length }}
         </span>
         <div class="flex-1" />
       </div>
 
-      <div class="border border-default rounded-lg overflow-hidden bg-white">
+      <div class="border border-default rounded-lg overflow-hidden bg-default">
         <SprintTaskRow
           v-for="t in tasks"
           :key="t.task.id"
@@ -345,10 +345,10 @@ const sprintGoals = computed(() => {
         <button
           v-if="canManage"
           type="button"
-          class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left bg-zinc-50/50 hover:bg-zinc-100/60 transition-colors text-[12.5px] text-muted cursor-pointer border-t border-zinc-100"
+          class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left bg-muted/50 hover:bg-elevated/60 transition-colors text-[12.5px] text-muted cursor-pointer border-t border-default"
           @click="$emit('add-task')"
         >
-          <span class="size-5 rounded-full grid place-items-center bg-white border border-dashed border-zinc-300 text-zinc-400">
+          <span class="size-5 rounded-full grid place-items-center bg-default border border-dashed border-default text-dimmed">
             <UIcon name="i-lucide-plus" class="size-3" />
           </span>
           <span class="flex-1">Добавить задачу из бэклога…</span>

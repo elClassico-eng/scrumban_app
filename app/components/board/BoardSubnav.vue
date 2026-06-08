@@ -157,8 +157,8 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
             :class="[
               'inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full text-[11.5px] font-medium transition-colors disabled:cursor-default',
               replenishmentState.overdue
-                ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                : 'bg-zinc-100 text-muted hover:bg-zinc-200',
+                ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900'
+                : 'bg-elevated text-muted hover:bg-accented',
               canRename && 'cursor-pointer',
             ]"
             @click="canRename && onMarkReplenishment()"
@@ -171,7 +171,7 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
           <button
             type="button"
             :disabled="recordReplenishment.isPending.value"
-            class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-zinc-100 text-muted hover:bg-zinc-200 text-[11.5px] font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
+            class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-elevated text-muted hover:bg-accented text-[11.5px] font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
             @click="onMarkReplenishment"
           >
             <UIcon name="i-lucide-calendar" class="size-3" />

@@ -27,8 +27,8 @@ const columnLabel = computed(() => props.column?.name ?? '—')
 
 const CLASS_BADGE: Partial<Record<Task['serviceClass'], { label: string; className: string }>> = {
   expedite: { label: 'Срочная', className: 'bg-accent-500 text-white' },
-  intangible: { label: 'Фон', className: 'bg-zinc-100 text-zinc-500' },
-  fixed_date: { label: 'С дедлайном', className: 'bg-amber-50 text-amber-700' },
+  intangible: { label: 'Фон', className: 'bg-elevated text-muted' },
+  fixed_date: { label: 'С дедлайном', className: 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300' },
 }
 
 const classBadge = computed(() => CLASS_BADGE[props.task.serviceClass] ?? null)
@@ -62,7 +62,7 @@ function openTask() {
 <template>
   <button
     type="button"
-    class="w-full flex items-center gap-2.5 px-3 py-2 text-left bg-white hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-b-0 cursor-pointer"
+    class="w-full flex items-center gap-2.5 px-3 py-2 text-left bg-default hover:bg-muted transition-colors border-b border-default last:border-b-0 cursor-pointer"
     :class="addedAfterStart ? 'ring-1 ring-accent-100 ring-inset' : ''"
     :title="addedAfterStart ? 'Добавлена после старта спринта' : column?.name"
     @click="openTask"
@@ -95,13 +95,13 @@ function openTask() {
       />
       <div
         v-if="hiddenAssigneesCount > 0"
-        class="size-5 rounded-full bg-zinc-200 text-zinc-600 text-[9px] font-medium flex items-center justify-center ring-2 ring-white"
+        class="size-5 rounded-full bg-accented text-default text-[9px] font-medium flex items-center justify-center ring-2 ring-white dark:ring-zinc-800"
       >
         +{{ hiddenAssigneesCount }}
       </div>
       <span
         v-if="assignees.length === 0 && hiddenAssigneesCount === 0"
-        class="size-5 rounded-full bg-zinc-100 text-zinc-400 text-[10px] flex items-center justify-center"
+        class="size-5 rounded-full bg-elevated text-dimmed text-[10px] flex items-center justify-center"
         title="Без исполнителя"
       >·</span>
     </div>

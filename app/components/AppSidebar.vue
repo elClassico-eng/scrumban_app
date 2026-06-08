@@ -42,10 +42,10 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
 <template>
   <aside
     :class="[
-      'm-3 rounded-2xl flex flex-col overflow-hidden shadow-sm transition-[width,background-color,color] duration-300 ease-out',
+      'm-3 rounded-2xl flex flex-col overflow-hidden shadow-sm dark:shadow-[0_4px_22px_-6px_rgba(232,80,2,0.3)] transition-[width,background-color,color] duration-300 ease-out',
       collapsed
-        ? 'w-16 bg-black text-white'
-        : 'w-60 bg-white text-default',
+        ? 'w-16 bg-brand-500 text-white'
+        : 'w-60 bg-default text-default',
     ]"
   >
     <div
@@ -67,7 +67,7 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
           'rounded-md p-1.5 transition-colors',
           collapsed
             ? 'hover:bg-white/10'
-            : 'hover:bg-[#f4f4f4]',
+            : 'hover:bg-elevated',
         ]"
         :title="collapsed ? 'Развернуть' : 'Свернуть'"
         @click="uiStore.toggleSidebar"
@@ -101,13 +101,13 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
           :class="[
             'flex items-center gap-3 rounded-md text-sm transition-colors',
             collapsed
-              ? 'justify-center p-2.5 text-white/70 hover:bg-white/10 hover:text-white'
-              : 'px-3 py-2 text-muted hover:bg-[#f4f4f4] hover:text-default',
+              ? 'justify-center p-2.5 text-white/80 hover:bg-white/10 hover:text-white'
+              : 'px-3 py-2 text-muted hover:bg-elevated hover:text-default',
           ]"
           :active-class="
             collapsed
-              ? '!bg-white/15 !text-white'
-              : '!bg-accent-50 !text-accent-700 font-medium'
+              ? '!bg-white/20 !text-white'
+              : '!bg-accent-50 dark:!bg-accent-950 !text-accent-700 dark:!text-accent-300 font-medium'
           "
         >
           <UIcon :name="link.icon" class="size-4 shrink-0" />
@@ -136,14 +136,14 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
           'm-3 rounded-lg flex items-center transition-colors',
           collapsed
             ? 'justify-center p-2 hover:bg-white/10'
-            : 'p-3 gap-3 hover:bg-[#f4f4f4]',
+            : 'p-3 gap-3 hover:bg-elevated',
         ]"
       >
         <div class="relative shrink-0">
           <div
             :class="[
               'size-9 rounded-full text-xs font-semibold flex items-center justify-center overflow-hidden transition-colors',
-              collapsed ? 'bg-white/10 text-white' : 'bg-[#f4f4f4] text-default',
+              collapsed ? 'bg-white/15 text-white' : 'bg-elevated text-default',
             ]"
           >
             <img

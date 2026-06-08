@@ -96,18 +96,16 @@ const assigneeMenu = computed(() =>
     const isAssigned = assigneeIdSet.value.has(m.userId)
     return {
       label: displayName(m),
-      icon: isAssigned ? 'i-lucide-check' : undefined,
-      onSelect: () => {
-        if (isAssigned) emit('assignee-remove', m.userId)
-        else emit('assignee-add', m.userId)
-      },
+      avatar: m.avatarUrl ? { src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
+      disabled: isAssigned,
+      onSelect: () => emit('assignee-add', m.userId),
     }
   }),
 )
 </script>
 
 <template>
-  <aside class="bg-brand-50 flex flex-col min-h-0 overflow-y-auto">
+  <aside class="bg-muted flex flex-col min-h-0 overflow-y-auto">
     <section class="px-[18px] py-4 border-b border-default">
       <h5 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-2.5">
         Состояние
@@ -117,7 +115,7 @@ const assigneeMenu = computed(() =>
           <UDropdownMenu :items="columnOptions">
             <button
               type="button"
-              class="inline-flex items-center gap-1.5 h-6 px-2 rounded-md bg-brand-500 text-white text-[12px] cursor-pointer"
+              class="inline-flex items-center gap-1.5 h-6 px-2 rounded-md bg-inverted text-inverted text-[12px] cursor-pointer"
             >
               <span class="size-1.5 rounded-full bg-accent-500" />
               {{ currentColumn?.name ?? '—' }}
@@ -133,7 +131,7 @@ const assigneeMenu = computed(() =>
               class="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] border cursor-pointer transition-colors"
               :class="task.serviceClass === 'expedite'
                 ? 'bg-accent-500 text-white border-accent-500'
-                : 'bg-zinc-100 text-default border-default'"
+                : 'bg-elevated text-default border-default'"
             >
               <UIcon :name="CLASS_ICON[task.serviceClass]" class="size-3" />
               {{ SERVICE_CLASS_INFO[task.serviceClass].shortLabel }}
@@ -146,15 +144,15 @@ const assigneeMenu = computed(() =>
             <input
               :value="localDueDate"
               type="date"
-              class="bg-white border border-default rounded-md px-2 py-1 text-[12.5px] text-default font-sans focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-50 transition-colors"
+              class="bg-default border border-default rounded-md px-2 py-1 text-[12.5px] text-default font-sans focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-50 transition-colors"
               @input="onDueInput"
             >
             <span
               v-if="deadlineMeta"
               class="text-[11.5px] px-1.5 py-px rounded-full font-medium self-start"
               :class="deadlineMeta.overdue
-                ? 'bg-red-50 text-red-600'
-                : 'bg-accent-50 text-accent-600'"
+                ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300'
+                : 'bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-300'"
             >
               {{ deadlineMeta.countdown }}
             </span>
@@ -167,8 +165,8 @@ const assigneeMenu = computed(() =>
               type="button"
               class="inline-flex items-center gap-1.5 h-6 px-2 rounded-md text-[12px] border cursor-pointer transition-colors"
               :class="task.storyPoints != null
-                ? 'bg-zinc-100 text-default border-default'
-                : 'bg-transparent text-muted border-dashed border-zinc-300 hover:border-accent-500 hover:text-accent-500'"
+                ? 'bg-elevated text-default border-default'
+                : 'bg-transparent text-muted border-dashed border-default hover:border-accent-500 hover:text-accent-500'"
             >
               <template v-if="task.storyPoints != null">
                 <span class="tabular-nums font-semibold">{{ task.storyPoints }}</span>
@@ -188,11 +186,11 @@ const assigneeMenu = computed(() =>
             <button
               type="button"
               class="relative w-8 h-[18px] rounded-full transition-colors cursor-pointer shrink-0"
-              :class="task.isEpic ? 'bg-accent-500' : 'bg-zinc-300'"
+              :class="task.isEpic ? 'bg-accent-500' : 'bg-accented'"
               @click="emit('epic-toggle')"
             >
               <span
-                class="absolute top-0.5 left-0.5 size-3.5 rounded-full bg-white shadow-sm transition-transform"
+                class="absolute top-0.5 left-0.5 size-3.5 rounded-full bg-default shadow-sm transition-transform"
                 :class="task.isEpic ? 'translate-x-[14px]' : ''"
               />
             </button>
@@ -228,7 +226,7 @@ const assigneeMenu = computed(() =>
           >
             <button
               type="button"
-              class="size-6 rounded-full border border-dashed border-zinc-300 text-zinc-400 grid place-items-center cursor-pointer hover:border-accent-500 hover:text-accent-500 transition-colors"
+              class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center cursor-pointer hover:border-accent-500 hover:text-accent-500 transition-colors"
               title="Добавить исполнителя"
             >
               <UIcon name="i-lucide-plus" class="size-3" />
@@ -241,7 +239,7 @@ const assigneeMenu = computed(() =>
         <div
           v-for="a in assignees"
           :key="a.userId"
-          class="group flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-white transition-colors"
+          class="group flex items-center gap-2 px-1.5 py-1 rounded-md hover:bg-default transition-colors"
         >
           <UserAvatar :user="a" size="sm" />
           <span class="flex-1 text-[12.5px] text-default truncate">
@@ -249,7 +247,7 @@ const assigneeMenu = computed(() =>
           </span>
           <button
             type="button"
-            class="opacity-0 group-hover:opacity-100 size-5 rounded grid place-items-center text-zinc-400 hover:bg-zinc-100 hover:text-default cursor-pointer transition-all"
+            class="opacity-0 group-hover:opacity-100 size-5 rounded grid place-items-center text-dimmed hover:bg-elevated hover:text-default cursor-pointer transition-all"
             title="Снять"
             @click="emit('assignee-remove', a.userId)"
           >
@@ -276,12 +274,15 @@ const assigneeMenu = computed(() =>
           </button>
         </div>
 
-        <button
+        <div
           v-if="parentTask"
-          type="button"
-          class="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-[12.5px] text-default bg-white border border-default hover:border-zinc-400 transition-colors text-left cursor-pointer"
+          role="button"
+          tabindex="0"
+          class="w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-[12.5px] text-default bg-default border border-default hover:border-zinc-400 transition-colors text-left cursor-pointer"
           :title="parentTask.title"
           @click="emit('open-subtask', parentTask.id)"
+          @keydown.enter="emit('open-subtask', parentTask.id)"
+          @keydown.space.prevent="emit('open-subtask', parentTask.id)"
         >
           <UIcon
             v-if="parentTask.isEpic"
@@ -302,18 +303,18 @@ const assigneeMenu = computed(() =>
           </span>
           <button
             type="button"
-            class="bg-transparent border-0 text-zinc-400 cursor-pointer p-0.5 rounded grid place-items-center hover:bg-zinc-100 hover:text-default transition-colors shrink-0"
+            class="bg-transparent border-0 text-dimmed cursor-pointer p-0.5 rounded grid place-items-center hover:bg-elevated hover:text-default transition-colors shrink-0"
             title="Открепить от родителя"
             @click.stop="emit('clear-parent')"
           >
             <UIcon name="i-lucide-x" class="size-3" />
           </button>
-        </button>
+        </div>
 
         <button
           v-else
           type="button"
-          class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-md text-[12px] text-muted bg-transparent border border-dashed border-zinc-300 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
+          class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-md text-[12px] text-muted bg-transparent border border-dashed border-default cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           @click="emit('open-parent-picker')"
         >
           <UIcon name="i-lucide-plus" class="size-3" />
@@ -328,7 +329,7 @@ const assigneeMenu = computed(() =>
           </h5>
           <span
             v-if="subtasks.length > 0"
-            class="text-[11px] text-muted bg-zinc-100 px-1.5 rounded-full"
+            class="text-[11px] text-muted bg-elevated px-1.5 rounded-full"
           >
             {{ subtasks.length }}
           </span>
@@ -340,7 +341,7 @@ const assigneeMenu = computed(() =>
             v-for="st in subtasks"
             :key="st.id"
             type="button"
-            class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12.5px] bg-white border border-default hover:border-zinc-400 transition-colors text-left cursor-pointer"
+            class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[12.5px] bg-default border border-default hover:border-zinc-400 transition-colors text-left cursor-pointer"
             :title="st.title"
             @click="emit('open-subtask', st.id)"
           >
@@ -349,7 +350,7 @@ const assigneeMenu = computed(() =>
               :class="{
                 'bg-emerald-500': subtaskStatusTone(st) === 'done',
                 'bg-blue-500': subtaskStatusTone(st) === 'progress',
-                'bg-zinc-300': subtaskStatusTone(st) === 'default',
+                'bg-accented': subtaskStatusTone(st) === 'default',
               }"
             />
             <span
@@ -375,7 +376,7 @@ const assigneeMenu = computed(() =>
         >
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-md text-[12px] text-muted bg-transparent border border-dashed border-zinc-300 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
+            class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-md text-[12px] text-muted bg-transparent border border-dashed border-default cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           >
             <UIcon name="i-lucide-plus" class="size-3" />
             Подзадача

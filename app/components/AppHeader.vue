@@ -23,9 +23,17 @@ const weekday = computed(() => {
   return raw.charAt(0).toUpperCase() + raw.slice(1)
 })
 
-function toggleTheme() {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
-}
+const themeItems = computed(() => [
+  { label: 'Светлая', icon: 'i-lucide-sun', onSelect: () => { colorMode.preference = 'light' } },
+  { label: 'Тёмная', icon: 'i-lucide-moon', onSelect: () => { colorMode.preference = 'dark' } },
+  { label: 'Система', icon: 'i-lucide-monitor', onSelect: () => { colorMode.preference = 'system' } },
+])
+
+const themeIcon = computed(() => {
+  if (colorMode.preference === 'light') return 'i-lucide-sun'
+  if (colorMode.preference === 'dark') return 'i-lucide-moon'
+  return 'i-lucide-monitor'
+})
 
 function onLogout() {
   logout.mutate()
@@ -33,7 +41,7 @@ function onLogout() {
 </script>
 
 <template>
-  <header class="bg-white m-3 rounded-2xl h-14 flex items-center justify-between px-6 border-b border-neutral-100">
+  <header class="bg-default m-3 rounded-2xl h-14 flex items-center justify-between px-6 border border-default shadow-sm dark:shadow-[0_4px_22px_-6px_rgba(232,80,2,0.3)]">
     <div class="flex items-baseline gap-2 text-sm">
       <span class="font-semibold tracking-tight tabular-nums text-default">{{ currentTime }}</span>
       <span class="text-muted">·</span>
@@ -42,13 +50,9 @@ function onLogout() {
     <div class="flex items-center gap-3">
       <WorkspaceTeamAvatars />
       <NotificationBell v-if="authStore.isAuthenticated" />
-      <UButton
-        :icon="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        @click="toggleTheme"
-      />
+      <UDropdownMenu :items="themeItems" :ui="{ content: 'w-40' }">
+        <UButton :icon="themeIcon" color="neutral" variant="ghost" size="sm" />
+      </UDropdownMenu>
       <UButton
         v-if="authStore.isAuthenticated"
         icon="i-lucide-log-out"

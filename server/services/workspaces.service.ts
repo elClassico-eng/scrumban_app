@@ -6,6 +6,7 @@
 import { and, eq } from 'drizzle-orm'
 import {
   workspaceMembers,
+  workspaceUserLabels,
   workspaces,
   type Workspace,
   type WorkspaceMemberRole,
@@ -16,6 +17,8 @@ import { requireMinRole } from '../utils/rbac'
 export interface WorkspaceWithRole extends Workspace {
   role: WorkspaceMemberRole
 }
+
+export type WorkspaceListItem = WorkspaceWithRole & { myLabel: string | null }
 
 type Tx = Parameters<Parameters<ReturnType<typeof useDB>['transaction']>[0]>[0]
 
@@ -72,12 +75,21 @@ const workspaceWithRoleSelect = {
   role: workspaceMembers.role,
 } as const
 
-export async function listWorkspacesForUser(userId: string): Promise<WorkspaceWithRole[]> {
-  return useDB()
-    .select(workspaceWithRoleSelect)
-    .from(workspaceMembers)
-    .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-    .where(eq(workspaceMembers.userId, userId))
+export async function listWorkspacesForUser(userId: string): Promise<WorkspaceListItem[]> {
+  return withUser(userId, tx =>
+    tx
+      .select({ ...workspaceWithRoleSelect, myLabel: workspaceUserLabels.label })
+      .from(workspaceMembers)
+      .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+      .leftJoin(
+        workspaceUserLabels,
+        and(
+          eq(workspaceUserLabels.workspaceId, workspaceMembers.workspaceId),
+          eq(workspaceUserLabels.userId, userId),
+        ),
+      )
+      .where(eq(workspaceMembers.userId, userId)),
+  )
 }
 
 // Returns the workspace if the user is a member of it (with their role).
@@ -144,4 +156,46 @@ export async function updateWorkspace(input: {
   if (!updated) throw new NotFoundError('Workspace не найден')
 
   return { ...updated, role: input.actorRole }
+}
+
+export async function deleteWorkspace(input: {
+  workspaceId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<void> {
+  requireMinRole(input.actorRole, 'owner')
+
+  const result = await useDB()
+    .delete(workspaces)
+    .where(eq(workspaces.id, input.workspaceId))
+
+  if ((result.count ?? 0) === 0) throw new NotFoundError('Workspace не найден')
+}
+
+export async function setWorkspaceLabel(input: {
+  workspaceId: string
+  userId: string
+  label: string | null
+}): Promise<{ label: string | null }> {
+  return withUser(input.userId, async (tx) => {
+    const trimmed = input.label?.trim() ?? ''
+    if (trimmed === '') {
+      await tx
+        .delete(workspaceUserLabels)
+        .where(
+          and(
+            eq(workspaceUserLabels.userId, input.userId),
+            eq(workspaceUserLabels.workspaceId, input.workspaceId),
+          ),
+        )
+      return { label: null }
+    }
+    await tx
+      .insert(workspaceUserLabels)
+      .values({ userId: input.userId, workspaceId: input.workspaceId, label: trimmed })
+      .onConflictDoUpdate({
+        target: [workspaceUserLabels.userId, workspaceUserLabels.workspaceId],
+        set: { label: trimmed },
+      })
+    return { label: trimmed }
+  })
 }

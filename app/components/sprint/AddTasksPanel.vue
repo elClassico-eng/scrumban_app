@@ -81,8 +81,8 @@ const memberById = computed(() => {
 
 const CLASS_BADGE: Partial<Record<Task['serviceClass'], { label: string; className: string }>> = {
   expedite: { label: 'Срочная', className: 'bg-accent-500 text-white' },
-  intangible: { label: 'Фон', className: 'bg-zinc-100 text-zinc-500' },
-  fixed_date: { label: 'С дедлайном', className: 'bg-amber-50 text-amber-700' },
+  intangible: { label: 'Фон', className: 'bg-elevated text-muted' },
+  fixed_date: { label: 'С дедлайном', className: 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300' },
 }
 
 const FILTERS: { key: typeof filter.value; label: string }[] = [
@@ -124,7 +124,7 @@ function onClose() {
     >
       <aside
         v-if="open"
-        class="fixed top-0 right-0 bottom-0 w-full sm:w-[480px] bg-white shadow-2xl z-50 flex flex-col"
+        class="fixed top-0 right-0 bottom-0 w-full sm:w-[480px] bg-default shadow-2xl z-50 flex flex-col"
       >
         <header class="flex items-start gap-3 px-5 py-4 border-b border-default">
           <div class="flex-1 min-w-0">
@@ -137,7 +137,7 @@ function onClose() {
           </div>
           <button
             type="button"
-            class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default transition-colors cursor-pointer"
+            class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
             title="Закрыть"
             @click="onClose"
           >
@@ -163,14 +163,14 @@ function onClose() {
             type="button"
             class="h-7 px-2.5 rounded-md text-[12px] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
             :class="filter === f.key
-              ? 'bg-brand-500 text-white'
-              : 'bg-transparent text-muted hover:bg-zinc-100'"
+              ? 'bg-inverted text-inverted'
+              : 'bg-transparent text-muted hover:bg-elevated'"
             @click="filter = f.key"
           >
             {{ f.label }}
             <span
               class="text-[10.5px]"
-              :class="filter === f.key ? 'text-white/70' : 'text-zinc-400'"
+              :class="filter === f.key ? 'text-white/70' : 'text-dimmed'"
             >
               {{ counts[f.key] }}
             </span>
@@ -186,7 +186,7 @@ function onClose() {
             <div class="text-[12px]">Попробуй другой запрос</div>
           </div>
 
-          <div v-else class="divide-y divide-zinc-100">
+          <div v-else class="divide-y divide-default">
             <button
               v-for="t in filteredBacklog"
               :key="t.id"
@@ -194,14 +194,14 @@ function onClose() {
               class="w-full flex gap-3 px-5 py-3 text-left transition-colors cursor-pointer"
               :class="selected.has(t.id)
                 ? 'bg-accent-50/40'
-                : 'bg-white hover:bg-zinc-50'"
+                : 'bg-default hover:bg-muted'"
               @click="toggle(t.id)"
             >
               <span
                 class="size-4 rounded grid place-items-center shrink-0 mt-0.5 border transition-colors"
                 :class="selected.has(t.id)
                   ? 'bg-accent-500 border-accent-500 text-white'
-                  : 'border-zinc-400 bg-white'"
+                  : 'border-zinc-400 bg-default'"
               >
                 <UIcon v-if="selected.has(t.id)" name="i-lucide-check" class="size-3" />
               </span>
@@ -225,7 +225,7 @@ function onClose() {
                     <UIcon name="i-lucide-calendar" class="size-3" />
                     {{ ageInDays(t.createdAt) }} дн в бэклоге
                   </span>
-                  <span v-if="columnById.get(t.columnId)" class="text-zinc-400">
+                  <span v-if="columnById.get(t.columnId)" class="text-dimmed">
                     · {{ columnById.get(t.columnId)!.name }}
                   </span>
                 </div>
@@ -248,7 +248,7 @@ function onClose() {
           </div>
         </div>
 
-        <footer class="flex items-center gap-2 px-5 py-3.5 border-t border-default bg-zinc-50/50">
+        <footer class="flex items-center gap-2 px-5 py-3.5 border-t border-default bg-muted/50">
           <div class="flex-1 text-[12.5px] text-default">
             Выбрано: <b>{{ selected.size }}</b> задач
             <span v-if="selected.size > 0" class="ml-2 inline-flex items-center gap-1 text-accent-700">
