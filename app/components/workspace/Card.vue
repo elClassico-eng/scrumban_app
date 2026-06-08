@@ -57,7 +57,7 @@ const menuItems = computed(() => {
           <UDropdownMenu :items="menuItems" :ui="{ content: 'w-48' }">
             <button
               type="button"
-              class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default transition-colors cursor-pointer"
+              class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
               title="Действия"
             >
               <UIcon name="i-lucide-more-horizontal" class="size-4" />
@@ -68,7 +68,7 @@ const menuItems = computed(() => {
 
       <span
         v-if="workspace.myLabel"
-        class="inline-flex items-center gap-1 text-[11px] font-medium text-accent-700 bg-accent-50 px-1.5 py-0.5 rounded"
+        class="inline-flex items-center gap-1 text-[11px] font-medium text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-950 px-1.5 py-0.5 rounded"
       >
         <UIcon name="i-lucide-tag" class="size-3" />
         {{ workspace.myLabel }}

@@ -127,7 +127,7 @@ async function onRemove(board: Board) {
               <UDropdownMenu :items="menuItems(board)" :ui="{ content: 'w-48' }">
                 <button
                   type="button"
-                  class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default transition-colors cursor-pointer"
+                  class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
                   title="Действия"
                 >
                   <UIcon name="i-lucide-more-horizontal" class="size-4" />

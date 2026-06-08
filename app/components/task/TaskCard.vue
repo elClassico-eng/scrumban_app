@@ -90,9 +90,9 @@ const isDone = computed(() => props.task.closedAt != null)
 
 <template>
   <div
-    class="group relative bg-white border border-default rounded-lg pl-4 pr-3 py-2.5 cursor-pointer hover:border-zinc-400 hover:shadow-sm transition-all overflow-hidden"
+    class="group relative bg-default border border-default rounded-lg pl-4 pr-3 py-2.5 cursor-pointer hover:border-zinc-400 hover:shadow-sm transition-all overflow-hidden"
     :class="[
-      isDone ? 'bg-zinc-50/60' : '',
+      isDone ? 'bg-muted' : '',
       task.blockedReason || blockerCount > 0 ? 'border-red-200' : '',
     ]"
     @click="openTask"
@@ -103,7 +103,7 @@ const isDone = computed(() => props.task.closedAt != null)
       <span class="font-mono text-[11px] text-muted shrink-0">{{ shortId }}</span>
       <span
         v-if="parentTask"
-        class="inline-flex items-center gap-1 px-1.5 h-[18px] rounded bg-zinc-100 font-mono text-[10.5px] text-muted truncate min-w-0"
+        class="inline-flex items-center gap-1 px-1.5 h-[18px] rounded bg-elevated font-mono text-[10.5px] text-muted truncate min-w-0"
         :title="parentTask.title"
       >
         <UIcon
@@ -121,21 +121,21 @@ const isDone = computed(() => props.task.closedAt != null)
       <div class="flex-1" />
       <span
         v-if="task.serviceClass === 'expedite'"
-        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 text-accent-600 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-300 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
       >
         <UIcon name="i-lucide-zap" class="size-3" />
         Срочная
       </span>
       <span
         v-if="task.serviceClass === 'fixed_date'"
-        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
       >
         <UIcon name="i-lucide-calendar-clock" class="size-3" />
         Дедлайн
       </span>
       <span
         v-if="task.isEpic"
-        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 text-accent-600 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-300 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
         title="Эпик"
       >
         <UIcon name="i-lucide-crown" class="size-3" />
@@ -143,7 +143,7 @@ const isDone = computed(() => props.task.closedAt != null)
       </span>
       <span
         v-if="task.storyPoints != null"
-        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded-full bg-zinc-100 text-default text-[11px] font-semibold tabular-nums shrink-0"
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded-full bg-elevated text-default text-[11px] font-semibold tabular-nums shrink-0"
         title="Story points"
       >
         <span class="size-1.5 rounded-full bg-zinc-400" />
@@ -160,7 +160,7 @@ const isDone = computed(() => props.task.closedAt != null)
 
     <div
       v-if="task.blockedReason"
-      class="flex items-start gap-1.5 px-2 py-1 mb-1.5 rounded bg-red-50 text-red-600 text-[11.5px] font-medium leading-snug"
+      class="flex items-start gap-1.5 px-2 py-1 mb-1.5 rounded bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300 text-[11.5px] font-medium leading-snug"
     >
       <UIcon name="i-lucide-alert-triangle" class="size-3.5 shrink-0 mt-px" />
       <span class="line-clamp-2">{{ task.blockedReason }}</span>
@@ -192,7 +192,7 @@ const isDone = computed(() => props.task.closedAt != null)
         v-else-if="dueState"
         class="inline-flex items-center gap-1 text-[11px] text-muted tabular-nums"
       >
-        <UIcon name="i-lucide-calendar" class="size-3 text-zinc-400" />
+        <UIcon name="i-lucide-calendar" class="size-3 text-dimmed" />
         {{ dueState.label }}
       </span>
 
@@ -232,7 +232,7 @@ const isDone = computed(() => props.task.closedAt != null)
             />
             <div
               v-if="hiddenAssigneesCount > 0"
-              class="size-6 rounded-full bg-zinc-100 text-muted text-[10px] font-semibold flex items-center justify-center shrink-0 ring-2 ring-white"
+              class="size-6 rounded-full bg-elevated text-muted text-[10px] font-semibold flex items-center justify-center shrink-0 ring-2 ring-white dark:ring-zinc-800"
               :title="`Ещё ${hiddenAssigneesCount}`"
             >
               +{{ hiddenAssigneesCount }}
@@ -241,7 +241,7 @@ const isDone = computed(() => props.task.closedAt != null)
         </template>
         <span
           v-else
-          class="size-6 rounded-full border border-dashed border-zinc-300 text-zinc-400 grid place-items-center text-[10px]"
+          class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center text-[10px]"
           title="Не назначено"
         >·</span>
       </div>

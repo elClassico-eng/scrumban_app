@@ -34,10 +34,10 @@ export const ROLE_DOT_CLASS: Record<Role, string> = {
 
 export const ROLE_CHIP_CLASS: Record<Role, string> = {
   viewer: 'bg-elevated text-muted',
-  member: 'bg-info-50 text-info-700',
-  scrum_master: 'bg-secondary-50 text-secondary-700',
-  admin: 'bg-accent-50 text-accent-700',
-  owner: 'bg-secondary-50 text-secondary-700',
+  member: 'bg-info-50 dark:bg-info-950 text-info-700 dark:text-info-300',
+  scrum_master: 'bg-secondary-50 dark:bg-secondary-950 text-secondary-700 dark:text-secondary-300',
+  admin: 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300',
+  owner: 'bg-secondary-50 dark:bg-secondary-950 text-secondary-700 dark:text-secondary-300',
 }
 
 export const ROLE_STRIPE_CLASS: Record<Role, string> = {
@@ -49,11 +49,11 @@ export const ROLE_STRIPE_CLASS: Record<Role, string> = {
 }
 
 export const ROLE_STAT_ICON_CLASS: Record<Role, string> = {
-  viewer: 'bg-info-50 text-info-600',
-  member: 'bg-info-50 text-info-600',
-  scrum_master: 'bg-secondary-50 text-secondary-600',
-  admin: 'bg-accent-50 text-accent-600',
-  owner: 'bg-secondary-50 text-secondary-600',
+  viewer: 'bg-info-50 dark:bg-info-950 text-info-600 dark:text-info-400',
+  member: 'bg-info-50 dark:bg-info-950 text-info-600 dark:text-info-400',
+  scrum_master: 'bg-secondary-50 dark:bg-secondary-950 text-secondary-600 dark:text-secondary-400',
+  admin: 'bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-400',
+  owner: 'bg-secondary-50 dark:bg-secondary-950 text-secondary-600 dark:text-secondary-400',
 }
 
 export const ROLE_ORDER: Record<Role, number> = {

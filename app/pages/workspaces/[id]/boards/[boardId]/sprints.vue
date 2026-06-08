@@ -287,14 +287,14 @@ const isFilteredEmpty = computed(() =>
         class="w-56"
       />
 
-      <div class="inline-flex items-center gap-1 bg-white border border-default rounded-md p-0.5">
+      <div class="inline-flex items-center gap-1 bg-default border border-default rounded-md p-0.5">
         <button
           v-for="f in FILTERS"
           :key="f.key"
           type="button"
           class="h-7 px-2.5 rounded text-[12.5px] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
           :class="filter === f.key
-            ? 'bg-brand-500 text-white'
+            ? 'bg-inverted text-inverted'
             : 'bg-transparent text-muted hover:text-default'"
           @click="filter = f.key"
         >
@@ -307,7 +307,7 @@ const isFilteredEmpty = computed(() =>
             class="text-[10.5px] tabular-nums px-1.5 py-0.5 rounded-full"
             :class="filter === f.key
               ? 'bg-white/15 text-white/85'
-              : 'bg-zinc-100 text-muted'"
+              : 'bg-elevated text-muted'"
           >
             {{ counts[f.key] }}
           </span>
@@ -356,10 +356,10 @@ const isFilteredEmpty = computed(() =>
             </span>
             Активный
           </h2>
-          <span class="text-[11px] font-medium text-muted bg-zinc-100 px-1.5 py-0.5 rounded-full">
+          <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full">
             {{ activeSprints.length }}
           </span>
-          <span class="flex-1 h-px bg-zinc-200" />
+          <span class="flex-1 h-px bg-accented" />
         </div>
 
         <SprintActiveCard
@@ -381,10 +381,10 @@ const isFilteredEmpty = computed(() =>
           <h2 class="text-[12px] font-bold uppercase tracking-[0.08em] text-muted m-0">
             Запланированы
           </h2>
-          <span class="text-[11px] font-medium text-muted bg-zinc-100 px-1.5 py-0.5 rounded-full">
+          <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full">
             {{ plannedSprints.length }}
           </span>
-          <span class="flex-1 h-px bg-zinc-200" />
+          <span class="flex-1 h-px bg-accented" />
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -408,10 +408,10 @@ const isFilteredEmpty = computed(() =>
           <h2 class="text-[12px] font-bold uppercase tracking-[0.08em] text-muted m-0">
             Закрытые
           </h2>
-          <span class="text-[11px] font-medium text-muted bg-zinc-100 px-1.5 py-0.5 rounded-full">
+          <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full">
             {{ closedSprints.length }}
           </span>
-          <span class="flex-1 h-px bg-zinc-200" />
+          <span class="flex-1 h-px bg-accented" />
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">

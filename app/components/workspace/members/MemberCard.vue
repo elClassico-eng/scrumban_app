@@ -41,7 +41,7 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
 
 <template>
   <div
-    class="relative rounded-xl border border-default bg-default p-4 pt-5 transition-all hover:border-neutral-300 hover:shadow-sm flex flex-col"
+    class="relative rounded-xl border border-default bg-default p-4 pt-5 transition-all hover:border-default hover:shadow-sm flex flex-col"
     :class="isYou ? 'border-accent-500 bg-gradient-to-b from-accent-50/60 via-default to-default' : ''"
   >
     <span

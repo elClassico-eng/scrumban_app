@@ -26,15 +26,15 @@ const emit = defineEmits<{
     <span class="text-[12px] text-muted font-mono">{{ shortId }}</span>
 
     <span class="flex items-center gap-1.5 text-[12.5px] text-muted min-w-0 overflow-hidden">
-      <span class="text-zinc-400">/</span>
+      <span class="text-dimmed">/</span>
       <span class="truncate max-w-[14ch]">{{ workspaceName ?? '' }}</span>
-      <span class="text-zinc-400">/</span>
+      <span class="text-dimmed">/</span>
       <span class="truncate max-w-[14ch]">{{ boardName ?? '' }}</span>
       <template v-if="parentTask">
-        <span class="text-zinc-400">/</span>
+        <span class="text-dimmed">/</span>
         <button
           type="button"
-          class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12.5px] text-default font-medium bg-zinc-100 hover:bg-zinc-200 transition-colors cursor-pointer truncate max-w-[28ch]"
+          class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12.5px] text-default font-medium bg-elevated hover:bg-accented transition-colors cursor-pointer truncate max-w-[28ch]"
           :title="parentTask.title"
           @click="emit('open-parent-picker')"
         >
@@ -49,7 +49,7 @@ const emit = defineEmits<{
     <div class="flex items-center gap-0.5">
       <button
         type="button"
-        class="size-7 rounded-md grid place-items-center cursor-pointer transition-colors hover:bg-zinc-100"
+        class="size-7 rounded-md grid place-items-center cursor-pointer transition-colors hover:bg-elevated"
         :class="watching ? 'text-accent-500' : 'text-muted hover:text-default'"
         title="Следить"
         @click="emit('toggle-watch')"
@@ -58,7 +58,7 @@ const emit = defineEmits<{
       </button>
       <button
         type="button"
-        class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default cursor-pointer transition-colors"
+        class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
         title="Копировать ссылку"
         @click="emit('copy-link')"
       >
@@ -72,7 +72,7 @@ const emit = defineEmits<{
       >
         <button
           type="button"
-          class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default cursor-pointer transition-colors"
+          class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
           title="Ещё"
         >
           <UIcon name="i-lucide-more-horizontal" class="size-4" />
@@ -81,7 +81,7 @@ const emit = defineEmits<{
       <span class="w-1.5" />
       <button
         type="button"
-        class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default cursor-pointer transition-colors"
+        class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
         title="Закрыть (Esc)"
         @click="emit('close')"
       >

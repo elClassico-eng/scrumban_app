@@ -237,7 +237,7 @@ function timeLabel(iso: string): string {
       </h4>
       <span
         v-if="comments.length > 0"
-        class="h-5 px-1.5 rounded-full text-[11px] inline-flex items-center bg-zinc-100 text-muted"
+        class="h-5 px-1.5 rounded-full text-[11px] inline-flex items-center bg-elevated text-muted"
       >
         {{ comments.length }}
       </span>
@@ -262,7 +262,7 @@ function timeLabel(iso: string): string {
             </span>
             <span
               v-if="commentRole(c)"
-              class="text-[10px] font-semibold uppercase tracking-[0.04em] text-muted bg-zinc-200 px-1.5 py-px rounded-full"
+              class="text-[10px] font-semibold uppercase tracking-[0.04em] text-muted bg-accented px-1.5 py-px rounded-full"
             >
               {{ commentRole(c) }}
             </span>
@@ -282,7 +282,7 @@ function timeLabel(iso: string): string {
             >
               <button
                 type="button"
-                class="size-6 rounded-md grid place-items-center text-muted opacity-0 group-hover:opacity-100 hover:bg-zinc-100 cursor-pointer transition-all"
+                class="size-6 rounded-md grid place-items-center text-muted opacity-0 group-hover:opacity-100 hover:bg-elevated cursor-pointer transition-all"
                 title="Действия"
               >
                 <UIcon name="i-lucide-more-horizontal" class="size-3.5" />
@@ -292,7 +292,7 @@ function timeLabel(iso: string): string {
 
           <div
             v-if="editingId === c.id"
-            class="rounded-lg bg-white border border-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
+            class="rounded-lg bg-default border border-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
           >
             <textarea
               ref="editRef"
@@ -301,10 +301,10 @@ function timeLabel(iso: string): string {
               class="w-full bg-transparent border-0 outline-none px-3.5 py-2.5 text-[13.5px] text-default leading-relaxed resize-none"
               @keydown="onEditKeydown"
             />
-            <div class="flex items-center gap-1 px-2 py-1.5 border-t border-zinc-100">
+            <div class="flex items-center gap-1 px-2 py-1.5 border-t border-default">
               <button
                 type="button"
-                class="size-7 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default cursor-pointer transition-colors"
+                class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
                 @click="editPickerOpen = true"
               >
                 <UIcon name="i-lucide-at-sign" class="size-3.5" />
@@ -326,7 +326,7 @@ function timeLabel(iso: string): string {
 
           <div
             v-else
-            class="rounded-tl-[4px] rounded-[12px] bg-zinc-100 px-3.5 py-2.5"
+            class="rounded-tl-[4px] rounded-[12px] bg-elevated px-3.5 py-2.5"
           >
             <p class="m-0 text-[13.5px] text-default leading-[1.55] whitespace-pre-wrap break-words">
               <template
@@ -345,9 +345,9 @@ function timeLabel(iso: string): string {
       </div>
     </div>
 
-    <div v-if="hasRole(myRole, 'member')" class="sticky bottom-0 -mx-7 px-7 pt-3 pb-1 bg-gradient-to-t from-white via-white/95 to-white/0">
+    <div v-if="hasRole(myRole, 'member')" class="sticky bottom-0 -mx-7 px-7 pt-3 pb-1 bg-gradient-to-t from-[var(--ui-bg)] via-[var(--ui-bg)]/95 to-transparent">
       <div
-        class="rounded-lg border border-default bg-white focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
+        class="rounded-lg border border-default bg-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
       >
         <textarea
           ref="composerRef"
@@ -357,10 +357,10 @@ function timeLabel(iso: string): string {
           class="w-full bg-transparent border-0 outline-none px-3.5 py-2.5 text-[13.5px] text-default leading-relaxed resize-none"
           @keydown="onComposerKeydown"
         />
-        <div class="flex items-center gap-1 px-2 py-1.5 border-t border-zinc-100">
+        <div class="flex items-center gap-1 px-2 py-1.5 border-t border-default">
           <button
             type="button"
-            class="h-7 px-2 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default cursor-pointer transition-colors inline-flex items-center gap-1 text-[12px]"
+            class="h-7 px-2 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors inline-flex items-center gap-1 text-[12px]"
             @click="openMentionPicker"
           >
             <UIcon name="i-lucide-at-sign" class="size-3.5" />

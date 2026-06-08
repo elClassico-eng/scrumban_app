@@ -119,7 +119,7 @@ function cancelEdit() {
       <button
         v-if="!adding"
         type="button"
-        class="h-6 px-2 rounded-md border border-dashed border-zinc-300 text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
+        class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="startAdd"
       >
         <UIcon name="i-lucide-plus" class="size-3" />
@@ -127,13 +127,13 @@ function cancelEdit() {
       </button>
     </div>
 
-    <div class="border border-default rounded-lg overflow-hidden bg-white">
+    <div class="border border-default rounded-lg overflow-hidden bg-default">
       <div
         v-if="items.length > 0"
-        class="flex items-center gap-3 px-3.5 py-2.5 bg-zinc-50 border-b border-default"
+        class="flex items-center gap-3 px-3.5 py-2.5 bg-muted border-b border-default"
       >
         <span class="text-[13px] font-semibold text-default">Прогресс</span>
-        <div class="flex-1 max-w-[180px] h-1.5 bg-zinc-200 rounded-full overflow-hidden ml-3">
+        <div class="flex-1 max-w-[180px] h-1.5 bg-accented rounded-full overflow-hidden ml-3">
           <div
             class="h-full bg-accent-500 rounded-full transition-all"
             :style="{ width: `${pct}%` }"
@@ -147,7 +147,7 @@ function cancelEdit() {
       <div
         v-for="item in items"
         :key="item.id"
-        class="group flex items-center gap-2.5 px-3.5 py-2 border-t border-zinc-100 first:border-t-0 hover:bg-zinc-50 transition-colors"
+        class="group flex items-center gap-2.5 px-3.5 py-2 border-t border-default first:border-t-0 hover:bg-muted transition-colors"
         :class="item.isDone ? 'is-done' : ''"
       >
         <button
@@ -155,7 +155,7 @@ function cancelEdit() {
           class="size-4 rounded grid place-items-center shrink-0 transition-colors cursor-pointer"
           :class="item.isDone
             ? 'bg-accent-500 border border-accent-500 text-white'
-            : 'border-[1.5px] border-zinc-400 bg-white hover:border-accent-500'"
+            : 'border-[1.5px] border-zinc-400 bg-default hover:border-accent-500'"
           @click="onToggle(item.id, !item.isDone)"
         >
           <UIcon v-if="item.isDone" name="i-lucide-check" class="size-2.5" />
@@ -182,7 +182,7 @@ function cancelEdit() {
 
         <button
           type="button"
-          class="opacity-0 group-hover:opacity-100 size-5 rounded grid place-items-center text-zinc-400 hover:text-default hover:bg-zinc-200 transition-all cursor-pointer"
+          class="opacity-0 group-hover:opacity-100 size-5 rounded grid place-items-center text-dimmed hover:text-default hover:bg-accented transition-all cursor-pointer"
           title="Удалить пункт"
           @click="onRemove(item.id)"
         >
@@ -192,7 +192,7 @@ function cancelEdit() {
 
       <div
         v-if="adding"
-        class="flex items-center gap-2.5 px-3.5 py-2 border-t border-zinc-100"
+        class="flex items-center gap-2.5 px-3.5 py-2 border-t border-default"
       >
         <span class="size-4 border-[1.5px] border-dashed border-zinc-400 rounded" />
         <input

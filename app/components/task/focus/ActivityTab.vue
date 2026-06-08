@@ -95,11 +95,11 @@ const sortedEvents = computed(() => {
       >
         <span
           v-if="idx !== sortedEvents.length - 1"
-          class="absolute left-[13px] top-[30px] bottom-0 w-px bg-zinc-200"
+          class="absolute left-[13px] top-[30px] bottom-0 w-px bg-accented"
         />
 
         <div
-          class="size-7 rounded-full bg-white border border-default grid place-items-center text-muted relative z-10"
+          class="size-7 rounded-full bg-default border border-default grid place-items-center text-muted relative z-10"
         >
           <UIcon :name="EVENT_ICON[e.eventType] ?? 'i-lucide-circle'" class="size-3.5" />
         </div>
@@ -110,11 +110,11 @@ const sortedEvents = computed(() => {
 
             <template v-if="e.eventType === 'task_moved'">
               <span class="text-muted">переместил(а) задачу</span>
-              <span v-if="fromColumnName(e)" class="inline-flex items-center h-5 px-1.5 rounded text-[11.5px] bg-zinc-100 text-default">
+              <span v-if="fromColumnName(e)" class="inline-flex items-center h-5 px-1.5 rounded text-[11.5px] bg-elevated text-default">
                 {{ fromColumnName(e) }}
               </span>
               <UIcon name="i-lucide-arrow-right" class="size-3 text-muted" />
-              <span class="inline-flex items-center gap-1 h-5 px-1.5 rounded text-[11.5px] bg-brand-500 text-white">
+              <span class="inline-flex items-center gap-1 h-5 px-1.5 rounded text-[11.5px] bg-inverted text-inverted">
                 <span class="size-1.5 rounded-full bg-accent-500" />
                 {{ toColumnName(e) ?? '—' }}
               </span>

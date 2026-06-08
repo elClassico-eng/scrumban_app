@@ -188,13 +188,13 @@ const wipBarState = computed(() => {
 </script>
 
 <template>
-  <div class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full bg-white border border-default">
+  <div class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full bg-default border border-default">
     <div class="px-3 pt-3 pb-2.5">
       <div class="flex items-center gap-2 mb-1.5">
         <UIcon
           v-if="canManage"
           name="i-lucide-grip-vertical"
-          class="column-drag-handle size-3.5 text-zinc-300 hover:text-default cursor-grab active:cursor-grabbing shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          class="column-drag-handle size-3.5 text-dimmed hover:text-default cursor-grab active:cursor-grabbing shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
           title="Перетащи, чтобы переставить колонку"
         />
         <span :class="['size-2.5 rounded-full shrink-0', roleStyle.dotClass]" />
@@ -235,18 +235,18 @@ const wipBarState = computed(() => {
         <UDropdownMenu v-if="canManage" :items="menuItems" :ui="{ content: 'w-44' }">
           <button
             type="button"
-            class="size-6 rounded-md grid place-items-center text-muted hover:bg-zinc-100 hover:text-default transition-colors cursor-pointer"
+            class="size-6 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
             title="Действия"
           >
             <UIcon name="i-lucide-more-horizontal" class="size-3.5" />
           </button>
         </UDropdownMenu>
       </div>
-      <div v-if="wipBarState" class="h-[3px] rounded-full bg-zinc-100 overflow-hidden">
+      <div v-if="wipBarState" class="h-[3px] rounded-full bg-elevated overflow-hidden">
         <div
           :class="[
             'h-full rounded-full transition-[width] duration-300',
-            wipBarState.tone === 'over' ? 'bg-red-500' : wipBarState.tone === 'warn' ? 'bg-accent-500' : 'bg-brand-500',
+            wipBarState.tone === 'over' ? 'bg-red-500' : wipBarState.tone === 'warn' ? 'bg-accent-500' : 'bg-inverted',
           ]"
           :style="{ width: `${wipBarState.pct}%` }"
         />

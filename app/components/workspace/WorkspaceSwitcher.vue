@@ -38,7 +38,7 @@ const items = computed(() => [
     <UDropdownMenu :items="items" :ui="{ content: 'w-56' }">
       <button
         type="button"
-        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-[#f4f4f4] hover:bg-[#ebebeb] transition-colors text-left"
+        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-elevated hover:bg-accented transition-colors text-left"
       >
         <UIcon name="i-lucide-folder" class="size-4 shrink-0 text-muted" />
         <span class="flex-1 truncate text-sm font-medium text-default">

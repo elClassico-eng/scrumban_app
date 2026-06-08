@@ -95,7 +95,7 @@ watch(open, (v) => {
       <UForm :schema="schema" :state="state" class="space-y-4" :on-submit="onSubmit">
         <div
           v-if="parentTaskId && parentTitle"
-          class="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-zinc-100 text-[12.5px] text-default"
+          class="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-elevated text-[12.5px] text-default"
         >
           <UIcon name="i-lucide-corner-down-right" class="size-3.5 text-muted shrink-0" />
           <span class="text-muted shrink-0">Родитель:</span>

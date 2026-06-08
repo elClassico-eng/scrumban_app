@@ -46,11 +46,11 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-4 py-2.5 bg-white border-b border-default flex-wrap">
+  <div class="flex items-center gap-2 px-4 py-2.5 bg-default border-b border-default flex-wrap">
     <UDropdownMenu :items="groupMenu" :ui="{ content: 'w-48' }">
       <button
         type="button"
-        class="inline-flex items-center gap-2 h-8 px-3 rounded-md border border-default bg-white text-[13px] text-default hover:border-zinc-400 cursor-pointer transition-colors"
+        class="inline-flex items-center gap-2 h-8 px-3 rounded-md border border-default bg-default text-[13px] text-default hover:border-zinc-400 cursor-pointer transition-colors"
       >
         <span class="text-muted">Группировка:</span>
         <span class="font-medium">{{ swimlaneLabel }}</span>
@@ -67,22 +67,22 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
         :value="query"
         type="search"
         placeholder="Найти задачу…"
-        class="h-8 w-[220px] pl-8 pr-3 rounded-md bg-zinc-50 border border-transparent text-[13px] text-default placeholder:text-muted focus:outline-none focus:border-accent-500 focus:bg-white transition-colors"
+        class="h-8 w-[220px] pl-8 pr-3 rounded-md bg-muted border border-transparent text-[13px] text-default placeholder:text-muted focus:outline-none focus:border-accent-500 focus:bg-default transition-colors"
         @input="emit('update:query', ($event.target as HTMLInputElement).value)"
       >
     </div>
 
     <div
       v-if="members.length > 0"
-      class="inline-flex items-center bg-white border border-default rounded-full px-1 py-0.5 gap-px"
+      class="inline-flex items-center bg-default border border-default rounded-full px-1 py-0.5 gap-px"
     >
       <button
         type="button"
         :class="[
           'h-6 px-2 rounded-full text-[11px] font-semibold transition-all cursor-pointer',
           selectedAssignees.size === 0
-            ? 'bg-zinc-100 text-default'
-            : 'text-muted hover:bg-zinc-50',
+            ? 'bg-elevated text-default'
+            : 'text-muted hover:bg-muted',
         ]"
         title="Все"
         @click="emit('toggle-assignee', null)"
@@ -110,8 +110,8 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
       :class="[
         'inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] cursor-pointer transition-colors',
         classFilter === 'expedite'
-          ? 'bg-brand-500 text-white border-brand-500'
-          : 'bg-white text-default border-default hover:border-zinc-400',
+          ? 'bg-inverted text-inverted border-brand-500'
+          : 'bg-default text-default border-default hover:border-zinc-400',
       ]"
       @click="emit('update:classFilter', classFilter === 'expedite' ? 'all' : 'expedite')"
     >
@@ -125,7 +125,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
           'px-1.5 h-4 min-w-[16px] grid place-items-center rounded-full text-[10.5px] tabular-nums',
           classFilter === 'expedite'
             ? 'bg-white/15 text-white/85'
-            : 'bg-zinc-100 text-muted',
+            : 'bg-elevated text-muted',
         ]"
       >{{ expediteCount }}</span>
     </button>
@@ -135,8 +135,8 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
       :class="[
         'inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] cursor-pointer transition-colors',
         classFilter === 'blocker'
-          ? 'bg-brand-500 text-white border-brand-500'
-          : 'bg-white text-default border-default hover:border-zinc-400',
+          ? 'bg-inverted text-inverted border-brand-500'
+          : 'bg-default text-default border-default hover:border-zinc-400',
       ]"
       @click="emit('update:classFilter', classFilter === 'blocker' ? 'all' : 'blocker')"
     >
@@ -150,7 +150,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
           'px-1.5 h-4 min-w-[16px] grid place-items-center rounded-full text-[10.5px] tabular-nums',
           classFilter === 'blocker'
             ? 'bg-white/15 text-white/85'
-            : 'bg-zinc-100 text-muted',
+            : 'bg-elevated text-muted',
         ]"
       >{{ blockerCount }}</span>
     </button>
@@ -160,7 +160,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
     <button
       v-if="canCreate"
       type="button"
-      class="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md bg-brand-500 hover:bg-accent-500 text-white text-[13px] font-medium cursor-pointer transition-colors"
+      class="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md bg-inverted hover:bg-accent-500 text-inverted hover:text-white text-[13px] font-medium cursor-pointer transition-colors"
       @click="emit('create-task')"
     >
       <UIcon name="i-lucide-plus" class="size-3.5" />

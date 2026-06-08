@@ -28,7 +28,7 @@ const cardMaxWidth = computed(() => (route.meta.cardMaxWidth as string | undefin
     </div>
 
     <div class="relative z-10 flex-1 flex items-center justify-center p-6 lg:p-12">
-      <div :class="['w-full bg-white rounded-3xl shadow-xl shadow-black/20 p-10', cardMaxWidth]">
+      <div :class="['w-full bg-default rounded-3xl shadow-xl shadow-black/20 p-10', cardMaxWidth]">
         <slot />
       </div>
     </div>

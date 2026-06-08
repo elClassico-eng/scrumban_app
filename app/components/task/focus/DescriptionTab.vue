@@ -53,7 +53,7 @@ function onComingSoon(feature: string) {
       <div class="flex-1" />
       <button
         type="button"
-        class="h-6 px-2 rounded-md border border-dashed border-zinc-300 text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
+        class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="onComingSoon('Улучшить с AI')"
       >
         <UIcon name="i-lucide-sparkles" class="size-3" />
@@ -61,7 +61,7 @@ function onComingSoon(feature: string) {
       </button>
       <button
         type="button"
-        class="h-6 px-2 rounded-md border border-dashed border-zinc-300 text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
+        class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="onComingSoon('Вложение')"
       >
         <UIcon name="i-lucide-plus" class="size-3" />
@@ -75,7 +75,7 @@ function onComingSoon(feature: string) {
         rows="8"
         autofocus
         placeholder="Напиши описание задачи…"
-        class="block w-full text-[14px] leading-[1.65] text-default bg-white border border-default rounded-md px-3 py-2.5 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-50 transition-colors resize-y font-sans"
+        class="block w-full text-[14px] leading-[1.65] text-default bg-default border border-default rounded-md px-3 py-2.5 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-50 transition-colors resize-y font-sans"
         @keydown.esc="cancelEdit"
       />
       <div class="flex items-center gap-2 mt-2">

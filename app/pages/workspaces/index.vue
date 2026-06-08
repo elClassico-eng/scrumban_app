@@ -138,7 +138,7 @@ async function onDelete() {
           type="button"
           class="text-[12px] px-2.5 py-1 rounded-full border transition-colors cursor-pointer"
           :class="activeFilter === null
-            ? 'border-accent-400 text-accent-700 bg-accent-50'
+            ? 'border-accent-400 text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-950'
             : 'border-default text-muted hover:border-accent-300'"
           @click="activeFilter = null"
         >
@@ -150,7 +150,7 @@ async function onDelete() {
           type="button"
           class="text-[12px] px-2.5 py-1 rounded-full border transition-colors cursor-pointer"
           :class="activeFilter === l
-            ? 'border-accent-400 text-accent-700 bg-accent-50'
+            ? 'border-accent-400 text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-950'
             : 'border-default text-muted hover:border-accent-300'"
           @click="activeFilter = l"
         >
@@ -172,10 +172,10 @@ async function onDelete() {
           <h2 class="text-[12px] font-bold uppercase tracking-[0.08em] text-muted m-0">
             {{ g.label }}
           </h2>
-          <span class="text-[11px] font-medium text-muted bg-zinc-100 px-1.5 py-0.5 rounded-full">
+          <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full">
             {{ g.items.length }}
           </span>
-          <span class="flex-1 h-px bg-zinc-200" />
+          <span class="flex-1 h-px bg-accented" />
         </button>
 
         <div

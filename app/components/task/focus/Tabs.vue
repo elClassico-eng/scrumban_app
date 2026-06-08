@@ -36,7 +36,7 @@ const TABS: { id: FocusTab; label: string; icon: string }[] = [
       <span
         v-if="t.id !== 'desc' && counts[t.id as Exclude<FocusTab, 'desc'>] > 0"
         class="rounded-full px-1.5 py-px text-[11px] tabular-nums"
-        :class="current === t.id ? 'bg-accent-50 text-accent-600' : 'bg-zinc-100 text-muted'"
+        :class="current === t.id ? 'bg-accent-50 text-accent-600' : 'bg-elevated text-muted'"
       >
         {{ counts[t.id as Exclude<FocusTab, 'desc'>] }}
       </span>
