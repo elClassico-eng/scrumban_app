@@ -23,7 +23,12 @@ async function registerAndLogin(email: string): Promise<CookieJar> {
   const jar = new CookieJar()
   await fetchWithJar(jar, '/api/auth/register', {
     method: 'POST',
-    body: { email, password: 'correct horse battery' },
+    body: {
+      email,
+      password: 'correct horse battery 1',
+      workspace: { name: 'Reg WS', slug: 'reg-ws' },
+    },
+    headers: { 'x-forwarded-for': `10.0.${Math.floor(Math.random() * 200)}.${Math.floor(Math.random() * 200)}` },
   })
   return jar
 }
@@ -42,17 +47,18 @@ describe('POST /api/workspaces', () => {
     expect(res.body.workspace.role).toBe('owner')
   })
 
-  it('rejects duplicate slug with 409', async () => {
+  it('allows duplicate slug (global uniqueness dropped in 0023)', async () => {
     const jar = await registerAndLogin('alice@example.com')
     await fetchWithJar(jar, '/api/workspaces', {
       method: 'POST',
       body: { name: 'Acme', slug: 'acme' },
     })
-    const res = await fetchWithJar(jar, '/api/workspaces', {
+    const res = await fetchWithJar<{ workspace: { slug: string } }>(jar, '/api/workspaces', {
       method: 'POST',
       body: { name: 'Other', slug: 'acme' },
     })
-    expect(res.status).toBe(409)
+    expect(res.status).toBe(200)
+    expect(res.body.workspace.slug).toBe('acme')
   })
 
   it('rejects bad slug format with 400', async () => {
@@ -87,11 +93,12 @@ describe('GET /api/workspaces', () => {
       alice,
       '/api/workspaces',
     )
-    expect(aliceList.body.workspaces).toHaveLength(1)
-    expect(aliceList.body.workspaces[0]!.slug).toBe('acme')
+    expect(aliceList.body.workspaces).toHaveLength(2)
+    expect(aliceList.body.workspaces.map(w => w.slug)).toContain('acme')
 
-    const bobList = await fetchWithJar<{ workspaces: unknown[] }>(bob, '/api/workspaces')
-    expect(bobList.body.workspaces).toHaveLength(0)
+    const bobList = await fetchWithJar<{ workspaces: { slug: string }[] }>(bob, '/api/workspaces')
+    expect(bobList.body.workspaces).toHaveLength(1)
+    expect(bobList.body.workspaces.map(w => w.slug)).not.toContain('acme')
   })
 })
 
