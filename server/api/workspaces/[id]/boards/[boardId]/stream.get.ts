@@ -7,6 +7,7 @@
 // (a comment line every 25 s) keep proxies and load balancers from
 // idling the connection.
 import { z } from 'zod'
+import { getBoard } from '../../../../../services/boards.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../utils/auth'
 import { toHttpError } from '../../../../../utils/errors'
@@ -22,12 +23,18 @@ export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
     const { id, boardId } = await getValidatedRouterParams(event, ParamsSchema.parse)
-    // Membership check before we open the long-lived stream.
-    await getWorkspaceForUserOrThrow(id, user.id)
+    // Membership check, then verify the board actually belongs to this
+    // workspace before opening the long-lived stream. getBoard runs through
+    // withTenant/RLS and throws NotFound for a foreign board — without it a
+    // member of ANY workspace could subscribe to a foreign board's channel
+    // (the event bus is keyed by board id alone, outside RLS).
+    const workspace = await getWorkspaceForUserOrThrow(id, user.id)
+    await getBoard({ workspaceId: id, boardId, actorRole: workspace.role })
 
     const stream = createEventStream(event)
 
     const unsubscribe = subscribeBoardEvents(boardId, (boardEvent) => {
+      if (boardEvent.workspaceId !== id) return
       stream.push({
         event: boardEvent.type,
         data: JSON.stringify(boardEvent),
