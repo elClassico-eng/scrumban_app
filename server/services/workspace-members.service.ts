@@ -8,12 +8,13 @@
 //
 // We never look up users by id without bounding them to a workspace —
 // that's how cross-tenant info leaks happen.
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   users,
   workspaceMembers,
   type WorkspaceMemberRole,
 } from '../db/schema'
+import type { DbTransaction } from '../utils/db'
 import {
   ConflictError,
   ForbiddenError,
@@ -128,9 +129,15 @@ export async function updateMemberRole(input: {
   const target = await findMemberRow(input.workspaceId, input.targetUserId)
   if (!target) throw new NotFoundError('Участник не найден в этом workspace')
 
-  // You can't promote anyone (including yourself) to a role above your own.
-  if (!roleAtLeast(input.actorRole, input.newRole)) {
-    throw new ForbiddenError('Нельзя выдать роль выше своей')
+  // Cannot grant a role above your own. Only owners may grant a role EQUAL
+  // to their own (appointing a co-owner); everyone else must strictly
+  // outrank the granted role — matching the invite/add paths, so the admin
+  // tier can't self-expand by minting peer admins.
+  const canGrantRole = input.actorRole === 'owner'
+    ? roleAtLeast(input.actorRole, input.newRole)
+    : strictlyOutranks(input.actorRole, input.newRole)
+  if (!canGrantRole) {
+    throw new ForbiddenError('Нельзя выдать роль выше своей или равную своей')
   }
 
   // For OTHER members, actor must strictly outrank the target's current role.
@@ -141,20 +148,23 @@ export async function updateMemberRole(input: {
     throw new ForbiddenError('Нельзя изменять участника с равной или более высокой ролью')
   }
 
-  // Demoting the last remaining owner would orphan the workspace.
-  if (target.role === 'owner' && input.newRole !== 'owner') {
-    await assertNotLastOwner(input.workspaceId, input.targetUserId)
-  }
-
-  await useDB()
-    .update(workspaceMembers)
-    .set({ role: input.newRole })
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, input.workspaceId),
-        eq(workspaceMembers.userId, input.targetUserId),
-      ),
-    )
+  // Lock owners + recount + write in one transaction so a concurrent
+  // demotion/removal of a different owner can't also slip past the
+  // last-owner guard and orphan the workspace.
+  await useDB().transaction(async (tx) => {
+    if (target.role === 'owner' && input.newRole !== 'owner') {
+      await assertNotLastOwner(tx, input.workspaceId, input.targetUserId)
+    }
+    await tx
+      .update(workspaceMembers)
+      .set({ role: input.newRole })
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, input.workspaceId),
+          eq(workspaceMembers.userId, input.targetUserId),
+        ),
+      )
+  })
 
   const view = await findMemberView(input.workspaceId, input.targetUserId)
   if (!view) throw new NotFoundError('Не удалось прочитать обновлённого участника')
@@ -179,18 +189,19 @@ export async function removeMember(input: {
       throw new ForbiddenError('Нельзя удалить участника с равной или более высокой ролью')
     }
   }
-  if (target.role === 'owner') {
-    await assertNotLastOwner(input.workspaceId, input.targetUserId)
-  }
-
-  await useDB()
-    .delete(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, input.workspaceId),
-        eq(workspaceMembers.userId, input.targetUserId),
-      ),
-    )
+  await useDB().transaction(async (tx) => {
+    if (target.role === 'owner') {
+      await assertNotLastOwner(tx, input.workspaceId, input.targetUserId)
+    }
+    await tx
+      .delete(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, input.workspaceId),
+          eq(workspaceMembers.userId, input.targetUserId),
+        ),
+      )
+  })
 }
 
 async function findMemberRow(workspaceId: string, userId: string) {
@@ -206,9 +217,18 @@ async function findMemberRow(workspaceId: string, userId: string) {
   return row
 }
 
-async function assertNotLastOwner(workspaceId: string, candidateUserId: string): Promise<void> {
-  const rows = await useDB()
-    .select({ count: sql<number>`count(*)::int` })
+async function assertNotLastOwner(
+  tx: DbTransaction,
+  workspaceId: string,
+  candidateUserId: string,
+): Promise<void> {
+  // SELECT ... FOR UPDATE locks the workspace's owner rows so two concurrent
+  // demotions/removals of different owners serialize here — the second waits,
+  // then sees the post-commit set and can't also drop the last owner.
+  // (count(*) can't be combined with FOR UPDATE, so we lock the rows and
+  // count them in JS.)
+  const owners = await tx
+    .select({ userId: workspaceMembers.userId })
     .from(workspaceMembers)
     .where(
       and(
@@ -216,9 +236,9 @@ async function assertNotLastOwner(workspaceId: string, candidateUserId: string):
         eq(workspaceMembers.role, 'owner'),
       ),
     )
-  // count includes the candidate; if it's exactly 1 they are the last owner.
-  const count = rows[0]?.count ?? 0
-  if (count <= 1) {
+    .for('update')
+  // owners includes the candidate; if it's the only one they are the last.
+  if (owners.length <= 1) {
     throw new ValidationError(
       `Это последний владелец workspace — сначала назначь другого владельца (user ${candidateUserId})`,
     )
