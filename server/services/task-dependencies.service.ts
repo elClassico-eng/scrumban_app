@@ -1,5 +1,6 @@
 import { and, eq, or, sql } from 'drizzle-orm'
 import {
+  boards,
   taskDependencies,
   tasks,
   type TaskDependency,
@@ -41,6 +42,11 @@ export async function addDependency(input: {
     if (blocker.boardId !== blocked.boardId) {
       throw new ValidationError('Зависимости можно ставить только в пределах одной доски')
     }
+
+    // Lock the board row so concurrent dependency writes on this board
+    // serialize — otherwise two parallel adds (A→B and B→A) each pass the
+    // cycle check against pre-insert state and together close a loop.
+    await tx.select({ id: boards.id }).from(boards).where(eq(boards.id, blocker.boardId)).for('update')
 
     // Cycle check: walking forward from blocked (following "what does
     // this task in turn block"), if we reach blocker the new edge would
