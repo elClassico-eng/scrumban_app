@@ -12,6 +12,7 @@
 import { and, eq, sql } from 'drizzle-orm'
 import {
   boardColumns,
+  boards,
   type BoardColumn,
   type ColumnRole,
   type WorkspaceMemberRole,
@@ -50,6 +51,11 @@ export async function createColumn(input: {
 }): Promise<BoardColumn> {
   requireMinRole(input.actorRole, 'admin')
   return withTenant(input.workspaceId, async (tx) => {
+    // Lock the board row so concurrent column creates on the same board
+    // serialize — otherwise both compute the same MAX(position)+1 and collide
+    // on the (board_id, position) unique index (an uncaught 23505 → 500).
+    await tx.select({ id: boards.id }).from(boards).where(eq(boards.id, input.boardId)).for('update')
+
     // Append at the end. COALESCE handles the empty-board case (no rows).
     const [agg] = await tx
       .select({ next: sql<number>`COALESCE(MAX(${boardColumns.position}), -1) + 1` })
