@@ -210,20 +210,23 @@ export async function computeAndStoreSLE(input: {
   // Lookback window matches the rest of analytics (Phase 3 default).
   const now = new Date()
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-
-  const [board] = await useDB()
-    .select({ sleProbability: boards.sleProbability })
-    .from(boards)
-    .where(eq(boards.id, input.boardId))
-  if (!board) throw new NotFoundError('Доска не найдена')
-
-  // sleProbability arrives as a string from numeric(3,2); coerce.
-  const probability = Number(board.sleProbability)
-
   const fromIso = ninetyDaysAgo.toISOString()
   const toIso = now.toISOString()
-  const samples = await withTenant(input.workspaceId, async (tx) => {
-    return tx.execute<{ cycleHours: string }>(sql`
+
+  // Read, compute and write all inside one tenant transaction: a bare
+  // useDB() query carries no app.workspace_id, so under the NOBYPASSRLS app
+  // role RLS returns zero rows (board read 404s; update touches nothing).
+  return withTenant(input.workspaceId, async (tx) => {
+    const [board] = await tx
+      .select({ sleProbability: boards.sleProbability })
+      .from(boards)
+      .where(eq(boards.id, input.boardId))
+    if (!board) throw new NotFoundError('Доска не найдена')
+
+    // sleProbability arrives as a string from numeric(3,2); coerce.
+    const probability = Number(board.sleProbability)
+
+    const samples = await tx.execute<{ cycleHours: string }>(sql`
       WITH closed AS (
         SELECT e.task_id, e.created_at AS closed_at
         FROM task_events e
@@ -246,33 +249,33 @@ export async function computeAndStoreSLE(input: {
       LEFT JOIN created cr ON cr.task_id = c.task_id
       WHERE c.closed_at >= COALESCE(cr.first_at, t.created_at)
     `)
+
+    const hoursArray = (samples as unknown as Array<{ cycleHours: string | number }>)
+      .map((r) => Number(r.cycleHours))
+      .sort((a, b) => a - b)
+
+    // Min-sample guard mirrors analytics percentile threshold. Below this
+    // count the percentile would just be noise — leave sle_days unchanged.
+    const MIN_SAMPLES = 5
+    if (hoursArray.length < MIN_SAMPLES) {
+      return { sleDays: null, sampleCount: hoursArray.length }
+    }
+
+    // Linear-interpolation percentile over the sorted sample, then convert
+    // hours → whole days, rounded up so SLE is conservative (we'd rather
+    // over-promise time than mis-flag tasks as 'aging' too early).
+    const idx = (probability * (hoursArray.length - 1))
+    const lower = Math.floor(idx)
+    const upper = Math.ceil(idx)
+    const frac = idx - lower
+    const valueHours = hoursArray[lower]! + frac * (hoursArray[upper]! - hoursArray[lower]!)
+    const valueDays = Math.max(1, Math.ceil(valueHours / 24))
+
+    await tx
+      .update(boards)
+      .set({ sleDays: valueDays, updatedAt: new Date() })
+      .where(and(eq(boards.id, input.boardId), eq(boards.workspaceId, input.workspaceId)))
+
+    return { sleDays: valueDays, sampleCount: hoursArray.length }
   })
-
-  const hoursArray = (samples as unknown as Array<{ cycleHours: string | number }>)
-    .map((r) => Number(r.cycleHours))
-    .sort((a, b) => a - b)
-
-  // Min-sample guard mirrors analytics percentile threshold. Below this
-  // count the percentile would just be noise — leave sle_days unchanged.
-  const MIN_SAMPLES = 5
-  if (hoursArray.length < MIN_SAMPLES) {
-    return { sleDays: null, sampleCount: hoursArray.length }
-  }
-
-  // Linear-interpolation percentile over the sorted sample, then convert
-  // hours → whole days, rounded up so SLE is conservative (we'd rather
-  // over-promise time than mis-flag tasks as 'aging' too early).
-  const idx = (probability * (hoursArray.length - 1))
-  const lower = Math.floor(idx)
-  const upper = Math.ceil(idx)
-  const frac = idx - lower
-  const valueHours = hoursArray[lower]! + frac * (hoursArray[upper]! - hoursArray[lower]!)
-  const valueDays = Math.max(1, Math.ceil(valueHours / 24))
-
-  await useDB()
-    .update(boards)
-    .set({ sleDays: valueDays, updatedAt: new Date() })
-    .where(eq(boards.id, input.boardId))
-
-  return { sleDays: valueDays, sampleCount: hoursArray.length }
 }
