@@ -13,8 +13,16 @@ const TARGET_PATHS = new Set([
 const buckets = new Map<string, Bucket>()
 
 function getClientIp(event: H3Event): string {
+  // Trust only the LAST X-Forwarded-For element. Our single reverse proxy
+  // (Caddy) appends the real client IP at the end of the chain, and the app
+  // container is not publicly reachable except through it. The FIRST element
+  // is whatever the client sent — trivially spoofable, so keying the limiter
+  // on it lets an attacker mint a fresh bucket per request and bypass it.
   const xff = getRequestHeader(event, 'x-forwarded-for')
-  if (xff) return xff.split(',')[0]!.trim()
+  if (xff) {
+    const parts = xff.split(',')
+    return parts[parts.length - 1]!.trim()
+  }
   const xreal = getRequestHeader(event, 'x-real-ip')
   if (xreal) return xreal.trim()
   return event.node.req.socket?.remoteAddress ?? 'unknown'
