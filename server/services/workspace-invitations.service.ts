@@ -11,8 +11,9 @@ import {
 import {
   ForbiddenError,
   NotFoundError,
+  ValidationError,
 } from '../utils/errors'
-import { requireMinRole, strictlyOutranks } from '../utils/rbac'
+import { requireMinRole, roleAtLeast, strictlyOutranks } from '../utils/rbac'
 
 const TOKEN_BYTES = 32
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -53,6 +54,12 @@ export async function createInvitation(input: {
   }
 
   const email = input.email ? normaliseEmail(input.email) : null
+  // An open (email-less) link grants membership on token possession alone.
+  // Don't let it carry a high-privilege seat — admin+ requires an email
+  // binding so acceptance also checks email match + verification.
+  if (!email && roleAtLeast(input.role, 'admin')) {
+    throw new ValidationError('Открытую ссылку без email нельзя выдать для роли «Admin» и выше — укажите email получателя')
+  }
   const plainToken = randomBytes(TOKEN_BYTES).toString('hex')
   const tokenHash = hashToken(plainToken)
   const expiresAt = new Date(Date.now() + TTL_MS)
