@@ -26,9 +26,8 @@ const serviceClassLabel = (c: string) => SERVICE_CLASS_INFO[c as keyof typeof SE
 const columnPill = (c: Column) => COLUMN_ROLE_INFO[c.columnRole].pillClass
 
 const childrenByParent = computed(() => buildChildrenByParent(props.tasks))
-const topLevel = computed(() => buildTopLevel(props.tasks))
 const groups = computed<ListGroup[]>(() =>
-  buildGroups(topLevel.value, props.groupBy, props.columns, props.members, serviceClassLabel, columnPill, memberLabel),
+  buildGroups(props.tasks, props.groupBy, props.columns, props.members, serviceClassLabel, columnPill, memberLabel),
 )
 
 const collapsed = ref<Set<string>>(new Set())

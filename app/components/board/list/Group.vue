@@ -28,7 +28,7 @@ const count = computed(() => props.group.tasks.length)
 const spSum = computed(() => props.group.tasks.reduce((a, t) => a + (t.storyPoints ?? 0), 0))
 const over = computed(() => props.group.limit != null && count.value > props.group.limit)
 const warn = computed(() => props.group.limit != null && count.value === props.group.limit)
-const wipPct = computed(() => props.group.limit ? Math.min(100, count.value / props.group.limit * 100) : 0)
+const wipPct = computed(() => props.group.limit != null && props.group.limit > 0 ? Math.min(100, count.value / props.group.limit * 100) : 0)
 
 function blockerCount(id: string) {
   return props.depCounts.get(id)?.blockerCount ?? 0
@@ -48,7 +48,7 @@ function commitAdd() {
 <template>
   <div class="bg-default border border-default rounded-xl overflow-hidden">
     <div
-      class="group/head flex items-center gap-2.5 px-3.5 py-2.5 cursor-pointer select-none border-b border-default"
+      class="group/head flex items-center gap-2.5 px-3.5 py-2.5 cursor-pointer select-none border-b border-default hover:bg-muted transition-colors"
       :class="collapsed ? 'border-b-transparent' : ''"
       @click="emit('toggle-collapse', group.key)"
     >

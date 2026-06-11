@@ -43,7 +43,7 @@ export function buildTopLevel(tasks: Task[]): Task[] {
 }
 
 export function buildGroups(
-  topLevel: Task[],
+  tasks: Task[],
   groupBy: GroupBy,
   columns: Column[],
   members: MemberView[],
@@ -51,6 +51,7 @@ export function buildGroups(
   columnPill: (c: Column) => string,
   memberLabel: (id: string) => string,
 ): ListGroup[] {
+  const topLevel = buildTopLevel(tasks)
   const sorted = [...topLevel].sort((a, b) => a.position - b.position)
 
   if (groupBy === 'assignee') {
@@ -87,22 +88,12 @@ export function buildGroups(
 
   if (groupBy === 'epic') {
     const groups: ListGroup[] = []
-    const epics = sorted.filter(t => t.isEpic)
-    const epicIds = new Set(epics.map(e => e.id))
-    const none: Task[] = []
-    const byEpic = new Map<string, Task[]>()
-    for (const t of sorted) {
-      if (t.isEpic) continue
-      if (t.parentTaskId && epicIds.has(t.parentTaskId)) {
-        const arr = byEpic.get(t.parentTaskId) ?? []
-        arr.push(t)
-        byEpic.set(t.parentTaskId, arr)
-      } else { none.push(t) }
-    }
+    const epics = tasks.filter(t => t.isEpic).sort((a, b) => a.position - b.position)
     for (const e of epics) {
-      const arr = byEpic.get(e.id) ?? []
-      groups.push({ key: `e-${e.id}`, title: e.title, pillClass: 'bg-violet-500', columnId: null, limit: null, doneGroup: false, tasks: arr })
+      const rows = tasks.filter(t => t.parentTaskId === e.id).sort((a, b) => a.position - b.position)
+      groups.push({ key: `e-${e.id}`, title: e.title, pillClass: 'bg-violet-500', columnId: null, limit: null, doneGroup: false, tasks: rows })
     }
+    const none = sorted.filter(t => !t.isEpic)
     if (none.length) groups.push({ key: 'e-none', title: 'Без эпика', pillClass: 'bg-zinc-400 dark:bg-zinc-600', columnId: null, limit: null, doneGroup: false, tasks: none })
     return groups
   }
