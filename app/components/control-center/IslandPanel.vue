@@ -36,6 +36,10 @@ const props = defineProps<{
   focusOn: boolean
   isDark: boolean
   canCreateTask: boolean
+  sleLabel?: string | null
+  replenishmentLabel?: string | null
+  replenishmentOverdue?: boolean
+  hasBoardMetrics?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -118,11 +122,27 @@ const unread = computed(() => props.notifs.filter(n => n.unread).length)
         :reduced-motion="reducedMotion"
       />
     </div>
-    <ControlCenterPresenceTile
-      :people="people"
-      :extra="presenceExtra"
-      @view-all="(e) => emit('view-all', e)"
-    />
+    <div class="flex flex-wrap gap-[10px]">
+      <template v-if="hasBoardMetrics">
+        <ControlCenterMetricTile
+          icon="i-lucide-sparkles"
+          label="Прогноз"
+          :value="sleLabel ?? '—'"
+          accent
+        />
+        <ControlCenterMetricTile
+          icon="i-lucide-calendar"
+          label="Пополнение"
+          :value="replenishmentLabel ?? '—'"
+          :accent="replenishmentOverdue"
+        />
+      </template>
+      <ControlCenterPresenceTile
+        :people="people"
+        :extra="presenceExtra"
+        @view-all="(e) => emit('view-all', e)"
+      />
+    </div>
   </div>
 
   <div v-show="tab === 'notifs'" class="flex-1 min-h-0">

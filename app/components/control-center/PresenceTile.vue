@@ -30,7 +30,7 @@ const tooltipItems = computed(() =>
 
 <template>
   <div
-    class="rounded-2xl p-[13px]"
+    class="inline-flex flex-col self-start rounded-2xl p-[13px]"
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
   >
     <div class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)] mb-[9px]">Команда</div>
@@ -45,10 +45,10 @@ const tooltipItems = computed(() =>
       title="Все участники"
       @click.stop="(e) => $emit('view-all', e)"
     >
-      <UiAnimatedTooltip :items="tooltipItems" :size="26" ring="var(--island-bg-2)" />
+      <UiAnimatedTooltip :items="tooltipItems" :size="34" ring="var(--island-bg-2)" />
       <span
         v-if="extra > 0"
-        class="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 -ml-2"
+        class="w-[34px] h-[34px] rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 -ml-2"
         style="background: rgba(255,255,255,0.08); color: var(--island-ink-3); box-shadow: 0 0 0 2px var(--island-bg-2);"
       >+{{ extra }}</span>
     </button>

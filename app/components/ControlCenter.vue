@@ -138,6 +138,30 @@ const presencePeople = computed(() => {
 const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.members.length ?? 0) - 5))
 
 const boardId = computed(() => (route.params.boardId as string) ?? '')
+
+const { list: boardsList } = useBoardsApi(workspaceId)
+const board = computed(() => boardsList.data.value?.boards.find(b => b.id === boardId.value) ?? null)
+const sleLabel = computed(() => {
+  const b = board.value
+  if (!b) return null
+  if (b.sleDays == null) return null
+  return `${Math.round(Number(b.sleProbability) * 100)}% · ${b.sleDays} дн`
+})
+const replenishmentLabel = computed(() => {
+  const b = board.value
+  if (!b?.lastReplenishmentAt) return null
+  const due = new Date(b.lastReplenishmentAt).getTime() + b.replenishmentPeriodDays * 86_400_000
+  const daysLeft = Math.round((due - Date.now()) / 86_400_000)
+  return daysLeft < 0 ? `просрочено ${-daysLeft} дн` : `через ${daysLeft} дн`
+})
+const replenishmentOverdue = computed(() => {
+  const b = board.value
+  if (!b?.lastReplenishmentAt) return false
+  const due = new Date(b.lastReplenishmentAt).getTime() + b.replenishmentPeriodDays * 86_400_000
+  return (due - Date.now()) < 0
+})
+const hasBoardMetrics = computed(() => !!boardId.value && !!board.value)
+
 const { list: sprintsList } = useSprintsApi(workspaceId, boardId)
 const activeSprint = computed(() => sprintsList.data.value?.sprints.find(s => s.state === 'active') ?? null)
 const hasSprint = computed(() => activeSprint.value !== null)
@@ -340,6 +364,10 @@ onUnmounted(() => {
           :focus-on="focus"
           :is-dark="isDark"
           :can-create-task="canCreateTask"
+          :sle-label="sleLabel"
+          :replenishment-label="replenishmentLabel"
+          :replenishment-overdue="replenishmentOverdue"
+          :has-board-metrics="hasBoardMetrics"
           @toggle-pin="togglePin"
           @toggle-running="onTimerToggle"
           @stop-timer="onTimerStop"
