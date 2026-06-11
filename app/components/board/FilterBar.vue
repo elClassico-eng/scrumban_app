@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MemberView } from '#shared/types/workspace'
+import { ROLE_LABEL } from '~/utils/role-labels'
 
 type SwimlaneMode = 'none' | 'assignee' | 'service_class' | 'epic'
 type ClassFilter = 'all' | 'expedite' | 'blocker'
@@ -89,20 +90,25 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
       >
         Все
       </button>
-      <button
+      <UiAvatarTooltipWrap
         v-for="m in visibleMembers"
         :key="m.userId"
-        type="button"
-        :class="[
-          'relative size-6 rounded-full grid place-items-center transition-all cursor-pointer -ml-1.5 first:ml-0',
-          selectedAssignees.size > 0 && !selectedAssignees.has(m.userId) ? 'opacity-40 grayscale' : '',
-          selectedAssignees.has(m.userId) ? 'ring-2 ring-accent-500 z-10' : '',
-        ]"
-        :title="displayName(m)"
-        @click="emit('toggle-assignee', m.userId)"
+        :name="displayName(m)"
+        :designation="ROLE_LABEL[m.role]"
+        class="-ml-1.5 first:ml-0"
       >
-        <UserAvatar :user="m" size="sm" />
-      </button>
+        <button
+          type="button"
+          :class="[
+            'relative size-6 rounded-full grid place-items-center transition-all cursor-pointer',
+            selectedAssignees.size > 0 && !selectedAssignees.has(m.userId) ? 'opacity-40 grayscale' : '',
+            selectedAssignees.has(m.userId) ? 'ring-2 ring-accent-500 z-10' : '',
+          ]"
+          @click="emit('toggle-assignee', m.userId)"
+        >
+          <UserAvatar :user="m" size="sm" />
+        </button>
+      </UiAvatarTooltipWrap>
     </div>
 
     <button
