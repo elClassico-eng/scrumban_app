@@ -22,7 +22,8 @@ const assignedIds = computed(() => new Set(props.task.assigneeIds ?? []))
 const items = computed(() =>
   props.members.map(m => ({
     label: displayName(m),
-    icon: assignedIds.value.has(m.userId) ? 'i-lucide-check' : undefined,
+    member: m,
+    checked: assignedIds.value.has(m.userId),
     onSelect: () => {
       if (assignedIds.value.has(m.userId)) remove.mutate(m.userId)
       else add.mutate({ userId: m.userId })
@@ -32,19 +33,25 @@ const items = computed(() =>
 </script>
 
 <template>
-  <UDropdownMenu v-if="canEdit" :items="items" :ui="{ content: 'w-56 max-h-64 overflow-auto' }">
+  <UDropdownMenu v-if="canEdit" :items="items" :ui="{ content: 'w-60 max-h-72 overflow-auto' }">
     <button class="flex items-center rounded hover:bg-elevated px-1 py-0.5">
       <template v-if="assignees.length > 0">
-        <UserAvatar v-for="(m, i) in assignees" :key="m.userId" :user="m" size="sm" ring :class="i > 0 ? '-ml-[7px]' : ''" />
+        <UserAvatar v-for="(m, i) in assignees" :key="m.userId" :user="m" size="xs" ring :class="i > 0 ? '-ml-[7px]' : ''" />
       </template>
       <span v-else class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center">
         <UIcon name="i-lucide-user" class="size-3" />
       </span>
     </button>
+    <template #item-leading="{ item }">
+      <UserAvatar :user="(item as any).member" size="xs" />
+    </template>
+    <template #item-trailing="{ item }">
+      <UIcon v-if="(item as any).checked" name="i-lucide-check" class="size-4 text-accent-500" />
+    </template>
   </UDropdownMenu>
   <span v-else class="flex items-center">
     <template v-if="assignees.length > 0">
-      <UserAvatar v-for="(m, i) in assignees" :key="m.userId" :user="m" size="sm" ring tooltip :class="i > 0 ? '-ml-[7px]' : ''" />
+      <UserAvatar v-for="(m, i) in assignees" :key="m.userId" :user="m" size="xs" ring tooltip :class="i > 0 ? '-ml-[7px]' : ''" />
     </template>
     <span v-else class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center">
       <UIcon name="i-lucide-user" class="size-3" />

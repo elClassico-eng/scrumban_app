@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { Task } from '#shared/types/task'
 import type { MemberView } from '#shared/types/workspace'
+import type { BoardColumn as Column } from '#shared/types/column'
 
 const props = defineProps<{
   task: Task
   isDone: boolean
   members: MemberView[]
+  columns: Column[]
   blockerCount: number
   childCount: number
   expanded: boolean
@@ -20,6 +22,7 @@ const emit = defineEmits<{
   'toggle-select': [id: string]
   'toggle-expand': [id: string]
   'add-subtask': [id: string]
+  'move-to-column': [taskId: string, columnId: string]
 }>()
 
 const router = useRouter()
@@ -41,79 +44,86 @@ const hasBlocker = computed(() => !!props.task.blockedReason || props.blockerCou
 const cos = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const checklistFull = computed(() => props.task.checklistTotal > 0 && props.task.checklistDone === props.task.checklistTotal)
 const due = computed(() => dueInfo(props.task.dueDate))
+
+const column = computed(() => props.columns.find(c => c.id === props.task.columnId) ?? null)
+const circleClass = computed(() => column.value ? COLUMN_ROLE_INFO[column.value.columnRole].circleClass : 'border-[var(--ui-text-dimmed)] text-[var(--ui-text-dimmed)]')
+const columnItems = computed(() =>
+  props.columns.map(c => ({
+    label: c.name,
+    icon: c.id === props.task.columnId ? 'i-lucide-check' : undefined,
+    onSelect: () => emit('move-to-column', props.task.id, c.id),
+  })),
+)
 </script>
 
 <template>
   <div
-    class="group grid grid-cols-[var(--kl-cols)] items-center pr-3.5 min-h-[44px] border-b border-[var(--ui-border-muted)] last:border-b-0 cursor-pointer relative transition-colors"
-    :class="selected ? 'bg-accent-50 dark:bg-accent-950/40' : depth > 0 ? 'bg-muted/40 hover:bg-muted' : 'hover:bg-muted'"
+    class="group grid grid-cols-[var(--kl-cols)] items-center min-h-[38px] border-b border-[var(--ui-border-muted)] cursor-pointer relative transition-colors"
+    :class="selected ? 'bg-accent-50 dark:bg-accent-950/40' : depth > 0 ? 'bg-muted/30 hover:bg-muted' : 'hover:bg-muted'"
     @click="openTask"
   >
-    <span
-      class="absolute left-0 top-0 bottom-0 w-[3px]"
-      :class="task.serviceClass === 'expedite' && !isDone ? 'bg-accent-500' : 'bg-transparent'"
-    />
-
-    <div class="flex items-center gap-[9px] py-2 pr-2.5 min-w-0" :style="{ paddingLeft: `${14 + depth * 22}px` }">
+    <div class="flex items-center gap-2 py-1.5 pr-2 min-w-0" :style="{ paddingLeft: `${10 + depth * 26}px` }">
       <span
         v-if="depth > 0"
-        class="text-dimmed shrink-0 -ml-3.5 mr-0.5 font-mono text-[11px] select-none"
+        class="shrink-0 -ml-[18px] mr-0.5 w-3.5 h-3.5 -translate-y-[3px] border-l-[1.5px] border-b-[1.5px] border-[var(--ui-border-accented)] rounded-bl-[5px]"
         aria-hidden="true"
-      >└</span>
+      />
 
       <span
-        class="size-[17px] rounded-[5px] border-[1.6px] grid place-items-center shrink-0 transition-colors"
+        class="size-4 rounded border-[1.5px] grid place-items-center shrink-0 transition-all"
         :class="selected
           ? 'opacity-100 bg-accent-500 border-accent-500 text-white'
           : 'opacity-0 group-hover:opacity-100 border-[var(--ui-border-accented)] bg-default text-transparent hover:border-muted'"
         @click.stop="emit('toggle-select', task.id)"
       >
-        <UIcon name="i-lucide-check" class="size-3" />
+        <UIcon name="i-lucide-check" class="size-2.5" />
       </span>
 
       <button
         v-if="childCount > 0"
         type="button"
-        class="size-4 grid place-items-center shrink-0 text-muted hover:text-default transition-transform"
+        class="size-3.5 grid place-items-center shrink-0 text-dimmed hover:text-default transition-transform"
         :class="expanded ? '' : '-rotate-90'"
         @click.stop="emit('toggle-expand', task.id)"
       >
-        <UIcon name="i-lucide-chevron-down" class="size-4" />
+        <UIcon name="i-lucide-chevron-down" class="size-3.5" />
       </button>
+      <span v-else class="w-3.5 shrink-0" />
 
-      <span
-        class="size-4 rounded-full shrink-0 grid place-items-center"
-        :class="isDone ? 'bg-emerald-500 text-white' : hasBlocker ? 'border-2 border-red-500' : 'border-2 border-[var(--ui-text-dimmed)]'"
-      >
-        <UIcon v-if="isDone" name="i-lucide-check" class="size-[11px]" />
-      </span>
+      <UDropdownMenu :items="columnItems" :ui="{ content: 'w-48' }">
+        <button
+          class="size-[15px] rounded-full border-2 grid place-items-center shrink-0 transition-colors hover:scale-110"
+          :class="[hasBlocker ? 'border-red-500 text-red-500' : circleClass, isDone ? 'bg-current' : '']"
+          title="Сменить статус"
+          @click.stop
+        >
+          <UIcon v-if="isDone" name="i-lucide-check" class="size-2.5 text-white" />
+        </button>
+      </UDropdownMenu>
 
-      <span class="font-mono text-[10.5px] text-muted shrink-0 tracking-tight">{{ shortId }}</span>
+      <span class="font-mono text-[10px] text-dimmed shrink-0 tracking-tight">{{ shortId }}</span>
 
       <span
         class="text-[13px] truncate min-w-0"
-        :class="isDone ? 'text-muted line-through' : 'text-default'"
+        :class="isDone ? 'text-dimmed line-through' : depth > 0 ? 'text-toned' : 'text-default'"
       >{{ task.title }}</span>
 
       <span
         v-if="task.serviceClass === 'expedite' && !isDone"
-        class="inline-flex items-center gap-[3px] text-[9.5px] font-bold uppercase tracking-[0.04em] text-accent-600 dark:text-accent-300 bg-accent-50 dark:bg-accent-950 px-[5px] py-px rounded-[3px] shrink-0"
+        class="inline-flex items-center gap-[3px] text-[9px] font-bold uppercase tracking-[0.03em] text-accent-600 dark:text-accent-300 bg-accent-50 dark:bg-accent-950 px-1.5 h-[15px] rounded shrink-0"
       >
-        <UIcon name="i-lucide-zap" class="size-3" />
-        Срочная
+        <UIcon name="i-lucide-zap" class="size-2.5" />
+        Срочно
       </span>
 
-      <span class="inline-flex items-center gap-[7px] shrink-0 ml-0.5">
-        <span v-if="childCount > 0" class="inline-flex items-center gap-1 text-[10.5px] text-muted tabular-nums">
-          <UIcon name="i-lucide-git-branch" class="size-3" />{{ childCount }}
-        </span>
-        <span v-if="hasBlocker" class="text-red-500"><UIcon name="i-lucide-alert-triangle" class="size-3.5" /></span>
+      <span class="inline-flex items-center gap-1.5 shrink-0 ml-0.5">
+        <span v-if="hasBlocker" class="text-red-500"><UIcon name="i-lucide-alert-triangle" class="size-3" /></span>
         <span
           v-if="task.checklistTotal > 0"
-          class="inline-flex items-center gap-1 text-[10.5px] tabular-nums"
-          :class="checklistFull ? 'text-emerald-600' : 'text-muted'"
+          class="inline-flex items-center gap-0.5 text-[10px] tabular-nums"
+          :class="checklistFull ? 'text-emerald-600' : 'text-dimmed'"
         >
-          <UIcon name="i-lucide-check-square" class="size-3" />{{ task.checklistDone }}/{{ task.checklistTotal }}
+          <UIcon name="i-lucide-check-square" class="size-2.5" />{{ task.checklistDone }}/{{ task.checklistTotal }}
         </span>
         <button
           v-if="canCreate"
@@ -127,31 +137,31 @@ const due = computed(() => dueInfo(props.task.dueDate))
       </span>
     </div>
 
-    <div class="flex items-center px-2.5 h-full border-l border-[var(--ui-border-muted)]" @click.stop>
+    <div class="flex items-center px-2 h-full min-w-0" @click.stop>
       <BoardListAssigneeCell
         :task="task" :assignees="assignees" :members="members" :can-edit="canCreate"
         :workspace-id="workspaceId" :board-id="boardId"
       />
     </div>
 
-    <div class="flex items-center px-2.5 h-full border-l border-[var(--ui-border-muted)]" @click.stop>
+    <div class="flex items-center px-2 h-full min-w-0" @click.stop>
       <BoardListDueCell :task="task" :due="due" :is-done="isDone" :can-edit="canCreate" :workspace-id="workspaceId" :board-id="boardId" />
     </div>
 
-    <div class="flex items-center px-2.5 h-full border-l border-[var(--ui-border-muted)] col-class" @click.stop>
+    <div class="flex items-center px-2 h-full min-w-0 col-class" @click.stop>
       <BoardListClassCell :task="task" :cos="cos" :can-edit="canCreate" :workspace-id="workspaceId" :board-id="boardId" />
     </div>
 
-    <div class="flex items-center justify-center px-2.5 h-full border-l border-[var(--ui-border-muted)] col-sp" @click.stop>
+    <div class="flex items-center justify-center px-2 h-full col-sp" @click.stop>
       <BoardListSpCell :task="task" :can-edit="canCreate" :workspace-id="workspaceId" :board-id="boardId" />
     </div>
 
-    <div class="flex items-center px-2.5 h-full border-l border-[var(--ui-border-muted)] col-clist">
-      <span v-if="task.checklistTotal > 0" class="inline-flex items-center gap-[7px] w-full">
-        <span class="flex-1 h-1 bg-elevated rounded-full overflow-hidden min-w-[36px]">
+    <div class="flex items-center px-2 h-full col-clist">
+      <span v-if="task.checklistTotal > 0" class="inline-flex items-center gap-1.5 w-full">
+        <span class="flex-1 h-1 bg-elevated rounded-full overflow-hidden min-w-[28px]">
           <span class="block h-full rounded-full" :class="checklistFull ? 'bg-emerald-500' : 'bg-accent-500'" :style="{ width: `${task.checklistDone / task.checklistTotal * 100}%` }" />
         </span>
-        <span class="font-mono text-[10.5px] text-muted whitespace-nowrap">{{ task.checklistDone }}/{{ task.checklistTotal }}</span>
+        <span class="font-mono text-[10px] text-dimmed whitespace-nowrap">{{ task.checklistDone }}/{{ task.checklistTotal }}</span>
       </span>
       <span v-else class="text-dimmed text-xs">—</span>
     </div>

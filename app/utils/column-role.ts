@@ -10,6 +10,7 @@ interface ColumnRoleInfo {
   dotClass: string
   chipColor: ChipColor
   pillClass: string
+  circleClass: string
 }
 
 export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
@@ -21,6 +22,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
     dotClass: 'bg-slate-400 dark:bg-slate-500',
     chipColor: 'neutral',
     pillClass: 'bg-slate-400 dark:bg-slate-500',
+    circleClass: 'border-slate-400 text-slate-400',
   },
   in_progress: {
     label: 'В работе — активный поток',
@@ -30,6 +32,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
     dotClass: 'bg-amber-500',
     chipColor: 'warning',
     pillClass: 'bg-amber-500',
+    circleClass: 'border-amber-500 text-amber-500',
   },
   review: {
     label: 'На ревью — проверка/QA',
@@ -39,6 +42,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
     dotClass: 'bg-violet-500',
     chipColor: 'primary',
     pillClass: 'bg-violet-500',
+    circleClass: 'border-violet-500 text-violet-500',
   },
   done: {
     label: 'Готово — завершено',
@@ -48,6 +52,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
     dotClass: 'bg-emerald-500',
     chipColor: 'success',
     pillClass: 'bg-emerald-500',
+    circleClass: 'border-emerald-500 text-emerald-500',
   },
   archived: {
     label: 'Архив — вне потока',
@@ -57,6 +62,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
     dotClass: 'bg-zinc-400 dark:bg-zinc-500',
     chipColor: 'neutral',
     pillClass: 'bg-zinc-400 dark:bg-zinc-500',
+    circleClass: 'border-zinc-400 text-zinc-400',
   },
 }
 
