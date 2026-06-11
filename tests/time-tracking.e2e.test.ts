@@ -119,3 +119,41 @@ describe('time tracking — start/stop', () => {
     expect(aEntries.body.entries.every(e => !e.running)).toBe(true)
   })
 })
+
+describe('time tracking — manual entries + rbac', () => {
+  it('create/list/update/delete a manual entry; total reflects it', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const taskId = (await fetchWithJar<{ task: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, { method: 'POST', body: { columnId: columns.backlog, title: 'T' } })).body.task.id
+
+    const created = await fetchWithJar<{ entry: { id: string, durationSeconds: number } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time`, { method: 'POST', body: { startedAt: new Date().toISOString(), durationSeconds: 3600, description: 'work' } })
+    expect(created.body.entry.durationSeconds).toBe(3600)
+
+    const list = await fetchWithJar<{ entries: unknown[], totalSeconds: number }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time`, {})
+    expect(list.body.totalSeconds).toBe(3600)
+
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time/${created.body.entry.id}`, { method: 'PATCH', body: { durationSeconds: 1800 } })
+    const list2 = await fetchWithJar<{ totalSeconds: number }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time`, {})
+    expect(list2.body.totalSeconds).toBe(1800)
+
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time/${created.body.entry.id}`, { method: 'DELETE' })
+    const list3 = await fetchWithJar<{ totalSeconds: number }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time`, {})
+    expect(list3.body.totalSeconds).toBe(0)
+  })
+
+  it("a member cannot edit another member's entry; an admin/owner can", async () => {
+    const owner = await registerUser('owner@example.com')
+    const dev = await registerUser('dev@example.com')
+    const wsId = await createWorkspace(owner)
+    await addMember(owner, wsId, 'dev@example.com', 'member')
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const taskId = (await fetchWithJar<{ task: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, { method: 'POST', body: { columnId: columns.backlog, title: 'T' } })).body.task.id
+    const devEntry = await fetchWithJar<{ entry: { id: string } }>(dev.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time`, { method: 'POST', body: { startedAt: new Date().toISOString(), durationSeconds: 600 } })
+    const m2 = await registerUser('m2@example.com'); await addMember(owner, wsId, 'm2@example.com', 'member')
+    const forbidden = await fetchWithJar(m2.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time/${devEntry.body.entry.id}`, { method: 'PATCH', body: { durationSeconds: 1 } })
+    expect(forbidden.status).toBe(403)
+    const ok = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time/${devEntry.body.entry.id}`, { method: 'PATCH', body: { durationSeconds: 1200 } })
+    expect(ok.status).toBe(200)
+  })
+})

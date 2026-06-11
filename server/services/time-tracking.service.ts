@@ -1,9 +1,9 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import { tasks, timeEntries, type WorkspaceMemberRole } from '../db/schema'
 import { withTenant } from '../utils/db'
-import { NotFoundError } from '../utils/errors'
+import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
-import { requireMinRole } from '../utils/rbac'
+import { requireMinRole, roleAtLeast } from '../utils/rbac'
 
 function toView(e: typeof timeEntries.$inferSelect) {
   const running = e.durationSeconds == null
@@ -135,5 +135,118 @@ export async function listTaskEntries(input: {
       entries: rows.map(toView),
       totalSeconds: rows.reduce((a, r) => a + (r.durationSeconds ?? 0), 0),
     }
+  })
+}
+
+export async function createManualEntry(input: {
+  workspaceId: string
+  boardId: string
+  taskId: string
+  userId: string
+  actorRole: WorkspaceMemberRole
+  startedAt: string
+  durationSeconds: number
+  description?: string | null
+}) {
+  requireMinRole(input.actorRole, 'member')
+  if (!Number.isInteger(input.durationSeconds) || input.durationSeconds <= 0)
+    throw new ValidationError('durationSeconds must be a positive integer')
+  const entry = await withTenant(input.workspaceId, async (tx) => {
+    const [task] = await tx
+      .select({ id: tasks.id, boardId: tasks.boardId })
+      .from(tasks)
+      .where(eq(tasks.id, input.taskId))
+    if (!task || task.boardId !== input.boardId) throw new NotFoundError('Task not found')
+    const [created] = await tx
+      .insert(timeEntries)
+      .values({
+        workspaceId: input.workspaceId,
+        taskId: input.taskId,
+        userId: input.userId,
+        startedAt: new Date(input.startedAt),
+        durationSeconds: input.durationSeconds,
+        description: input.description ?? null,
+      })
+      .returning()
+    return created!
+  })
+  publishBoardEvent({
+    type: 'time.updated',
+    workspaceId: input.workspaceId,
+    boardId: input.boardId,
+    payload: { taskId: input.taskId },
+  })
+  return entry
+}
+
+export async function updateEntry(input: {
+  workspaceId: string
+  boardId: string
+  entryId: string
+  actorId: string
+  actorRole: WorkspaceMemberRole
+  patch: { startedAt?: string; durationSeconds?: number; description?: string | null }
+}) {
+  requireMinRole(input.actorRole, 'member')
+  const updated = await withTenant(input.workspaceId, async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(timeEntries)
+      .where(eq(timeEntries.id, input.entryId))
+    if (!existing) throw new NotFoundError('Entry not found')
+    if (existing.userId !== input.actorId && !roleAtLeast(input.actorRole, 'scrum_master'))
+      throw new ForbiddenError("Cannot edit another user's entry")
+    if (existing.durationSeconds == null) throw new ValidationError('Cannot edit a running entry')
+    if (
+      input.patch.durationSeconds != null &&
+      (!Number.isInteger(input.patch.durationSeconds) || input.patch.durationSeconds <= 0)
+    )
+      throw new ValidationError('durationSeconds must be a positive integer')
+    const [row] = await tx
+      .update(timeEntries)
+      .set({
+        startedAt: input.patch.startedAt ? new Date(input.patch.startedAt) : existing.startedAt,
+        durationSeconds: input.patch.durationSeconds ?? existing.durationSeconds,
+        description:
+          input.patch.description !== undefined ? input.patch.description : existing.description,
+        updatedAt: sql`now()`,
+      })
+      .where(eq(timeEntries.id, input.entryId))
+      .returning()
+    return { row: row!, taskId: existing.taskId }
+  })
+  publishBoardEvent({
+    type: 'time.updated',
+    workspaceId: input.workspaceId,
+    boardId: input.boardId,
+    payload: { taskId: updated.taskId },
+  })
+  return updated.row
+}
+
+export async function deleteEntry(input: {
+  workspaceId: string
+  boardId: string
+  entryId: string
+  actorId: string
+  actorRole: WorkspaceMemberRole
+}) {
+  requireMinRole(input.actorRole, 'member')
+  const taskId = await withTenant(input.workspaceId, async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(timeEntries)
+      .where(eq(timeEntries.id, input.entryId))
+    if (!existing) throw new NotFoundError('Entry not found')
+    if (existing.userId !== input.actorId && !roleAtLeast(input.actorRole, 'scrum_master'))
+      throw new ForbiddenError("Cannot delete another user's entry")
+    await tx.delete(timeEntries).where(eq(timeEntries.id, input.entryId))
+    return existing.taskId
+  })
+  publishBoardEvent({
+    type: 'time.updated',
+    workspaceId: input.workspaceId,
+    boardId: input.boardId,
+    payload: { taskId },
   })
 }
