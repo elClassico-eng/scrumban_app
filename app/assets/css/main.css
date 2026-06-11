@@ -1,6 +1,36 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+:root {
+  --island-bg: #16161a;
+  --island-bg-2: #1e1e23;
+  --island-line: rgba(255,255,255,.09);
+  --island-line-2: rgba(255,255,255,.06);
+  --island-tile: rgba(255,255,255,.035);
+  --island-ink: #f4f4f6;
+  --island-ink-2: #b7b8c0;
+  --island-ink-3: #7e7f8a;
+  --island-orange: #ff6a1a;
+  --island-orange-2: #ff894a;
+  --island-orange-deep: #e4540a;
+}
+
+@keyframes cc-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,106,26,0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(255,106,26,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,106,26,0); }
+}
+
+.cc-pulse-dot {
+  animation: cc-pulse 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-pulse-dot {
+    animation: none;
+  }
+}
+
 @theme static {
   --font-sans: 'Manrope', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
