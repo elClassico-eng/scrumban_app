@@ -28,6 +28,10 @@ import {
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant, type DbTransaction } from '../utils/db'
+import { NotFoundError, ValidationError } from '../utils/errors'
+import { publishBoardEvent } from '../utils/events'
+import { emitNotification } from './notifications.service'
+import { requireMinRole } from '../utils/rbac'
 
 // `tasks.id` is written as a SQL literal (not Drizzle's ${tasks.id}) so the
 // correlated subqueries below reference the outer tasks row, not the joined
@@ -48,10 +52,6 @@ const taskWithAssigneesSelect = {
     WHERE ${taskChecklistItems.taskId} = tasks.id AND ${taskChecklistItems.isDone}
   ), 0)`.as('checklist_done'),
 }
-import { NotFoundError, ValidationError } from '../utils/errors'
-import { publishBoardEvent } from '../utils/events'
-import { emitNotification } from './notifications.service'
-import { requireMinRole } from '../utils/rbac'
 
 export async function listTasksForBoard(input: {
   workspaceId: string

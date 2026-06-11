@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { Task } from '#shared/types/task'
-import type { CreateTaskInput } from '#shared/types/task'
+import type { Task, CreateTaskInput } from '#shared/types/task'
 import type { BoardColumn as Column } from '#shared/types/column'
 import type { MemberView } from '#shared/types/workspace'
 import type { GroupBy, ListGroup } from '~/utils/list-groups'
@@ -36,17 +35,20 @@ const selected = ref<Set<string>>(new Set())
 
 function toggleCollapse(key: string) {
   const n = new Set(collapsed.value)
-  n.has(key) ? n.delete(key) : n.add(key)
+  if (n.has(key)) n.delete(key)
+  else n.add(key)
   collapsed.value = n
 }
 function toggleExpand(id: string) {
   const n = new Set(expanded.value)
-  n.has(id) ? n.delete(id) : n.add(id)
+  if (n.has(id)) n.delete(id)
+  else n.add(id)
   expanded.value = n
 }
 function toggleSelect(id: string) {
   const n = new Set(selected.value)
-  n.has(id) ? n.delete(id) : n.add(id)
+  if (n.has(id)) n.delete(id)
+  else n.add(id)
   selected.value = n
 }
 function clearSelection() {

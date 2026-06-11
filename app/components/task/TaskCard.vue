@@ -19,7 +19,6 @@ const { list: boardsList } = useBoardsApi(wsId)
 const { list: tasksList } = useTasksApi(wsId, bId)
 const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 
-const cosInfo = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const blockerCount = computed(() => depCountsByTaskId.value.get(props.task.id)?.blockerCount ?? 0)
 
 const memberById = computed(() => {
