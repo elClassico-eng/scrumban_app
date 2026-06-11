@@ -46,7 +46,7 @@ const due = computed(() => dueInfo(props.task.dueDate))
 <template>
   <div
     class="group grid grid-cols-[var(--kl-cols)] items-center pr-3.5 min-h-[44px] border-b border-[var(--ui-border-muted)] last:border-b-0 cursor-pointer relative transition-colors"
-    :class="[selected ? 'bg-accent-50 dark:bg-accent-950/40' : 'hover:bg-muted', depth > 0 ? 'bg-muted/40' : '']"
+    :class="selected ? 'bg-accent-50 dark:bg-accent-950/40' : depth > 0 ? 'bg-muted/40 hover:bg-muted' : 'hover:bg-muted'"
     @click="openTask"
   >
     <span

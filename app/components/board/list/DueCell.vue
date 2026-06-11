@@ -10,7 +10,6 @@ defineProps<{
   boardId: string
 }>()
 function label(d: DueInfo): string {
-  if (d.tone === 'today') return 'сегодня'
   if (d.diff === 1) return 'завтра'
   return d.dateLabel
 }

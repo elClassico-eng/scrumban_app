@@ -15,7 +15,7 @@ defineProps<{
   <span v-if="assignees.length > 0" class="flex items-center">
     <UserAvatar
       v-for="(m, i) in assignees" :key="m.userId" :user="m" size="sm" ring tooltip
-      :class="i > 0 ? '-ml-1.5' : ''"
+      :class="i > 0 ? '-ml-[7px]' : ''"
     />
   </span>
   <span v-else class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center">
