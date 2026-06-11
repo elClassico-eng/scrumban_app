@@ -165,5 +165,9 @@ const columnItems = computed(() =>
       </span>
       <span v-else class="text-dimmed text-xs">—</span>
     </div>
+
+    <div class="flex items-center px-2 h-full col-time">
+      <BoardListTimeCell :task="task" />
+    </div>
   </div>
 </template>

@@ -140,5 +140,5 @@ body {
 
 @media (max-width: 1000px) {
   [style*="--kl-cols"] { --kl-cols: minmax(0, 1fr) 96px 116px !important; }
-  .col-class, .col-sp, .col-clist { display: none !important; }
+  .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
 }
