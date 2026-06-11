@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import VChart from 'vue-echarts'
 import type { MaybeRef } from 'vue'
-import type { TimeReportResponse } from '#shared/types/time-entry'
 
 const props = defineProps<{
   workspaceId: MaybeRef<string>
@@ -17,7 +16,7 @@ const bId = computed(() => unref(props.boardId))
 const { timeReport } = useAnalyticsApi(wsId, bId)
 const { list: membersList } = useMembersApi(wsId)
 
-const report = computed(() => timeReport.data.value as TimeReportResponse | undefined)
+const report = computed(() => timeReport.data.value)
 const isLoading = computed(() => timeReport.isLoading.value)
 
 function resolveDisplayName(userId: string): string {
@@ -74,7 +73,7 @@ const hasSprintData = computed(() => (report.value?.bySprint.length ?? 0) > 0)
       <div v-if="hasSprintData" class="border-t border-default pt-3 space-y-1.5">
         <p class="text-xs text-muted mb-2">По спринтам</p>
         <div
-          v-for="s in report!.bySprint"
+          v-for="s in (report?.bySprint ?? [])"
           :key="s.sprintId"
           class="flex items-center justify-between text-sm"
         >

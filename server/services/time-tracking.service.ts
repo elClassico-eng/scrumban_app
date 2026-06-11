@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { sprints, sprintTasks, tasks, timeEntries, type WorkspaceMemberRole } from '../db/schema'
 import { withTenant } from '../utils/db'
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
@@ -265,7 +265,7 @@ export async function timeReport(input: {
       })
       .from(timeEntries)
       .innerJoin(tasks, eq(tasks.id, timeEntries.taskId))
-      .where(and(eq(tasks.boardId, input.boardId), sql`${timeEntries.durationSeconds} IS NOT NULL`))
+      .where(and(eq(tasks.boardId, input.boardId), isNotNull(timeEntries.durationSeconds)))
       .groupBy(timeEntries.userId)
 
     const bySprint = await tx
@@ -277,7 +277,7 @@ export async function timeReport(input: {
       .from(timeEntries)
       .innerJoin(sprintTasks, eq(sprintTasks.taskId, timeEntries.taskId))
       .innerJoin(sprints, eq(sprints.id, sprintTasks.sprintId))
-      .where(and(eq(sprints.boardId, input.boardId), sql`${timeEntries.durationSeconds} IS NOT NULL`))
+      .where(and(eq(sprints.boardId, input.boardId), isNotNull(timeEntries.durationSeconds)))
       .groupBy(sprints.id, sprints.name)
 
     return { byUser, bySprint }
