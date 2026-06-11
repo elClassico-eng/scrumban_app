@@ -15,6 +15,7 @@ const { add, remove } = useTaskAssigneesApi(
   toRef(props, 'workspaceId'),
   toRef(props, 'boardId'),
   toRef(() => props.task.id),
+  { enabled: false },
 )
 
 const assignedIds = computed(() => new Set(props.task.assigneeIds ?? []))

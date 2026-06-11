@@ -9,18 +9,17 @@ const props = defineProps<{
 }>()
 
 const { update } = useTasksApi(toRef(props, 'workspaceId'), toRef(props, 'boardId'))
-const POINTS = [1, 2, 3, 5, 8, 13]
 
 const items = computed(() => [
-  ...POINTS.map(p => ({
+  ...STORY_POINTS_OPTIONS.map(p => ({
     label: String(p),
     icon: props.task.storyPoints === p ? 'i-lucide-check' : undefined,
-    onSelect: () => update.mutate({ taskId: props.task.id, storyPoints: p }),
+    onSelect: () => { if (props.task.storyPoints !== p) update.mutate({ taskId: props.task.id, storyPoints: p }) },
   })),
   {
     label: 'Без оценки',
     icon: props.task.storyPoints == null ? 'i-lucide-check' : undefined,
-    onSelect: () => update.mutate({ taskId: props.task.id, storyPoints: null }),
+    onSelect: () => { if (props.task.storyPoints != null) update.mutate({ taskId: props.task.id, storyPoints: null }) },
   },
 ])
 </script>

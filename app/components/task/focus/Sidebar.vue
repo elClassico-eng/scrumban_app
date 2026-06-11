@@ -32,7 +32,7 @@ const emit = defineEmits<{
   'open-subtask': [taskId: string]
 }>()
 
-const SP_OPTIONS: number[] = [1, 2, 3, 5, 8, 13, 21]
+const SP_OPTIONS = STORY_POINTS_OPTIONS
 
 const storyPointsMenu = computed(() => [
   ...SP_OPTIONS.map(n => ({

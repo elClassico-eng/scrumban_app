@@ -17,10 +17,10 @@ const localDate = computed(() => props.task.dueDate ? props.task.dueDate.slice(0
 
 const display = computed(() => {
   const d = props.due
-  if (!d) return { cls: 'text-dimmed', icon: '', text: '—' }
-  if (props.isDone) return { cls: 'text-emerald-600', icon: '', text: d.dateLabel }
-  if (d.tone === 'overdue') return { cls: 'text-white bg-red-500 px-2.5 py-0.5 rounded-full font-semibold', icon: '', text: d.dateLabel }
-  if (d.tone === 'today') return { cls: 'text-white bg-accent-500 px-2.5 py-0.5 rounded-full font-semibold', icon: '', text: 'сегодня' }
+  if (!d) return { cls: 'text-dimmed', icon: undefined, text: '—' }
+  if (props.isDone) return { cls: 'text-emerald-600', icon: undefined, text: d.dateLabel }
+  if (d.tone === 'overdue') return { cls: 'text-white bg-red-500 px-2.5 py-0.5 rounded-full font-semibold', icon: undefined, text: d.dateLabel }
+  if (d.tone === 'today') return { cls: 'text-white bg-accent-500 px-2.5 py-0.5 rounded-full font-semibold', icon: undefined, text: 'сегодня' }
   if (d.tone === 'soon') return { cls: 'text-accent-600 font-semibold', icon: 'text-accent-500', text: d.diff === 1 ? 'завтра' : d.dateLabel }
   return { cls: 'text-toned', icon: 'text-muted', text: d.dateLabel }
 })
