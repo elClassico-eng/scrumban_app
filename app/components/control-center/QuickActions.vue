@@ -51,7 +51,7 @@ function btnStyle(style: ActionStyle): string {
     <button
       class="flex-1 h-[46px] border-none rounded-[13px] cursor-pointer flex flex-col items-center justify-center gap-[3px] text-[9.5px] font-semibold transition-colors"
       :style="focusOn ? btnStyle('toggle-active') : btnStyle('normal')"
-      title="Фокус"
+      :title="focusOn ? 'Фокус включён · всплывающие уведомления приглушены' : 'Фокус · приглушить всплывающие уведомления'"
       aria-label="Фокус"
       @click="emit('toggle-focus', $event)"
     >

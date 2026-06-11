@@ -112,7 +112,8 @@ watch(() => list.isFetched.value, (fetched) => {
 const { time, weekday } = useClock()
 const { open, pinned, peek, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, doOpen, doClose, togglePin, firePeek } = useIsland()
 
-const focus = useLocalStorage('scrumban:cc-focus', false)
+const toast = useToast()
+const { focus, toggle: toggleFocusMode } = useFocusMode()
 const isDark = computed(() => colorMode.preference === 'dark')
 
 const wsStore = useWorkspaceStore()
@@ -209,7 +210,14 @@ function onQuickSearch(e: Event) {
 
 function toggleFocus(e: Event) {
   e.stopPropagation()
-  focus.value = !focus.value
+  toggleFocusMode()
+  toast.add({
+    title: focus.value ? 'Режим фокуса включён' : 'Режим фокуса выключен',
+    description: focus.value
+      ? 'Всплывающие уведомления приглушены'
+      : 'Уведомления снова показываются',
+    icon: focus.value ? 'i-lucide-focus' : 'i-lucide-bell',
+  })
 }
 
 function toggleTheme(e: Event) {

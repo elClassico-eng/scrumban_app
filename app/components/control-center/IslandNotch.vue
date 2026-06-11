@@ -43,8 +43,8 @@ defineEmits<{
     <UIcon name="i-lucide-bell" class="w-[18px] h-[18px]" />
     <span
       v-if="unread > 0"
-      class="absolute top-[6px] right-[6px] min-w-[15px] h-[15px] px-1 rounded-full bg-[var(--island-orange)] text-white text-[9.5px] font-bold grid place-items-center"
+      class="absolute -top-[1px] -right-[1px] min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--island-orange)] text-white text-[9.5px] font-bold grid place-items-center"
       style="border: 2px solid var(--island-bg);"
-    >{{ unread }}</span>
+    >{{ unread > 9 ? '9+' : unread }}</span>
   </button>
 </template>
