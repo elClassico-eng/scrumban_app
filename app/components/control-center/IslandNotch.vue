@@ -50,4 +50,9 @@ defineEmits<{
       style="border: 2px solid var(--island-bg);"
     >{{ unread > 9 ? '9+' : unread }}</span>
   </button>
+  <UIcon
+    v-if="expanded"
+    name="i-lucide-chevron-down"
+    class="w-4 h-4 text-[var(--island-ink-3)] shrink-0 ml-0.5"
+  />
 </template>
