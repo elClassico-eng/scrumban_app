@@ -17,7 +17,7 @@ type Notif = {
   unread: boolean
 }
 
-defineProps<{
+const props = defineProps<{
   time: string
   weekday: string
   pinned: boolean
@@ -50,6 +50,9 @@ const emit = defineEmits<{
   logout: [e: Event]
   'view-all': [e: Event]
 }>()
+
+const tab = ref<'overview' | 'notifs'>('overview')
+const unread = computed(() => props.notifs.filter(n => n.unread).length)
 </script>
 
 <template>
@@ -71,8 +74,34 @@ const emit = defineEmits<{
     </button>
   </div>
 
-  <div class="grid gap-[10px] flex-1 min-h-0" style="grid-template-columns: 1fr 1fr;">
-    <div class="flex flex-col gap-[10px] min-h-0 overflow-hidden">
+  <div
+    class="rounded-xl p-[3px] flex gap-[2px]"
+    style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
+  >
+    <button
+      type="button"
+      class="flex-1 h-[30px] rounded-lg text-[12px] font-semibold border-none cursor-pointer transition-colors"
+      :style="tab === 'overview' ? 'background: rgba(255,106,26,0.18); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
+      @click="tab = 'overview'"
+    >
+      Обзор
+    </button>
+    <button
+      type="button"
+      class="flex-1 h-[30px] rounded-lg text-[12px] font-semibold border-none cursor-pointer transition-colors flex items-center justify-center gap-[5px]"
+      :style="tab === 'notifs' ? 'background: rgba(255,106,26,0.18); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
+      @click="tab = 'notifs'"
+    >
+      Уведомления
+      <span
+        v-if="unread > 0"
+        class="min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--island-orange)] text-white text-[9.5px] font-bold flex items-center justify-center"
+      >{{ unread > 9 ? '9+' : unread }}</span>
+    </button>
+  </div>
+
+  <div v-show="tab === 'overview'" class="flex-1 min-h-0 flex flex-col gap-[10px]">
+    <div class="grid gap-[10px]" style="grid-template-columns: 1.5fr 1fr;">
       <ControlCenterTaskTimerTile
         :task-id="timerTaskId"
         :task-title="timerTaskTitle"
@@ -88,12 +117,15 @@ const emit = defineEmits<{
         :active="sprintActive"
         :reduced-motion="reducedMotion"
       />
-      <ControlCenterPresenceTile
-        :people="people"
-        :extra="presenceExtra"
-        @view-all="(e) => emit('view-all', e)"
-      />
     </div>
+    <ControlCenterPresenceTile
+      :people="people"
+      :extra="presenceExtra"
+      @view-all="(e) => emit('view-all', e)"
+    />
+  </div>
+
+  <div v-show="tab === 'notifs'" class="flex-1 min-h-0">
     <ControlCenterNotifsTile
       class="h-full min-h-0"
       :notifs="notifs"
