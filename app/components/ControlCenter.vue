@@ -86,8 +86,8 @@ const unreadCount = computed(() => notifs.value.filter(n => n.unread).length)
 
 const islW = computed(() => {
   if (open.value) return 720
-  if (peek.value) return 440
-  return 384
+  if (peek.value) return 540
+  return 480
 })
 const islH = computed(() => open.value ? 524 : 52)
 const islR = computed(() => open.value ? 30 : 26)
