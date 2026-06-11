@@ -119,7 +119,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 
 <template>
   <div
-    class="bg-default border-b border-default sticky top-0 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
+    class="bg-default border-b border-default sticky top-16 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
     :class="compact ? 'py-2' : 'py-3'"
   >
     <div class="flex items-center gap-4 px-4 sm:px-6 min-h-[44px]">
