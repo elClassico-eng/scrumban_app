@@ -110,7 +110,7 @@ watch(() => list.isFetched.value, (fetched) => {
 }, { immediate: true })
 
 const { time, weekday } = useClock()
-const { open, pinned, peek, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, doOpen, doClose, togglePin, firePeek } = useIsland()
+const { open, pinned, peek, hovered, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, onPointerEnter, onPointerLeave, onActivate, togglePin, firePeek } = useIsland()
 
 const toast = useToast()
 const { focus, toggle: toggleFocusMode } = useFocusMode()
@@ -246,8 +246,11 @@ function onViewTeam(e: Event) {
   if (workspaceId.value) router.push(pageRoutes.workspaceMembers(workspaceId.value))
 }
 
-function onIslandClick() {
-  if (!open.value) open.value = true
+const cmdKLabel = computed(() => (import.meta.client && /Mac|iPhone|iPad/i.test(navigator.userAgent)) ? '⌘K' : 'Ctrl K')
+
+function onCmdK(e: Event) {
+  e.stopPropagation()
+  ccActions.requestSearch()
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -274,18 +277,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="fixed top-4 left-1/2 z-[100] flex flex-col items-center -translate-x-1/2"
-    tabindex="0"
-    aria-label="Центр управления"
-    @mouseenter="doOpen"
-    @mouseleave="doClose"
-    @click="onIslandClick"
-    @keydown="onKeydown"
-  >
+  <div class="fixed top-4 left-1/2 z-[100] flex items-start gap-2 -translate-x-1/2">
     <div
       :style="[islStyle, { background: 'linear-gradient(180deg,var(--island-bg-2),var(--island-bg))', border: '1px solid var(--island-line)', color: 'var(--island-ink)', boxShadow: '0 1px 0 var(--island-line-2) inset, 0 18px 50px -16px rgba(0,0,0,0.55), 0 6px 16px -8px rgba(0,0,0,0.4)' }]"
       class="relative overflow-hidden"
+      tabindex="0"
+      aria-label="Центр управления"
+      @mouseenter="onPointerEnter"
+      @mouseleave="onPointerLeave"
+      @click="onActivate"
+      @keydown="onKeydown"
     >
       <div
         class="absolute top-0 left-0 right-0 h-[52px] flex items-center gap-3 pl-4 pr-2"
@@ -299,6 +300,7 @@ onUnmounted(() => {
           :running="timerActive"
           :active="timerActive"
           :unread="unreadCount"
+          :expanded="hovered"
           @bell.stop
         />
       </div>
@@ -348,5 +350,14 @@ onUnmounted(() => {
         />
       </div>
     </div>
+
+    <button
+      v-show="!open"
+      type="button"
+      class="h-9 px-3 rounded-full text-[12px] font-semibold whitespace-nowrap cursor-pointer transition-opacity self-center"
+      style="background: var(--island-bg-2); border: 1px solid var(--island-line); color: var(--island-ink-2); box-shadow: 0 6px 16px -8px rgba(0,0,0,0.4);"
+      title="Командная палитра"
+      @click.stop="onCmdK"
+    >{{ cmdKLabel }}</button>
   </div>
 </template>

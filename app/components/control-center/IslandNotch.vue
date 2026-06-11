@@ -7,6 +7,7 @@ defineProps<{
   running: boolean
   active: boolean
   unread: number
+  expanded: boolean
 }>()
 
 defineEmits<{
@@ -17,12 +18,14 @@ defineEmits<{
 <template>
   <div class="flex items-baseline gap-[7px] whitespace-nowrap">
     <b class="text-[15px] font-semibold tracking-[-0.01em]">{{ time }}</b>
-    <span class="text-[var(--island-ink-3)]">·</span>
-    <span class="text-[13px] text-[var(--island-ink-3)]">{{ weekday }}</span>
+    <template v-if="expanded">
+      <span class="text-[var(--island-ink-3)]">·</span>
+      <span class="text-[13px] text-[var(--island-ink-3)]">{{ weekday }}</span>
+    </template>
   </div>
   <div class="flex-1" />
   <div
-    v-if="active"
+    v-if="expanded && active"
     class="inline-flex items-center gap-2 h-8 px-3 rounded-full text-[var(--island-orange-2)] text-[12.5px] font-semibold whitespace-nowrap max-w-[220px] overflow-hidden"
     style="background: rgba(255,106,26,0.16); border: 1px solid rgba(255,106,26,0.3);"
   >

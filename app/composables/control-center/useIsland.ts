@@ -14,6 +14,7 @@ export function useIsland() {
   const open = ref(false)
   const pinned = ref(false)
   const peek = ref<PeekEvent | null>(null)
+  const hovered = ref(false)
 
   let peekTimer: ReturnType<typeof setTimeout> | null = null
   let closeTimer: ReturnType<typeof setTimeout> | null = null
@@ -21,7 +22,8 @@ export function useIsland() {
   const islW = computed(() => {
     if (open.value) return 760
     if (peek.value) return 540
-    return 480
+    if (hovered.value) return 480
+    return 210
   })
   const islH = computed(() => open.value ? 540 : 52)
   const islR = computed(() => open.value ? 30 : 26)
@@ -62,14 +64,21 @@ export function useIsland() {
     return { ...base, transition: 'opacity .3s cubic-bezier(.4,0,.2,1) .06s, transform .3s cubic-bezier(.4,0,.2,1) .06s' }
   })
 
-  function doOpen() {
+  function onPointerEnter() {
     if (closeTimer) { clearTimeout(closeTimer); closeTimer = null }
-    open.value = true
+    hovered.value = true
   }
 
-  function doClose() {
-    if (pinned.value) return
-    closeTimer = setTimeout(() => { open.value = false }, 380)
+  function onPointerLeave() {
+    hovered.value = false
+    if (open.value && !pinned.value) {
+      closeTimer = setTimeout(() => { open.value = false }, 380)
+    }
+  }
+
+  function onActivate() {
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null }
+    if (!open.value) open.value = true
   }
 
   function togglePin(e: Event) {
@@ -93,13 +102,15 @@ export function useIsland() {
     open,
     pinned,
     peek,
+    hovered,
     reducedMotion,
     islStyle,
     notchStyle,
     peekStyle,
     panelStyle,
-    doOpen,
-    doClose,
+    onPointerEnter,
+    onPointerLeave,
+    onActivate,
     togglePin,
     firePeek,
   }
