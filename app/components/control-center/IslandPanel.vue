@@ -28,6 +28,7 @@ defineProps<{
   timerActive: boolean
   sprintPct: number
   sprintCaption: string
+  sprintActive: boolean
   people: Person[]
   presenceExtra: number
   notifs: Notif[]
@@ -81,6 +82,7 @@ const emit = defineEmits<{
     <ControlCenterSprintRingTile
       :pct="sprintPct"
       :caption="sprintCaption"
+      :active="sprintActive"
       :reduced-motion="reducedMotion"
     />
   </div>

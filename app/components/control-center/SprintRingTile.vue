@@ -2,6 +2,7 @@
 const props = defineProps<{
   pct: number
   caption: string
+  active: boolean
   reducedMotion?: boolean
 }>()
 
@@ -17,7 +18,7 @@ const ringOffset = computed(() => ringC.value * (1 - props.pct / 100))
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
   >
     <div class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)] mb-[9px]">Спринт</div>
-    <div class="relative w-[78px] h-[78px]">
+    <div class="relative w-[78px] h-[78px]" :class="{ 'opacity-60': !active }">
       <svg
         :width="ringSize"
         :height="ringSize"
@@ -53,7 +54,7 @@ const ringOffset = computed(() => ringC.value * (1 - props.pct / 100))
       </svg>
       <div class="absolute inset-0 grid place-items-center">
         <div class="flex flex-col items-center">
-          <b class="text-[19px] font-bold tracking-[-0.02em] text-[var(--island-ink)]">{{ pct }}%</b>
+          <b class="text-[19px] font-bold tracking-[-0.02em] text-[var(--island-ink)]">{{ active ? `${pct}%` : '—' }}</b>
           <span class="text-[9px] text-[var(--island-ink-3)] uppercase tracking-[0.05em]">спринт</span>
         </div>
       </div>
