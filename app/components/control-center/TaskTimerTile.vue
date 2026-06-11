@@ -21,7 +21,7 @@ defineEmits<{
     <div class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)] mb-[9px]">Активная задача</div>
     <template v-if="active">
       <div class="font-mono text-[11px] text-[var(--island-orange-2)]">{{ taskId }} · в работе</div>
-      <div class="text-[13.5px] font-medium leading-[1.3] mt-[3px] mb-3 text-[var(--island-ink)]">{{ taskTitle }}</div>
+      <div class="text-[13.5px] font-medium leading-[1.3] mt-[3px] mb-3 text-[var(--island-ink)] line-clamp-2">{{ taskTitle }}</div>
       <div class="flex items-center gap-3">
         <span
           class="font-mono text-[26px] font-semibold tracking-[-0.02em]"

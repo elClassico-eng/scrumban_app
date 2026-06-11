@@ -72,7 +72,7 @@ const emit = defineEmits<{
   </div>
 
   <div class="grid gap-[10px] flex-1 min-h-0" style="grid-template-columns: 1fr 1fr;">
-    <div class="flex flex-col gap-[10px] min-h-0">
+    <div class="flex flex-col gap-[10px] min-h-0 overflow-hidden">
       <ControlCenterTaskTimerTile
         :task-id="timerTaskId"
         :task-title="timerTaskTitle"

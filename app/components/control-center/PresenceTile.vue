@@ -15,6 +15,16 @@ defineProps<{
 defineEmits<{
   'view-all': [e: Event]
 }>()
+
+const failed = ref(new Set<string>())
+
+function onImgError(id: string) {
+  failed.value = new Set(failed.value).add(id)
+}
+
+function showImage(p: Person): boolean {
+  return !!p.avatarUrl && !failed.value.has(p.id)
+}
 </script>
 
 <template>
@@ -27,25 +37,26 @@ defineEmits<{
       v-if="people.length === 0"
       class="text-[11.5px] text-[var(--island-ink-3)]"
     >Нет участников</span>
-    <div
+    <button
       v-else
-      class="flex items-center -space-x-2 cursor-pointer"
-      role="button"
+      type="button"
+      class="flex items-center -space-x-2 cursor-pointer border-none bg-transparent p-0 hover:opacity-90 transition-opacity"
       title="Все участники"
-      @click="(e) => $emit('view-all', e)"
+      @click.stop="(e) => $emit('view-all', e)"
     >
       <span
         v-for="p in people"
         :key="p.id"
         class="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 overflow-hidden"
         :title="p.name"
-        :style="p.avatarUrl ? 'box-shadow: 0 0 0 2px var(--island-bg-2);' : `background: ${p.color}; box-shadow: 0 0 0 2px var(--island-bg-2);`"
+        :style="showImage(p) ? 'box-shadow: 0 0 0 2px var(--island-bg-2);' : `background: ${p.color}; box-shadow: 0 0 0 2px var(--island-bg-2);`"
       >
         <img
-          v-if="p.avatarUrl"
-          :src="p.avatarUrl"
+          v-if="showImage(p)"
+          :src="p.avatarUrl!"
           class="size-full object-cover"
           :alt="p.name"
+          @error="onImgError(p.id)"
         >
         <template v-else>{{ p.initials }}</template>
       </span>
@@ -54,6 +65,6 @@ defineEmits<{
         class="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
         style="background: rgba(255,255,255,0.08); color: var(--island-ink-3); box-shadow: 0 0 0 2px var(--island-bg-2);"
       >+{{ extra }}</span>
-    </div>
+    </button>
   </div>
 </template>

@@ -34,7 +34,7 @@ function resolveIcon(iconType: string): string {
 
 <template>
   <div
-    class="rounded-2xl p-[13px] flex-1 min-h-0 overflow-auto h-full"
+    class="rounded-2xl p-[13px] min-h-0 overflow-auto h-full"
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
   >
     <div class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)] mb-[9px]">Уведомления</div>
@@ -47,7 +47,7 @@ function resolveIcon(iconType: string): string {
         v-for="n in notifs"
         :key="n.id"
         class="flex gap-[10px] items-start p-2.5 rounded-[10px] cursor-pointer hover:bg-[rgba(255,255,255,0.05)]"
-        @click="(e) => $emit('read', e, n.id)"
+        @click.stop="(e) => $emit('read', e, n.id)"
       >
         <span
           class="w-[30px] h-[30px] rounded-lg grid place-items-center flex-shrink-0 text-white"
