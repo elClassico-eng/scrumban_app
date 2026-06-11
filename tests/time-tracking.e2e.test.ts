@@ -157,3 +157,15 @@ describe('time tracking — manual entries + rbac', () => {
     expect(ok.status).toBe(200)
   })
 })
+
+describe('time tracking — tasks list aggregate', () => {
+  it('tasks list exposes timeSpentSeconds per task', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const taskId = (await fetchWithJar<{ task: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, { method: 'POST', body: { columnId: columns.backlog, title: 'T' } })).body.task.id
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time`, { method: 'POST', body: { startedAt: new Date().toISOString(), durationSeconds: 900 } })
+    const list = await fetchWithJar<{ tasks: Array<{ id: string, timeSpentSeconds: number }> }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {})
+    expect(list.body.tasks.find(t => t.id === taskId)!.timeSpentSeconds).toBe(900)
+  })
+})

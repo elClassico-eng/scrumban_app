@@ -20,6 +20,7 @@ import {
   taskChecklistItems,
   taskEvents,
   tasks,
+  timeEntries,
   type ColumnRole,
   type ServiceClass,
   type Task,
@@ -51,6 +52,10 @@ const taskWithAssigneesSelect = {
     SELECT COUNT(*)::int FROM ${taskChecklistItems}
     WHERE ${taskChecklistItems.taskId} = tasks.id AND ${taskChecklistItems.isDone}
   ), 0)`.as('checklist_done'),
+  timeSpentSeconds: sql<number>`COALESCE((
+    SELECT SUM(${timeEntries.durationSeconds})::int FROM ${timeEntries}
+    WHERE ${timeEntries.taskId} = tasks.id AND ${timeEntries.durationSeconds} IS NOT NULL
+  ), 0)`.as('time_spent_seconds'),
 }
 
 export async function listTasksForBoard(input: {
