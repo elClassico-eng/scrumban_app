@@ -29,6 +29,9 @@ import {
 } from '../db/schema'
 import { withTenant, type DbTransaction } from '../utils/db'
 
+// `tasks.id` is written as a SQL literal (not Drizzle's ${tasks.id}) so the
+// correlated subqueries below reference the outer tasks row, not the joined
+// table's own id column.
 const taskWithAssigneesSelect = {
   ...getTableColumns(tasks),
   assigneeIds: sql<string[]>`COALESCE((

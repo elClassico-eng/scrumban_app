@@ -93,7 +93,7 @@ export function useTaskChecklistApi(
         apiRoutes.taskChecklistReorder(unref(workspaceId), unref(boardId), unref(taskId)),
         { method: 'POST', body: input },
       ),
-    onSuccess: invalidate,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
   })
 
   return { list, create, update, remove, reorder }
