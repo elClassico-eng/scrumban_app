@@ -13,7 +13,7 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
 
   const { data, event, status, close } = useEventSource(
     url,
-    ['task.created', 'task.moved', 'task.updated', 'task.deleted', 'task.commented', 'task.comment_deleted'],
+    ['task.created', 'task.moved', 'task.updated', 'task.deleted', 'task.commented', 'task.comment_deleted', 'time.started', 'time.stopped', 'time.updated'],
     { autoReconnect: { retries: 3, delay: 2_000 } },
   )
 
@@ -31,6 +31,15 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
         }
       }
       catch { /* ignore malformed event */ }
+      return
+    }
+
+    if (event.value === 'time.started' || event.value === 'time.stopped' || event.value === 'time.updated') {
+      qc.invalidateQueries({
+        queryKey: ['tasks', unref(workspaceId), unref(boardId)],
+      })
+      qc.invalidateQueries({ queryKey: ['task-time'] })
+      qc.invalidateQueries({ queryKey: ['active-timer'] })
       return
     }
 
