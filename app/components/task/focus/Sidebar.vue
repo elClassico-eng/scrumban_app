@@ -15,6 +15,9 @@ const props = defineProps<{
   subtasks: Task[]
   dueDate: string
   deadlineMeta: { date: string; countdown: string; overdue: boolean } | null
+  workspaceId: string
+  boardId: string
+  canEdit: boolean
 }>()
 
 const emit = defineEmits<{
@@ -385,6 +388,13 @@ const assigneeMenu = computed(() =>
         </UDropdownMenu>
       </div>
     </section>
+
+    <TaskFocusTimeTrackingSection
+      :workspace-id="workspaceId"
+      :board-id="boardId"
+      :task-id="task.id"
+      :can-edit="canEdit"
+    />
 
     <section class="px-[18px] py-4">
       <h5 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-2.5">
