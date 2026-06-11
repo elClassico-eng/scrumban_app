@@ -8,6 +8,7 @@ const props = defineProps<{
   boardName: string | undefined
   canRename: boolean
   board?: Board
+  compact?: boolean
 }>()
 
 const wsId = computed(() => props.workspaceId)
@@ -107,9 +108,13 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
 </script>
 
 <template>
-  <div class="liquid-glass sticky top-0 z-20 flex items-start justify-between gap-4 px-4 sm:px-6 py-3 -mx-4 sm:-mx-6 rounded-b-xl">
+  <div
+    class="liquid-glass sticky top-0 z-20 flex justify-between gap-4 px-4 sm:px-6 -mx-4 sm:-mx-6 rounded-b-xl transition-all duration-200"
+    :class="compact ? 'items-center py-2' : 'items-start py-3.5'"
+  >
     <div class="flex flex-col min-w-0 gap-1">
       <NuxtLink
+        v-show="!compact"
         :to="pageRoutes.boards(workspaceId)"
         class="text-[12px] text-muted hover:text-default transition-colors w-fit"
       >
@@ -120,7 +125,8 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
           v-if="isEditing"
           ref="inputRef"
           v-model="draftName"
-          class="text-[22px] font-semibold tracking-tight bg-transparent border-b border-accent-500 outline-none min-w-0"
+          class="font-semibold tracking-tight bg-transparent border-b border-accent-500 outline-none min-w-0 transition-all"
+          :class="compact ? 'text-[16px]' : 'text-[22px]'"
           :disabled="update.isPending.value"
           @keyup.enter="commitEdit"
           @keyup.esc="cancelEdit"
@@ -128,8 +134,8 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
         >
         <h1
           v-else
-          class="text-[22px] font-semibold tracking-tight truncate"
-          :class="canRename ? 'cursor-text hover:text-accent-600 transition-colors' : ''"
+          class="font-semibold tracking-tight truncate transition-all"
+          :class="[compact ? 'text-[16px]' : 'text-[22px]', canRename ? 'cursor-text hover:text-accent-600' : '']"
           :title="canRename ? 'Двойной клик — переименовать' : ''"
           @dblclick="startEdit"
         >
@@ -137,7 +143,7 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
         </h1>
       </div>
       <div
-        v-if="sleLabel || replenishmentState || (canRename && board)"
+        v-if="!compact && (sleLabel || replenishmentState || (canRename && board))"
         class="flex items-center gap-1.5 flex-wrap mt-1"
       >
         <UTooltip v-if="sleLabel" :text="sleTooltip">

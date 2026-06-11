@@ -187,13 +187,18 @@ useHead({
 
 const createColumnOpen = ref(false)
 const createTaskOpen = ref(false)
+const createTaskColumnIdOverride = ref<string | null>(null)
 const createTaskColumnId = computed(() => {
+  if (createTaskColumnIdOverride.value) return createTaskColumnIdOverride.value
   const backlog = localColumns.value.find(c => c.columnRole === 'backlog')
   return backlog?.id ?? localColumns.value[0]?.id ?? null
 })
-function openCreateTask() {
+function openCreateTask(columnId?: string) {
+  createTaskColumnIdOverride.value = columnId ?? null
   if (createTaskColumnId.value) createTaskOpen.value = true
 }
+
+const listCompact = ref(false)
 
 const isLoading = computed(() =>
   columnsList.isLoading.value || tasksList.isLoading.value,
@@ -208,6 +213,7 @@ const isLoading = computed(() =>
       :board-name="board?.name"
       :can-rename="canCreateColumns"
       :board="board"
+      :compact="viewMode === 'list' && listCompact"
     />
 
     <BoardFilterBar
@@ -258,6 +264,8 @@ const isLoading = computed(() =>
       :workspace-id="wsId"
       :board-id="bId"
       class="flex-1 min-h-0"
+      @create-in-column="openCreateTask"
+      @update:compact="listCompact = $event"
     />
 
     <div v-else-if="swimlane === 'none'" class="flex-1 min-h-0 overflow-x-auto overflow-y-hidden pt-4 pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6">
