@@ -17,6 +17,7 @@ import { and, asc, eq, getTableColumns, gt, gte, inArray, lt, lte, sql } from 'd
 import {
   boardColumns,
   taskAssignees,
+  taskChecklistItems,
   taskEvents,
   tasks,
   type ColumnRole,
@@ -33,8 +34,16 @@ const taskWithAssigneesSelect = {
   assigneeIds: sql<string[]>`COALESCE((
     SELECT array_agg(${taskAssignees.userId} ORDER BY ${taskAssignees.addedAt})
     FROM ${taskAssignees}
-    WHERE ${taskAssignees.taskId} = ${tasks.id}
+    WHERE ${taskAssignees.taskId} = tasks.id
   ), ARRAY[]::uuid[])`.as('assignee_ids'),
+  checklistTotal: sql<number>`COALESCE((
+    SELECT COUNT(*)::int FROM ${taskChecklistItems}
+    WHERE ${taskChecklistItems.taskId} = tasks.id
+  ), 0)`.as('checklist_total'),
+  checklistDone: sql<number>`COALESCE((
+    SELECT COUNT(*)::int FROM ${taskChecklistItems}
+    WHERE ${taskChecklistItems.taskId} = tasks.id AND ${taskChecklistItems.isDone}
+  ), 0)`.as('checklist_done'),
 }
 import { NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'

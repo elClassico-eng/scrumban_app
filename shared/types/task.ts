@@ -19,6 +19,8 @@ export interface Task {
   blockedReason: string | null
   isEpic: boolean
   storyPoints: number | null
+  checklistTotal: number
+  checklistDone: number
   createdAt: string
   updatedAt: string
 }

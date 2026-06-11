@@ -326,3 +326,59 @@ describe('DELETE /tasks/:taskId', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe('GET /tasks — checklist aggregate', () => {
+  it('returns checklistTotal and checklistDone per task', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+
+    const created = await fetchWithJar<{ task: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks`,
+      { method: 'POST', body: { columnId: columns.backlog, title: 'Parent' } },
+    )
+    const taskId = created.body.task.id
+
+    const i1 = await fetchWithJar<{ item: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/checklist`,
+      { method: 'POST', body: { title: 'step 1' } },
+    )
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/checklist`,
+      { method: 'POST', body: { title: 'step 2' } },
+    )
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/checklist/${i1.body.item.id}`,
+      { method: 'PATCH', body: { isDone: true } },
+    )
+
+    const list = await fetchWithJar<{
+      tasks: Array<{ id: string, checklistTotal: number, checklistDone: number }>
+    }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`)
+
+    const t = list.body.tasks.find(x => x.id === taskId)!
+    expect(t.checklistTotal).toBe(2)
+    expect(t.checklistDone).toBe(1)
+  })
+
+  it('reports zero counts for a task with no checklist', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const created = await fetchWithJar<{ task: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks`,
+      { method: 'POST', body: { columnId: columns.backlog, title: 'No list' } },
+    )
+    const list = await fetchWithJar<{
+      tasks: Array<{ id: string, checklistTotal: number, checklistDone: number }>
+    }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`)
+    const t = list.body.tasks.find(x => x.id === created.body.task.id)!
+    expect(t.checklistTotal).toBe(0)
+    expect(t.checklistDone).toBe(0)
+  })
+})
