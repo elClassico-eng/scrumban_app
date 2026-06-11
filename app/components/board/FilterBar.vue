@@ -46,11 +46,11 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-4 py-2.5 bg-default border-b border-default flex-wrap">
+  <div class="liquid-glass sticky top-[60px] z-10 flex items-center gap-2 px-4 py-2.5 flex-wrap">
     <UDropdownMenu :items="groupMenu" :ui="{ content: 'w-48' }">
       <button
         type="button"
-        class="inline-flex items-center gap-2 h-8 px-3 rounded-md border border-default bg-default text-[13px] text-default hover:border-zinc-400 cursor-pointer transition-colors"
+        class="inline-flex items-center gap-2 h-8 px-3 rounded-md border border-default bg-default/70 text-[13px] text-default hover:border-zinc-400 cursor-pointer transition-colors"
       >
         <span class="text-muted">Группировка:</span>
         <span class="font-medium">{{ swimlaneLabel }}</span>
@@ -111,7 +111,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
         'inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] cursor-pointer transition-colors',
         classFilter === 'expedite'
           ? 'bg-inverted text-inverted border-brand-500'
-          : 'bg-default text-default border-default hover:border-zinc-400',
+          : 'bg-default/70 text-default border-default hover:border-zinc-400',
       ]"
       @click="emit('update:classFilter', classFilter === 'expedite' ? 'all' : 'expedite')"
     >
@@ -136,7 +136,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
         'inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] cursor-pointer transition-colors',
         classFilter === 'blocker'
           ? 'bg-inverted text-inverted border-brand-500'
-          : 'bg-default text-default border-default hover:border-zinc-400',
+          : 'bg-default/70 text-default border-default hover:border-zinc-400',
       ]"
       @click="emit('update:classFilter', classFilter === 'blocker' ? 'all' : 'blocker')"
     >

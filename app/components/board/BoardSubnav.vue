@@ -107,7 +107,7 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
 </script>
 
 <template>
-  <div class="flex items-start justify-between gap-4 pb-3 border-b border-default">
+  <div class="liquid-glass sticky top-0 z-20 flex items-start justify-between gap-4 px-4 sm:px-6 py-3 -mx-4 sm:-mx-6 rounded-b-xl">
     <div class="flex flex-col min-w-0 gap-1">
       <NuxtLink
         :to="pageRoutes.boards(workspaceId)"
