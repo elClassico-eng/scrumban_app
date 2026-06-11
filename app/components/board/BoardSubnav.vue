@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { pageRoutes } from '~/routing'
 import type { Board } from '#shared/types/board'
+import type { DropdownMenuItem } from '@nuxt/ui'
 
 const props = defineProps<{
   workspaceId: string
@@ -88,7 +89,7 @@ const sleLabel = computed(() => {
 })
 const sleTooltip = 'Service Level Expectation — вероятностный прогноз сроков. Например, «85% задач закрываются за 10 дней». Используется для индикаторов aging WIP.'
 
-interface ReplenishmentState {
+type ReplenishmentState = {
   daysLeft: number
   overdue: boolean
   label: string
@@ -105,6 +106,75 @@ const replenishmentState = computed<ReplenishmentState | null>(() => {
   return { daysLeft, overdue: false, label: `Пополнение через ${daysLeft} дн` }
 })
 const replenishmentTooltip = 'Пополнение бэклога — регулярная встреча планирования (replenishment). Клик отмечает её как проведённую и сбрасывает счётчик периода.'
+
+type ViewEntry = {
+  key: string
+  label: string
+  icon: string
+  to: string | { path: string; query: Record<string, string> }
+  isActive: boolean
+}
+
+const views = computed<ViewEntry[]>(() => {
+  const boardPath = pageRoutes.board(props.workspaceId, props.boardId)
+  return [
+    {
+      key: 'board',
+      label: 'Доска',
+      icon: 'i-lucide-kanban-square',
+      to: boardPath,
+      isActive: route.path === boardPath && !isListView.value,
+    },
+    {
+      key: 'list',
+      label: 'Список',
+      icon: 'i-lucide-list',
+      to: { path: boardPath, query: { view: 'list' } },
+      isActive: route.path === boardPath && isListView.value,
+    },
+    {
+      key: 'calendar',
+      label: 'Календарь',
+      icon: 'i-lucide-calendar-days',
+      to: pageRoutes.boardCalendar(props.workspaceId, props.boardId),
+      isActive: route.path === pageRoutes.boardCalendar(props.workspaceId, props.boardId),
+    },
+    {
+      key: 'timeline',
+      label: 'Timeline',
+      icon: 'i-lucide-bar-chart-horizontal',
+      to: pageRoutes.boardTimeline(props.workspaceId, props.boardId),
+      isActive: route.path === pageRoutes.boardTimeline(props.workspaceId, props.boardId),
+    },
+    {
+      key: 'sprints',
+      label: 'Спринты',
+      icon: 'i-lucide-rocket',
+      to: pageRoutes.boardSprints(props.workspaceId, props.boardId),
+      isActive: route.path === pageRoutes.boardSprints(props.workspaceId, props.boardId),
+    },
+    {
+      key: 'analytics',
+      label: 'Аналитика',
+      icon: 'i-lucide-chart-line',
+      to: pageRoutes.boardAnalytics(props.workspaceId, props.boardId),
+      isActive: route.path === pageRoutes.boardAnalytics(props.workspaceId, props.boardId),
+    },
+  ]
+})
+
+const currentView = computed<ViewEntry>(
+  () => views.value.find(v => v.isActive) ?? views.value[0]!,
+)
+
+const dropdownItems = computed<DropdownMenuItem[]>(() =>
+  views.value.map(v => ({
+    label: v.label,
+    icon: v.icon,
+    to: v.to,
+    ...(v.isActive ? { color: 'primary' as const } : {}),
+  })),
+)
 </script>
 
 <template>
@@ -189,63 +259,16 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
       </div>
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <nav class="flex gap-1 items-center">
-        <NuxtLink
-          :to="pageRoutes.board(workspaceId, boardId)"
-          active-class=""
-          exact-active-class=""
-          class="px-3 py-1.5 rounded-md text-sm transition-colors inline-flex items-center gap-1.5"
-          :class="isListView
-            ? 'text-muted hover:bg-accented hover:text-default'
-            : 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary'"
-        >
-          <UIcon name="i-lucide-kanban-square" class="size-4" />
-          Доска
-        </NuxtLink>
-        <NuxtLink
-          :to="{ path: pageRoutes.board(workspaceId, boardId), query: { view: 'list' } }"
-          active-class=""
-          exact-active-class=""
-          class="px-3 py-1.5 rounded-md text-sm transition-colors inline-flex items-center gap-1.5"
-          :class="isListView
-            ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary'
-            : 'text-muted hover:bg-accented hover:text-default'"
-        >
-          <UIcon name="i-lucide-list" class="size-4" />
-          Список
-        </NuxtLink>
-        <NuxtLink
-          :to="pageRoutes.boardCalendar(workspaceId, boardId)"
-          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors inline-flex items-center gap-1.5"
-          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-        >
-          <UIcon name="i-lucide-calendar-days" class="size-4" />
-          Календарь
-        </NuxtLink>
-        <NuxtLink
-          :to="pageRoutes.boardTimeline(workspaceId, boardId)"
-          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors inline-flex items-center gap-1.5"
-          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-        >
-          <UIcon name="i-lucide-bar-chart-horizontal" class="size-4" />
-          Timeline
-        </NuxtLink>
-        <span class="w-px h-5 bg-default mx-1" />
-        <NuxtLink
-          :to="pageRoutes.boardSprints(workspaceId, boardId)"
-          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
-          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-        >
-          Спринты
-        </NuxtLink>
-        <NuxtLink
-          :to="pageRoutes.boardAnalytics(workspaceId, boardId)"
-          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors"
-          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
-        >
-          Аналитика
-        </NuxtLink>
-      </nav>
+      <UDropdownMenu :items="dropdownItems">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="currentView.icon"
+          :label="currentView.label"
+          trailing-icon="i-lucide-chevron-down"
+        />
+      </UDropdownMenu>
       <UButton
         v-if="canRename"
         icon="i-lucide-settings"

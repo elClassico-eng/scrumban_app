@@ -8,7 +8,7 @@ useNotificationsSse()
     <AppSidebar />
     <div class="flex-1 flex flex-col min-w-0">
       <ControlCenter />
-      <main class="flex-1 overflow-auto p-6 pt-[84px] min-w-0">
+      <main class="flex-1 overflow-auto p-6 pt-12 min-w-0">
         <slot />
       </main>
     </div>
