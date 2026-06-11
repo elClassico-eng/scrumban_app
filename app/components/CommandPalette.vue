@@ -47,7 +47,7 @@ function selectTask(id: string) {
   router.push(pageRoutes.task(wsId.value, bId.value, id))
 }
 
-function go(to: ReturnType<typeof pageRoutes.boards>) {
+function go(to: string) {
   open.value = false
   router.push(to)
 }
@@ -176,7 +176,7 @@ const groups = computed<CommandPaletteGroup[]>(() => {
 <template>
   <UModal
     v-model:open="open"
-    :ui="{ content: 'dark max-w-xl p-0 overflow-hidden bg-[#16161a] border border-white/[0.09]', overlay: 'bg-black/60' }"
+    :ui="{ content: 'dark max-w-xl p-0 overflow-hidden bg-[var(--island-bg)] border border-[var(--island-line)]', overlay: 'bg-black/60' }"
   >
     <template #content>
       <UCommandPalette
