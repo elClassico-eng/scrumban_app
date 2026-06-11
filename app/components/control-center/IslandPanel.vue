@@ -7,8 +7,8 @@ type Person = {
 }
 
 type Notif = {
-  id: number
-  iconType: 'at' | 'move' | 'check'
+  id: string
+  iconType: 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
   color: string
   who: string
   txt: string
@@ -38,7 +38,7 @@ const emit = defineEmits<{
   'toggle-pin': [e: Event]
   'toggle-running': [e: Event]
   'stop-timer': [e: Event]
-  'mark-read': [e: Event, id: number]
+  'mark-read': [e: Event, id: string]
   'quick-task': [e: Event]
   'quick-search': [e: Event]
   'toggle-focus': [e: Event]

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 type Notif = {
-  id: number
-  iconType: 'at' | 'move' | 'check'
+  id: string
+  iconType: 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
   color: string
   who: string
   txt: string
@@ -14,7 +14,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-  read: [e: Event, id: number]
+  read: [e: Event, id: string]
 }>()
 
 const ICON_MAP: Record<string, string> = {
@@ -22,6 +22,9 @@ const ICON_MAP: Record<string, string> = {
   at: 'i-lucide-at-sign',
   build: 'i-lucide-hammer',
   check: 'i-lucide-check',
+  alert: 'i-lucide-alert-triangle',
+  refresh: 'i-lucide-refresh-cw',
+  trend: 'i-lucide-trending-down',
 }
 
 function resolveIcon(iconType: string): string {
@@ -50,7 +53,7 @@ function resolveIcon(iconType: string): string {
         </span>
         <div class="text-[12px] leading-[1.4] text-[var(--island-ink-2)] min-w-0">
           <b class="text-[var(--island-ink)] font-semibold">{{ n.who }}</b> {{ n.txt }}
-          <div class="text-[10.5px] text-[var(--island-ink-3)] mt-[1px]">{{ n.t }} назад</div>
+          <div class="text-[10.5px] text-[var(--island-ink-3)] mt-[1px]">{{ n.t }}</div>
         </div>
         <span
           v-if="n.unread"

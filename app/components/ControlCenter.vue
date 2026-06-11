@@ -1,18 +1,17 @@
 <script setup lang="ts">
+import type { Notification, NotificationType } from '#shared/types/notification'
+import { pageRoutes } from '~/routing'
+
 const colorMode = useColorMode()
 const { logout } = useAuthApi()
+const router = useRouter()
 
-type PeekEvent = {
-  iconType: 'move' | 'at' | 'build' | 'check'
-  color: string
-  title: string
-  sub: string
-  act: string
-}
+type TileIconType = 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
+type PeekIconType = 'move' | 'at' | 'build' | 'check'
 
-type Notif = {
-  id: number
-  iconType: 'at' | 'move' | 'check'
+type TileNotif = {
+  id: string
+  iconType: TileIconType
   color: string
   who: string
   txt: string
@@ -20,18 +19,96 @@ type Notif = {
   unread: boolean
 }
 
-const EVENTS: PeekEvent[] = [
-  { iconType: 'move', color: '#2e6df5', title: 'Вера → PAY-187', sub: 'перенесла в «На ревью»', act: 'Открыть' },
-  { iconType: 'at', color: '#7a4cf0', title: 'Артём упомянул вас', sub: 'в комментарии к PAY-204', act: 'Ответить' },
-  { iconType: 'build', color: '#1f9d55', title: 'Сборка #841 прошла', sub: 'CI · ветка feature/2fa', act: 'Логи' },
-  { iconType: 'check', color: '#1f9d55', title: 'PAY-201 закрыта', sub: 'Миша · 8 SP', act: '' },
-]
-
 const PRESENCE = [
   { id: 'vera', name: 'Вера', color: '#7a4cf0', initials: 'В' },
   { id: 'misha', name: 'Миша', color: '#2e6df5', initials: 'М' },
   { id: 'artem', name: 'Артём', color: '#1f9d55', initials: 'А' },
 ]
+
+const NOTIF_ICON: Record<NotificationType, TileIconType> = {
+  mention: 'at',
+  assigned: 'check',
+  comment_on_assigned: 'at',
+  sle_breach: 'alert',
+  replenishment_overdue: 'refresh',
+  sprint_forecast_drop: 'trend',
+}
+
+const NOTIF_COLOR: Record<NotificationType, string> = {
+  mention: '#7a4cf0',
+  assigned: '#2e6df5',
+  comment_on_assigned: '#7a4cf0',
+  sle_breach: '#e85002',
+  replenishment_overdue: '#e85002',
+  sprint_forecast_drop: '#e85002',
+}
+
+const NOTIF_PEEK_ICON: Record<NotificationType, PeekIconType> = {
+  mention: 'at',
+  assigned: 'check',
+  comment_on_assigned: 'at',
+  sle_breach: 'check',
+  replenishment_overdue: 'check',
+  sprint_forecast_drop: 'check',
+}
+
+const NOTIF_TITLE: Record<NotificationType, string> = {
+  mention: 'Упомянули в комментарии',
+  assigned: 'Назначили задачу',
+  comment_on_assigned: 'Прокомментировали вашу задачу',
+  sle_breach: 'Задача застряла дольше SLE',
+  replenishment_overdue: 'Пора провести Replenishment',
+  sprint_forecast_drop: 'Прогноз спринта упал',
+}
+
+function getNotifDescription(n: Notification): string {
+  const p = n.payload as Record<string, string>
+  switch (n.type) {
+    case 'mention':
+    case 'comment_on_assigned':
+    case 'assigned':
+    case 'sle_breach':
+      return p.taskTitle ?? ''
+    case 'replenishment_overdue':
+      return p.boardName ?? ''
+    case 'sprint_forecast_drop':
+      return p.sprintName ?? ''
+  }
+}
+
+function getNotifActor(n: Notification): string {
+  const p = n.payload as Record<string, string>
+  return p.actorName ?? p.actorEmail ?? ''
+}
+
+function mapToTileNotif(n: Notification): TileNotif {
+  return {
+    id: n.id,
+    iconType: NOTIF_ICON[n.type],
+    color: NOTIF_COLOR[n.type],
+    who: getNotifActor(n),
+    txt: getNotifDescription(n),
+    t: formatRelativeDate(n.createdAt),
+    unread: n.readAt === null,
+  }
+}
+
+function mapToChip(n: Notification) {
+  return {
+    iconType: NOTIF_PEEK_ICON[n.type],
+    color: NOTIF_COLOR[n.type],
+    title: NOTIF_TITLE[n.type],
+    sub: getNotifDescription(n),
+    act: '',
+  }
+}
+
+const { list, unreadCount: unreadQuery, markRead: markReadMutation } = useNotificationsApi()
+useNotificationsSse()
+
+const rawNotifs = computed(() => list.data.value?.notifications ?? [])
+const notifs = computed<TileNotif[]>(() => rawNotifs.value.map(mapToTileNotif))
+const unreadCount = computed(() => unreadQuery.data.value?.count ?? 0)
 
 const { time, weekday } = useClock()
 const { open, pinned, peek, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, doOpen, doClose, togglePin, firePeek } = useIsland()
@@ -39,18 +116,9 @@ const { open, pinned, peek, reducedMotion, islStyle, notchStyle, peekStyle, pane
 const focus = ref(false)
 const sec = ref(134)
 const running = ref(true)
-const notifs = ref<Notif[]>([
-  { id: 1, iconType: 'at', color: '#7a4cf0', who: 'Артём', txt: 'упомянул вас в PAY-204', t: '2 мин', unread: true },
-  { id: 2, iconType: 'move', color: '#2e6df5', who: 'Вера', txt: 'перенесла PAY-187 в «На ревью»', t: '12 мин', unread: true },
-  { id: 3, iconType: 'check', color: '#1f9d55', who: 'Миша', txt: 'закрыл PAY-201', t: '1 ч', unread: false },
-])
-
-const unreadCount = computed(() => notifs.value.filter(n => n.unread).length)
 const isDark = computed(() => colorMode.preference === 'dark')
 
 let runTimer: ReturnType<typeof setInterval> | null = null
-let demoTimer: ReturnType<typeof setInterval> | null = null
-let demoIdx = 0
 
 function startRunTimer() {
   if (runTimer) clearInterval(runTimer)
@@ -88,9 +156,15 @@ function doLogout(e: Event) {
   logout.mutate()
 }
 
-function markRead(e: Event, id: number) {
+async function markRead(e: Event, id: string) {
   e.stopPropagation()
-  notifs.value = notifs.value.map(n => n.id === id ? { ...n, unread: false } : n)
+  markReadMutation.mutate(id)
+  const n = rawNotifs.value.find(x => x.id === id)
+  if (!n) return
+  const p = n.payload as Record<string, string>
+  if (p.taskId && p.boardId) {
+    await router.push(pageRoutes.task(n.workspaceId, p.boardId, p.taskId))
+  }
 }
 
 function onIslandClick() {
@@ -113,17 +187,19 @@ watch(running, (val) => {
   else stopRunTimer()
 })
 
+watch(rawNotifs, (next, prev) => {
+  if (!prev || next.length <= prev.length) return
+  const prevIds = new Set(prev.map(n => n.id))
+  const newest = next.find(n => !prevIds.has(n.id))
+  if (newest) firePeek(mapToChip(newest))
+}, { flush: 'sync' })
+
 onMounted(() => {
   startRunTimer()
-  demoTimer = setInterval(() => {
-    firePeek(EVENTS[demoIdx % EVENTS.length]!)
-    demoIdx++
-  }, 9000)
 })
 
 onUnmounted(() => {
   if (runTimer) clearInterval(runTimer)
-  if (demoTimer) clearInterval(demoTimer)
 })
 </script>
 
