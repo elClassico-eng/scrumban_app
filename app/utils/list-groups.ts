@@ -1,6 +1,7 @@
 import type { Task } from '#shared/types/task'
 import type { BoardColumn as Column } from '#shared/types/column'
 import type { MemberView } from '#shared/types/workspace'
+import type { ServiceClass } from '#shared/types/domain'
 
 export type GroupBy = 'none' | 'assignee' | 'service_class' | 'epic'
 
@@ -14,7 +15,7 @@ export type ListGroup = {
   tasks: Task[]
 }
 
-const SERVICE_CLASS_PILL: Record<string, string> = {
+const SERVICE_CLASS_PILL: Record<ServiceClass, string> = {
   expedite: 'bg-red-500',
   fixed_date: 'bg-amber-500',
   standard: 'bg-slate-400 dark:bg-slate-500',
@@ -79,7 +80,7 @@ export function buildGroups(
     const groups: ListGroup[] = []
     for (const cls of SERVICE_CLASS_ORDER) {
       const arr = sorted.filter(t => t.serviceClass === cls)
-      if (arr.length) groups.push({ key: `c-${cls}`, title: serviceClassLabel(cls), pillClass: SERVICE_CLASS_PILL[cls]!, columnId: null, limit: null, doneGroup: false, tasks: arr })
+      if (arr.length) groups.push({ key: `c-${cls}`, title: serviceClassLabel(cls), pillClass: SERVICE_CLASS_PILL[cls], columnId: null, limit: null, doneGroup: false, tasks: arr })
     }
     return groups
   }
@@ -87,11 +88,12 @@ export function buildGroups(
   if (groupBy === 'epic') {
     const groups: ListGroup[] = []
     const epics = sorted.filter(t => t.isEpic)
+    const epicIds = new Set(epics.map(e => e.id))
     const none: Task[] = []
     const byEpic = new Map<string, Task[]>()
     for (const t of sorted) {
       if (t.isEpic) continue
-      if (t.parentTaskId && epics.some(e => e.id === t.parentTaskId)) {
+      if (t.parentTaskId && epicIds.has(t.parentTaskId)) {
         const arr = byEpic.get(t.parentTaskId) ?? []
         arr.push(t)
         byEpic.set(t.parentTaskId, arr)
