@@ -40,6 +40,7 @@ const props = defineProps<{
   replenishmentLabel?: string | null
   replenishmentOverdue?: boolean
   hasBoardMetrics?: boolean
+  replenishmentClickable?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -53,6 +54,7 @@ const emit = defineEmits<{
   'toggle-theme': [e: Event]
   logout: [e: Event]
   'view-all': [e: Event]
+  'mark-replenishment': [e: Event]
 }>()
 
 const tab = ref<'overview' | 'notifs'>('overview')
@@ -135,6 +137,8 @@ const unread = computed(() => props.notifs.filter(n => n.unread).length)
           label="Пополнение"
           :value="replenishmentLabel ?? '—'"
           :accent="replenishmentOverdue"
+          :clickable="replenishmentClickable"
+          @click="(e) => emit('mark-replenishment', e)"
         />
       </template>
       <ControlCenterPresenceTile

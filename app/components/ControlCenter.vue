@@ -113,6 +113,7 @@ const { time, weekday } = useClock()
 const { open, pinned, peek, hovered, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, onPointerEnter, onPointerLeave, onActivate, togglePin, firePeek } = useIsland()
 
 const toast = useToast()
+const confirm = useConfirm()
 const { focus, toggle: toggleFocusMode } = useFocusMode()
 const isDark = computed(() => colorMode.preference === 'dark')
 
@@ -139,8 +140,9 @@ const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.member
 
 const boardId = computed(() => (route.params.boardId as string) ?? '')
 
-const { list: boardsList } = useBoardsApi(workspaceId)
+const { list: boardsList, recordReplenishment } = useBoardsApi(workspaceId)
 const board = computed(() => boardsList.data.value?.boards.find(b => b.id === boardId.value) ?? null)
+const canManageBoard = computed(() => hasRole(role.value, 'admin'))
 const sleLabel = computed(() => {
   const b = board.value
   if (!b) return null
@@ -242,6 +244,24 @@ function toggleFocus(e: Event) {
       : 'Уведомления снова показываются',
     icon: focus.value ? 'i-lucide-focus' : 'i-lucide-bell',
   })
+}
+
+async function onMarkReplenishment(e: Event) {
+  e.stopPropagation()
+  if (!canManageBoard.value || !boardId.value) return
+  const ok = await confirm({
+    title: 'Отметить replenishment сейчас?',
+    description: 'Сбросит счётчик периода. Используй после реальной встречи планирования backlog\'а.',
+    confirmLabel: 'Отметить',
+  })
+  if (!ok) return
+  try {
+    await recordReplenishment.mutateAsync(boardId.value)
+    toast.add({ title: 'Replenishment отмечен', icon: 'i-lucide-check-circle', color: 'success' })
+  }
+  catch {
+    toast.add({ title: 'Не удалось отметить', color: 'error', icon: 'i-lucide-alert-circle' })
+  }
 }
 
 function toggleTheme(e: Event) {
@@ -368,7 +388,9 @@ onUnmounted(() => {
           :replenishment-label="replenishmentLabel"
           :replenishment-overdue="replenishmentOverdue"
           :has-board-metrics="hasBoardMetrics"
+          :replenishment-clickable="canManageBoard"
           @toggle-pin="togglePin"
+          @mark-replenishment="onMarkReplenishment"
           @toggle-running="onTimerToggle"
           @stop-timer="onTimerStop"
           @mark-read="markRead"
