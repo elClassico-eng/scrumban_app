@@ -13,12 +13,11 @@ const ParamsSchema = z.object({
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const { id, boardId, taskId } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { id, taskId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
 
     const result = await listTaskEntries({
       workspaceId: id,
-      boardId,
       taskId,
       actorRole: workspace.role,
     })

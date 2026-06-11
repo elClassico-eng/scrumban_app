@@ -13,12 +13,13 @@ const ParamsSchema = z.object({
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const { id, boardId } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { id, boardId, taskId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
 
     const stopped = await stopTimer({
       workspaceId: id,
       boardId,
+      taskId,
       userId: user.id,
       actorRole: workspace.role,
     })

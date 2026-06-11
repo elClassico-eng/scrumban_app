@@ -21,7 +21,7 @@ export async function startTimer(input: {
   actorRole: WorkspaceMemberRole
 }) {
   requireMinRole(input.actorRole, 'member')
-  return withTenant(input.workspaceId, async (tx) => {
+  const entry = await withTenant(input.workspaceId, async (tx) => {
     const [task] = await tx
       .select({ id: tasks.id, boardId: tasks.boardId })
       .from(tasks)
@@ -36,7 +36,7 @@ export async function startTimer(input: {
       })
       .where(and(eq(timeEntries.userId, input.userId), isNull(timeEntries.durationSeconds)))
 
-    const [entry] = await tx
+    const [created] = await tx
       .insert(timeEntries)
       .values({
         workspaceId: input.workspaceId,
@@ -46,45 +46,53 @@ export async function startTimer(input: {
       })
       .returning()
 
-    publishBoardEvent({
-      type: 'time.started',
-      workspaceId: input.workspaceId,
-      boardId: input.boardId,
-      payload: { taskId: input.taskId },
-    })
-
-    return entry!
+    return created!
   })
+
+  publishBoardEvent({
+    type: 'time.started',
+    workspaceId: input.workspaceId,
+    boardId: input.boardId,
+    payload: { taskId: input.taskId },
+  })
+
+  return entry
 }
 
 export async function stopTimer(input: {
   workspaceId: string
   boardId: string
+  taskId: string
   userId: string
   actorRole: WorkspaceMemberRole
 }) {
   requireMinRole(input.actorRole, 'member')
-  return withTenant(input.workspaceId, async (tx) => {
-    const [stopped] = await tx
+  const stopped = await withTenant(input.workspaceId, async (tx) => {
+    const [row] = await tx
       .update(timeEntries)
       .set({
         durationSeconds: sql`GREATEST(1, EXTRACT(EPOCH FROM (now() - ${timeEntries.startedAt}))::int)`,
         updatedAt: sql`now()`,
       })
-      .where(and(eq(timeEntries.userId, input.userId), isNull(timeEntries.durationSeconds)))
+      .where(and(
+        eq(timeEntries.userId, input.userId),
+        eq(timeEntries.taskId, input.taskId),
+        isNull(timeEntries.durationSeconds),
+      ))
       .returning()
-
-    if (stopped) {
-      publishBoardEvent({
-        type: 'time.stopped',
-        workspaceId: input.workspaceId,
-        boardId: input.boardId,
-        payload: { taskId: stopped.taskId },
-      })
-    }
-
-    return stopped ?? null
+    return row ?? null
   })
+
+  if (stopped) {
+    publishBoardEvent({
+      type: 'time.stopped',
+      workspaceId: input.workspaceId,
+      boardId: input.boardId,
+      payload: { taskId: stopped.taskId },
+    })
+  }
+
+  return stopped
 }
 
 export async function getActiveTimer(input: {
@@ -112,7 +120,6 @@ export async function getActiveTimer(input: {
 
 export async function listTaskEntries(input: {
   workspaceId: string
-  boardId: string
   taskId: string
   actorRole: WorkspaceMemberRole
 }) {
