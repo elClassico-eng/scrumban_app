@@ -4,7 +4,7 @@ import type { MemberView } from '#shared/types/workspace'
 
 export type GroupBy = 'none' | 'assignee' | 'service_class' | 'epic'
 
-export interface ListGroup {
+export type ListGroup = {
   key: string
   title: string
   pillClass: string

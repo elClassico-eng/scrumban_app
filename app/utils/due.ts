@@ -1,6 +1,6 @@
 export type DueTone = 'overdue' | 'today' | 'soon' | 'normal'
 
-export interface DueInfo {
+export type DueInfo = {
   diff: number
   tone: DueTone
   dateLabel: string
