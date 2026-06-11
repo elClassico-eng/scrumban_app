@@ -277,7 +277,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="fixed top-4 left-1/2 z-[100] flex items-start gap-2 -translate-x-1/2">
+  <div class="fixed top-4 left-1/2 z-[100] -translate-x-1/2">
+    <div class="relative">
     <div
       :style="[islStyle, { background: 'linear-gradient(180deg,var(--island-bg-2),var(--island-bg))', border: '1px solid var(--island-line)', color: 'var(--island-ink)', boxShadow: '0 1px 0 var(--island-line-2) inset, 0 18px 50px -16px rgba(0,0,0,0.55), 0 6px 16px -8px rgba(0,0,0,0.4)' }]"
       class="relative overflow-hidden"
@@ -354,10 +355,11 @@ onUnmounted(() => {
     <button
       v-show="!open"
       type="button"
-      class="h-9 px-3 rounded-full text-[12px] font-semibold whitespace-nowrap cursor-pointer transition-opacity self-center"
+      class="absolute top-1/2 left-full ml-2 -translate-y-1/2 h-9 px-3 rounded-full text-[12px] font-semibold whitespace-nowrap cursor-pointer transition-opacity"
       style="background: var(--island-bg-2); border: 1px solid var(--island-line); color: var(--island-ink-2); box-shadow: 0 6px 16px -8px rgba(0,0,0,0.4);"
       title="Командная палитра"
       @click.stop="onCmdK"
     >{{ cmdKLabel }}</button>
+    </div>
   </div>
 </template>
