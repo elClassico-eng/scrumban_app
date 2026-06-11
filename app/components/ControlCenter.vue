@@ -85,11 +85,11 @@ const timerStr = computed(() => `${pad(Math.floor(sec.value / 60))}:${pad(sec.va
 const unreadCount = computed(() => notifs.value.filter(n => n.unread).length)
 
 const islW = computed(() => {
-  if (open.value) return 600
+  if (open.value) return 720
   if (peek.value) return 440
   return 384
 })
-const islH = computed(() => open.value ? 384 : 52)
+const islH = computed(() => open.value ? 524 : 52)
 const islR = computed(() => open.value ? 30 : 26)
 
 const sprintPct = 64
