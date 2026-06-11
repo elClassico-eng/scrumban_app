@@ -13,6 +13,6 @@ useNotificationsSse()
       </main>
     </div>
     <IntroduceModal />
-    <QuickSearchModal />
+    <CommandPalette />
   </div>
 </template>
