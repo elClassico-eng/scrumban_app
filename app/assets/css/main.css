@@ -115,3 +115,8 @@ body {
   background: rgba(20, 20, 22, 0.95);
   border-color: #27272a;
 }
+
+@media (max-width: 1000px) {
+  [style*="--kl-cols"] { --kl-cols: minmax(0, 1fr) 96px 116px !important; }
+  .col-class, .col-sp, .col-clist { display: none !important; }
+}
