@@ -126,14 +126,15 @@ const canCreateTask = computed(() => hasRole(role.value, 'member'))
 const { list: membersList } = useMembersApi(workspaceId)
 const presencePeople = computed(() => {
   const members = membersList.data.value?.members ?? []
-  return members.slice(0, 3).map(m => ({
+  return members.slice(0, 5).map(m => ({
     id: m.userId,
     name: displayName(m),
     color: avatarColor(m.userId),
     initials: initials(m),
+    avatarUrl: m.avatarUrl,
   }))
 })
-const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.members.length ?? 0) - 3))
+const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.members.length ?? 0) - 5))
 
 const boardId = computed(() => (route.params.boardId as string) ?? '')
 const { list: sprintsList } = useSprintsApi(workspaceId, boardId)
@@ -230,6 +231,11 @@ async function markRead(e: Event, id: string) {
   if (p.taskId && p.boardId) {
     await router.push(pageRoutes.task(n.workspaceId, p.boardId, p.taskId))
   }
+}
+
+function onViewTeam(e: Event) {
+  e.stopPropagation()
+  if (workspaceId.value) router.push(pageRoutes.workspaceMembers(workspaceId.value))
 }
 
 function onIslandClick() {
@@ -330,6 +336,7 @@ onUnmounted(() => {
           @toggle-focus="toggleFocus"
           @toggle-theme="toggleTheme"
           @logout="doLogout"
+          @view-all="onViewTeam"
         />
       </div>
     </div>

@@ -4,11 +4,16 @@ type Person = {
   name: string
   color: string
   initials: string
+  avatarUrl?: string | null
 }
 
 defineProps<{
   people: Person[]
   extra: number
+}>()
+
+defineEmits<{
+  'view-all': [e: Event]
 }>()
 </script>
 
@@ -18,28 +23,37 @@ defineProps<{
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
   >
     <div class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)] mb-[9px]">Команда</div>
-    <div class="flex items-center gap-2 flex-wrap">
+    <span
+      v-if="people.length === 0"
+      class="text-[11.5px] text-[var(--island-ink-3)]"
+    >Нет участников</span>
+    <div
+      v-else
+      class="flex items-center -space-x-2 cursor-pointer"
+      role="button"
+      title="Все участники"
+      @click="(e) => $emit('view-all', e)"
+    >
       <span
-        v-if="people.length === 0"
-        class="text-[11.5px] text-[var(--island-ink-3)]"
-      >Нет участников</span>
-      <template v-else>
-        <span
-          v-for="p in people"
-          :key="p.id"
-          class="flex items-center gap-[7px] rounded-full py-1 pr-[10px] pl-1"
-          style="background: rgba(255,255,255,0.05);"
+        v-for="p in people"
+        :key="p.id"
+        class="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 overflow-hidden"
+        :title="p.name"
+        :style="p.avatarUrl ? 'box-shadow: 0 0 0 2px var(--island-bg-2);' : `background: ${p.color}; box-shadow: 0 0 0 2px var(--island-bg-2);`"
+      >
+        <img
+          v-if="p.avatarUrl"
+          :src="p.avatarUrl"
+          class="size-full object-cover"
+          :alt="p.name"
         >
-          <span
-            class="relative w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
-            :style="{ background: p.color }"
-          >
-            {{ p.initials }}
-          </span>
-          <span class="text-[11.5px] text-[var(--island-ink-2)] max-w-[92px] truncate">{{ p.name }}</span>
-        </span>
-        <span v-if="extra > 0" class="text-[11.5px] text-[var(--island-ink-3)]">+{{ extra }}</span>
-      </template>
+        <template v-else>{{ p.initials }}</template>
+      </span>
+      <span
+        v-if="extra > 0"
+        class="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+        style="background: rgba(255,255,255,0.08); color: var(--island-ink-3); box-shadow: 0 0 0 2px var(--island-bg-2);"
+      >+{{ extra }}</span>
     </div>
   </div>
 </template>

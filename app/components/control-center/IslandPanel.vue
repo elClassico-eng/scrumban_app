@@ -4,6 +4,7 @@ type Person = {
   name: string
   color: string
   initials: string
+  avatarUrl?: string | null
 }
 
 type Notif = {
@@ -47,6 +48,7 @@ const emit = defineEmits<{
   'toggle-focus': [e: Event]
   'toggle-theme': [e: Event]
   logout: [e: Event]
+  'view-all': [e: Event]
 }>()
 </script>
 
@@ -69,33 +71,35 @@ const emit = defineEmits<{
     </button>
   </div>
 
-  <div class="grid gap-[10px]" style="grid-template-columns: 1.5fr 1fr;">
-    <ControlCenterTaskTimerTile
-      :task-id="timerTaskId"
-      :task-title="timerTaskTitle"
-      :seconds="seconds"
-      :running="running"
-      :active="timerActive"
-      @toggle="emit('toggle-running', $event)"
-      @stop="emit('stop-timer', $event)"
-    />
-    <ControlCenterSprintRingTile
-      :pct="sprintPct"
-      :caption="sprintCaption"
-      :active="sprintActive"
-      :reduced-motion="reducedMotion"
+  <div class="grid gap-[10px] flex-1 min-h-0" style="grid-template-columns: 1fr 1fr;">
+    <div class="flex flex-col gap-[10px] min-h-0">
+      <ControlCenterTaskTimerTile
+        :task-id="timerTaskId"
+        :task-title="timerTaskTitle"
+        :seconds="seconds"
+        :running="running"
+        :active="timerActive"
+        @toggle="emit('toggle-running', $event)"
+        @stop="emit('stop-timer', $event)"
+      />
+      <ControlCenterSprintRingTile
+        :pct="sprintPct"
+        :caption="sprintCaption"
+        :active="sprintActive"
+        :reduced-motion="reducedMotion"
+      />
+      <ControlCenterPresenceTile
+        :people="people"
+        :extra="presenceExtra"
+        @view-all="(e) => emit('view-all', e)"
+      />
+    </div>
+    <ControlCenterNotifsTile
+      class="h-full min-h-0"
+      :notifs="notifs"
+      @read="(e, id) => emit('mark-read', e, id)"
     />
   </div>
-
-  <ControlCenterPresenceTile
-    :people="people"
-    :extra="presenceExtra"
-  />
-
-  <ControlCenterNotifsTile
-    :notifs="notifs"
-    @read="(e, id) => emit('mark-read', e, id)"
-  />
 
   <ControlCenterQuickActions
     :focus-on="focusOn"

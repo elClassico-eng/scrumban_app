@@ -19,11 +19,11 @@ export function useIsland() {
   let closeTimer: ReturnType<typeof setTimeout> | null = null
 
   const islW = computed(() => {
-    if (open.value) return 720
+    if (open.value) return 760
     if (peek.value) return 540
     return 480
   })
-  const islH = computed(() => open.value ? 524 : 52)
+  const islH = computed(() => open.value ? 540 : 52)
   const islR = computed(() => open.value ? 30 : 26)
 
   const islStyle = computed(() => {
