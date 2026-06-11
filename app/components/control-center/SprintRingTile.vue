@@ -16,9 +16,10 @@ const ringOffset = computed(() => ringC.value * (1 - props.pct / 100))
   <div
     class="rounded-2xl p-[13px] flex flex-col items-center justify-center text-center"
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
+    :class="{ 'opacity-60': !active }"
   >
     <div class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)] mb-[9px]">Спринт</div>
-    <div class="relative w-[78px] h-[78px]" :class="{ 'opacity-60': !active }">
+    <div class="relative w-[78px] h-[78px]">
       <svg
         :width="ringSize"
         :height="ringSize"
