@@ -198,6 +198,9 @@ function openCreateTask(columnId?: string) {
   if (createTaskColumnId.value) createTaskOpen.value = true
 }
 
+const ccActions = useControlCenterActions()
+watch(() => ccActions.createTaskTick.value, () => openCreateTask())
+
 const listCompact = ref(false)
 
 const isLoading = computed(() =>

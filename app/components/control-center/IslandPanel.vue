@@ -33,6 +33,7 @@ defineProps<{
   notifs: Notif[]
   focusOn: boolean
   isDark: boolean
+  canCreateTask: boolean
 }>()
 
 const emit = defineEmits<{
@@ -97,6 +98,7 @@ const emit = defineEmits<{
   <ControlCenterQuickActions
     :focus-on="focusOn"
     :is-dark="isDark"
+    :can-create-task="canCreateTask"
     @task="emit('quick-task', $event)"
     @search="emit('quick-search', $event)"
     @toggle-focus="emit('toggle-focus', $event)"

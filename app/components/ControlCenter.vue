@@ -5,6 +5,7 @@ import { pageRoutes } from '~/routing'
 const colorMode = useColorMode()
 const { logout } = useAuthApi()
 const router = useRouter()
+const route = useRoute()
 
 type TileIconType = 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
 type PeekIconType = 'move' | 'at' | 'build' | 'check'
@@ -118,11 +119,18 @@ watch(() => list.isFetched.value, (fetched) => {
 const { time, weekday } = useClock()
 const { open, pinned, peek, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, doOpen, doClose, togglePin, firePeek } = useIsland()
 
-const focus = ref(false)
+const focus = useLocalStorage('scrumban:cc-focus', false)
 const isDark = computed(() => colorMode.preference === 'dark')
 
 const wsStore = useWorkspaceStore()
 const workspaceId = computed(() => wsStore.currentId ?? '')
+const { list: workspacesList } = useWorkspacesApi()
+const role = computed(() =>
+  workspacesList.data.value?.workspaces.find(w => w.id === workspaceId.value)?.role,
+)
+const canCreateTask = computed(() => hasRole(role.value, 'member'))
+
+const ccActions = useControlCenterActions()
 const { list: activeTimer } = useActiveTimerApi(workspaceId)
 const active = computed(() => activeTimer.data.value?.active ?? null)
 const timerActive = computed(() => active.value !== null)
@@ -159,6 +167,18 @@ function onTimerToggle(e: Event) {
 function onTimerStop(e: Event) {
   e.stopPropagation()
   if (timerActive.value) stopTimerMut.mutate()
+}
+
+function onQuickTask(e: Event) {
+  e.stopPropagation()
+  if (!canCreateTask.value) return
+  if (route.params.boardId && route.params.id) ccActions.requestCreateTask()
+  else if (workspaceId.value) router.push(pageRoutes.boards(workspaceId.value))
+}
+
+function onQuickSearch(e: Event) {
+  e.stopPropagation()
+  ccActions.requestSearch()
 }
 
 function toggleFocus(e: Event) {
@@ -203,7 +223,7 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 watch(rawNotifs, (next, prev) => {
-  if (!peekPrimed.value || !prev || next.length <= prev.length) return
+  if (!peekPrimed.value || focus.value || !prev || next.length <= prev.length) return
   const prevIds = new Set(prev.map(n => n.id))
   const newest = next.find(n => !prevIds.has(n.id))
   if (newest) firePeek(mapToChip(newest))
@@ -274,12 +294,13 @@ onUnmounted(() => {
           :notifs="notifs"
           :focus-on="focus"
           :is-dark="isDark"
+          :can-create-task="canCreateTask"
           @toggle-pin="togglePin"
           @toggle-running="onTimerToggle"
           @stop-timer="onTimerStop"
           @mark-read="markRead"
-          @quick-task="(e) => e.stopPropagation()"
-          @quick-search="(e) => e.stopPropagation()"
+          @quick-task="onQuickTask"
+          @quick-search="onQuickSearch"
           @toggle-focus="toggleFocus"
           @toggle-theme="toggleTheme"
           @logout="doLogout"

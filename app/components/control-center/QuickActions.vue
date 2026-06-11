@@ -2,6 +2,7 @@
 const props = defineProps<{
   focusOn: boolean
   isDark: boolean
+  canCreateTask: boolean
 }>()
 
 const emit = defineEmits<{
@@ -27,7 +28,9 @@ function btnStyle(style: ActionStyle): string {
   <div class="flex gap-2">
     <button
       class="flex-1 h-[46px] border-none rounded-[13px] cursor-pointer flex flex-col items-center justify-center gap-[3px] text-[9.5px] font-semibold transition-colors"
-      :style="btnStyle('primary')"
+      :class="{ 'opacity-40 cursor-not-allowed': !canCreateTask }"
+      :style="canCreateTask ? btnStyle('primary') : btnStyle('normal')"
+      :disabled="!canCreateTask"
       title="Задача"
       aria-label="Задача"
       @click="emit('task', $event)"
