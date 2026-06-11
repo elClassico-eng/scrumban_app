@@ -23,6 +23,11 @@ export function useTaskChecklistApi(
     unref(taskId),
   ])
 
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: queryKey.value })
+    qc.invalidateQueries({ queryKey: ['tasks', unref(workspaceId), unref(boardId)] })
+  }
+
   const list = useQuery({
     queryKey,
     queryFn: () =>
@@ -38,7 +43,7 @@ export function useTaskChecklistApi(
         apiRoutes.taskChecklist(unref(workspaceId), unref(boardId), unref(taskId)),
         { method: 'POST', body: input },
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: invalidate,
   })
 
   const update = useMutation({
@@ -65,7 +70,7 @@ export function useTaskChecklistApi(
     onError: (_err, _input, ctx) => {
       if (ctx?.prev) qc.setQueryData(queryKey.value, ctx.prev)
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSettled: invalidate,
   })
 
   const remove = useMutation({
@@ -79,7 +84,7 @@ export function useTaskChecklistApi(
         ),
         { method: 'DELETE' },
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: invalidate,
   })
 
   const reorder = useMutation({
@@ -88,7 +93,7 @@ export function useTaskChecklistApi(
         apiRoutes.taskChecklistReorder(unref(workspaceId), unref(boardId), unref(taskId)),
         { method: 'POST', body: input },
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: invalidate,
   })
 
   return { list, create, update, remove, reorder }
