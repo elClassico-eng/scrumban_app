@@ -110,6 +110,11 @@ const rawNotifs = computed(() => list.data.value?.notifications ?? [])
 const notifs = computed<TileNotif[]>(() => rawNotifs.value.map(mapToTileNotif))
 const unreadCount = computed(() => unreadQuery.data.value?.count ?? 0)
 
+const peekPrimed = ref(false)
+watch(() => list.isFetched.value, (fetched) => {
+  if (fetched) peekPrimed.value = true
+}, { immediate: true })
+
 const { time, weekday } = useClock()
 const { open, pinned, peek, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, doOpen, doClose, togglePin, firePeek } = useIsland()
 
@@ -188,7 +193,7 @@ watch(running, (val) => {
 })
 
 watch(rawNotifs, (next, prev) => {
-  if (!prev || next.length <= prev.length) return
+  if (!peekPrimed.value || !prev || next.length <= prev.length) return
   const prevIds = new Set(prev.map(n => n.id))
   const newest = next.find(n => !prevIds.has(n.id))
   if (newest) firePeek(mapToChip(newest))
