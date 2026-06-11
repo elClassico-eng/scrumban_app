@@ -33,7 +33,7 @@ export const timeEntries = pgTable(
   },
   (table) => [
     index('time_entries_task_id_idx').on(table.taskId),
-    index('time_entries_ws_user_idx').on(table.workspaceId, table.userId),
+    index('time_entries_workspace_id_user_id_idx').on(table.workspaceId, table.userId),
     uniqueIndex('time_entries_one_running_per_user').on(table.userId).where(sql`${table.durationSeconds} IS NULL`),
   ],
 )

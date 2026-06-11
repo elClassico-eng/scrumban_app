@@ -1619,8 +1619,8 @@
           "method": "btree",
           "with": {}
         },
-        "time_entries_ws_user_idx": {
-          "name": "time_entries_ws_user_idx",
+        "time_entries_workspace_id_user_id_idx": {
+          "name": "time_entries_workspace_id_user_id_idx",
           "columns": [
             {
               "expression": "workspace_id",

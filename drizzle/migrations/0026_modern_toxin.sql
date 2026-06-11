@@ -14,5 +14,5 @@ ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_workspace_id_workspaces_
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_entries" ADD CONSTRAINT "time_entries_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "time_entries_task_id_idx" ON "time_entries" USING btree ("task_id");--> statement-breakpoint
-CREATE INDEX "time_entries_ws_user_idx" ON "time_entries" USING btree ("workspace_id","user_id");--> statement-breakpoint
+CREATE INDEX "time_entries_workspace_id_user_id_idx" ON "time_entries" USING btree ("workspace_id","user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "time_entries_one_running_per_user" ON "time_entries" USING btree ("user_id") WHERE "time_entries"."duration_seconds" IS NULL;
