@@ -115,7 +115,7 @@ type ViewEntry = {
   isActive: boolean
 }
 
-const views = computed<ViewEntry[]>(() => {
+const displayViews = computed<ViewEntry[]>(() => {
   const boardPath = pageRoutes.board(props.workspaceId, props.boardId)
   return [
     {
@@ -146,138 +146,153 @@ const views = computed<ViewEntry[]>(() => {
       to: pageRoutes.boardTimeline(props.workspaceId, props.boardId),
       isActive: route.path === pageRoutes.boardTimeline(props.workspaceId, props.boardId),
     },
-    {
-      key: 'sprints',
-      label: 'Спринты',
-      icon: 'i-lucide-rocket',
-      to: pageRoutes.boardSprints(props.workspaceId, props.boardId),
-      isActive: route.path === pageRoutes.boardSprints(props.workspaceId, props.boardId),
-    },
-    {
-      key: 'analytics',
-      label: 'Аналитика',
-      icon: 'i-lucide-chart-line',
-      to: pageRoutes.boardAnalytics(props.workspaceId, props.boardId),
-      isActive: route.path === pageRoutes.boardAnalytics(props.workspaceId, props.boardId),
-    },
   ]
 })
 
 const currentView = computed<ViewEntry>(
-  () => views.value.find(v => v.isActive) ?? views.value[0]!,
+  () => displayViews.value.find(v => v.isActive) ?? displayViews.value[0]!,
 )
 
 const dropdownItems = computed<DropdownMenuItem[]>(() =>
-  views.value.map(v => ({
+  displayViews.value.map(v => ({
     label: v.label,
     icon: v.icon,
     to: v.to,
     ...(v.isActive ? { color: 'primary' as const } : {}),
   })),
 )
+
+const sprintsPath = computed(() => pageRoutes.boardSprints(props.workspaceId, props.boardId))
+const analyticsPath = computed(() => pageRoutes.boardAnalytics(props.workspaceId, props.boardId))
+const isSprintsActive = computed(() => route.path === sprintsPath.value)
+const isAnalyticsActive = computed(() => route.path === analyticsPath.value)
 </script>
 
 <template>
   <div
-    class="bg-default border-b border-default sticky top-0 z-20 flex justify-between gap-4 px-4 sm:px-6 -mx-4 sm:-mx-6 transition-all duration-200"
-    :class="compact ? 'items-center py-2' : 'items-start py-3.5'"
+    class="bg-default border-b border-default sticky top-0 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
+    :class="compact ? 'py-2' : 'py-3'"
   >
-    <div class="flex flex-col min-w-0 gap-1">
-      <NuxtLink
-        v-show="!compact"
-        :to="pageRoutes.boards(workspaceId)"
-        class="text-[12px] text-muted hover:text-default transition-colors w-fit"
-      >
-        Доски
-      </NuxtLink>
-      <div class="flex items-center gap-2 min-w-0">
-        <input
-          v-if="isEditing"
-          ref="inputRef"
-          v-model="draftName"
-          class="font-semibold tracking-tight bg-transparent border-b border-accent-500 outline-none min-w-0 transition-all"
-          :class="compact ? 'text-[16px]' : 'text-[22px]'"
-          :disabled="update.isPending.value"
-          @keyup.enter="commitEdit"
-          @keyup.esc="cancelEdit"
-          @blur="commitEdit"
+    <div class="relative flex items-center px-4 sm:px-6 min-h-[44px]">
+      <div class="flex flex-col min-w-0 gap-1 z-10">
+        <NuxtLink
+          v-show="!compact"
+          :to="pageRoutes.boards(workspaceId)"
+          class="text-[12px] text-muted hover:text-default transition-colors w-fit"
         >
-        <h1
-          v-else
-          class="font-semibold tracking-tight truncate transition-all"
-          :class="[compact ? 'text-[16px]' : 'text-[22px]', canRename ? 'cursor-text hover:text-accent-600' : '']"
-          :title="canRename ? 'Двойной клик — переименовать' : ''"
-          @dblclick="startEdit"
-        >
-          {{ boardName ?? 'Доска' }}
-        </h1>
+          Доски
+        </NuxtLink>
+        <div class="flex items-center gap-2 min-w-0">
+          <input
+            v-if="isEditing"
+            ref="inputRef"
+            v-model="draftName"
+            class="font-semibold tracking-tight bg-transparent border-b border-accent-500 outline-none min-w-0 transition-all"
+            :class="compact ? 'text-[16px]' : 'text-[22px]'"
+            :disabled="update.isPending.value"
+            @keyup.enter="commitEdit"
+            @keyup.esc="cancelEdit"
+            @blur="commitEdit"
+          >
+          <h1
+            v-else
+            class="font-semibold tracking-tight truncate transition-all"
+            :class="[compact ? 'text-[16px]' : 'text-[22px]', canRename ? 'cursor-text hover:text-accent-600' : '']"
+            :title="canRename ? 'Двойной клик — переименовать' : ''"
+            @dblclick="startEdit"
+          >
+            {{ boardName ?? 'Доска' }}
+          </h1>
+        </div>
       </div>
+
       <div
-        v-if="!compact && (sleLabel || replenishmentState || (canRename && board))"
-        class="flex items-center gap-1.5 flex-wrap mt-1"
+        v-if="!compact"
+        class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex items-center gap-0 rounded-full border px-1 py-1"
+        style="background: #16161a; border-color: rgba(255,255,255,0.10);"
       >
-        <UTooltip v-if="sleLabel" :text="sleTooltip">
+        <UDropdownMenu :items="dropdownItems">
           <button
             type="button"
-            :disabled="!canRename"
-            class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-accent-50 text-accent-600 text-[11.5px] font-medium tabular-nums transition-colors disabled:cursor-default"
-            :class="canRename ? 'cursor-pointer hover:bg-accent-100' : ''"
-            @click="canRename && (settingsOpen = true)"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-medium transition-colors text-white/80 hover:text-white hover:bg-white/10"
           >
-            <UIcon name="i-lucide-sparkles" class="size-3" />
-            {{ sleLabel }}
+            <UIcon :name="currentView.icon" class="size-3.5 shrink-0" />
+            {{ currentView.label }}
+            <UIcon name="i-lucide-chevron-down" class="size-3 shrink-0 opacity-60" />
           </button>
-        </UTooltip>
-        <UTooltip v-if="replenishmentState" :text="replenishmentTooltip">
-          <button
-            type="button"
-            :disabled="!canRename"
-            :class="[
-              'inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full text-[11.5px] font-medium transition-colors disabled:cursor-default',
-              replenishmentState.overdue
-                ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900'
-                : 'bg-elevated text-muted hover:bg-accented',
-              canRename && 'cursor-pointer',
-            ]"
-            @click="canRename && onMarkReplenishment()"
-          >
-            <UIcon name="i-lucide-calendar" class="size-3" />
-            {{ replenishmentState.label }}
-          </button>
-        </UTooltip>
-        <UTooltip v-else-if="canRename && board" :text="replenishmentTooltip">
-          <button
-            type="button"
-            :disabled="recordReplenishment.isPending.value"
-            class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-elevated text-muted hover:bg-accented text-[11.5px] font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
-            @click="onMarkReplenishment"
-          >
-            <UIcon name="i-lucide-calendar" class="size-3" />
-            Запустить пополнение
-          </button>
-        </UTooltip>
+        </UDropdownMenu>
+
+        <div class="w-px h-5 mx-1" style="background: rgba(255,255,255,0.15);" />
+
+        <NuxtLink
+          :to="sprintsPath"
+          class="px-3 py-1 rounded-full text-[13px] font-medium transition-colors"
+          :class="isSprintsActive ? 'text-white bg-white/15' : 'text-white/60 hover:text-white hover:bg-white/10'"
+        >
+          Спринты
+        </NuxtLink>
+        <NuxtLink
+          :to="analyticsPath"
+          class="px-3 py-1 rounded-full text-[13px] font-medium transition-colors"
+          :class="isAnalyticsActive ? 'text-white bg-white/15' : 'text-white/60 hover:text-white hover:bg-white/10'"
+        >
+          Аналитика
+        </NuxtLink>
       </div>
-    </div>
-    <div class="flex items-center gap-2 shrink-0">
-      <UDropdownMenu :items="dropdownItems">
+
+      <div class="ml-auto flex items-center gap-1.5 shrink-0 z-10">
+        <template v-if="!compact && (sleLabel || replenishmentState || (canRename && board))">
+          <UTooltip v-if="sleLabel" :text="sleTooltip">
+            <button
+              type="button"
+              :disabled="!canRename"
+              class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-accent-50 text-accent-600 text-[11.5px] font-medium tabular-nums transition-colors disabled:cursor-default"
+              :class="canRename ? 'cursor-pointer hover:bg-accent-100' : ''"
+              @click="canRename && (settingsOpen = true)"
+            >
+              <UIcon name="i-lucide-sparkles" class="size-3" />
+              {{ sleLabel }}
+            </button>
+          </UTooltip>
+          <UTooltip v-if="replenishmentState" :text="replenishmentTooltip">
+            <button
+              type="button"
+              :disabled="!canRename"
+              :class="[
+                'inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full text-[11.5px] font-medium transition-colors disabled:cursor-default',
+                replenishmentState.overdue
+                  ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900'
+                  : 'bg-elevated text-muted hover:bg-accented',
+                canRename && 'cursor-pointer',
+              ]"
+              @click="canRename && onMarkReplenishment()"
+            >
+              <UIcon name="i-lucide-calendar" class="size-3" />
+              {{ replenishmentState.label }}
+            </button>
+          </UTooltip>
+          <UTooltip v-else-if="canRename && board" :text="replenishmentTooltip">
+            <button
+              type="button"
+              :disabled="recordReplenishment.isPending.value"
+              class="inline-flex items-center gap-1.5 h-[24px] px-2.5 rounded-full bg-elevated text-muted hover:bg-accented text-[11.5px] font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
+              @click="onMarkReplenishment"
+            >
+              <UIcon name="i-lucide-calendar" class="size-3" />
+              Запустить пополнение
+            </button>
+          </UTooltip>
+        </template>
         <UButton
+          v-if="canRename"
+          icon="i-lucide-settings"
           color="neutral"
-          variant="outline"
+          variant="ghost"
           size="sm"
-          :icon="currentView.icon"
-          :label="currentView.label"
-          trailing-icon="i-lucide-chevron-down"
+          title="Настройки доски"
+          @click="settingsOpen = true"
         />
-      </UDropdownMenu>
-      <UButton
-        v-if="canRename"
-        icon="i-lucide-settings"
-        color="neutral"
-        variant="ghost"
-        size="sm"
-        title="Настройки доски"
-        @click="settingsOpen = true"
-      />
+      </div>
     </div>
     <BoardSettingsModal
       v-if="canRename && board"
