@@ -95,7 +95,7 @@ watch(() => y.value > 6, v => emit('update:compact', v), { immediate: true })
 </script>
 
 <template>
-  <div ref="scrollEl" class="overflow-auto px-4 sm:px-6 pb-16 bg-default" style="--kl-cols: minmax(0,1fr) 92px 104px 116px 44px 116px">
+  <div ref="scrollEl" class="overflow-auto px-3 sm:px-5 pb-16 bg-default" style="--kl-cols: minmax(0,1fr) 92px 104px 116px 44px 116px">
     <div class="grid grid-cols-[var(--kl-cols)] items-center h-9 sticky top-0 z-30 bg-default border-b border-default">
       <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed pl-[34px]">Задача</span>
       <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2">Исполн.</span>

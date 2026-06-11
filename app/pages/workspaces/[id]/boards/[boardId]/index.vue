@@ -263,7 +263,7 @@ const isLoading = computed(() =>
       :can-create="canCreateTasks"
       :workspace-id="wsId"
       :board-id="bId"
-      class="flex-1 min-h-0"
+      class="flex-1 min-h-0 -mx-4 sm:-mx-6"
       @create-in-column="openCreateTask"
       @update:compact="listCompact = $event"
     />
