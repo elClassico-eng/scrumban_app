@@ -169,3 +169,42 @@ describe('time tracking — tasks list aggregate', () => {
     expect(list.body.tasks.find(t => t.id === taskId)!.timeSpentSeconds).toBe(900)
   })
 })
+
+describe('time tracking — analytics time report', () => {
+  it('GET analytics/time returns byUser and bySprint totals', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+
+    const taskId = (await fetchWithJar<{ task: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks`,
+      { method: 'POST', body: { columnId: columns.backlog, title: 'T' } },
+    )).body.task.id
+
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time`, {
+      method: 'POST',
+      body: { startedAt: new Date().toISOString(), durationSeconds: 1200 },
+    })
+
+    const sprintId = (await fetchWithJar<{ sprint: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/sprints`,
+      { method: 'POST', body: { name: 'Sprint R' } },
+    )).body.sprint.id
+
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/sprints/${sprintId}/tasks`, {
+      method: 'POST',
+      body: { taskId },
+    })
+
+    const res = await fetchWithJar<{ byUser: Array<{ userId: string; totalSeconds: number }>; bySprint: Array<{ sprintId: string; sprintName: string; totalSeconds: number }> }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/analytics/time`,
+    )
+
+    expect(res.status).toBe(200)
+    expect(res.body.byUser.find(u => u.totalSeconds === 1200)).toBeDefined()
+    expect(res.body.bySprint.find(s => s.sprintId === sprintId && s.totalSeconds === 1200)).toBeDefined()
+  })
+})

@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
-import { tasks, timeEntries, type WorkspaceMemberRole } from '../db/schema'
+import { sprints, sprintTasks, tasks, timeEntries, type WorkspaceMemberRole } from '../db/schema'
 import { withTenant } from '../utils/db'
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
@@ -248,5 +248,38 @@ export async function deleteEntry(input: {
     workspaceId: input.workspaceId,
     boardId: input.boardId,
     payload: { taskId },
+  })
+}
+
+export async function timeReport(input: {
+  workspaceId: string
+  boardId: string
+  actorRole: WorkspaceMemberRole
+}) {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) => {
+    const byUser = await tx
+      .select({
+        userId: timeEntries.userId,
+        totalSeconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}),0)::int`,
+      })
+      .from(timeEntries)
+      .innerJoin(tasks, eq(tasks.id, timeEntries.taskId))
+      .where(and(eq(tasks.boardId, input.boardId), sql`${timeEntries.durationSeconds} IS NOT NULL`))
+      .groupBy(timeEntries.userId)
+
+    const bySprint = await tx
+      .select({
+        sprintId: sprints.id,
+        sprintName: sprints.name,
+        totalSeconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}),0)::int`,
+      })
+      .from(timeEntries)
+      .innerJoin(sprintTasks, eq(sprintTasks.taskId, timeEntries.taskId))
+      .innerJoin(sprints, eq(sprints.id, sprintTasks.sprintId))
+      .where(and(eq(sprints.boardId, input.boardId), sql`${timeEntries.durationSeconds} IS NOT NULL`))
+      .groupBy(sprints.id, sprints.name)
+
+    return { byUser, bySprint }
   })
 }
