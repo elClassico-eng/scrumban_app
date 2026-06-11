@@ -11,6 +11,8 @@ const props = defineProps<{
 }>()
 
 const wsId = computed(() => props.workspaceId)
+const route = useRoute()
+const isListView = computed(() => route.query.view === 'list')
 const { update, recordReplenishment } = useBoardsApi(wsId)
 const toast = useToast()
 const confirm = useConfirm()
@@ -184,11 +186,23 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
       <nav class="flex gap-1 items-center">
         <NuxtLink
           :to="pageRoutes.board(workspaceId, boardId)"
-          class="px-3 py-1.5 rounded-md text-sm text-muted hover:bg-accented hover:text-default transition-colors inline-flex items-center gap-1.5"
-          active-class="bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+          class="px-3 py-1.5 rounded-md text-sm transition-colors inline-flex items-center gap-1.5"
+          :class="isListView
+            ? 'text-muted hover:bg-accented hover:text-default'
+            : 'bg-primary/10 text-primary hover:bg-primary/15'"
         >
           <UIcon name="i-lucide-kanban-square" class="size-4" />
           Доска
+        </NuxtLink>
+        <NuxtLink
+          :to="{ path: pageRoutes.board(workspaceId, boardId), query: { view: 'list' } }"
+          class="px-3 py-1.5 rounded-md text-sm transition-colors inline-flex items-center gap-1.5"
+          :class="isListView
+            ? 'bg-primary/10 text-primary hover:bg-primary/15'
+            : 'text-muted hover:bg-accented hover:text-default'"
+        >
+          <UIcon name="i-lucide-list" class="size-4" />
+          Список
         </NuxtLink>
         <NuxtLink
           :to="pageRoutes.boardCalendar(workspaceId, boardId)"
