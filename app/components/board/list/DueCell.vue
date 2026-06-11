@@ -44,7 +44,7 @@ function clearDue() {
     </button>
     <template #content>
       <div class="p-2 flex flex-col gap-2">
-        <input type="date" :value="localDate" class="h-8 px-2 rounded-md bg-default border border-default text-sm text-default" @input="onInput">
+        <input type="date" :value="localDate" class="h-8 px-2 rounded-md bg-default border border-default text-sm text-default" @change="onInput">
         <button class="text-xs text-muted hover:text-red-500 text-left" @click="clearDue">Очистить срок</button>
       </div>
     </template>
