@@ -17,20 +17,22 @@ const props = withDefaults(defineProps<{ items: AvatarItem[]; size?: number; rin
 
 const hoveredId = ref<string | null>(null)
 const mouseX = ref<number>(0)
+const anchor = ref<{ cx: number; top: number } | null>(null)
 const failedIds = ref(new Set<string>())
 
 const rotation = computed(() => (mouseX.value / 100) * 40)
 const translation = computed(() => (mouseX.value / 100) * 40)
+const hoveredItem = computed(() => props.items.find(i => i.id === hoveredId.value) ?? null)
 
-function handleMouseEnter(event: MouseEvent, itemId: string) {
-  hoveredId.value = itemId
-  const rect = (event.target as HTMLElement).getBoundingClientRect()
+function track(event: MouseEvent) {
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   mouseX.value = event.clientX - rect.left - rect.width / 2
+  anchor.value = { cx: rect.left + rect.width / 2, top: rect.top }
 }
 
-function handleMouseMove(event: MouseEvent) {
-  const rect = (event.target as HTMLElement).getBoundingClientRect()
-  mouseX.value = event.clientX - rect.left - rect.width / 2
+function onEnter(event: MouseEvent, itemId: string) {
+  hoveredId.value = itemId
+  track(event)
 }
 
 function onImgError(id: string) {
@@ -48,23 +50,10 @@ function showImage(item: AvatarItem): boolean {
       v-for="item in props.items"
       :key="item.id"
       class="group relative -ml-2 first:ml-0"
-      @mouseenter="(e) => handleMouseEnter(e, item.id)"
+      @mouseenter="(e) => onEnter(e, item.id)"
       @mouseleave="hoveredId = null"
-      @mousemove="handleMouseMove"
+      @mousemove="track"
     >
-      <Motion
-        v-if="hoveredId === item.id"
-        :initial="{ opacity: 0, y: 20, scale: 0.6 }"
-        :animate="{ opacity: 1, y: 0, scale: 1 }"
-        :transition="{ type: 'spring', stiffness: 260, damping: 10 }"
-        :style="{ translateX: `${translation}px`, rotate: `${rotation}deg` }"
-        class="absolute -top-14 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center rounded-lg bg-[#16161a] px-3 py-1.5 whitespace-nowrap shadow-xl ring-1 ring-white/10"
-      >
-        <div class="absolute -bottom-px left-1/2 h-px w-2/5 -translate-x-1/2 bg-gradient-to-r from-transparent via-[#e85002] to-transparent" />
-        <div class="text-[12px] font-semibold text-white">{{ item.name }}</div>
-        <div v-if="item.designation" class="text-[10px] text-white/60">{{ item.designation }}</div>
-      </Motion>
-
       <div
         class="overflow-hidden rounded-full flex items-center justify-center flex-shrink-0 transition group-hover:z-30 group-hover:scale-105"
         :style="{
@@ -88,5 +77,25 @@ function showImage(item: AvatarItem): boolean {
         >{{ item.initials }}</span>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="hoveredItem && anchor"
+        class="fixed z-[200] -translate-x-1/2 pointer-events-none"
+        :style="{ left: `${anchor.cx}px`, top: `${anchor.top - 52}px` }"
+      >
+        <Motion
+          :initial="{ opacity: 0, y: 18, scale: 0.6 }"
+          :animate="{ opacity: 1, y: 0, scale: 1 }"
+          :transition="{ type: 'spring', stiffness: 260, damping: 11 }"
+          :style="{ translateX: `${translation}px`, rotate: `${rotation}deg` }"
+          class="relative flex flex-col items-center rounded-lg bg-[#16161a] px-3 py-1.5 whitespace-nowrap shadow-xl ring-1 ring-white/10"
+        >
+          <div class="absolute -bottom-px left-1/2 h-px w-2/5 -translate-x-1/2 bg-gradient-to-r from-transparent via-[#e85002] to-transparent" />
+          <div class="text-[12px] font-semibold text-white">{{ hoveredItem.name }}</div>
+          <div v-if="hoveredItem.designation" class="text-[10px] text-white/60">{{ hoveredItem.designation }}</div>
+        </Motion>
+      </div>
+    </Teleport>
   </div>
 </template>
