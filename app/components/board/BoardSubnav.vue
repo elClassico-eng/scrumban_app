@@ -186,19 +186,23 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
       <nav class="flex gap-1 items-center">
         <NuxtLink
           :to="pageRoutes.board(workspaceId, boardId)"
+          active-class=""
+          exact-active-class=""
           class="px-3 py-1.5 rounded-md text-sm transition-colors inline-flex items-center gap-1.5"
           :class="isListView
             ? 'text-muted hover:bg-accented hover:text-default'
-            : 'bg-primary/10 text-primary hover:bg-primary/15'"
+            : 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary'"
         >
           <UIcon name="i-lucide-kanban-square" class="size-4" />
           Доска
         </NuxtLink>
         <NuxtLink
           :to="{ path: pageRoutes.board(workspaceId, boardId), query: { view: 'list' } }"
+          active-class=""
+          exact-active-class=""
           class="px-3 py-1.5 rounded-md text-sm transition-colors inline-flex items-center gap-1.5"
           :class="isListView
-            ? 'bg-primary/10 text-primary hover:bg-primary/15'
+            ? 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary'
             : 'text-muted hover:bg-accented hover:text-default'"
         >
           <UIcon name="i-lucide-list" class="size-4" />
