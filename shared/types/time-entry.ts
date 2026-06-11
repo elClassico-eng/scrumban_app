@@ -36,6 +36,7 @@ export interface ActiveTimerView {
   entry: TimeEntryView
   taskTitle: string
   taskShortId: string
+  boardId: string
 }
 
 export interface ActiveTimerResponse {

@@ -94,9 +94,10 @@ describe('time tracking — start/stop', () => {
     expect(before.body.active).toBeNull()
 
     await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time/start`, { method: 'POST' })
-    const active = await fetchWithJar<{ active: { entry: { running: boolean }, taskTitle: string } | null }>(owner.jar, `/api/workspaces/${wsId}/time/active`, {})
+    const active = await fetchWithJar<{ active: { entry: { running: boolean }, taskTitle: string, boardId: string } | null }>(owner.jar, `/api/workspaces/${wsId}/time/active`, {})
     expect(active.body.active?.entry.running).toBe(true)
     expect(active.body.active?.taskTitle).toBe('T')
+    expect(active.body.active?.boardId).toBe(boardId)
 
     const stop = await fetchWithJar<{ entry: { durationSeconds: number | null } | null }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/time/stop`, { method: 'POST' })
     expect(stop.body.entry?.durationSeconds).toBeGreaterThanOrEqual(0)

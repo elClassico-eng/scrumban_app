@@ -119,31 +119,46 @@ const { time, weekday } = useClock()
 const { open, pinned, peek, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, doOpen, doClose, togglePin, firePeek } = useIsland()
 
 const focus = ref(false)
-const sec = ref(134)
-const running = ref(true)
 const isDark = computed(() => colorMode.preference === 'dark')
 
-let runTimer: ReturnType<typeof setInterval> | null = null
+const wsStore = useWorkspaceStore()
+const workspaceId = computed(() => wsStore.currentId ?? '')
+const { list: activeTimer } = useActiveTimerApi(workspaceId)
+const active = computed(() => activeTimer.data.value?.active ?? null)
+const timerActive = computed(() => active.value !== null)
+const activeBoardId = computed(() => active.value?.boardId ?? '')
+const activeTaskId = computed(() => active.value?.entry.taskId ?? '')
+const timerTaskId = computed(() => active.value?.taskShortId ?? '')
+const timerTaskTitle = computed(() => active.value?.taskTitle ?? '')
 
-function startRunTimer() {
-  if (runTimer) clearInterval(runTimer)
-  if (!running.value) return
-  runTimer = setInterval(() => { sec.value++ }, 1000)
+const { stop: stopTimerMut } = useTaskTimeApi(workspaceId, activeBoardId, activeTaskId)
+
+const elapsed = ref(0)
+let tick: ReturnType<typeof setInterval> | null = null
+
+function stopTick() {
+  if (tick) { clearInterval(tick); tick = null }
 }
 
-function stopRunTimer() {
-  if (runTimer) { clearInterval(runTimer); runTimer = null }
+function startTick() {
+  stopTick()
+  if (!timerActive.value) return
+  tick = setInterval(() => { elapsed.value++ }, 1000)
 }
 
-function toggleRunning(e: Event) {
+watch(active, (a) => {
+  elapsed.value = a?.entry.elapsedSeconds ?? 0
+  startTick()
+}, { immediate: true })
+
+function onTimerToggle(e: Event) {
   e.stopPropagation()
-  running.value = !running.value
+  if (timerActive.value) stopTimerMut.mutate()
 }
 
-function stopTimer(e: Event) {
+function onTimerStop(e: Event) {
   e.stopPropagation()
-  running.value = false
-  sec.value = 0
+  if (timerActive.value) stopTimerMut.mutate()
 }
 
 function toggleFocus(e: Event) {
@@ -187,11 +202,6 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-watch(running, (val) => {
-  if (val) startRunTimer()
-  else stopRunTimer()
-})
-
 watch(rawNotifs, (next, prev) => {
   if (!peekPrimed.value || !prev || next.length <= prev.length) return
   const prevIds = new Set(prev.map(n => n.id))
@@ -199,12 +209,8 @@ watch(rawNotifs, (next, prev) => {
   if (newest) firePeek(mapToChip(newest))
 }, { flush: 'sync' })
 
-onMounted(() => {
-  startRunTimer()
-})
-
 onUnmounted(() => {
-  if (runTimer) clearInterval(runTimer)
+  stopTick()
 })
 </script>
 
@@ -229,9 +235,10 @@ onUnmounted(() => {
         <ControlCenterIslandNotch
           :time="time"
           :weekday="weekday"
-          timer-task-id="PAY-204"
-          :seconds="sec"
-          :running="running"
+          :timer-task-id="timerTaskId"
+          :seconds="elapsed"
+          :running="timerActive"
+          :active="timerActive"
           :unread="unreadCount"
           @bell.stop
         />
@@ -255,10 +262,11 @@ onUnmounted(() => {
           :weekday="weekday"
           :pinned="pinned"
           :reduced-motion="reducedMotion"
-          timer-task-id="PAY-204"
-          timer-task-title="Двухфакторная аутентификация для крупных переводов"
-          :seconds="sec"
-          :running="running"
+          :timer-task-id="timerTaskId"
+          :timer-task-title="timerTaskTitle"
+          :seconds="elapsed"
+          :running="timerActive"
+          :timer-active="timerActive"
           :sprint-pct="64"
           sprint-caption="Спринт 24 · 6 дн"
           :people="PRESENCE"
@@ -267,8 +275,8 @@ onUnmounted(() => {
           :focus-on="focus"
           :is-dark="isDark"
           @toggle-pin="togglePin"
-          @toggle-running="toggleRunning"
-          @stop-timer="stopTimer"
+          @toggle-running="onTimerToggle"
+          @stop-timer="onTimerStop"
           @mark-read="markRead"
           @quick-task="(e) => e.stopPropagation()"
           @quick-search="(e) => e.stopPropagation()"

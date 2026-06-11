@@ -103,7 +103,7 @@ export async function getActiveTimer(input: {
   requireMinRole(input.actorRole, 'viewer')
   return withTenant(input.workspaceId, async (tx) => {
     const [row] = await tx
-      .select({ entry: timeEntries, taskTitle: tasks.title })
+      .select({ entry: timeEntries, taskTitle: tasks.title, boardId: tasks.boardId })
       .from(timeEntries)
       .innerJoin(tasks, eq(tasks.id, timeEntries.taskId))
       .where(and(eq(timeEntries.userId, input.userId), isNull(timeEntries.durationSeconds)))
@@ -114,6 +114,7 @@ export async function getActiveTimer(input: {
       entry: toView(row.entry),
       taskTitle: row.taskTitle,
       taskShortId: row.entry.taskId.slice(0, 6).toUpperCase(),
+      boardId: row.boardId,
     }
   })
 }

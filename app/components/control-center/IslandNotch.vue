@@ -5,20 +5,13 @@ defineProps<{
   timerTaskId: string
   seconds: number
   running: boolean
+  active: boolean
   unread: number
 }>()
 
 defineEmits<{
   bell: []
 }>()
-
-function pad(n: number) {
-  return String(n).padStart(2, '0')
-}
-
-function timerStr(seconds: number) {
-  return `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`
-}
 </script>
 
 <template>
@@ -29,6 +22,7 @@ function timerStr(seconds: number) {
   </div>
   <div class="flex-1" />
   <div
+    v-if="active"
     class="inline-flex items-center gap-2 h-8 px-3 rounded-full text-[var(--island-orange-2)] text-[12.5px] font-semibold whitespace-nowrap max-w-[220px] overflow-hidden"
     style="background: rgba(255,106,26,0.16); border: 1px solid rgba(255,106,26,0.3);"
   >
@@ -37,7 +31,7 @@ function timerStr(seconds: number) {
       :class="running ? 'bg-[var(--island-orange)] cc-pulse-dot' : 'bg-[var(--island-ink-3)]'"
     />
     <span class="font-mono text-[var(--island-ink-2)] font-medium">{{ timerTaskId }}</span>
-    <span class="font-mono">{{ timerStr(seconds) }}</span>
+    <span class="font-mono">{{ formatClock(seconds) }}</span>
   </div>
   <button
     class="relative w-9 h-9 rounded-full grid place-items-center border-none cursor-pointer text-[var(--island-ink-2)] hover:text-[var(--island-ink)] transition-colors"

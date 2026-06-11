@@ -25,6 +25,7 @@ defineProps<{
   timerTaskTitle: string
   seconds: number
   running: boolean
+  timerActive: boolean
   sprintPct: number
   sprintCaption: string
   people: Person[]
@@ -72,6 +73,7 @@ const emit = defineEmits<{
       :task-title="timerTaskTitle"
       :seconds="seconds"
       :running="running"
+      :active="timerActive"
       @toggle="emit('toggle-running', $event)"
       @stop="emit('stop-timer', $event)"
     />
