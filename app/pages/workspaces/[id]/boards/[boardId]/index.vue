@@ -46,6 +46,7 @@ const swimlane = ref<SwimlaneMode>('none')
 const query = ref('')
 const selectedAssignees = ref<Set<string>>(new Set())
 const classFilter = ref<ClassFilter>('all')
+const viewMode = computed<'board' | 'list'>(() => route.query.view === 'list' ? 'list' : 'board')
 
 function toggleAssignee(userId: string | null) {
   if (userId === null) {
@@ -245,6 +246,19 @@ const isLoading = computed(() =>
         </UButton>
       </div>
     </UCard>
+
+    <BoardListView
+      v-else-if="viewMode === 'list'"
+      :tasks="filteredTasks"
+      :group-by="swimlane"
+      :columns="localColumns"
+      :members="members"
+      :dep-counts="depCountsByTaskId"
+      :can-create="canCreateTasks"
+      :workspace-id="wsId"
+      :board-id="bId"
+      class="flex-1 min-h-0"
+    />
 
     <div v-else-if="swimlane === 'none'" class="flex-1 min-h-0 overflow-x-auto overflow-y-hidden pt-4 pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6">
       <draggable
