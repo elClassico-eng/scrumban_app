@@ -44,7 +44,7 @@ function onAdd() {
 <template>
   <div class="mt-5 first:mt-2">
     <div
-      class="group/head flex items-center gap-2.5 h-9 px-2 sticky top-9 z-20 bg-default/65 dark:bg-elevated/55 backdrop-blur-xl backdrop-saturate-150 cursor-pointer select-none"
+      class="group/head flex items-center gap-2.5 h-9 px-2 sticky top-9 z-20 bg-default cursor-pointer select-none"
       @click="emit('toggle-collapse', group.key)"
     >
       <span class="text-dimmed grid place-items-center transition-transform" :class="collapsed ? '-rotate-90' : ''">

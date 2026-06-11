@@ -44,6 +44,7 @@ async function runBulk(work: () => Promise<void>, title: string) {
 const assignItems = computed(() =>
   props.members.map(m => ({
     label: displayName(m),
+    member: m,
     onSelect: () => runBulk(async () => {
       await Promise.allSettled(ids.value.map(id =>
         $fetch(apiRoutes.taskAssignees(props.workspaceId, props.boardId, id), { method: 'POST', body: { userId: m.userId } }),
@@ -74,13 +75,16 @@ function closeSelected() {
 </script>
 
 <template>
-  <div class="sticky bottom-4 mx-auto w-max flex items-center gap-3.5 bg-zinc-900 text-white rounded-full py-2 pr-2.5 pl-[18px] shadow-xl z-[5]">
+  <div class="sticky bottom-4 mx-auto w-max flex items-center gap-3.5 bg-zinc-900 text-white rounded-full py-2 pr-2.5 pl-[18px] shadow-[0_12px_32px_-8px_rgba(0,0,0,0.45)] z-50">
     <span class="text-[13px] font-semibold"><b class="text-accent-500">{{ selected.size }}</b> выбрано</span>
     <div class="flex items-center gap-1">
-      <UDropdownMenu :items="assignItems" :ui="{ content: 'w-56 max-h-64 overflow-auto' }">
+      <UDropdownMenu :items="assignItems" :ui="{ content: 'w-60 max-h-72 overflow-auto' }">
         <button class="h-[30px] px-3 bg-white/10 hover:bg-white/20 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5">
           <UIcon name="i-lucide-user" class="size-3.5" /> Назначить
         </button>
+        <template #item-leading="{ item }">
+          <UserAvatar :user="(item as any).member" size="xs" />
+        </template>
       </UDropdownMenu>
 
       <UPopover v-model:open="dueOpen">

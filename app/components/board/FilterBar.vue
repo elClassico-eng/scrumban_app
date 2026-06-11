@@ -46,7 +46,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
 </script>
 
 <template>
-  <div class="liquid-glass sticky top-[60px] z-10 flex items-center gap-2 px-4 py-2.5 flex-wrap">
+  <div class="bg-default border-b border-default sticky top-[60px] z-10 flex items-center gap-2 px-4 py-2.5 flex-wrap">
     <UDropdownMenu :items="groupMenu" :ui="{ content: 'w-48' }">
       <button
         type="button"

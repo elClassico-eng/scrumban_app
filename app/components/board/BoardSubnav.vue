@@ -109,7 +109,7 @@ const replenishmentTooltip = 'Пополнение бэклога — регул
 
 <template>
   <div
-    class="liquid-glass sticky top-0 z-20 flex justify-between gap-4 px-4 sm:px-6 -mx-4 sm:-mx-6 rounded-b-xl transition-all duration-200"
+    class="bg-default border-b border-default sticky top-0 z-20 flex justify-between gap-4 px-4 sm:px-6 -mx-4 sm:-mx-6 transition-all duration-200"
     :class="compact ? 'items-center py-2' : 'items-start py-3.5'"
   >
     <div class="flex flex-col min-w-0 gap-1">

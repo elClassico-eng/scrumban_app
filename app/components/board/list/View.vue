@@ -70,9 +70,8 @@ const backlogColumnId = computed(() => {
 
 async function addSubtask(parentId: string) {
   if (!backlogColumnId.value) return
-  const parent = props.tasks.find(t => t.id === parentId)
   const input: CreateTaskInput = {
-    columnId: parent?.columnId ?? backlogColumnId.value,
+    columnId: backlogColumnId.value,
     title: 'Новая подзадача',
     parentTaskId: parentId,
     serviceClass: 'standard',
@@ -96,8 +95,8 @@ watch(() => y.value > 6, v => emit('update:compact', v), { immediate: true })
 </script>
 
 <template>
-  <div ref="scrollEl" class="overflow-auto px-4 sm:px-6 pb-16" style="--kl-cols: minmax(0,1fr) 92px 104px 116px 44px 116px">
-    <div class="grid grid-cols-[var(--kl-cols)] items-center h-9 sticky top-0 z-30 bg-default/65 dark:bg-elevated/55 backdrop-blur-xl backdrop-saturate-150 border-b border-default">
+  <div ref="scrollEl" class="overflow-auto px-4 sm:px-6 pb-16 bg-default" style="--kl-cols: minmax(0,1fr) 92px 104px 116px 44px 116px">
+    <div class="grid grid-cols-[var(--kl-cols)] items-center h-9 sticky top-0 z-30 bg-default border-b border-default">
       <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed pl-[34px]">Задача</span>
       <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2">Исполн.</span>
       <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2">Срок</span>
