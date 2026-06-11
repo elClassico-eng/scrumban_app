@@ -48,6 +48,7 @@ useHead({
         :report="wipRecommendations.data.value"
         :is-loading="wipRecommendations.isLoading.value"
       />
+      <AnalyticsTimeReportCard :workspace-id="wsId" :board-id="bId" />
     </div>
   </div>
 </template>
