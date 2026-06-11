@@ -166,6 +166,7 @@ const sprintsPath = computed(() => pageRoutes.boardSprints(props.workspaceId, pr
 const analyticsPath = computed(() => pageRoutes.boardAnalytics(props.workspaceId, props.boardId))
 const isSprintsActive = computed(() => route.path === sprintsPath.value)
 const isAnalyticsActive = computed(() => route.path === analyticsPath.value)
+const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 </script>
 
 <template>
@@ -173,8 +174,8 @@ const isAnalyticsActive = computed(() => route.path === analyticsPath.value)
     class="bg-default border-b border-default sticky top-0 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
     :class="compact ? 'py-2' : 'py-3'"
   >
-    <div class="relative flex items-center px-4 sm:px-6 min-h-[44px]">
-      <div class="flex flex-col min-w-0 gap-1 z-10">
+    <div class="flex items-center gap-4 px-4 sm:px-6 min-h-[44px]">
+      <div class="flex flex-col min-w-0 gap-1">
         <NuxtLink
           v-show="!compact"
           :to="pageRoutes.boards(workspaceId)"
@@ -206,42 +207,35 @@ const isAnalyticsActive = computed(() => route.path === analyticsPath.value)
         </div>
       </div>
 
-      <div
-        v-if="!compact"
-        class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex items-center gap-0 rounded-full border px-1 py-1"
-        style="background: #16161a; border-color: rgba(255,255,255,0.10);"
-      >
+      <div class="ml-auto flex items-center gap-1.5 shrink-0">
         <UDropdownMenu :items="dropdownItems">
           <button
             type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[13px] font-medium transition-colors text-white/80 hover:text-white hover:bg-white/10"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+            :class="isViewActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
           >
-            <UIcon :name="currentView.icon" class="size-3.5 shrink-0" />
+            <UIcon :name="currentView.icon" class="size-4 shrink-0" />
             {{ currentView.label }}
-            <UIcon name="i-lucide-chevron-down" class="size-3 shrink-0 opacity-60" />
+            <UIcon name="i-lucide-chevron-down" class="size-3.5 shrink-0 opacity-60" />
           </button>
         </UDropdownMenu>
-
-        <div class="w-px h-5 mx-1" style="background: rgba(255,255,255,0.15);" />
-
         <NuxtLink
           :to="sprintsPath"
-          class="px-3 py-1 rounded-full text-[13px] font-medium transition-colors"
-          :class="isSprintsActive ? 'text-white bg-white/15' : 'text-white/60 hover:text-white hover:bg-white/10'"
+          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+          :class="isSprintsActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
         >
           Спринты
         </NuxtLink>
         <NuxtLink
           :to="analyticsPath"
-          class="px-3 py-1 rounded-full text-[13px] font-medium transition-colors"
-          :class="isAnalyticsActive ? 'text-white bg-white/15' : 'text-white/60 hover:text-white hover:bg-white/10'"
+          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+          :class="isAnalyticsActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
         >
           Аналитика
         </NuxtLink>
-      </div>
 
-      <div class="ml-auto flex items-center gap-1.5 shrink-0 z-10">
         <template v-if="!compact && (sleLabel || replenishmentState || (canRename && board))">
+          <div class="w-px h-5 bg-default mx-1" />
           <UTooltip v-if="sleLabel" :text="sleTooltip">
             <button
               type="button"
