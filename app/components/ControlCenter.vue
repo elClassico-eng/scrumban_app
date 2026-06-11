@@ -99,7 +99,6 @@ function mapToChip(n: Notification) {
 }
 
 const { list, unreadCount: unreadQuery, markRead: markReadMutation } = useNotificationsApi()
-useNotificationsSse()
 
 const rawNotifs = computed(() => list.data.value?.notifications ?? [])
 const notifs = computed<TileNotif[]>(() => rawNotifs.value.map(mapToTileNotif))
