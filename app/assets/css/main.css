@@ -2,6 +2,28 @@
 @import "@nuxt/ui";
 
 :root {
+  --island-bg: #ffffff;
+  --island-bg-2: #f6f6f7;
+  --island-line: rgba(0,0,0,.10);
+  --island-line-2: rgba(0,0,0,.06);
+  --island-tile: rgba(0,0,0,.03);
+  --island-ink: #18181b;
+  --island-ink-2: #52525b;
+  --island-ink-3: #9b9ba3;
+  --island-orange: #e85002;
+  --island-orange-2: #d9420b;
+  --island-orange-deep: #b3310c;
+  --island-fill: rgba(0,0,0,.05);
+  --island-fill-strong: rgba(0,0,0,.08);
+  --island-hover: rgba(0,0,0,.04);
+  --island-track: rgba(0,0,0,.08);
+  --island-orange-tint: rgba(232,80,2,.10);
+  --island-orange-tint-border: rgba(232,80,2,.22);
+  --island-orange-soft: rgba(232,80,2,.12);
+  --island-shadow: 0 6px 18px -10px rgba(0,0,0,.10), 0 2px 6px -5px rgba(0,0,0,.06);
+}
+
+.dark {
   --island-bg: #16161a;
   --island-bg-2: #1e1e23;
   --island-line: rgba(255,255,255,.09);
@@ -13,6 +35,14 @@
   --island-orange: #ff6a1a;
   --island-orange-2: #ff894a;
   --island-orange-deep: #e4540a;
+  --island-fill: rgba(255,255,255,.06);
+  --island-fill-strong: rgba(255,255,255,.09);
+  --island-hover: rgba(255,255,255,.05);
+  --island-track: rgba(255,255,255,.1);
+  --island-orange-tint: rgba(255,106,26,.16);
+  --island-orange-tint-border: rgba(255,106,26,.3);
+  --island-orange-soft: rgba(255,106,26,.18);
+  --island-shadow: 0 12px 32px -18px rgba(0,0,0,.4), 0 3px 10px -8px rgba(0,0,0,.26);
 }
 
 @keyframes cc-pulse {
