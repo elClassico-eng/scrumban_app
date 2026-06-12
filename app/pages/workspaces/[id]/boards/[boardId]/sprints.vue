@@ -261,7 +261,7 @@ const isFilteredEmpty = computed(() =>
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="flex flex-col h-full min-h-0">
     <BoardSubnav
       :workspace-id="wsId"
       :board-id="bId"
@@ -270,7 +270,7 @@ const isFilteredEmpty = computed(() =>
       :board="board"
     />
 
-    <div class="sticky top-[68px] z-10 bg-default border-b border-default -mx-4 sm:-mx-6 px-4 sm:px-6 py-2.5 flex flex-wrap items-center gap-3">
+    <div class="shrink-0 flex flex-wrap items-center gap-3 pt-4 pb-3">
       <h1 class="text-[26px] font-semibold tracking-tight text-default m-0">
         Спринты
         <span v-if="sprints.length > 0" class="text-[18px] font-medium text-muted tabular-nums">
@@ -324,7 +324,8 @@ const isFilteredEmpty = computed(() =>
       </UButton>
     </div>
 
-    <div v-if="isLoading" class="text-center py-12 text-muted">
+    <div class="flex-1 min-h-0 overflow-y-auto space-y-4 pb-4">
+      <div v-if="isLoading" class="text-center py-12 text-muted">
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
     </div>
 
@@ -426,7 +427,8 @@ const isFilteredEmpty = computed(() =>
           />
         </div>
       </section>
-    </template>
+      </template>
+    </div>
 
     <SprintCreateModal
       v-if="canManage"
