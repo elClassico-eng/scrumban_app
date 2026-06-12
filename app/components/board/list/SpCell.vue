@@ -26,11 +26,18 @@ const items = computed(() => [
 
 <template>
   <UDropdownMenu v-if="canEdit" :items="items" :ui="{ content: 'w-32' }">
-    <button class="font-mono text-xs font-semibold tabular-nums px-1.5 rounded hover:bg-elevated" :class="task.storyPoints == null ? 'text-dimmed' : 'text-toned'">
+    <button
+      class="font-mono text-[12px] font-semibold tabular-nums min-w-[26px] h-[24px] px-[7px] rounded-[7px] inline-grid place-items-center transition-opacity hover:opacity-80"
+      :class="task.storyPoints == null ? 'text-dimmed bg-transparent' : 'text-toned bg-elevated'"
+    >
       {{ task.storyPoints == null ? '—' : task.storyPoints }}
     </button>
   </UDropdownMenu>
-  <span v-else class="font-mono text-xs font-semibold tabular-nums" :class="task.storyPoints == null ? 'text-dimmed' : 'text-toned'">
+  <span
+    v-else
+    class="font-mono text-[12px] font-semibold tabular-nums min-w-[26px] h-[24px] px-[7px] rounded-[7px] inline-grid place-items-center"
+    :class="task.storyPoints == null ? 'text-dimmed' : 'text-toned bg-elevated'"
+  >
     {{ task.storyPoints == null ? '—' : task.storyPoints }}
   </span>
 </template>

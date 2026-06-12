@@ -15,14 +15,14 @@ const { update } = useTasksApi(toRef(props, 'workspaceId'), toRef(props, 'boardI
 const open = ref(false)
 const localDate = computed(() => props.task.dueDate ? props.task.dueDate.slice(0, 10) : '')
 
-const display = computed(() => {
+const pill = computed(() => {
   const d = props.due
-  if (!d) return { cls: 'text-dimmed', icon: undefined, text: '—' }
-  if (props.isDone) return { cls: 'text-emerald-600', icon: undefined, text: d.dateLabel }
-  if (d.tone === 'overdue') return { cls: 'text-white bg-red-500 px-2.5 py-0.5 rounded-full font-semibold', icon: undefined, text: d.dateLabel }
-  if (d.tone === 'today') return { cls: 'text-white bg-accent-500 px-2.5 py-0.5 rounded-full font-semibold', icon: undefined, text: 'сегодня' }
-  if (d.tone === 'soon') return { cls: 'text-accent-600 font-semibold', icon: 'text-accent-500', text: d.diff === 1 ? 'завтра' : d.dateLabel }
-  return { cls: 'text-toned', icon: 'text-muted', text: d.dateLabel }
+  if (!d) return { cls: 'bg-transparent text-dimmed pl-0', text: '—', noIcon: true }
+  if (props.isDone) return { cls: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400', text: d.dateLabel }
+  if (d.tone === 'overdue') return { cls: 'bg-red-500 text-white', text: d.dateLabel }
+  if (d.tone === 'today') return { cls: 'bg-accent-500 text-white', text: 'сегодня' }
+  if (d.tone === 'soon') return { cls: 'bg-accent-50 dark:bg-accent-950/60 text-accent-700 dark:text-accent-400', text: d.diff === 1 ? 'завтра' : d.dateLabel }
+  return { cls: 'bg-elevated text-toned', text: d.dateLabel }
 })
 
 function onInput(e: Event) {
@@ -39,8 +39,12 @@ function clearDue() {
 
 <template>
   <UPopover v-if="canEdit" v-model:open="open">
-    <button class="inline-flex items-center gap-[5px] text-xs tabular-nums rounded hover:opacity-80 transition-opacity" :class="display.cls">
-      <UIcon name="i-lucide-calendar" class="size-3" :class="display.icon" />{{ display.text }}
+    <button
+      class="inline-flex items-center gap-[6px] h-[24px] px-[9px] rounded-[7px] text-[12px] font-medium tabular-nums transition-opacity hover:opacity-80"
+      :class="pill.cls"
+    >
+      <UIcon v-if="!pill.noIcon" name="i-lucide-calendar" class="size-[13px] shrink-0" />
+      {{ pill.text }}
     </button>
     <template #content>
       <div class="p-2 flex flex-col gap-2">
@@ -49,7 +53,12 @@ function clearDue() {
       </div>
     </template>
   </UPopover>
-  <span v-else class="inline-flex items-center gap-[5px] text-xs tabular-nums" :class="display.cls">
-    <UIcon name="i-lucide-calendar" class="size-3" :class="display.icon" />{{ display.text }}
+  <span
+    v-else
+    class="inline-flex items-center gap-[6px] h-[24px] px-[9px] rounded-[7px] text-[12px] font-medium tabular-nums"
+    :class="pill.cls"
+  >
+    <UIcon v-if="!pill.noIcon" name="i-lucide-calendar" class="size-[13px] shrink-0" />
+    {{ pill.text }}
   </span>
 </template>

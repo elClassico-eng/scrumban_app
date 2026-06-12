@@ -95,25 +95,27 @@ watch(() => y.value > 6, v => emit('update:compact', v), { immediate: true })
 </script>
 
 <template>
-  <div ref="scrollEl" class="overflow-auto px-3 sm:px-5 pb-16 bg-default" style="--kl-cols: minmax(0,1fr) 92px 104px 116px 44px 116px 96px">
-    <div class="grid grid-cols-[var(--kl-cols)] items-center h-9 sticky top-0 z-30 bg-default border-b border-default">
-      <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed pl-[34px]">Задача</span>
-      <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2">Исполн.</span>
-      <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2">Срок</span>
-      <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2 col-class">Класс</span>
-      <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2 text-center col-sp">SP</span>
-      <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2 col-clist">Чек-лист</span>
-      <span class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-dimmed px-2 col-time">Время</span>
-    </div>
+  <div ref="scrollEl" class="overflow-auto pb-16" style="--kl-cols: minmax(0,1fr) 96px 132px 138px 52px 124px 86px">
+    <div class="rounded-2xl border border-default bg-default shadow-[0_1px_0_rgba(255,255,255,0.06)_inset,0_18px_44px_-28px_rgba(10,10,10,0.18)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_18px_44px_-28px_rgba(0,0,0,0.5)] overflow-hidden mx-3 sm:mx-5 mt-3">
+      <div class="hidden sm:grid grid-cols-[var(--kl-cols)] items-center h-[42px] sticky top-0 z-30 bg-muted/60 dark:bg-muted/40 border-b border-default backdrop-blur-sm px-[18px]">
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">Задача</span>
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-class">Исполн.</span>
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">Срок</span>
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-class">Класс</span>
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-sp">SP</span>
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-clist">Чек-лист</span>
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-time">Время</span>
+      </div>
 
-    <BoardListGroup
-      v-for="g in groups" :key="g.key"
-      :group="g" :children-by-parent="childrenByParent" :members="members" :columns="columns" :dep-counts="depCounts"
-      :collapsed="collapsed.has(g.key)" :selected="selected" :expanded="expanded"
-      :can-create="canCreate" :workspace-id="workspaceId" :board-id="boardId"
-      @toggle-collapse="toggleCollapse" @toggle-select="toggleSelect" @toggle-expand="toggleExpand"
-      @add-subtask="addSubtask" @move-to-column="moveToColumn" @create-in-column="emit('create-in-column', $event)"
-    />
+      <BoardListGroup
+        v-for="g in groups" :key="g.key"
+        :group="g" :children-by-parent="childrenByParent" :members="members" :columns="columns" :dep-counts="depCounts"
+        :collapsed="collapsed.has(g.key)" :selected="selected" :expanded="expanded"
+        :can-create="canCreate" :workspace-id="workspaceId" :board-id="boardId"
+        @toggle-collapse="toggleCollapse" @toggle-select="toggleSelect" @toggle-expand="toggleExpand"
+        @add-subtask="addSubtask" @move-to-column="moveToColumn" @create-in-column="emit('create-in-column', $event)"
+      />
+    </div>
 
     <BoardListBulkBar
       v-if="selected.size > 0"

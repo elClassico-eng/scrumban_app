@@ -34,11 +34,18 @@ const items = computed(() =>
 
 <template>
   <UDropdownMenu v-if="canEdit" :items="items" :ui="{ content: 'w-60 max-h-72 overflow-auto' }">
-    <button class="flex items-center rounded hover:bg-elevated px-1 py-0.5">
+    <button class="flex items-center rounded hover:bg-elevated px-0.5 py-0.5 transition-colors">
       <template v-if="assignees.length > 0">
-        <UserAvatar v-for="(m, i) in assignees" :key="m.userId" :user="m" size="xs" ring :class="i > 0 ? '-ml-[7px]' : ''" />
+        <UserAvatar
+          v-for="(m, i) in assignees.slice(0, 3)"
+          :key="m.userId"
+          :user="m"
+          size="xs"
+          ring
+          :class="i > 0 ? '-ml-[8px]' : ''"
+        />
       </template>
-      <span v-else class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center">
+      <span v-else class="size-[26px] rounded-full border border-dashed border-[var(--ui-border-muted)] text-dimmed grid place-items-center">
         <UIcon name="i-lucide-user" class="size-3" />
       </span>
     </button>
@@ -51,9 +58,17 @@ const items = computed(() =>
   </UDropdownMenu>
   <span v-else class="flex items-center">
     <template v-if="assignees.length > 0">
-      <UserAvatar v-for="(m, i) in assignees" :key="m.userId" :user="m" size="xs" ring tooltip :class="i > 0 ? '-ml-[7px]' : ''" />
+      <UserAvatar
+        v-for="(m, i) in assignees.slice(0, 3)"
+        :key="m.userId"
+        :user="m"
+        size="xs"
+        ring
+        tooltip
+        :class="i > 0 ? '-ml-[8px]' : ''"
+      />
     </template>
-    <span v-else class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center">
+    <span v-else class="size-[26px] rounded-full border border-dashed border-[var(--ui-border-muted)] text-dimmed grid place-items-center">
       <UIcon name="i-lucide-user" class="size-3" />
     </span>
   </span>
