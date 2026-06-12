@@ -116,6 +116,8 @@ export const apiRoutes = {
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
 
+  workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
+
   workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
 
   notifications: '/api/notifications',

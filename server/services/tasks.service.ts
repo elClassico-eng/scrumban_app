@@ -73,6 +73,19 @@ export async function listTasksForBoard(input: {
   )
 }
 
+export async function listTasksForWorkspace(input: {
+  workspaceId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<Task[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) =>
+    tx
+      .select(taskWithAssigneesSelect)
+      .from(tasks)
+      .orderBy(asc(tasks.boardId), asc(tasks.columnId), asc(tasks.position)),
+  )
+}
+
 export async function getTask(input: {
   workspaceId: string
   taskId: string

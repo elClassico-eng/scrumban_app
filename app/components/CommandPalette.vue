@@ -20,11 +20,15 @@ const onBoard = computed(() => !!wsId.value && !!bId.value)
 
 const { list: tasksList } = useTasksApi(wsId, bId)
 const { list: columnsList } = useColumnsApi(wsId, bId)
+const { list: wsTasksList } = useWorkspaceTasksApi(computed(() => (!onBoard.value ? wsId.value : '')))
+const { list: boardsList } = useBoardsApi(wsId)
 
 const tasks = computed(() => tasksList.data.value?.tasks ?? [])
 const columns = computed(() =>
   [...(columnsList.data.value?.columns ?? [])].sort((a, b) => a.position - b.position),
 )
+const wsTasks = computed(() => wsTasksList.data.value?.tasks ?? [])
+const boards = computed(() => boardsList.data.value?.boards ?? [])
 
 const { list: workspacesList } = useWorkspacesApi()
 const role = computed(() =>
@@ -47,6 +51,11 @@ defineShortcuts({
 function selectTask(id: string) {
   open.value = false
   router.push(pageRoutes.task(wsId.value, bId.value, id))
+}
+
+function selectTaskOnBoard(boardId: string, taskId: string) {
+  open.value = false
+  router.push(pageRoutes.task(wsId.value, boardId, taskId))
 }
 
 function go(to: string) {
@@ -83,6 +92,21 @@ const groups = computed<CommandPaletteGroup[]>(() => {
           suffix: t.id.slice(0, 6).toUpperCase(),
           icon: 'i-lucide-square-check-big',
           onSelect: () => selectTask(t.id),
+        })),
+      })
+    }
+  } else if (wsId.value) {
+    for (const board of boards.value) {
+      const boardTasks = wsTasks.value.filter(t => t.boardId === board.id)
+      if (boardTasks.length === 0) continue
+      result.push({
+        id: board.id,
+        label: board.name,
+        items: boardTasks.map<CommandPaletteItem>(t => ({
+          label: t.title,
+          suffix: t.id.slice(0, 6).toUpperCase(),
+          icon: 'i-lucide-square-check-big',
+          onSelect: () => selectTaskOnBoard(t.boardId, t.id),
         })),
       })
     }
