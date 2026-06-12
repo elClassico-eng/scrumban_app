@@ -9,10 +9,12 @@ const { focus, toggle: toggleFocus } = useFocusMode()
 const colorMode = useColorMode()
 const { logout } = useAuthApi()
 
+const wsStore = useWorkspaceStore()
+
 const open = ref(false)
 const term = ref('')
 
-const wsId = computed(() => (route.params.id as string) ?? '')
+const wsId = computed(() => (route.params.id as string) || wsStore.currentId || '')
 const bId = computed(() => (route.params.boardId as string) ?? '')
 const onBoard = computed(() => !!wsId.value && !!bId.value)
 
