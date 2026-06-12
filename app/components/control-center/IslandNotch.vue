@@ -27,7 +27,7 @@ defineEmits<{
   <div
     v-if="expanded && active"
     class="inline-flex items-center gap-2 h-8 px-3 rounded-full text-[var(--island-orange-2)] text-[12.5px] font-semibold whitespace-nowrap max-w-[220px] overflow-hidden"
-    style="background: rgba(255,106,26,0.16); border: 1px solid rgba(255,106,26,0.3);"
+    style="background: var(--island-orange-tint); border: 1px solid var(--island-orange-tint-border);"
   >
     <span
       class="w-[7px] h-[7px] rounded-full flex-shrink-0"
@@ -38,7 +38,7 @@ defineEmits<{
   </div>
   <button
     class="relative w-9 h-9 rounded-full grid place-items-center border-none cursor-pointer text-[var(--island-ink-2)] hover:text-[var(--island-ink)] transition-colors"
-    style="background: rgba(255,255,255,0.06);"
+    style="background: var(--island-fill);"
     title="Уведомления"
     aria-label="Уведомления"
     @click.stop="$emit('bell')"

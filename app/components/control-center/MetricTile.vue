@@ -17,7 +17,7 @@ defineEmits<{
     :is="clickable ? 'button' : 'div'"
     :type="clickable ? 'button' : undefined"
     class="rounded-2xl p-[13px] flex flex-col gap-[6px] text-left transition-colors"
-    :class="clickable ? 'cursor-pointer hover:bg-[rgba(255,255,255,0.04)]' : ''"
+    :class="clickable ? 'cursor-pointer hover:bg-[var(--island-hover)]' : ''"
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
     @click="clickable && $emit('click', $event)"
   >

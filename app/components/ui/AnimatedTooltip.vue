@@ -89,11 +89,11 @@ function showImage(item: AvatarItem): boolean {
           :animate="{ opacity: 1, y: 0, scale: 1 }"
           :transition="{ type: 'spring', stiffness: 260, damping: 11 }"
           :style="{ translateX: `${translation}px`, rotate: `${rotation}deg` }"
-          class="relative flex flex-col items-center rounded-lg bg-[#16161a] px-3 py-1.5 whitespace-nowrap shadow-xl ring-1 ring-white/10"
+          class="relative flex flex-col items-center rounded-lg bg-[var(--island-bg)] px-3 py-1.5 whitespace-nowrap shadow-xl ring-1 ring-[var(--island-line)]"
         >
-          <div class="absolute -bottom-px left-1/2 h-px w-2/5 -translate-x-1/2 bg-gradient-to-r from-transparent via-[#e85002] to-transparent" />
-          <div class="text-[12px] font-semibold text-white">{{ hoveredItem.name }}</div>
-          <div v-if="hoveredItem.designation" class="text-[10px] text-white/60">{{ hoveredItem.designation }}</div>
+          <div class="absolute -bottom-px left-1/2 h-px w-2/5 -translate-x-1/2 bg-gradient-to-r from-transparent via-[var(--island-orange)] to-transparent" />
+          <div class="text-[12px] font-semibold text-[var(--island-ink)]">{{ hoveredItem.name }}</div>
+          <div v-if="hoveredItem.designation" class="text-[10px] text-[var(--island-ink-2)]">{{ hoveredItem.designation }}</div>
         </Motion>
       </div>
     </Teleport>

@@ -19,8 +19,8 @@ type ActionStyle = 'primary' | 'toggle-active' | 'normal'
 
 function btnStyle(style: ActionStyle): string {
   if (style === 'primary') return 'background: var(--island-orange); color: #fff;'
-  if (style === 'toggle-active') return 'background: rgba(255,106,26,0.18); color: var(--island-orange-2);'
-  return 'background: rgba(255,255,255,0.05); color: var(--island-ink-2);'
+  if (style === 'toggle-active') return 'background: var(--island-orange-soft); color: var(--island-orange-2);'
+  return 'background: var(--island-fill); color: var(--island-ink-2);'
 }
 </script>
 

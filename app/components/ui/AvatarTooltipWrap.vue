@@ -34,11 +34,11 @@ function onEnter(e: MouseEvent) {
           :animate="{ opacity: 1, y: 0, scale: 1 }"
           :transition="{ type: 'spring', stiffness: 260, damping: 12 }"
           :style="{ translateX: `${translation}px`, rotate: `${rotation}deg` }"
-          class="relative flex flex-col items-center rounded-lg bg-[#16161a] px-3 py-1.5 shadow-xl ring-1 ring-white/10 whitespace-nowrap"
+          class="relative flex flex-col items-center rounded-lg bg-[var(--island-bg)] px-3 py-1.5 shadow-xl ring-1 ring-[var(--island-line)] whitespace-nowrap"
         >
-          <div class="absolute -bottom-px left-1/2 -translate-x-1/2 h-px w-2/3 bg-gradient-to-r from-transparent via-[#e85002] to-transparent" />
-          <div class="text-[12px] font-semibold text-white">{{ name }}</div>
-          <div v-if="designation" class="text-[10px] text-white/60">{{ designation }}</div>
+          <div class="absolute -bottom-px left-1/2 -translate-x-1/2 h-px w-2/3 bg-gradient-to-r from-transparent via-[var(--island-orange)] to-transparent" />
+          <div class="text-[12px] font-semibold text-[var(--island-ink)]">{{ name }}</div>
+          <div v-if="designation" class="text-[10px] text-[var(--island-ink-2)]">{{ designation }}</div>
         </Motion>
       </div>
     </Teleport>

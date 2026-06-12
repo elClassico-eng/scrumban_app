@@ -39,7 +39,7 @@ defineEmits<{
           </button>
           <button
             class="w-9 h-9 rounded-[10px] border-none cursor-pointer grid place-items-center"
-            style="background: rgba(255,255,255,0.07); color: var(--island-ink);"
+            style="background: var(--island-fill); color: var(--island-ink);"
             title="Стоп"
             aria-label="Стоп"
             @click="$emit('stop', $event)"

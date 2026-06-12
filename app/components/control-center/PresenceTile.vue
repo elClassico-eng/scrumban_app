@@ -49,7 +49,7 @@ const tooltipItems = computed(() =>
       <span
         v-if="extra > 0"
         class="w-[34px] h-[34px] rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 -ml-2"
-        style="background: rgba(255,255,255,0.08); color: var(--island-ink-3); box-shadow: 0 0 0 2px var(--island-bg-2);"
+        style="background: var(--island-fill-strong); color: var(--island-ink-3); box-shadow: 0 0 0 2px var(--island-bg-2);"
       >+{{ extra }}</span>
     </button>
   </div>

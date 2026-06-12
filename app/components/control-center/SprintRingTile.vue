@@ -31,7 +31,7 @@ const ringOffset = computed(() => ringC.value * (1 - props.pct / 100))
           :cy="ringSize / 2"
           :r="ringR"
           fill="none"
-          stroke="rgba(255,255,255,0.1)"
+          stroke="var(--island-track)"
           stroke-width="6"
         />
         <circle

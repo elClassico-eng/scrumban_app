@@ -71,7 +71,7 @@ const unread = computed(() => props.notifs.filter(n => n.unread).length)
     <div class="flex-1" />
     <button
       class="w-[30px] h-[30px] rounded-lg grid place-items-center border-none cursor-pointer transition-colors"
-      :style="pinned ? 'background: rgba(255,106,26,0.2); color: var(--island-orange-2);' : 'background: rgba(255,255,255,0.06); color: var(--island-ink-3);'"
+      :style="pinned ? 'background: var(--island-orange-soft); color: var(--island-orange-2);' : 'background: var(--island-fill); color: var(--island-ink-3);'"
       title="Закрепить"
       aria-label="Закрепить"
       @click="emit('toggle-pin', $event)"
@@ -87,7 +87,7 @@ const unread = computed(() => props.notifs.filter(n => n.unread).length)
     <button
       type="button"
       class="flex-1 h-[30px] rounded-lg text-[12px] font-semibold border-none cursor-pointer transition-colors"
-      :style="tab === 'overview' ? 'background: rgba(255,106,26,0.18); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
+      :style="tab === 'overview' ? 'background: var(--island-orange-soft); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
       @click="tab = 'overview'"
     >
       Обзор
@@ -95,7 +95,7 @@ const unread = computed(() => props.notifs.filter(n => n.unread).length)
     <button
       type="button"
       class="flex-1 h-[30px] rounded-lg text-[12px] font-semibold border-none cursor-pointer transition-colors flex items-center justify-center gap-[5px]"
-      :style="tab === 'notifs' ? 'background: rgba(255,106,26,0.18); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
+      :style="tab === 'notifs' ? 'background: var(--island-orange-soft); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
       @click="tab = 'notifs'"
     >
       Уведомления

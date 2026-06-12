@@ -46,7 +46,7 @@ function resolveIcon(iconType: string): string {
       <div
         v-for="n in notifs"
         :key="n.id"
-        class="flex gap-[10px] items-start p-2.5 rounded-[10px] cursor-pointer hover:bg-[rgba(255,255,255,0.05)]"
+        class="flex gap-[10px] items-start p-2.5 rounded-[10px] cursor-pointer hover:bg-[var(--island-hover)]"
         @click.stop="(e) => $emit('read', e, n.id)"
       >
         <span
