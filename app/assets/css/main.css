@@ -21,6 +21,9 @@
   --island-orange-tint-border: rgba(232,80,2,.22);
   --island-orange-soft: rgba(232,80,2,.12);
   --island-shadow: 0 6px 18px -10px rgba(0,0,0,.10), 0 2px 6px -5px rgba(0,0,0,.06);
+  --island-glass: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.22)), rgba(255,255,255,.62);
+  --island-glass-border: rgba(255,255,255,.6);
+  --island-glass-inset: rgba(255,255,255,.7);
 }
 
 .dark {
@@ -43,6 +46,9 @@
   --island-orange-tint-border: rgba(255,106,26,.3);
   --island-orange-soft: rgba(255,106,26,.18);
   --island-shadow: 0 12px 32px -18px rgba(0,0,0,.4), 0 3px 10px -8px rgba(0,0,0,.26);
+  --island-glass: linear-gradient(180deg, rgba(40,40,44,.6), rgba(20,20,22,.28)), rgba(22,22,26,.62);
+  --island-glass-border: rgba(255,255,255,.1);
+  --island-glass-inset: rgba(255,255,255,.07);
 }
 
 @keyframes cc-pulse {

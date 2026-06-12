@@ -327,7 +327,7 @@ onUnmounted(() => {
     @mouseleave="onPointerLeave"
   >
     <div
-      :style="[islStyle, { background: 'linear-gradient(180deg,var(--island-bg-2),var(--island-bg))', border: '1px solid var(--island-line)', color: 'var(--island-ink)', boxShadow: '0 1px 0 var(--island-line-2) inset, var(--island-shadow)' }]"
+      :style="[islStyle, { background: 'var(--island-glass)', backdropFilter: 'blur(20px) saturate(150%)', WebkitBackdropFilter: 'blur(20px) saturate(150%)', border: '1px solid var(--island-glass-border)', color: 'var(--island-ink)', boxShadow: '0 1px 0 var(--island-glass-inset) inset, var(--island-shadow)' }]"
       class="relative overflow-hidden cursor-pointer"
       tabindex="0"
       aria-label="Центр управления"
@@ -408,7 +408,7 @@ onUnmounted(() => {
       v-show="hovered && !open"
       type="button"
       class="h-[52px] min-w-[52px] px-4 rounded-[22px] grid place-items-center text-[12px] font-semibold whitespace-nowrap cursor-pointer shrink-0"
-      style="background: var(--island-bg-2); border: 1px solid var(--island-line); color: var(--island-ink-2); box-shadow: var(--island-shadow);"
+      style="background: var(--island-glass); backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%); border: 1px solid var(--island-glass-border); color: var(--island-ink-2); box-shadow: 0 1px 0 var(--island-glass-inset) inset, var(--island-shadow);"
       title="Командная палитра (открыть)"
       @click.stop="onCmdK"
     >{{ cmdKLabel }}</button>
