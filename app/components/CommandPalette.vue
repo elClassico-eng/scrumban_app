@@ -174,17 +174,17 @@ const groups = computed<CommandPaletteGroup[]>(() => {
 
 const paletteUi = {
   root: 'flex flex-col min-h-0 min-w-0 divide-y divide-[var(--island-line)]',
-  input: '[&>input]:h-14 [&>input]:text-[var(--island-ink)] [&>input]:placeholder-[var(--island-ink-3)] [&>input]:bg-transparent [&>input]:text-sm [&>input]:px-4',
+  input: '[&>input]:h-14 [&>input]:text-[var(--island-ink)] [&>input]:placeholder-[var(--island-ink-3)] [&>input]:bg-transparent [&>input]:text-sm [&>input]:ps-11 [&>input]:pe-4',
   content: 'relative overflow-hidden flex flex-col',
   viewport: 'divide-y divide-[var(--island-line-2)] overflow-y-auto flex-1 focus:outline-none',
   group: 'p-1.5 isolate',
   label: 'px-2 pt-3 pb-1 text-[10px] font-semibold tracking-widest uppercase text-[var(--island-ink-3)]',
-  item: 'group relative w-full flex items-center select-none outline-none rounded-lg px-2 py-2.5 text-sm gap-2.5 transition-colors data-highlighted:bg-[rgba(255,255,255,0.05)] data-highlighted:not-data-disabled:text-[var(--island-ink)] data-disabled:cursor-not-allowed data-disabled:opacity-50',
+  item: 'group relative w-full flex items-center select-none outline-none rounded-lg px-2 py-2.5 text-sm gap-2.5 transition-colors data-highlighted:bg-[var(--island-hover)] data-highlighted:not-data-disabled:text-[var(--island-ink)] data-disabled:cursor-not-allowed data-disabled:opacity-50',
   itemLeadingIcon: 'shrink-0 size-4 text-[var(--island-ink-3)] group-data-highlighted:text-[var(--island-ink-2)] transition-colors',
   itemWrapper: 'flex-1 flex flex-col text-start min-w-0',
   itemLabel: 'truncate space-x-1',
   itemLabelBase: 'text-[var(--island-ink-2)] group-data-highlighted:text-[var(--island-ink)] transition-colors [&>mark]:text-[var(--island-bg)] [&>mark]:bg-[var(--island-orange)]',
-  itemLabelSuffix: 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-[rgba(255,255,255,0.06)] text-[var(--island-ink-3)] [&>mark]:text-[var(--island-bg)] [&>mark]:bg-[var(--island-orange)]',
+  itemLabelSuffix: 'font-mono text-[10px] px-1.5 py-0.5 rounded bg-[var(--island-fill)] text-[var(--island-ink-3)] [&>mark]:text-[var(--island-bg)] [&>mark]:bg-[var(--island-orange)]',
   itemTrailing: 'ms-auto inline-flex items-center gap-1.5',
   itemTrailingIcon: 'shrink-0 size-4 text-[var(--island-ink-3)]',
   itemTrailingHighlightedIcon: 'shrink-0 size-4 text-[var(--island-orange)] hidden group-data-highlighted:inline-flex',
@@ -197,7 +197,7 @@ const paletteUi = {
 <template>
   <UModal
     v-model:open="open"
-    :ui="{ content: 'dark max-w-xl p-0 overflow-hidden bg-[var(--island-bg)] border border-[var(--island-line)] shadow-2xl', overlay: 'bg-black/70 backdrop-blur-sm' }"
+    :ui="{ content: 'max-w-xl p-0 overflow-hidden bg-[var(--island-bg)] border border-[var(--island-line)] shadow-2xl', overlay: 'bg-black/70 backdrop-blur-sm' }"
   >
     <template #content>
       <UCommandPalette
@@ -218,20 +218,20 @@ const paletteUi = {
         <template #footer>
           <div class="flex items-center gap-3 text-[11px] text-[var(--island-ink-3)]">
             <span class="flex items-center gap-1">
-              <span class="inline-flex items-center px-1 py-0.5 rounded bg-[rgba(255,255,255,0.07)] border border-[var(--island-line)] font-mono leading-none">↑↓</span>
+              <span class="inline-flex items-center px-1 py-0.5 rounded bg-[var(--island-fill)] border border-[var(--island-line)] font-mono leading-none">↑↓</span>
               навигация
             </span>
             <span class="flex items-center gap-1">
-              <span class="inline-flex items-center px-1 py-0.5 rounded bg-[rgba(255,255,255,0.07)] border border-[var(--island-line)] font-mono leading-none">↵</span>
+              <span class="inline-flex items-center px-1 py-0.5 rounded bg-[var(--island-fill)] border border-[var(--island-line)] font-mono leading-none">↵</span>
               открыть
             </span>
             <span class="flex items-center gap-1">
-              <span class="inline-flex items-center px-1 py-0.5 rounded bg-[rgba(255,255,255,0.07)] border border-[var(--island-line)] font-mono leading-none">esc</span>
+              <span class="inline-flex items-center px-1 py-0.5 rounded bg-[var(--island-fill)] border border-[var(--island-line)] font-mono leading-none">esc</span>
               закрыть
             </span>
           </div>
           <span class="flex items-center gap-1 text-[11px] text-[var(--island-ink-3)]">
-            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[rgba(255,106,26,0.12)] border border-[rgba(255,106,26,0.2)] font-mono leading-none text-[var(--island-orange-2)]">⌘K</span>
+            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--island-orange-soft)] border border-[var(--island-orange-tint-border)] font-mono leading-none text-[var(--island-orange-2)]">⌘K</span>
           </span>
         </template>
       </UCommandPalette>
