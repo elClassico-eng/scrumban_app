@@ -184,7 +184,7 @@ scrumban_app/
 
 ## Кто я, кто user
 
-User = Даня Черкесов, магистрант ВолГУ. Email artemovaulia391@gmail.com.
+User = Даня Черкесов, магистрант ВолГУ. Email daniilerkesov122@gmail.com.
 
 Обращаться на «ты», в дружелюбном но профессиональном тоне. Русский язык.
 
