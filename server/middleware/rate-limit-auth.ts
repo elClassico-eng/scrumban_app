@@ -9,6 +9,7 @@ const TARGET_PATHS = new Set([
   '/api/auth/register',
   '/api/auth/password/forgot',
   '/api/auth/password/reset',
+  '/api/leads',
 ])
 const buckets = new Map<string, Bucket>()
 
