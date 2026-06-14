@@ -59,6 +59,18 @@ const counts = computed(() => ({
   closed: sprints.value.filter(s => s.state === 'closed').length,
 }))
 
+const activeFilterLabel = computed(() => {
+  const f = FILTERS.find(x => x.key === filter.value)
+  return f ? `${f.label} · ${counts.value[f.key]}` : 'Все'
+})
+const filterMenu = computed(() =>
+  FILTERS.map(f => ({
+    label: `${f.label} (${counts.value[f.key]})`,
+    icon: filter.value === f.key ? 'i-lucide-check' : undefined,
+    onSelect: () => { filter.value = f.key },
+  })),
+)
+
 function matchesQuery(s: Sprint): boolean {
   const q = query.value.trim().toLowerCase()
   if (!q) return true
@@ -270,24 +282,50 @@ const isFilteredEmpty = computed(() =>
       :board="board"
     />
 
-    <div class="shrink-0 flex flex-wrap items-center gap-3 pt-4 pb-3">
-      <h1 class="text-[26px] font-semibold tracking-tight text-default m-0">
-        Спринты
-        <span v-if="sprints.length > 0" class="text-[18px] font-medium text-muted tabular-nums">
-          · {{ sprints.length }}
-        </span>
-      </h1>
-      <div class="flex-1" />
+    <div class="shrink-0 pt-4 pb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+      <div class="flex items-center gap-3 sm:contents">
+        <h1 class="text-[26px] font-semibold tracking-tight text-default m-0">
+          Спринты
+          <span v-if="sprints.length > 0" class="text-[18px] font-medium text-muted tabular-nums">
+            · {{ sprints.length }}
+          </span>
+        </h1>
+        <UButton
+          v-if="canManage"
+          icon="i-lucide-plus"
+          size="md"
+          class="ml-auto sm:hidden"
+          @click="createOpen = true"
+        >
+          Спринт
+        </UButton>
+      </div>
 
-      <UInput
-        v-model="query"
-        icon="i-lucide-search"
-        placeholder="Найти спринт…"
-        size="md"
-        class="w-56"
-      />
+      <div class="hidden sm:block sm:flex-1" />
 
-      <div class="inline-flex items-center gap-1 bg-default border border-default rounded-md p-0.5">
+      <div class="flex items-center gap-2 sm:contents">
+        <UInput
+          v-model="query"
+          icon="i-lucide-search"
+          placeholder="Найти спринт…"
+          size="md"
+          class="flex-1 sm:w-56 sm:flex-none"
+        />
+
+        <UDropdownMenu :items="filterMenu" :ui="{ content: 'w-44' }" class="sm:hidden">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="md"
+            trailing-icon="i-lucide-chevron-down"
+            class="shrink-0"
+          >
+            {{ activeFilterLabel }}
+          </UButton>
+        </UDropdownMenu>
+      </div>
+
+      <div class="hidden sm:inline-flex items-center gap-1 bg-default border border-default rounded-md p-0.5">
         <button
           v-for="f in FILTERS"
           :key="f.key"
@@ -318,6 +356,7 @@ const isFilteredEmpty = computed(() =>
         v-if="canManage"
         icon="i-lucide-plus"
         size="md"
+        class="hidden sm:flex"
         @click="createOpen = true"
       >
         Создать спринт
@@ -455,22 +494,11 @@ const isFilteredEmpty = computed(() =>
       @confirm="onAddTasks"
     />
 
-    <UModal
+    <TaskFocusModal
       v-model:open="taskModalOpen"
-      :ui="{
-        content: 'w-[95vw] max-w-[1180px] p-0 rounded-2xl',
-        overlay: 'bg-black/75 backdrop-blur-sm',
-      }"
-    >
-      <template #content>
-        <TaskFocusView
-          v-if="openTaskId"
-          :workspace-id="wsId"
-          :board-id="bId"
-          :task-id="openTaskId"
-          @close="closeTaskModal"
-        />
-      </template>
-    </UModal>
+      :workspace-id="wsId"
+      :board-id="bId"
+      :task-id="openTaskId"
+    />
   </div>
 </template>

@@ -24,7 +24,7 @@ const option = computed(() => {
 
   return {
     tooltip: { trigger: 'axis' },
-    legend: { top: 0 },
+    legend: { top: 0, type: 'scroll' },
     grid: { top: 40, left: 50, right: 20, bottom: 40 },
     xAxis: { type: 'category', boundaryGap: false, data: dates },
     yAxis: { type: 'value' },
