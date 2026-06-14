@@ -127,6 +127,8 @@ export const apiRoutes = {
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
   notificationsReadAll: '/api/notifications/read-all',
   notificationsStream: '/api/notifications/stream',
+
+  adminLeads: '/api/admin/leads',
 } as const
 
 export const pageRoutes = {
@@ -139,6 +141,8 @@ export const pageRoutes = {
   invite: (token: string) => `/invite/${token}`,
 
   me: '/me',
+
+  adminLeads: '/admin/leads',
 
   workspaces: '/workspaces',
   workspace: (id: string) => `/workspaces/${id}`,
