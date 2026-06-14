@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useMediaQuery } from '@vueuse/core'
 import type { Role } from '#shared/types/domain'
 
 const route = useRoute()
@@ -30,6 +31,9 @@ const currentUserId = computed(() => authStore.user?.id ?? null)
 const query = ref('')
 const roleFilter = ref<Role | 'all'>('all')
 const view = ref<'grid' | 'list'>('grid')
+
+const isMobile = useMediaQuery('(max-width: 639px)')
+const effectiveView = computed(() => (isMobile.value ? 'grid' : view.value))
 
 const counts = computed(() => {
   const c: Record<Role | 'all', number> = {
@@ -157,7 +161,7 @@ async function onRemove(userId: string, email: string) {
       <p class="text-xs text-muted">Сбросьте фильтры или измените запрос</p>
     </div>
 
-    <div v-else-if="view === 'list'" class="rounded-xl border border-default bg-default overflow-hidden">
+    <div v-else-if="effectiveView === 'list'" class="rounded-xl border border-default bg-default overflow-hidden">
       <div class="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_170px_64px_36px] items-center gap-4 px-4 py-2 border-b border-default text-[11px] uppercase tracking-wide text-muted font-semibold">
         <div>Участник</div>
         <div>Должность</div>

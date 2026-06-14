@@ -75,9 +75,9 @@ async function onRemove(board: Board) {
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight">
+    <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="min-w-0">
+        <h1 class="text-3xl font-bold tracking-tight truncate">
           {{ workspace?.name ?? 'Workspace' }}
         </h1>
         <p class="text-sm text-muted mt-1">Доски этой команды</p>
@@ -86,7 +86,7 @@ async function onRemove(board: Board) {
         v-if="canCreate"
         icon="i-lucide-plus"
         size="lg"
-        class="py-2.5"
+        class="py-2.5 w-full sm:w-auto justify-center shrink-0"
         @click="createOpen = true"
       >
         Создать доску
