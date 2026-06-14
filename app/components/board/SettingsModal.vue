@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { BOARD_COLOR_RE, DEFAULT_BOARD_COLOR } from '#shared/constants/board-colors'
 import type { Board } from '#shared/types/board'
 
 const props = defineProps<{
@@ -14,12 +15,14 @@ const { update, recomputeSLE } = useBoardsApi(wsId)
 const toast = useToast()
 
 const schema = z.object({
+  color: z.string().regex(BOARD_COLOR_RE),
   sleDays: z.number().int().positive().nullable(),
   sleProbability: z.number().min(0.5).max(0.99),
   replenishmentPeriodDays: z.number().int().positive().max(60),
 })
 type State = z.infer<typeof schema>
 const state = reactive<State>({
+  color: DEFAULT_BOARD_COLOR,
   sleDays: null,
   sleProbability: 0.85,
   replenishmentPeriodDays: 7,
@@ -29,6 +32,7 @@ watch(
   () => props.board,
   (b) => {
     if (!b) return
+    state.color = b.color
     state.sleDays = b.sleDays
     state.sleProbability = Number(b.sleProbability)
     state.replenishmentPeriodDays = b.replenishmentPeriodDays
@@ -71,6 +75,7 @@ async function onSave() {
   try {
     await update.mutateAsync({
       boardId: props.boardId,
+      color: state.color,
       sleDays: state.sleDays,
       sleProbability: state.sleProbability,
       replenishmentPeriodDays: state.replenishmentPeriodDays,
@@ -92,6 +97,11 @@ async function onSave() {
     <template #body>
       <UForm :schema="schema" :state="state" class="space-y-5" :on-submit="onSave">
         <div>
+          <p class="text-xs uppercase tracking-wide text-muted mb-2">Цвет доски</p>
+          <BoardColorPicker v-model="state.color" />
+        </div>
+
+        <div class="pt-4 border-t border-default">
           <p class="text-xs uppercase tracking-wide text-muted mb-2">Service Level Expectation</p>
           <p class="text-sm text-muted mb-3">
             Вероятностный прогноз: какой процент задач завершается за N дней.

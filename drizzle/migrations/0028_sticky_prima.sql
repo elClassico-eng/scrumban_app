@@ -1,0 +1,1 @@
+ALTER TABLE "boards" ADD COLUMN "color" varchar(7) DEFAULT '#e85002' NOT NULL;

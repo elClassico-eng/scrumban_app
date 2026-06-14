@@ -1,5 +1,6 @@
 // PATCH /api/workspaces/:id/boards/:boardId — rename / change slug (admin+).
 import { z } from 'zod'
+import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
 import { updateBoard } from '../../../../services/boards.service'
 import { getWorkspaceForUserOrThrow } from '../../../../services/workspaces.service'
 import { requireAuth } from '../../../../utils/auth'
@@ -12,6 +13,7 @@ const BodySchema = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
     slug: z.string().trim().toLowerCase().min(3).max(64).regex(SLUG_RE).optional(),
+    color: z.string().regex(BOARD_COLOR_RE, { message: 'color must be a hex like #e85002' }).optional(),
     sleDays: z.number().int().positive().nullable().optional(),
     sleProbability: z.number().min(0.5).max(0.99).optional(),
     replenishmentPeriodDays: z.number().int().positive().max(60).optional(),
@@ -20,6 +22,7 @@ const BodySchema = z
     (d) =>
       d.name !== undefined ||
       d.slug !== undefined ||
+      d.color !== undefined ||
       d.sleDays !== undefined ||
       d.sleProbability !== undefined ||
       d.replenishmentPeriodDays !== undefined,
@@ -39,6 +42,7 @@ export default defineEventHandler(async (event) => {
       patch: {
         name: body.name,
         slug: body.slug,
+        ...(body.color !== undefined ? { color: body.color } : {}),
         ...('sleDays' in body ? { sleDays: body.sleDays } : {}),
         // numeric(3,2) is text in postgres-js; coerce.
         ...(body.sleProbability !== undefined
