@@ -261,6 +261,10 @@ const wipBarState = computed(() => {
       ghost-class="opacity-40"
       drag-class="cursor-grabbing"
       animation="150"
+      :force-fallback="true"
+      :delay="160"
+      :delay-on-touch-only="true"
+      :touch-start-threshold="6"
       @change="onChange"
     >
       <template #item="{ element }">
