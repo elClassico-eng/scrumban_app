@@ -1,6 +1,72 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+:root {
+  --island-bg: #ffffff;
+  --island-bg-2: #f6f6f7;
+  --island-line: rgba(0,0,0,.10);
+  --island-line-2: rgba(0,0,0,.06);
+  --island-tile: rgba(0,0,0,.03);
+  --island-ink: #18181b;
+  --island-ink-2: #52525b;
+  --island-ink-3: #9b9ba3;
+  --island-orange: #e85002;
+  --island-orange-2: #d9420b;
+  --island-orange-deep: #b3310c;
+  --island-fill: rgba(0,0,0,.05);
+  --island-fill-strong: rgba(0,0,0,.08);
+  --island-hover: rgba(0,0,0,.04);
+  --island-track: rgba(0,0,0,.08);
+  --island-orange-tint: rgba(232,80,2,.10);
+  --island-orange-tint-border: rgba(232,80,2,.22);
+  --island-orange-soft: rgba(232,80,2,.12);
+  --island-shadow: 0 6px 18px -10px rgba(0,0,0,.10), 0 2px 6px -5px rgba(0,0,0,.06);
+  --island-glass: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.06)), rgba(236,237,242,.58);
+  --island-glass-border: rgba(0,0,0,.07);
+  --island-glass-inset: rgba(255,255,255,.85);
+}
+
+.dark {
+  --island-bg: #16161a;
+  --island-bg-2: #1e1e23;
+  --island-line: rgba(255,255,255,.09);
+  --island-line-2: rgba(255,255,255,.06);
+  --island-tile: rgba(255,255,255,.035);
+  --island-ink: #f4f4f6;
+  --island-ink-2: #b7b8c0;
+  --island-ink-3: #7e7f8a;
+  --island-orange: #ff6a1a;
+  --island-orange-2: #ff894a;
+  --island-orange-deep: #e4540a;
+  --island-fill: rgba(255,255,255,.06);
+  --island-fill-strong: rgba(255,255,255,.09);
+  --island-hover: rgba(255,255,255,.05);
+  --island-track: rgba(255,255,255,.1);
+  --island-orange-tint: rgba(255,106,26,.16);
+  --island-orange-tint-border: rgba(255,106,26,.3);
+  --island-orange-soft: rgba(255,106,26,.18);
+  --island-shadow: 0 12px 32px -18px rgba(0,0,0,.4), 0 3px 10px -8px rgba(0,0,0,.26);
+  --island-glass: linear-gradient(180deg, rgba(40,40,44,.6), rgba(20,20,22,.28)), rgba(22,22,26,.62);
+  --island-glass-border: rgba(255,255,255,.1);
+  --island-glass-inset: rgba(255,255,255,.07);
+}
+
+@keyframes cc-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,106,26,0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(255,106,26,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,106,26,0); }
+}
+
+.cc-pulse-dot {
+  animation: cc-pulse 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-pulse-dot {
+    animation: none;
+  }
+}
+
 @theme static {
   --font-sans: 'Manrope', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -35,10 +101,10 @@ body {
   min-height: 100vh;
 }
 
-/* Flat off-white bg replaces the pastel gradient. Surfaces (sidebar /
-   header / cards) sit on this with their own thin borders. */
+/* Solid white app background. Surfaces (sidebar / header / cards) sit on
+   this and separate via their own thin borders. */
 body {
-  background-color: #f9f9f9;
+  background-color: #ffffff;
 }
 
 @utility surface {
@@ -71,6 +137,18 @@ body {
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid #e5e5e5;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+@utility liquid-glass {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.18) 100%),
+    rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .dark {
@@ -114,4 +192,24 @@ body {
 .dark .glass-strong {
   background: rgba(20, 20, 22, 0.95);
   border-color: #27272a;
+}
+
+.dark .liquid-glass {
+  background:
+    linear-gradient(180deg, rgba(40, 40, 44, 0.55) 0%, rgba(20, 20, 22, 0.2) 100%),
+    rgba(20, 20, 22, 0.6);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 640px) {
+  [style*="--kl-cols"] { --kl-cols: 1fr !important; }
+  .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
+}
+
+@media (min-width: 641px) and (max-width: 1000px) {
+  [style*="--kl-cols"] { --kl-cols: minmax(0, 1fr) 96px 132px !important; }
+  .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
 }

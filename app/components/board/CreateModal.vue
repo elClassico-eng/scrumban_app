@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { BOARD_COLOR_RE, DEFAULT_BOARD_COLOR } from '#shared/constants/board-colors'
 
 const props = defineProps<{ workspaceId: string }>()
 const open = defineModel<boolean>('open', { default: false })
@@ -8,11 +9,12 @@ const schema = z.object({
   name: z.string().trim().min(1, 'Введи название').max(255),
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
+  color: z.string().regex(BOARD_COLOR_RE),
   seedDefaults: z.boolean(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: '', slug: '', seedDefaults: true })
+const state = reactive<State>({ name: '', slug: '', color: DEFAULT_BOARD_COLOR, seedDefaults: true })
 
 const slugTouched = ref(false)
 watch(() => state.name, (name) => {
@@ -29,6 +31,7 @@ const errorMessage = computed(() =>
 function resetForm() {
   state.name = ''
   state.slug = ''
+  state.color = DEFAULT_BOARD_COLOR
   state.seedDefaults = true
   slugTouched.value = false
   create.reset()
@@ -68,6 +71,9 @@ watch(open, (v) => {
             class="w-full"
             @update:model-value="slugTouched = true"
           />
+        </UFormField>
+        <UFormField label="Цвет" name="color">
+          <BoardColorPicker v-model="state.color" class="pt-1" />
         </UFormField>
         <UFormField name="seedDefaults">
           <UCheckbox

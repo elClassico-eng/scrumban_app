@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     '@nuxtjs/google-fonts',
     'nuxt-auth-utils',
     '@pinia/nuxt',
+    '@vueuse/nuxt',
   ],
 
   css: ['~/assets/css/main.css'],
@@ -33,7 +34,9 @@ export default defineNuxtConfig({
   googleFonts: {
     families: {
       Manrope: [400, 500, 600, 700, 800],
-      'JetBrains Mono': [400, 500],
+      'JetBrains Mono': [400, 500, 600],
+      Geist: [400, 500, 600, 700, 800],
+      Unbounded: [500, 600, 700, 800],
     },
     display: 'swap',
   },

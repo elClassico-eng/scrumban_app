@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { MemberView } from '#shared/types/workspace'
+import { ROLE_LABEL } from '~/utils/role-labels'
 
 type SwimlaneMode = 'none' | 'assignee' | 'service_class' | 'epic'
 type ClassFilter = 'all' | 'expedite' | 'blocker'
@@ -46,11 +47,11 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-4 py-2.5 bg-default border-b border-default flex-wrap">
+  <div class="bg-default border-b border-default sticky top-[60px] z-10 flex items-center gap-2 px-4 py-2.5 flex-wrap">
     <UDropdownMenu :items="groupMenu" :ui="{ content: 'w-48' }">
       <button
         type="button"
-        class="inline-flex items-center gap-2 h-8 px-3 rounded-md border border-default bg-default text-[13px] text-default hover:border-zinc-400 cursor-pointer transition-colors"
+        class="inline-flex items-center gap-2 h-8 px-3 rounded-md border border-default bg-default/70 text-[13px] text-default hover:border-zinc-400 cursor-pointer transition-colors"
       >
         <span class="text-muted">Группировка:</span>
         <span class="font-medium">{{ swimlaneLabel }}</span>
@@ -89,20 +90,25 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
       >
         Все
       </button>
-      <button
+      <UiAvatarTooltipWrap
         v-for="m in visibleMembers"
         :key="m.userId"
-        type="button"
-        :class="[
-          'relative size-6 rounded-full grid place-items-center transition-all cursor-pointer -ml-1.5 first:ml-0',
-          selectedAssignees.size > 0 && !selectedAssignees.has(m.userId) ? 'opacity-40 grayscale' : '',
-          selectedAssignees.has(m.userId) ? 'ring-2 ring-accent-500 z-10' : '',
-        ]"
-        :title="displayName(m)"
-        @click="emit('toggle-assignee', m.userId)"
+        :name="displayName(m)"
+        :designation="ROLE_LABEL[m.role]"
+        class="-ml-1.5 first:ml-0"
       >
-        <UserAvatar :user="m" size="sm" />
-      </button>
+        <button
+          type="button"
+          :class="[
+            'relative size-6 rounded-full grid place-items-center transition-all cursor-pointer',
+            selectedAssignees.size > 0 && !selectedAssignees.has(m.userId) ? 'opacity-40 grayscale' : '',
+            selectedAssignees.has(m.userId) ? 'ring-2 ring-accent-500 z-10' : '',
+          ]"
+          @click="emit('toggle-assignee', m.userId)"
+        >
+          <UserAvatar :user="m" size="sm" />
+        </button>
+      </UiAvatarTooltipWrap>
     </div>
 
     <button
@@ -111,7 +117,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
         'inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] cursor-pointer transition-colors',
         classFilter === 'expedite'
           ? 'bg-inverted text-inverted border-brand-500'
-          : 'bg-default text-default border-default hover:border-zinc-400',
+          : 'bg-default/70 text-default border-default hover:border-zinc-400',
       ]"
       @click="emit('update:classFilter', classFilter === 'expedite' ? 'all' : 'expedite')"
     >
@@ -136,7 +142,7 @@ const visibleMembers = computed(() => props.members.slice(0, 8))
         'inline-flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12.5px] cursor-pointer transition-colors',
         classFilter === 'blocker'
           ? 'bg-inverted text-inverted border-brand-500'
-          : 'bg-default text-default border-default hover:border-zinc-400',
+          : 'bg-default/70 text-default border-default hover:border-zinc-400',
       ]"
       @click="emit('update:classFilter', classFilter === 'blocker' ? 'all' : 'blocker')"
     >

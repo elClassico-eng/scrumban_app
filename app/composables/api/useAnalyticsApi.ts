@@ -9,6 +9,7 @@ import type {
   MonteCarloQuery,
   WipRecommendationsReport,
 } from '#shared/types/analytics'
+import type { TimeReportResponse } from '#shared/types/time-entry'
 
 export function useAnalyticsApi(workspaceId: MaybeRef<string>, boardId: MaybeRef<string>) {
   const enabled = computed(() => !!unref(workspaceId) && !!unref(boardId))
@@ -64,5 +65,12 @@ export function useAnalyticsApi(workspaceId: MaybeRef<string>, boardId: MaybeRef
     })
   }
 
-  return { cfd, cycleTime, throughput, wipRecommendations, monteCarlo }
+  const timeReport = useQuery({
+    queryKey: computed(() => ['analytics', 'time-report', unref(workspaceId), unref(boardId)]),
+    queryFn: () => $fetch<TimeReportResponse>(apiRoutes.boardTimeReport(unref(workspaceId), unref(boardId))),
+    enabled,
+    staleTime: 60_000,
+  })
+
+  return { cfd, cycleTime, throughput, wipRecommendations, monteCarlo, timeReport }
 }

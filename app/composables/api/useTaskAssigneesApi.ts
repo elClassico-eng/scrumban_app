@@ -7,6 +7,7 @@ export function useTaskAssigneesApi(
   workspaceId: MaybeRef<string>,
   boardId: MaybeRef<string>,
   taskId: MaybeRef<string>,
+  options?: { enabled?: MaybeRef<boolean> },
 ) {
   const qc = useQueryClient()
 
@@ -23,7 +24,7 @@ export function useTaskAssigneesApi(
       $fetch<TaskAssigneesListResponse>(
         apiRoutes.taskAssignees(unref(workspaceId), unref(boardId), unref(taskId)),
       ),
-    enabled: computed(() => !!unref(workspaceId) && !!unref(boardId) && !!unref(taskId)),
+    enabled: computed(() => !!unref(workspaceId) && !!unref(boardId) && !!unref(taskId) && (unref(options?.enabled) ?? true)),
     staleTime: 15_000,
   })
 

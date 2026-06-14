@@ -31,6 +31,7 @@ export const boards = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     // Slug is unique only within a workspace, not globally.
     slug: varchar('slug', { length: 64 }).notNull(),
+    color: varchar('color', { length: 7 }).notNull().default('#e85002'),
     sleDays: integer('sle_days'),
     sleProbability: decimal('sle_probability', { precision: 3, scale: 2 })
       .notNull()

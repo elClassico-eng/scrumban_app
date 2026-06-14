@@ -33,25 +33,29 @@ const visibleMembers = computed(() => sortedMembers.value.slice(0, props.visible
 const hiddenCount = computed(() =>
   Math.max(0, sortedMembers.value.length - props.visibleLimit),
 )
+
+const tooltipItems = computed(() =>
+  visibleMembers.value.map(m => ({
+    id: m.userId,
+    name: displayName(m),
+    designation: ROLE_LABEL[m.role] ?? m.email,
+    image: m.avatarUrl,
+    initials: initials(m),
+    color: avatarColor(m.userId),
+  })),
+)
 </script>
 
 <template>
   <NuxtLink
     v-if="current && members.length > 0"
     :to="pageRoutes.workspaceMembers(current.id)"
-    class="flex items-center -space-x-2 hover:opacity-90 transition-opacity"
+    class="flex items-center hover:opacity-90 transition-opacity"
   >
-    <UserAvatar
-      v-for="member in visibleMembers"
-      :key="member.userId"
-      :user="member"
-      size="md"
-      tooltip
-      ring
-    />
+    <UiAnimatedTooltip :items="tooltipItems" :size="32" ring="#ffffff" />
     <div
       v-if="hiddenCount > 0"
-      class="size-8 rounded-full bg-elevated text-muted text-xs font-medium flex items-center justify-center shrink-0 ring-2 ring-white dark:ring-zinc-800"
+      class="size-8 rounded-full bg-elevated text-muted text-xs font-medium flex items-center justify-center shrink-0 ring-2 ring-white dark:ring-zinc-800 -ml-2"
       :title="`Ещё ${hiddenCount}`"
     >
       +{{ hiddenCount }}

@@ -19,7 +19,6 @@ const { list: boardsList } = useBoardsApi(wsId)
 const { list: tasksList } = useTasksApi(wsId, bId)
 const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 
-const cosInfo = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const blockerCount = computed(() => depCountsByTaskId.value.get(props.task.id)?.blockerCount ?? 0)
 
 const memberById = computed(() => {
@@ -61,19 +60,13 @@ interface DueState {
   tone: 'overdue' | 'today' | 'soon' | 'normal'
 }
 const dueState = computed<DueState | null>(() => {
-  if (!props.task.dueDate) return null
-  const d = new Date(props.task.dueDate)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const dueDay = new Date(d)
-  dueDay.setHours(0, 0, 0, 0)
-  const diff = Math.round((dueDay.getTime() - today.getTime()) / 86_400_000)
-  const fmt = d.toLocaleDateString('ru', { day: '2-digit', month: 'short' })
-  if (diff < 0) return { label: `просрочена на ${-diff}д`, tone: 'overdue' }
-  if (diff === 0) return { label: 'сегодня', tone: 'today' }
-  if (diff === 1) return { label: 'завтра', tone: 'soon' }
-  if (diff <= 3) return { label: `${fmt} · через ${diff}д`, tone: 'soon' }
-  return { label: fmt, tone: 'normal' }
+  const info = dueInfo(props.task.dueDate)
+  if (!info) return null
+  if (info.tone === 'overdue') return { label: `просрочена на ${-info.diff}д`, tone: 'overdue' }
+  if (info.tone === 'today') return { label: 'сегодня', tone: 'today' }
+  if (info.diff === 1) return { label: 'завтра', tone: 'soon' }
+  if (info.tone === 'soon') return { label: `${info.dateLabel} · через ${info.diff}д`, tone: 'soon' }
+  return { label: info.dateLabel, tone: 'normal' }
 })
 
 const stripeColor = computed(() => {

@@ -69,7 +69,7 @@ describe('POST /api/workspaces/:id/boards', () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)
 
-    const res = await fetchWithJar<{ board: { id: string; name: string; slug: string } }>(
+    const res = await fetchWithJar<{ board: { id: string; name: string; slug: string; color: string } }>(
       owner.jar,
       `/api/workspaces/${wsId}/boards`,
       { method: 'POST', body: { name: 'Sprint Board', slug: 'sprint' } },
@@ -77,6 +77,20 @@ describe('POST /api/workspaces/:id/boards', () => {
     expect(res.status).toBe(200)
     expect(res.body.board.slug).toBe('sprint')
     expect(res.body.board.name).toBe('Sprint Board')
+    expect(res.body.board.color).toBe('#e85002')
+  })
+
+  it('persists an explicit board color on create', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+
+    const res = await fetchWithJar<{ board: { color: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'Blue', slug: 'blue', color: '#3b82f6' } },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.board.color).toBe('#3b82f6')
   })
 
   it('admin can create a board', async () => {
@@ -245,6 +259,41 @@ describe('PATCH /api/workspaces/:id/boards/:boardId', () => {
     )
     expect(res.status).toBe(200)
     expect(res.body.board.name).toBe('New')
+  })
+
+  it('admin can change board color', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const created = await fetchWithJar<{ board: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'Hued', slug: 'hued' } },
+    )
+
+    const res = await fetchWithJar<{ board: { color: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${created.body.board.id}`,
+      { method: 'PATCH', body: { color: '#22c55e' } },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.board.color).toBe('#22c55e')
+  })
+
+  it('rejects a non-hex color (400)', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const created = await fetchWithJar<{ board: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'C', slug: 'c-board' } },
+    )
+
+    const res = await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${created.body.board.id}`,
+      { method: 'PATCH', body: { color: 'red' } },
+    )
+    expect(res.status).toBe(400)
   })
 
   it('member cannot rename a board (403)', async () => {

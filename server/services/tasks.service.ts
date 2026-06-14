@@ -17,8 +17,10 @@ import { and, asc, eq, getTableColumns, gt, gte, inArray, lt, lte, sql } from 'd
 import {
   boardColumns,
   taskAssignees,
+  taskChecklistItems,
   taskEvents,
   tasks,
+  timeEntries,
   type ColumnRole,
   type ServiceClass,
   type Task,
@@ -27,19 +29,34 @@ import {
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant, type DbTransaction } from '../utils/db'
+import { NotFoundError, ValidationError } from '../utils/errors'
+import { publishBoardEvent } from '../utils/events'
+import { emitNotification } from './notifications.service'
+import { requireMinRole } from '../utils/rbac'
 
+// `tasks.id` is written as a SQL literal (not Drizzle's ${tasks.id}) so the
+// correlated subqueries below reference the outer tasks row, not the joined
+// table's own id column.
 const taskWithAssigneesSelect = {
   ...getTableColumns(tasks),
   assigneeIds: sql<string[]>`COALESCE((
     SELECT array_agg(${taskAssignees.userId} ORDER BY ${taskAssignees.addedAt})
     FROM ${taskAssignees}
-    WHERE ${taskAssignees.taskId} = ${tasks.id}
+    WHERE ${taskAssignees.taskId} = tasks.id
   ), ARRAY[]::uuid[])`.as('assignee_ids'),
+  checklistTotal: sql<number>`COALESCE((
+    SELECT COUNT(*)::int FROM ${taskChecklistItems}
+    WHERE ${taskChecklistItems.taskId} = tasks.id
+  ), 0)`.as('checklist_total'),
+  checklistDone: sql<number>`COALESCE((
+    SELECT COUNT(*)::int FROM ${taskChecklistItems}
+    WHERE ${taskChecklistItems.taskId} = tasks.id AND ${taskChecklistItems.isDone}
+  ), 0)`.as('checklist_done'),
+  timeSpentSeconds: sql<number>`COALESCE((
+    SELECT SUM(${timeEntries.durationSeconds})::int FROM ${timeEntries}
+    WHERE ${timeEntries.taskId} = tasks.id AND ${timeEntries.durationSeconds} IS NOT NULL
+  ), 0)`.as('time_spent_seconds'),
 }
-import { NotFoundError, ValidationError } from '../utils/errors'
-import { publishBoardEvent } from '../utils/events'
-import { emitNotification } from './notifications.service'
-import { requireMinRole } from '../utils/rbac'
 
 export async function listTasksForBoard(input: {
   workspaceId: string
@@ -53,6 +70,19 @@ export async function listTasksForBoard(input: {
       .from(tasks)
       .where(eq(tasks.boardId, input.boardId))
       .orderBy(asc(tasks.columnId), asc(tasks.position)),
+  )
+}
+
+export async function listTasksForWorkspace(input: {
+  workspaceId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<Task[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) =>
+    tx
+      .select(taskWithAssigneesSelect)
+      .from(tasks)
+      .orderBy(asc(tasks.boardId), asc(tasks.columnId), asc(tasks.position)),
   )
 }
 

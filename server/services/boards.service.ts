@@ -8,6 +8,7 @@
 //   update    → admin+
 //   delete    → owner (destructive: cascades to columns + tasks + events)
 import { and, eq, sql } from 'drizzle-orm'
+import { boardColorForIndex } from '#shared/constants/board-colors'
 import {
   boardColumns,
   boards,
@@ -59,18 +60,22 @@ export async function createBoard(input: {
   workspaceId: string
   name: string
   slug: string
+  color?: string
   seedDefaults?: boolean
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
   requireMinRole(input.actorRole, 'admin')
   try {
     return await withTenant(input.workspaceId, async (tx) => {
+      const existing = await tx.select({ id: boards.id }).from(boards)
+      const color = input.color ?? boardColorForIndex(existing.length)
       const [row] = await tx
         .insert(boards)
         .values({
           workspaceId: input.workspaceId,
           name: input.name,
           slug: input.slug,
+          color,
         })
         .returning()
 
@@ -105,6 +110,7 @@ export async function updateBoard(input: {
   patch: {
     name?: string
     slug?: string
+    color?: string
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
@@ -117,6 +123,7 @@ export async function updateBoard(input: {
   const set: {
     name?: string
     slug?: string
+    color?: string
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
@@ -124,6 +131,7 @@ export async function updateBoard(input: {
   } = { updatedAt: new Date() }
   if (input.patch.name !== undefined) set.name = input.patch.name
   if (input.patch.slug !== undefined) set.slug = input.patch.slug
+  if (input.patch.color !== undefined) set.color = input.patch.color
   if ('sleDays' in input.patch) set.sleDays = input.patch.sleDays ?? null
   if (input.patch.sleProbability !== undefined) set.sleProbability = input.patch.sleProbability
   if (input.patch.replenishmentPeriodDays !== undefined) {

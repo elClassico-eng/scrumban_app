@@ -70,6 +70,18 @@ export const apiRoutes = {
   taskChecklistReorder: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/checklist/reorder`,
 
+  taskTime: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/time`,
+  taskTimeItem: (wsId: string, boardId: string, taskId: string, entryId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/time/${entryId}`,
+  taskTimeStart: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/time/start`,
+  taskTimeStop: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/time/stop`,
+  activeTimer: (wsId: string) => `/api/workspaces/${wsId}/time/active`,
+  boardTimeReport: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/analytics/time`,
+
   taskComments: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/comments`,
   taskComment: (wsId: string, boardId: string, taskId: string, commentId: string) =>
@@ -103,6 +115,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/analytics/wip-recommendations`,
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
+
+  workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
 
   workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
 
