@@ -104,12 +104,12 @@ async function onDelete() {
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 class="text-3xl font-bold tracking-tight">Воркспейсы</h1>
         <p class="text-sm text-muted mt-1">Выберите команду или создайте новую</p>
       </div>
-      <UButton icon="i-lucide-plus" size="lg" class="py-2.5" @click="createOpen = true">
+      <UButton icon="i-lucide-plus" size="lg" class="py-2.5 w-full sm:w-auto justify-center" @click="createOpen = true">
         Создать workspace
       </UButton>
     </div>

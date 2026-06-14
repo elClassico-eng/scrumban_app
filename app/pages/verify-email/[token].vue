@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth', cardMaxWidth: 'max-w-md' })
+definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-md' })
 useHead({ title: 'Подтверждение email — Scrumban' })
 
 type State =

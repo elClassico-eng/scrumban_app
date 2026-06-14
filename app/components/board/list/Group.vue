@@ -44,7 +44,7 @@ function onAdd() {
 <template>
   <div>
     <div
-      class="group/head flex items-center gap-[11px] px-[18px] py-[11px] cursor-pointer select-none hover:bg-muted/40 dark:hover:bg-muted/20 transition-colors sticky top-[42px] sm:top-[42px] bg-default z-20"
+      class="group/head flex items-center gap-2 sm:gap-[11px] px-4 sm:px-[18px] py-2.5 sm:py-[11px] cursor-pointer select-none hover:bg-muted/40 dark:hover:bg-muted/20 transition-colors sticky top-0 sm:top-[42px] bg-default z-20"
       @click="emit('toggle-collapse', group.key)"
     >
       <span
@@ -55,11 +55,11 @@ function onAdd() {
       </span>
 
       <span
-        class="inline-flex items-center gap-[7px] h-[26px] px-3 rounded-full text-[11.5px] font-bold uppercase tracking-[0.04em] text-white shrink-0"
+        class="inline-flex items-center gap-[7px] h-[24px] sm:h-[26px] px-2.5 sm:px-3 rounded-full text-[10.5px] sm:text-[11.5px] font-bold uppercase tracking-[0.04em] text-white min-w-0 shrink sm:shrink-0"
         :class="group.pillClass"
       >
         <span class="w-1.5 h-1.5 rounded-full bg-white/90 shrink-0" />
-        {{ group.title }}
+        <span class="truncate">{{ group.title }}</span>
       </span>
 
       <span
@@ -70,7 +70,7 @@ function onAdd() {
         <template v-if="group.limit != null"> / {{ group.limit }}</template>
       </span>
 
-      <span v-if="group.limit != null" class="w-[72px] h-[5px] bg-elevated dark:bg-accented rounded-full overflow-hidden shrink-0">
+      <span v-if="group.limit != null" class="hidden sm:inline-block w-[72px] h-[5px] bg-elevated dark:bg-accented rounded-full overflow-hidden shrink-0">
         <span
           class="block h-full rounded-full transition-[width] duration-300"
           :class="over ? 'bg-red-500' : warn ? 'bg-accent-500' : 'bg-zinc-400 dark:bg-zinc-500'"
@@ -80,7 +80,7 @@ function onAdd() {
 
       <span class="flex-1" />
 
-      <span v-if="spSum > 0" class="text-[11.5px] text-dimmed tabular-nums shrink-0">
+      <span v-if="spSum > 0" class="hidden sm:inline-block text-[11.5px] text-dimmed tabular-nums shrink-0">
         <b class="text-toned font-semibold">{{ spSum }}</b> SP
       </span>
 
@@ -97,13 +97,13 @@ function onAdd() {
     <template v-if="!collapsed">
       <div
         v-if="count === 0"
-        class="flex items-center gap-2.5 mx-[18px] mb-2 ml-10 px-[14px] py-[10px] border border-dashed border-default rounded-[10px] text-dimmed text-[12.5px] bg-muted/30 dark:bg-muted/10"
+        class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-2.5 mx-4 sm:mx-[18px] mb-2 ml-4 sm:ml-10 px-[14px] py-[10px] border border-dashed border-default rounded-[10px] text-dimmed text-[12.5px] bg-muted/30 dark:bg-muted/10"
       >
-        Нет задач — перетащите сюда или
+        <span>Нет задач — перетащите сюда или</span>
         <button
           v-if="canCreate"
           type="button"
-          class="ml-auto inline-flex items-center gap-[5px] text-muted font-medium hover:text-accent-500 transition-colors"
+          class="sm:ml-auto inline-flex items-center gap-[5px] text-muted font-medium hover:text-accent-500 transition-colors"
           @click="onAdd"
         >
           <UIcon name="i-lucide-plus" class="size-3" />
@@ -138,7 +138,7 @@ function onAdd() {
       <button
         v-if="canCreate && count > 0"
         type="button"
-        class="flex items-center gap-2 min-h-[42px] pl-[40px] pr-[18px] text-[12.5px] text-dimmed hover:text-accent-600 dark:hover:text-accent-400 w-full text-left transition-colors border-t border-[var(--ui-border-muted)]"
+        class="flex items-center gap-2 min-h-[42px] pl-4 sm:pl-[40px] pr-4 sm:pr-[18px] text-[12.5px] text-dimmed hover:text-accent-600 dark:hover:text-accent-400 w-full text-left transition-colors border-t border-[var(--ui-border-muted)]"
         @click="onAdd"
       >
         <UIcon name="i-lucide-plus" class="size-3.5" />

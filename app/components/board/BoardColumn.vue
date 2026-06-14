@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import draggable from 'vuedraggable'
+import { useMediaQuery } from '@vueuse/core'
 import type { BoardColumn as Column } from '#shared/types/column'
 import type { Task } from '#shared/types/task'
 
@@ -15,6 +16,7 @@ const props = defineProps<{
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
 const { moveTask } = useTaskMove(wsId, bId)
+const isTouch = useMediaQuery('(pointer: coarse)')
 const { update: updateColumn, remove: removeColumn } = useColumnsApi(wsId, bId)
 const confirm = useConfirm()
 const toast = useToast()
@@ -261,6 +263,10 @@ const wipBarState = computed(() => {
       ghost-class="opacity-40"
       drag-class="cursor-grabbing"
       animation="150"
+      :force-fallback="isTouch"
+      :delay="160"
+      :delay-on-touch-only="true"
+      :touch-start-threshold="6"
       @change="onChange"
     >
       <template #item="{ element }">

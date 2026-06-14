@@ -168,7 +168,7 @@ watch(open, (v) => {
     :ui="{ content: 'max-w-xl' }"
   >
     <template #content>
-      <div class="flex items-center gap-3 p-5 border-b border-default">
+      <div class="flex items-start gap-3 p-4 sm:p-5 border-b border-default">
         <span class="inline-flex size-9 items-center justify-center rounded-lg bg-primary shrink-0">
           <UIcon name="i-lucide-mail-plus" class="size-4 text-accent-500" />
         </span>
@@ -185,6 +185,7 @@ watch(open, (v) => {
           size="sm"
           color="neutral"
           variant="soft"
+          class="shrink-0"
           @click="open = false"
         />
       </div>
@@ -291,7 +292,7 @@ watch(open, (v) => {
           <p class="text-xs font-semibold text-default uppercase tracking-wide mb-2">
             Роль <span class="text-accent-500">*</span>
           </p>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               v-for="opt in ROLE_OPTIONS"
               :key="opt.value"
@@ -325,8 +326,8 @@ watch(open, (v) => {
         </div>
       </div>
 
-      <div class="flex items-center gap-2 p-4 border-t border-default">
-        <p class="flex-1 text-xs text-muted">
+      <div class="flex flex-col gap-3 p-4 border-t border-default sm:flex-row sm:items-center sm:gap-2">
+        <p class="text-xs text-muted sm:flex-1">
           <template v-if="mode === 'emails'">
             <span v-if="validCount === 0">Введите хотя бы один email-адрес</span>
             <span v-else>
@@ -341,25 +342,27 @@ watch(open, (v) => {
             Ссылка с ролью <span class="text-default font-semibold">{{ ROLE_LABEL[role] }}</span> · 7 дней
           </template>
         </p>
-        <UButton variant="soft" color="neutral" @click="open = false">
-          Отмена
-        </UButton>
-        <UButton
-          v-if="mode === 'emails'"
-          icon="i-lucide-send"
-          :disabled="validCount === 0"
-          :loading="create.isPending.value"
-          @click="sendInvitations"
-        >
-          Пригласить{{ validCount > 0 ? ` (${validCount})` : '' }}
-        </UButton>
-        <UButton
-          v-else-if="linkToken"
-          icon="i-lucide-copy"
-          @click="copyLink"
-        >
-          Копировать ссылку
-        </UButton>
+        <div class="flex items-center justify-end gap-2 sm:shrink-0">
+          <UButton variant="soft" color="neutral" @click="open = false">
+            Отмена
+          </UButton>
+          <UButton
+            v-if="mode === 'emails'"
+            icon="i-lucide-send"
+            :disabled="validCount === 0"
+            :loading="create.isPending.value"
+            @click="sendInvitations"
+          >
+            Пригласить{{ validCount > 0 ? ` (${validCount})` : '' }}
+          </UButton>
+          <UButton
+            v-else-if="linkToken"
+            icon="i-lucide-copy"
+            @click="copyLink"
+          >
+            Копировать ссылку
+          </UButton>
+        </div>
       </div>
     </template>
   </UModal>

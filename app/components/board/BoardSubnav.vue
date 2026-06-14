@@ -119,10 +119,10 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 
 <template>
   <div
-    class="bg-default border-b border-default sticky top-0 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
+    class="bg-default border-b border-default relative lg:sticky lg:top-0 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
     :class="compact ? 'py-2' : 'py-3'"
   >
-    <div class="flex items-center gap-4 px-4 sm:px-6 min-h-[44px]">
+    <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-4 px-4 sm:px-6 min-h-[44px]">
       <div class="flex flex-col min-w-0 gap-1">
         <NuxtLink
           v-show="!compact"
@@ -155,7 +155,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
         </div>
       </div>
 
-      <div class="ml-auto flex items-center gap-1.5 shrink-0">
+      <div class="flex items-center gap-1.5 overflow-x-auto [&>*]:shrink-0 sm:ml-auto sm:overflow-visible">
         <UDropdownMenu :items="dropdownItems">
           <button
             type="button"

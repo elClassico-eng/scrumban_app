@@ -75,12 +75,12 @@ function closeSelected() {
 </script>
 
 <template>
-  <div class="sticky bottom-4 mx-auto w-max flex items-center gap-3.5 bg-zinc-900 text-white rounded-full py-2 pr-2.5 pl-[18px] shadow-[0_12px_32px_-8px_rgba(0,0,0,0.45)] z-50">
+  <div class="sticky bottom-4 mx-auto w-max max-w-[calc(100vw-1.5rem)] flex items-center gap-2.5 sm:gap-3.5 bg-zinc-900 text-white rounded-full py-2 pr-2.5 pl-4 sm:pl-[18px] shadow-[0_12px_32px_-8px_rgba(0,0,0,0.45)] z-50">
     <span class="text-[13px] font-semibold"><b class="text-accent-500">{{ selected.size }}</b> выбрано</span>
     <div class="flex items-center gap-1">
       <UDropdownMenu :items="assignItems" :ui="{ content: 'w-60 max-h-72 overflow-auto' }">
         <button class="h-[30px] px-3 bg-white/10 hover:bg-white/20 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5">
-          <UIcon name="i-lucide-user" class="size-3.5" /> Назначить
+          <UIcon name="i-lucide-user" class="size-3.5" /> <span class="hidden sm:inline">Назначить</span>
         </button>
         <template #item-leading="{ item }">
           <UserAvatar :user="(item as any).member" size="xs" />
@@ -89,7 +89,7 @@ function closeSelected() {
 
       <UPopover v-model:open="dueOpen">
         <button class="h-[30px] px-3 bg-white/10 hover:bg-white/20 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5">
-          <UIcon name="i-lucide-calendar" class="size-3.5" /> Срок
+          <UIcon name="i-lucide-calendar" class="size-3.5" /> <span class="hidden sm:inline">Срок</span>
         </button>
         <template #content>
           <div class="p-2"><input type="date" class="h-8 px-2 rounded-md bg-default border border-default text-sm text-default" @change="applyDue"></div>
@@ -101,7 +101,7 @@ function closeSelected() {
         class="h-[30px] px-3 bg-white/10 hover:bg-white/20 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5"
         @click="closeSelected"
       >
-        <UIcon name="i-lucide-check" class="size-3.5" /> Закрыть
+        <UIcon name="i-lucide-check" class="size-3.5" /> <span class="hidden sm:inline">Закрыть</span>
       </button>
 
       <button class="size-[30px] grid place-items-center rounded-full text-white/70 hover:bg-white/10" @click="emit('clear')">

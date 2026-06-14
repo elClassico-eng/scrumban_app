@@ -21,7 +21,7 @@ const TABS: { id: FocusTab; label: string; icon: string }[] = [
 </script>
 
 <template>
-  <div class="flex gap-0.5 px-7 border-b border-default shrink-0" role="tablist">
+  <div class="flex gap-0.5 px-4 sm:px-7 border-b border-default shrink-0 overflow-x-auto [&>*]:shrink-0" role="tablist">
     <button
       v-for="t in TABS"
       :key="t.id"
@@ -46,7 +46,7 @@ const TABS: { id: FocusTab; label: string; icon: string }[] = [
       />
       <span
         v-if="current === t.id"
-        class="absolute inset-x-2 -bottom-px h-0.5 bg-accent-500 rounded-sm"
+        class="absolute inset-x-2 bottom-0 h-0.5 bg-accent-500 rounded-sm"
       />
     </button>
   </div>

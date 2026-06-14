@@ -178,11 +178,11 @@ const isEmpty = computed(() => orderedTasks.value.length === 0)
   <div class="space-y-4 h-full flex flex-col">
     <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" :board="board" />
 
-    <div class="flex items-center justify-between gap-3">
+    <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <p class="text-xs text-muted">
         Каждая полоса — задача от создания до закрытия. Прозрачные — ещё в работе.
       </p>
-      <div class="flex items-center gap-3 text-xs">
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <span class="inline-flex items-center gap-1.5">
           <span class="size-3 rounded bg-red-500" />{{ SERVICE_CLASS_INFO.expedite.shortLabel }}
         </span>
@@ -219,22 +219,11 @@ const isEmpty = computed(() => orderedTasks.value.length === 0)
       />
     </div>
 
-    <UModal
+    <TaskFocusModal
       v-model:open="taskModalOpen"
-      :ui="{
-        content: 'w-[95vw] max-w-[1600px] p-0',
-        overlay: 'bg-black/70',
-      }"
-    >
-      <template #content>
-        <TaskFocusView
-          v-if="openTaskId"
-          :workspace-id="wsId"
-          :board-id="bId"
-          :task-id="openTaskId"
-          @close="closeTaskModal"
-        />
-      </template>
-    </UModal>
+      :workspace-id="wsId"
+      :board-id="bId"
+      :task-id="openTaskId"
+    />
   </div>
 </template>

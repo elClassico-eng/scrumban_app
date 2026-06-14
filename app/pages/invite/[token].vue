@@ -1,17 +1,20 @@
 <script setup lang="ts">
+import type { Role } from '#shared/types/domain'
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth', cardMaxWidth: 'max-w-md' })
+definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-md' })
 useHead({ title: 'Приглашение в workspace — Scrumban' })
 
 type InspectResponse =
   | { valid: true, workspaceName: string, role: string, emailBound: string | null }
   | { valid: false, reason: 'not_found' | 'expired' | 'already_used' }
 
+type InviteInfo = { workspaceName: string, role: Role, emailBound: string | null }
+
 type State =
   | { kind: 'loading' }
   | { kind: 'invalid', reason: 'not_found' | 'expired' | 'already_used' }
-  | { kind: 'ready', workspaceName: string, role: string, emailBound: string | null }
+  | { kind: 'ready' }
   | { kind: 'accepting' }
   | { kind: 'email_not_verified' }
   | { kind: 'error', message: string }
@@ -23,15 +26,16 @@ const token = computed(() => String(route.params.token ?? ''))
 const inviteHref = computed(() => pageRoutes.invite(token.value))
 
 const state = ref<State>({ kind: 'loading' })
+const invite = ref<InviteInfo | null>(null)
 
 const { sessionQuery } = useAuthApi()
 const authenticated = computed(() => !!sessionQuery.data.value?.user)
 const userEmail = computed(() => sessionQuery.data.value?.user?.email ?? null)
 
 const emailMismatch = computed(() => {
-  if (state.value.kind !== 'ready') return false
-  if (!state.value.emailBound || !userEmail.value) return false
-  return state.value.emailBound.toLowerCase() !== userEmail.value.toLowerCase()
+  const info = invite.value
+  if (!info?.emailBound || !userEmail.value) return false
+  return info.emailBound.toLowerCase() !== userEmail.value.toLowerCase()
 })
 
 onMounted(async () => {
@@ -41,12 +45,12 @@ onMounted(async () => {
       state.value = { kind: 'invalid', reason: res.reason }
       return
     }
-    state.value = {
-      kind: 'ready',
+    invite.value = {
       workspaceName: res.workspaceName,
-      role: res.role,
+      role: res.role as Role,
       emailBound: res.emailBound,
     }
+    state.value = { kind: 'ready' }
   }
   catch (err) {
     state.value = { kind: 'error', message: getErrorMessage(err, 'Не удалось загрузить приглашение') }
@@ -55,7 +59,7 @@ onMounted(async () => {
 
 async function accept() {
   if (state.value.kind !== 'ready') return
-  const wsName = state.value.workspaceName
+  const wsName = invite.value?.workspaceName ?? ''
   state.value = { kind: 'accepting' }
   try {
     const res = await $fetch<{
@@ -66,7 +70,7 @@ async function accept() {
     await sessionQuery.refetch()
     toast.add({
       title: res.alreadyMember
-        ? `Вы уже в ${wsName} (роль: ${ROLE_LABEL[res.currentRole] ?? res.currentRole})`
+        ? `Вы уже в ${wsName} (роль: ${ROLE_LABEL[res.currentRole as Role] ?? res.currentRole})`
         : `Вы присоединились к ${wsName}`,
       description: res.alreadyMember
         ? 'Текущая роль сохранена — изменение ролей делается через members.'
@@ -141,14 +145,14 @@ const registerWithNext = computed(() => ({
         </h1>
         <p class="text-sm text-muted leading-relaxed">
           Вас приглашают присоединиться к
-          <span class="font-semibold text-default">{{ state.workspaceName }}</span>
+          <span class="font-semibold text-default">{{ invite?.workspaceName }}</span>
           в роли
-          <span class="font-medium text-default">{{ ROLE_LABEL[state.role] ?? state.role }}</span>.
+          <span class="font-medium text-default">{{ invite ? ROLE_LABEL[invite.role] : '' }}</span>.
         </p>
       </div>
 
-      <div v-if="state.emailBound" class="text-xs text-center text-muted">
-        Приглашение выписано на <span class="text-default font-medium">{{ state.emailBound }}</span>
+      <div v-if="invite?.emailBound" class="text-xs text-center text-muted">
+        Приглашение выписано на <span class="text-default font-medium">{{ invite.emailBound }}</span>
       </div>
 
       <div v-if="!authenticated" class="space-y-3 pt-2">
@@ -168,7 +172,7 @@ const registerWithNext = computed(() => ({
           </div>
           <p class="text-sm text-muted leading-relaxed">
             Войдите как
-            <span class="text-default font-medium">{{ (state as { emailBound: string }).emailBound }}</span>,
+            <span class="text-default font-medium">{{ invite?.emailBound }}</span>,
             чтобы принять это приглашение. Сейчас вы вошли как
             <span class="text-default font-medium">{{ userEmail }}</span>.
           </p>
