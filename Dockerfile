@@ -5,7 +5,7 @@
 # scripts/codesign-natives.sh — not present at this stage and a no-op
 # on Linux anyway). nuxt build in the builder stage runs nuxt prepare
 # internally, so generated types still end up in .output/.
-FROM oven/bun:1 AS deps
+FROM oven/bun:1.2.21 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 # BuildKit cache mount keeps the bun package store between builds so a
@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile --ignore-scripts
 
 # Stage 2: build Nuxt — produces self-contained .output/
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.2.21 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
