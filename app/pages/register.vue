@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { passwordSchema } from '#shared/validation/password'
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth', cardMaxWidth: 'max-w-xl' })
+definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-xl' })
 useHead({ title: 'Регистрация — Scrumban' })
 
 type Step = 1 | 2 | 3
