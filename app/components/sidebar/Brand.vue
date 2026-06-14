@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { pageRoutes } from '~/routing'
 
-defineProps<{ collapsed: boolean }>()
-const emit = defineEmits<{ toggle: [] }>()
+defineProps<{ collapsed: boolean, mobile?: boolean }>()
+const emit = defineEmits<{ toggle: [], close: [] }>()
 </script>
 
 <template>
@@ -23,11 +23,11 @@ const emit = defineEmits<{ toggle: [] }>()
         'grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-default bg-default text-muted transition-colors hover:border-[var(--ui-border-accented)] hover:text-highlighted',
         collapsed ? '' : 'ml-auto',
       ]"
-      :title="collapsed ? 'Развернуть' : 'Свернуть'"
-      :aria-label="collapsed ? 'Развернуть меню' : 'Свернуть меню'"
-      @click="emit('toggle')"
+      :title="mobile ? 'Закрыть' : (collapsed ? 'Развернуть' : 'Свернуть')"
+      :aria-label="mobile ? 'Закрыть меню' : (collapsed ? 'Развернуть меню' : 'Свернуть меню')"
+      @click="mobile ? emit('close') : emit('toggle')"
     >
-      <UIcon :name="collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-left'" class="size-4" />
+      <UIcon :name="mobile ? 'i-lucide-x' : (collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-left')" class="size-4" />
     </button>
   </div>
 </template>
