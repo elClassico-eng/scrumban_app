@@ -8,7 +8,7 @@ useReveal(root)
 useLenis()
 
 useHead({
-  title: 'ScrumBan — Scrumban-платформа для IT-команд',
+  title: 'ScrumBan — Scrumban-доска с прогнозом сроков для команд 30+',
   bodyAttrs: { class: 'landing-page' },
 })
 </script>

@@ -3,7 +3,7 @@ const goToApp = useAccessCta()
 const dense = ref(false)
 
 const links: Array<[string, string]> = [
-  ['Возможности', '#why'],
+  ['Что работает', '#what'],
   ['Почему мы', '#why'],
   ['Roadmap', '#roadmap'],
   ['О проекте', '#about'],

@@ -2,12 +2,12 @@
 type WhyItem = { chip: 'done' | 'dev' | 'plan', title: string, desc: string }
 
 const WHY: WhyItem[] = [
+  { chip: 'done', title: 'Прогноз сроков, а не «на глаз»', desc: 'Monte Carlo и сетевое планирование (CPM/PERT) дают вероятность уложиться и P50/P85/P95 — с доверительным интервалом, а не «успеем / не успеем».' },
+  { chip: 'done', title: 'Каждая цифра — с формулой', desc: 'Никаких чёрных ящиков: WIP-рекомендации по закону Литтла, перцентили cycle time, CFD — всё объясняется и проверяется.' },
   { chip: 'done', title: 'Scrumban, а не «ещё один канбан»', desc: 'Спринты задают ритм, поток даёт предсказуемость. Две методологии работают вместе, а не вместо.' },
   { chip: 'done', title: 'Real-time из коробки', desc: 'Доска обновляется у всей команды мгновенно через SSE — без перезагрузок и конфликтов.' },
-  { chip: 'dev', title: 'Математика потока, а не «на глаз»', desc: 'Сетевое планирование (CPM/PERT), диаграммы CFD, прогнозы сроков с обоснованием.' },
-  { chip: 'dev', title: 'Нативно в РФ-экосистеме', desc: 'GitFlic, Pachca, Yandex Cloud, 1С — интеграции под российский стек.' },
-  { chip: 'plan', title: 'Данные остаются в РФ', desc: 'Хостинг в Yandex Cloud, self-hosting on-prem для требовательных команд.' },
   { chip: 'done', title: 'Под команды 30+', desc: 'Воркспейсы, роли и изоляция данных на уровне строк (RLS).' },
+  { chip: 'plan', title: 'РФ-экосистема и on-prem', desc: 'GitFlic, Pachca, Yandex Cloud, 1С и self-hosting — в планах под российский стек.' },
 ]
 
 const section = ref<HTMLElement | null>(null)

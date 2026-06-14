@@ -4,7 +4,7 @@
       <div class="footer__top">
         <div class="footer__brand">
           <div class="footer__logo"><span class="nav__mark">S</span><b>Scrum<span>Ban</span></b></div>
-          <p>Гибрид Scrum и Kanban с математикой в потоке. Дипломный проект в открытой бете.</p>
+          <p>Scrumban-доска с аналитикой потока и прогнозом сроков. Дипломный проект в открытой бете.</p>
           <span class="nav__beta"><LandingStatusChip kind="dev" /></span>
         </div>
         <div class="footer__cols">
@@ -16,9 +16,8 @@
           </div>
           <div class="footer__col">
             <h5>Контакты</h5>
-            <a href="mailto:hello@scrumban.ru">hello@scrumban.ru</a>
-            <a href="#">Telegram</a>
-            <a href="#">GitHub · демо</a>
+            <a href="mailto:daniilerkesov122@gmail.com">daniilerkesov122@gmail.com</a>
+            <a href="https://t.me/paytina4" target="_blank" rel="noopener">Telegram · @paytina4</a>
           </div>
         </div>
       </div>

@@ -21,10 +21,10 @@ useWordmarkFit(wordmark)
       </div>
       <div class="hero__lower">
         <div class="hero__tagline reveal">
-          Гибрид <span class="o">Scrum</span> и <span class="o">Kanban</span> —<br>с математикой в потоке.
+          Сроки спринта — <span class="o">с вероятностью</span>,<br>а не на глаз.
         </div>
         <div class="hero__desc reveal">
-          <p>Не «ещё один таск-трекер». Спринты задают ритм, поток — предсказуемость, а сроки считает математика, а не интуиция.</p>
+          <p>Scrumban-доска для Scrum Master'ов команд 30+. Спринты задают ритм, аналитика потока — предсказуемость, а сроки считает математика (Monte Carlo, CPM/PERT), а не интуиция. Каждая цифра — с формулой.</p>
           <div class="hero__cta-row">
             <button class="btn btn--primary btn--static" @click="goToApp">
               Получить доступ

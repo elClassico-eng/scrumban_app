@@ -4,10 +4,9 @@
     <div class="wrap">
       <div class="section__tag center reveal"><span class="n">01</span> — Проблема</div>
       <h2 class="manifesto__lines">
-        <span class="line-mask"><span><span class="hl">Scrum</span> или <span class="hl">Kanban</span> —</span></span>
-        <span class="line-mask"><span><span class="o">ложный выбор.</span></span></span>
-        <span class="line-mask"><span>Аналитика — <span class="o">на глаз.</span></span></span>
-        <span class="line-mask"><span>Зарубежные трекеры <span class="o">уезжают.</span></span></span>
+        <span class="line-mask"><span>«Успеем к концу спринта?» —</span></span>
+        <span class="line-mask"><span>а вы можете только <span class="o">гадать.</span></span></span>
+        <span class="line-mask"><span>Аналитику ведёте <span class="o">в Excel.</span></span></span>
       </h2>
       <div class="manifesto__foot reveal">
         <div class="manifesto__stat">

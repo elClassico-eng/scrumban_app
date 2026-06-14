@@ -3,27 +3,20 @@ type Phase = { cls: 'now' | 'soon' | 'vision', when: string, chip: 'done' | 'dev
 
 const PHASES: Phase[] = [
   {
-    cls: 'now', when: 'Сейчас', chip: 'done', title: 'Фундамент',
+    cls: 'now', when: 'Сейчас', chip: 'done', title: 'Рабочий продукт',
     items: [
-      ['Канбан-доска, спринты, бэклог'],
-      ['Real-time (SSE) и роли с RLS'],
-      ['Инвайты по magic-link, воркспейсы'],
+      ['Доска, спринты, WIP-лимиты, классы обслуживания'],
+      ['Аналитика потока', ' — CFD, cycle time, throughput'],
+      ['Прогноз сроков', ' — Monte Carlo, CPM/PERT'],
+      ['Real-time (SSE), роли и изоляция данных (RLS)'],
     ],
   },
   {
-    cls: 'soon', when: 'Скоро', chip: 'dev', title: 'Математика и интеграции',
+    cls: 'soon', when: 'Скоро', chip: 'dev', title: 'Интеграции и полировка',
     items: [
-      ['Аналитика потока', ' — CPM/PERT, CFD, прогнозы сроков'],
       ['Нативные интеграции', ' — GitFlic, Pachca, Yandex Cloud, 1С'],
       ['Уведомления и автоматизации потока'],
-    ],
-  },
-  {
-    cls: 'vision', when: 'Vision', chip: 'plan', title: 'Полноценный SaaS',
-    items: [
-      ['Хостинг в Yandex Cloud, данные в РФ'],
-      ['Self-hosting on-prem для enterprise'],
-      ['Маркетплейс шаблонов и плагинов'],
+      ['Редизайн аналитики и онбординг'],
     ],
   },
 ]
@@ -42,7 +35,22 @@ onMounted(() => {
     const rect = l.getBoundingClientRect()
     if (!done && rect.top < window.innerHeight * 0.8 && rect.bottom > 0) {
       done = true
-      f.style.height = `${Math.round(l.clientHeight * 0.5)}px`
+      const rmap = l.parentElement
+      const phases = rmap ? [...rmap.querySelectorAll<HTMLElement>('.rphase')] : []
+      const first = phases[0]
+      if (first) {
+        const dotCenter = (p: HTMLElement) => {
+          const dot = p.querySelector('.rphase__dot')
+          if (!dot) return 0
+          const r = dot.getBoundingClientRect()
+          return r.top + r.height / 2 - rect.top
+        }
+        const firstY = dotCenter(first)
+        const pending = phases.find(p => !p.classList.contains('now'))
+        const targetY = dotCenter(pending ?? phases[phases.length - 1] ?? first)
+        f.style.top = `${Math.max(0, firstY)}px`
+        f.style.height = `${Math.max(0, targetY - firstY)}px`
+      }
     }
   }
   loop()
