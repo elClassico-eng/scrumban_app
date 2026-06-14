@@ -189,7 +189,7 @@ function targetFor(e: ActivityEvent) {
                     <span class="text-muted"> — </span>
                     <NuxtLink
                       :to="targetFor(e)!"
-                      class="text-primary hover:underline truncate inline-block max-w-[40ch] align-bottom"
+                      class="text-primary hover:underline truncate inline-block max-w-full sm:max-w-[40ch] align-bottom"
                     >
                       {{ e.taskTitle ?? 'удалённая задача' }}
                     </NuxtLink>

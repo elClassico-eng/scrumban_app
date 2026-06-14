@@ -49,7 +49,7 @@ function onTitleBlur(e: FocusEvent) {
 </script>
 
 <template>
-  <div class="px-7 pt-[22px] pb-3.5 border-b border-default">
+  <div class="px-4 sm:px-7 pt-[22px] pb-3.5 border-b border-default">
     <div class="flex items-center gap-2 mb-3.5 flex-wrap">
       <UDropdownMenu :items="columnOptions">
         <button

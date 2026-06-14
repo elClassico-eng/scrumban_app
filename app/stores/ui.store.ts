@@ -5,6 +5,9 @@ export const useUiStore = defineStore('ui', () => {
   const sidebarCollapsed = useLocalStorage('ui:sidebar-collapsed', false)
   const boardsExpanded = useLocalStorage('ui:sidebar-boards-expanded', true)
 
+  const mobileNavOpen = ref(false)
+  const controlCenterOpen = ref(false)
+
   function toggleSidebar() {
     sidebarCollapsed.value = !sidebarCollapsed.value
   }
@@ -13,5 +16,24 @@ export const useUiStore = defineStore('ui', () => {
     boardsExpanded.value = !boardsExpanded.value
   }
 
-  return { sidebarCollapsed, boardsExpanded, toggleSidebar, toggleBoards }
+  function openMobileNav() { mobileNavOpen.value = true }
+  function closeMobileNav() { mobileNavOpen.value = false }
+  function toggleMobileNav() { mobileNavOpen.value = !mobileNavOpen.value }
+
+  function openControlCenter() { controlCenterOpen.value = true }
+  function closeControlCenter() { controlCenterOpen.value = false }
+
+  return {
+    sidebarCollapsed,
+    boardsExpanded,
+    mobileNavOpen,
+    controlCenterOpen,
+    toggleSidebar,
+    toggleBoards,
+    openMobileNav,
+    closeMobileNav,
+    toggleMobileNav,
+    openControlCenter,
+    closeControlCenter,
+  }
 })

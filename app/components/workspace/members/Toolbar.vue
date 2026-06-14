@@ -31,7 +31,7 @@ function selectRole(r: Role | 'all') {
 
 <template>
   <div class="flex items-center gap-2 flex-wrap">
-    <div class="relative flex-1 min-w-[240px] max-w-md">
+    <div class="relative w-full sm:flex-1 sm:min-w-[240px] sm:max-w-md">
       <UIcon
         name="i-lucide-search"
         class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted pointer-events-none"
@@ -45,7 +45,7 @@ function selectRole(r: Role | 'all') {
       >
     </div>
 
-    <div class="inline-flex gap-1 rounded-md border border-default bg-default p-0.5">
+    <div class="inline-flex gap-1 rounded-md border border-default bg-default p-0.5 max-w-full overflow-x-auto">
       <button
         type="button"
         class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded text-xs font-medium transition-colors whitespace-nowrap"
@@ -83,7 +83,7 @@ function selectRole(r: Role | 'all') {
       </button>
     </div>
 
-    <div class="ml-auto inline-flex gap-0.5 rounded-md border border-default bg-default p-0.5">
+    <div class="hidden sm:ml-auto sm:inline-flex gap-0.5 rounded-md border border-default bg-default p-0.5">
       <button
         type="button"
         title="Карточки"

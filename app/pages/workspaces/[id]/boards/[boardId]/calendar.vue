@@ -111,7 +111,7 @@ const COS_DOT: Record<Task['serviceClass'], string> = {
           color="neutral"
           @click="anchor = addMonths(anchor, -1)"
         />
-        <h2 class="text-lg font-semibold capitalize min-w-40 text-center">
+        <h2 class="text-base sm:text-lg font-semibold capitalize min-w-32 sm:min-w-40 text-center">
           {{ monthLabel }}
         </h2>
         <UButton
@@ -131,7 +131,7 @@ const COS_DOT: Record<Task['serviceClass'], string> = {
           Сегодня
         </UButton>
       </div>
-      <p class="text-xs text-muted">
+      <p class="hidden sm:block text-xs text-muted">
         Задачи отображаются по полю «Дедлайн».
       </p>
     </div>
@@ -150,7 +150,7 @@ const COS_DOT: Record<Task['serviceClass'], string> = {
         <div
           v-for="day in gridDays"
           :key="day.toISOString()"
-          class="p-1.5 overflow-y-auto min-h-0 flex flex-col gap-1"
+          class="p-1 sm:p-1.5 overflow-y-auto min-h-0 flex flex-col gap-1"
           :class="day.getMonth() !== anchor.getMonth() ? 'bg-elevated/30' : ''"
         >
           <div class="flex items-center justify-between text-xs">
@@ -187,22 +187,11 @@ const COS_DOT: Record<Task['serviceClass'], string> = {
       </div>
     </div>
 
-    <UModal
+    <TaskFocusModal
       v-model:open="taskModalOpen"
-      :ui="{
-        content: 'w-[95vw] max-w-[1600px] p-0',
-        overlay: 'bg-black/70',
-      }"
-    >
-      <template #content>
-        <TaskFocusView
-          v-if="openTaskId"
-          :workspace-id="wsId"
-          :board-id="bId"
-          :task-id="openTaskId"
-          @close="closeTaskModal"
-        />
-      </template>
-    </UModal>
+      :workspace-id="wsId"
+      :board-id="bId"
+      :task-id="openTaskId"
+    />
   </div>
 </template>

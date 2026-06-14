@@ -337,23 +337,12 @@ const isLoading = computed(() =>
       </div>
     </div>
 
-    <UModal
+    <TaskFocusModal
       v-model:open="taskModalOpen"
-      :ui="{
-        content: 'w-[95vw] max-w-[1180px] p-0 rounded-2xl',
-        overlay: 'bg-black/75 backdrop-blur-sm',
-      }"
-    >
-      <template #content>
-        <TaskFocusView
-          v-if="openTaskId"
-          :workspace-id="wsId"
-          :board-id="bId"
-          :task-id="openTaskId"
-          @close="closeTaskModal"
-        />
-      </template>
-    </UModal>
+      :workspace-id="wsId"
+      :board-id="bId"
+      :task-id="openTaskId"
+    />
 
     <BoardCreateColumnModal
       v-if="canCreateColumns"

@@ -308,7 +308,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="grid grid-rows-[44px_1fr] h-[90vh] max-h-[920px] bg-default text-default rounded-2xl overflow-hidden">
+  <div class="grid grid-rows-[44px_1fr] grid-cols-[minmax(0,1fr)] h-dvh sm:h-[90vh] sm:max-h-[920px] bg-default text-default rounded-none sm:rounded-2xl overflow-hidden">
     <div v-if="isLoading" class="row-span-2 grid place-items-center p-6">
       <UIcon name="i-lucide-loader" class="animate-spin size-6 text-muted" />
     </div>
@@ -337,8 +337,8 @@ onMounted(() => {
         @open-parent-picker="parentPickerOpen = true"
       />
 
-      <div class="grid grid-cols-[1fr_340px] min-h-0 overflow-hidden">
-        <main class="flex flex-col min-w-0 min-h-0 border-r border-default">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] min-w-0 min-h-0 overflow-y-auto overflow-x-hidden lg:overflow-hidden">
+        <main class="flex flex-col min-w-0 lg:min-h-0 border-b lg:border-b-0 lg:border-r border-default">
           <TaskFocusHeader
             :task="task"
             :current-column="currentColumn"
@@ -354,7 +354,7 @@ onMounted(() => {
             :has-blocker="hasBlocker"
           />
 
-          <div class="overflow-y-auto px-7 py-[22px] pb-20 min-h-0 flex-1">
+          <div class="px-4 sm:px-7 py-[22px] pb-20 lg:overflow-y-auto lg:min-h-0 lg:flex-1">
             <TaskFocusDescriptionTab
               v-if="tab === 'desc'"
               :description="task.description"

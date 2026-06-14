@@ -1,4 +1,4 @@
-import { useEventSource } from '@vueuse/core'
+import { useDebounceFn, useEventSource } from '@vueuse/core'
 import { useQueryClient } from '@tanstack/vue-query'
 import type { MaybeRef } from 'vue'
 import { apiRoutes } from '~/routing'
@@ -10,6 +10,16 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
   const url = computed(() =>
     apiRoutes.boardStream(unref(workspaceId), unref(boardId)),
   )
+
+  // Coalesce bursts of events (e.g. several quick moves) into one refetch
+  // once activity settles, so an in-flight refetch never reverts a just-
+  // committed optimistic move mid-burst.
+  const invalidateBoard = useDebounceFn(() => {
+    qc.invalidateQueries({ queryKey: ['tasks', unref(workspaceId), unref(boardId)] })
+    qc.invalidateQueries({ queryKey: ['board-dependency-counts', unref(workspaceId), unref(boardId)] })
+    qc.invalidateQueries({ queryKey: ['board-sprint-memberships', unref(workspaceId), unref(boardId)] })
+    qc.invalidateQueries({ queryKey: ['task-subtasks'] })
+  }, 250)
 
   const { data, event, status, close } = useEventSource(
     url,
@@ -43,17 +53,8 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
       return
     }
 
-    // Re-fetch authoritative state for any event.
-    qc.invalidateQueries({
-      queryKey: ['tasks', unref(workspaceId), unref(boardId)],
-    })
-    qc.invalidateQueries({
-      queryKey: ['board-dependency-counts', unref(workspaceId), unref(boardId)],
-    })
-    qc.invalidateQueries({
-      queryKey: ['board-sprint-memberships', unref(workspaceId), unref(boardId)],
-    })
-    qc.invalidateQueries({ queryKey: ['task-subtasks'] })
+    // Re-fetch authoritative state for any event (debounced — see above).
+    invalidateBoard()
 
     // Surface only events where the visual change isn't already obvious.
     // task.moved is shown via DnD; task.updated is visible inside the

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onKeyStroke, useMediaQuery, useSwipe } from '@vueuse/core'
 import { pageRoutes } from '~/routing'
 
 const workspaceStore = useWorkspaceStore()
@@ -6,13 +7,28 @@ const uiStore = useUiStore()
 const route = useRoute()
 const { list } = useWorkspacesApi()
 
+const isDesktop = useMediaQuery('(min-width: 1024px)')
+const asideRef = ref<HTMLElement | null>(null)
+
+watch(() => route.fullPath, () => uiStore.closeMobileNav())
+
+onKeyStroke('Escape', () => {
+  if (uiStore.mobileNavOpen) uiStore.closeMobileNav()
+})
+
+useSwipe(asideRef, {
+  onSwipeEnd: (_e, direction) => {
+    if (direction === 'left' && uiStore.mobileNavOpen) uiStore.closeMobileNav()
+  },
+})
+
 const workspaces = computed(() => list.data.value?.workspaces ?? [])
 const current = computed(() => {
   const id = workspaceStore.currentId
   return workspaces.value.find(w => w.id === id) ?? workspaces.value[0] ?? null
 })
 
-const collapsed = computed(() => uiStore.sidebarCollapsed)
+const collapsed = computed(() => isDesktop.value && uiStore.sidebarCollapsed)
 
 const { list: boardsList } = useBoardsApi(computed(() => current.value?.id ?? ''))
 const boards = computed(() => boardsList.data.value?.boards ?? [])
@@ -32,13 +48,22 @@ const secondaryLinks = computed(() => {
 </script>
 
 <template>
+  <div
+    v-show="uiStore.mobileNavOpen"
+    class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+    @click="uiStore.closeMobileNav"
+  />
   <aside
+    ref="asideRef"
     :class="[
-      'm-3 flex flex-col overflow-hidden rounded-3xl border border-default bg-default text-default shadow-xl transition-[width] duration-300 ease-out',
-      collapsed ? 'w-20' : 'w-64',
+      'flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
+      'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 ease-out',
+      uiStore.mobileNavOpen ? 'translate-x-0' : '-translate-x-[110%]',
+      'lg:static lg:z-auto lg:m-3 lg:max-w-none lg:translate-x-0 lg:rounded-3xl lg:shadow-xl lg:transition-[width]',
+      collapsed ? 'lg:w-20' : 'lg:w-64',
     ]"
   >
-    <SidebarBrand :collapsed="collapsed" @toggle="uiStore.toggleSidebar" />
+    <SidebarBrand :collapsed="collapsed" :mobile="!isDesktop" @toggle="uiStore.toggleSidebar" @close="uiStore.closeMobileNav" />
 
     <Transition
       enter-active-class="transition-opacity duration-200 delay-150"

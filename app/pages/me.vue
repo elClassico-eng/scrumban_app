@@ -136,7 +136,7 @@ const previewInitials = computed(() => initials({
       @submit="onSubmit"
     >
       <UCard>
-        <div class="flex items-start gap-6">
+        <div class="flex items-start gap-4 sm:gap-6">
           <div class="size-20 rounded-full bg-primary/10 text-primary text-2xl font-semibold flex items-center justify-center shrink-0 overflow-hidden">
             <img
               v-if="state.avatarUrl"
