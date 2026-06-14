@@ -13,8 +13,14 @@ function deltaIcon(current: number, recommended: number): { name: string; color:
 <template>
   <UCard>
     <template #header>
-      <div class="flex items-center justify-between">
-        <h2 class="font-semibold">WIP рекомендации</h2>
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <h2 class="font-semibold">WIP рекомендации</h2>
+          <AnalyticsInfo
+            answers="Сколько задач держать в работе одновременно. Если текущий WIP заметно выше рекомендованного — стадия перегружена и задачи застревают."
+            formula="Закон Литтла: WIP = throughput × cycle time. Рекомендация = средний throughput × среднее cycle time по истории."
+          />
+        </div>
         <span class="text-xs text-muted">Little's Law: WIP ≈ throughput × cycle time</span>
       </div>
     </template>

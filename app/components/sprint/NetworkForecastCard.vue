@@ -58,6 +58,10 @@ function pct(p: number | null | undefined): string {
         <UIcon name="i-lucide-git-branch" class="size-3.5" />
         Сетевой прогноз · CPM + PERT
       </h4>
+      <AnalyticsInfo
+        answers="Прогноз срока спринта с учётом зависимостей. Критический путь — цепочка без резерва, которая определяет дедлайн."
+        formula="PERT: ожидаемое = (O+4M+P)/6, σ = (P−O)/6. Симуляция прогоняет сеть 1000 раз. «Наивный MC» — без зависимостей, для сравнения."
+      />
       <span
         v-if="verdict"
         class="text-[10.5px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded"

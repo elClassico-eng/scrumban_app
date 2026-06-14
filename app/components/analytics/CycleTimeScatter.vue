@@ -52,8 +52,14 @@ const hasData = computed(() => (props.report?.samples.length ?? 0) > 0)
 <template>
   <UCard>
     <template #header>
-      <div class="flex items-center justify-between">
-        <h2 class="font-semibold">Cycle Time</h2>
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <h2 class="font-semibold">Cycle Time</h2>
+          <AnalyticsInfo
+            answers="Сколько каждая задача шла от создания до закрытия. Точка — задача; пунктир p85 = 85% задач закрывались быстрее."
+            formula="Перцентили по методу Type-7 на закрытых задачах. Это lead time (создание → закрытие)."
+          />
+        </div>
         <span class="text-xs text-muted">Длительность задачи от создания до закрытия</span>
       </div>
     </template>
