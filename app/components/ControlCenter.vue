@@ -6,6 +6,7 @@ const colorMode = useColorMode()
 const { logout } = useAuthApi()
 const router = useRouter()
 const route = useRoute()
+const uiStore = useUiStore()
 
 type TileIconType = 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
 type PeekIconType = 'move' | 'at' | 'build' | 'check'
@@ -322,7 +323,7 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="fixed top-2 left-1/2 z-[100] -translate-x-1/2 flex items-start gap-2"
+    class="fixed top-2 left-1/2 z-[100] -translate-x-1/2 hidden lg:flex items-start gap-2"
     @mouseenter="onPointerEnter"
     @mouseleave="onPointerLeave"
   >
@@ -413,4 +414,73 @@ onUnmounted(() => {
       @click.stop="onCmdK"
     >{{ cmdKLabel }}</button>
   </div>
+
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition-opacity duration-200"
+      leave-active-class="transition-opacity duration-150"
+      enter-from-class="opacity-0"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="uiStore.controlCenterOpen"
+        class="lg:hidden fixed inset-0 z-[200] flex flex-col"
+        style="background: var(--island-bg); color: var(--island-ink);"
+      >
+        <div
+          class="flex items-center justify-between px-4 h-14 shrink-0"
+          style="border-bottom: 1px solid var(--island-line-2);"
+        >
+          <span class="text-[15px] font-semibold">Центр управления</span>
+          <button
+            type="button"
+            class="size-9 grid place-items-center rounded-lg cursor-pointer"
+            style="background: var(--island-fill); color: var(--island-ink-2);"
+            aria-label="Закрыть"
+            @click="uiStore.closeControlCenter"
+          >
+            <UIcon name="i-lucide-x" class="size-5" />
+          </button>
+        </div>
+        <div class="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-[10px]">
+          <ControlCenterIslandPanel
+            :time="time"
+            :weekday="weekday"
+            :pinned="pinned"
+            :reduced-motion="reducedMotion"
+            :timer-task-id="timerTaskId"
+            :timer-task-title="timerTaskTitle"
+            :seconds="elapsed"
+            :running="timerActive"
+            :timer-active="timerActive"
+            :sprint-pct="sprintPct"
+            :sprint-caption="sprintCaption"
+            :sprint-active="hasSprint"
+            :people="presencePeople"
+            :presence-extra="presenceExtra"
+            :notifs="notifs"
+            :focus-on="focus"
+            :is-dark="isDark"
+            :can-create-task="canCreateTask"
+            :sle-label="sleLabel"
+            :replenishment-label="replenishmentLabel"
+            :replenishment-overdue="replenishmentOverdue"
+            :has-board-metrics="hasBoardMetrics"
+            :replenishment-clickable="canManageBoard"
+            @toggle-pin="togglePin"
+            @mark-replenishment="onMarkReplenishment"
+            @toggle-running="onTimerToggle"
+            @stop-timer="onTimerStop"
+            @mark-read="(e, id) => { markRead(e, id); uiStore.closeControlCenter() }"
+            @quick-task="(e) => { onQuickTask(e); uiStore.closeControlCenter() }"
+            @quick-search="(e) => { onQuickSearch(e); uiStore.closeControlCenter() }"
+            @toggle-focus="toggleFocus"
+            @toggle-theme="toggleTheme"
+            @logout="doLogout"
+            @view-all="(e) => { onViewTeam(e); uiStore.closeControlCenter() }"
+          />
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
