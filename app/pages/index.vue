@@ -1,10 +1,30 @@
 <script setup lang="ts">
-useHead({ title: 'Scrumban' })
+import '~/assets/css/landing.css'
+
+definePageMeta({ layout: false })
+
+const root = ref<HTMLElement | null>(null)
+useReveal(root)
+useLenis()
+
+useHead({
+  title: 'ScrumBan — Scrumban-платформа для IT-команд',
+  bodyAttrs: { class: 'landing-page' },
+})
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center gap-4">
-    <h1 class="text-4xl font-bold">Scrumban</h1>
-    <p class="text-gray-500">Phase 1 — MVP Foundation. Skeleton is up.</p>
+  <div ref="root" class="landing">
+    <div class="grain" />
+    <LandingNav />
+    <LandingHero />
+    <LandingManifesto />
+    <LandingWhySection />
+    <LandingWhatWorks />
+    <LandingRoadmap />
+    <LandingPilots />
+    <LandingAbout />
+    <LandingCtaForm />
+    <LandingFooter />
   </div>
 </template>

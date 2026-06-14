@@ -22,9 +22,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
   const authenticated = !!sessionQuery.data.value?.user
 
-  // Home is a routing hub, not a real page — bounce by auth state.
+  // Home is the public landing for guests; authenticated users go straight
+  // to their workspaces.
   if (to.path === pageRoutes.home) {
-    return navigateTo(authenticated ? pageRoutes.workspaces : pageRoutes.login)
+    if (authenticated) return navigateTo(pageRoutes.workspaces)
+    return
   }
 
   if (authenticated && AUTH_ROUTES.includes(to.path)) {
