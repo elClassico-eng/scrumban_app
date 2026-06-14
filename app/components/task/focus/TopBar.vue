@@ -25,7 +25,7 @@ const emit = defineEmits<{
   >
     <span class="text-[12px] text-muted font-mono">{{ shortId }}</span>
 
-    <span class="flex items-center gap-1.5 text-[12.5px] text-muted min-w-0 overflow-hidden">
+    <span class="flex flex-1 items-center gap-1.5 text-[12.5px] text-muted min-w-0 overflow-hidden">
       <span class="text-dimmed">/</span>
       <span class="truncate max-w-[14ch]">{{ workspaceName ?? '' }}</span>
       <span class="text-dimmed">/</span>
@@ -44,9 +44,7 @@ const emit = defineEmits<{
       </template>
     </span>
 
-    <div class="flex-1" />
-
-    <div class="flex items-center gap-0.5">
+    <div class="flex items-center gap-0.5 shrink-0">
       <button
         type="button"
         class="size-7 rounded-md grid place-items-center cursor-pointer transition-colors hover:bg-elevated"

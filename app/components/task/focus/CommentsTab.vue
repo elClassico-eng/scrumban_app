@@ -345,7 +345,7 @@ function timeLabel(iso: string): string {
       </div>
     </div>
 
-    <div v-if="hasRole(myRole, 'member')" class="sticky bottom-0 -mx-7 px-7 pt-3 pb-1 bg-gradient-to-t from-[var(--ui-bg)] via-[var(--ui-bg)]/95 to-transparent">
+    <div v-if="hasRole(myRole, 'member')" class="sticky bottom-0 -mx-4 px-4 sm:-mx-7 sm:px-7 pt-3 pb-1 bg-gradient-to-t from-[var(--ui-bg)] via-[var(--ui-bg)]/95 to-transparent">
       <div
         class="rounded-lg border border-default bg-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
       >

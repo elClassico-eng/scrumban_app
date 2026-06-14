@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import draggable from 'vuedraggable'
+import { useMediaQuery } from '@vueuse/core'
 import type { Task } from '#shared/types/task'
 import type { BoardColumn as Column } from '#shared/types/column'
 
@@ -203,6 +204,8 @@ watch(() => ccActions.createTaskTick.value, () => openCreateTask())
 
 const listCompact = ref(false)
 
+const isMobile = useMediaQuery('(max-width: 639px)')
+
 const isLoading = computed(() =>
   columnsList.isLoading.value || tasksList.isLoading.value,
 )
@@ -339,8 +342,9 @@ const isLoading = computed(() =>
 
     <UModal
       v-model:open="taskModalOpen"
+      :fullscreen="isMobile"
       :ui="{
-        content: 'w-[95vw] max-w-[1180px] p-0 rounded-2xl',
+        content: 'p-0 sm:w-[95vw] sm:max-w-[1180px] sm:rounded-2xl',
         overlay: 'bg-black/75 backdrop-blur-sm',
       }"
     >
