@@ -4,7 +4,7 @@ const cardMaxWidth = computed(() => (route.meta.cardMaxWidth as string | undefin
 </script>
 
 <template>
-  <div class="min-h-screen brand-gradient relative flex flex-col lg:flex-row overflow-hidden">
+  <div class="min-h-dvh brand-gradient relative flex flex-col lg:flex-row overflow-hidden">
     <div class="pointer-events-none absolute -top-24 -left-24 size-96 rounded-full bg-white/10 blur-3xl" />
     <div class="pointer-events-none absolute -bottom-32 right-10 size-[28rem] rounded-full bg-black/30 blur-3xl" />
 
@@ -28,7 +28,7 @@ const cardMaxWidth = computed(() => (route.meta.cardMaxWidth as string | undefin
     </div>
 
     <div class="relative z-10 flex-1 flex items-center justify-center p-6 lg:p-12">
-      <div :class="['w-full bg-default rounded-3xl shadow-xl shadow-black/20 p-10', cardMaxWidth]">
+      <div :class="['w-full bg-default rounded-3xl shadow-xl shadow-black/20 p-6 sm:p-10', cardMaxWidth]">
         <slot />
       </div>
     </div>
