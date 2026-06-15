@@ -213,3 +213,10 @@ body {
   [style*="--kl-cols"] { --kl-cols: minmax(0, 1fr) 96px 132px !important; }
   .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
 }
+
+/* These height utilities are used only by the analytics chart components and
+   weren't being emitted by Tailwind, collapsing the ECharts containers to 0.
+   Define them explicitly so the charts get a real height. */
+.h-32 { height: 8rem; }
+.h-48 { height: 12rem; }
+.h-64 { height: 16rem; }
