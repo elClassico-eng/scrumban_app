@@ -3,7 +3,6 @@
     <div class="wrap">
       <div class="footer__top">
         <div class="footer__brand">
-          <div class="footer__logo"><span class="nav__mark">S</span><b>Scrum<span>Ban</span></b></div>
           <p>Scrumban-доска с аналитикой потока и прогнозом сроков. Дипломный проект в открытой бете.</p>
           <span class="nav__beta"><LandingStatusChip kind="dev" /></span>
         </div>
@@ -23,7 +22,6 @@
       </div>
       <div class="footer__bottom">
         <span>© ScrumBan 2027 · дипломный проект ВолГУ</span>
-        <span>Сделано в РФ · с математикой в потоке</span>
       </div>
     </div>
   </footer>

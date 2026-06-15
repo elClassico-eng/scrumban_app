@@ -113,13 +113,6 @@
     box-shadow: 0 16px 50px -22px rgba(0,0,0,0.9);
   }
   & .nav__logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; padding-right: 6px; }
-  & .nav__mark {
-    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
-    background: linear-gradient(140deg, var(--orange-2), var(--orange-deep));
-    display: grid; place-items: center; color: #fff;
-    font-family: var(--font-mono); font-weight: 700; font-size: 13px;
-    box-shadow: 0 6px 18px -6px var(--orange-glow);
-  }
   & .nav__logo b { font-weight: 600; }
   & .nav__logo b span { color: var(--orange-2); }
   & .nav__div { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
@@ -312,7 +305,7 @@
   & .rmap__spine > i { position: absolute; left: 0; top: 0; width: 2px; height: 0; background: linear-gradient(180deg, var(--orange-deep), var(--orange)); transition: height 1.5s var(--ease); box-shadow: 0 0 14px var(--orange-glow); }
   & .rphase { position: relative; display: grid; grid-template-columns: 240px 1fr; gap: 40px; padding: 52px 0 52px 40px; border-top: 1px solid var(--line); align-items: start; }
   & .rphase:first-child { border-top: none; }
-  & .rphase__dot { position: absolute; left: -34px; top: 60px; width: 14px; height: 14px; border-radius: 999px; background: #f3f1ec; border: 2px solid var(--ink-4); }
+  & .rphase__dot { position: absolute; left: -31px; top: 60px; width: 14px; height: 14px; border-radius: 999px; background: #f3f1ec; border: 2px solid var(--ink-4); }
   & .rphase.now .rphase__dot { border-color: var(--orange); background: var(--orange); box-shadow: 0 0 14px var(--orange-glow); }
   & .rphase.soon .rphase__dot { border-color: var(--orange-2); }
   & .rphase__meta { display: flex; flex-direction: column; gap: 14px; }

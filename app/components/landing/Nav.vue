@@ -24,7 +24,6 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
   <nav class="nav" :class="{ dense }">
     <div class="nav__bar">
       <a class="nav__logo" href="#top">
-        <span class="nav__mark">S</span>
         <b>Scrum<span>Ban</span></b>
       </a>
       <span class="nav__div" />
