@@ -1,13 +1,13 @@
 <script setup lang="ts">
-type WorkItem = { t: string, d: string, slot: string, ph: string }
+type WorkItem = { t: string, d: string, slot: string, img: string }
 
 const WORKS: WorkItem[] = [
-  { t: 'Аналитика потока', d: 'CFD, scatter cycle time с перцентилями, throughput — всё считается из событий перехода задач, а не из ручных оценок.', slot: 'w-analytics', ph: 'Скриншот аналитики' },
-  { t: 'Прогноз сроков: Monte Carlo + CPM/PERT', d: 'Вероятность уложиться в спринт, P50/P85/P95, критический путь и резервы по задачам — с честным «мало истории», когда данных не хватает.', slot: 'w-forecast', ph: 'Скриншот прогноза' },
-  { t: 'Канбан-доска с WIP-лимитами', d: 'Колонки, лимиты WIP с алертами, классы обслуживания, drag-n-drop, фильтры и быстрые действия.', slot: 'w-board', ph: 'Скриншот доски' },
-  { t: 'Спринты и бэклог', d: 'Планирование спринтов, перенос задач между ними, добавление из бэклога в один клик.', slot: 'w-sprints', ph: 'Скриншот спринтов' },
-  { t: 'Real-time через SSE', d: 'Доска и задачи обновляются у всей команды мгновенно — без перезагрузок и конфликтов.', slot: 'w-rt', ph: 'Скриншот real-time' },
-  { t: 'Воркспейсы, роли, RLS', d: 'Несколько команд в одном аккаунте, роли от владельца до наблюдателя, изоляция данных на уровне строк базы.', slot: 'w-members', ph: 'Скриншот ролей' },
+  { t: 'Аналитика потока', d: 'CFD, scatter cycle time с перцентилями, throughput — всё считается из событий перехода задач, а не из ручных оценок.', slot: 'w-analytics', img: '/landing/analytics.webp' },
+  { t: 'Прогноз сроков: Monte Carlo + CPM/PERT', d: 'Вероятность уложиться в спринт, P50/P85/P95, критический путь и резервы по задачам — с честным «мало истории», когда данных не хватает.', slot: 'w-forecast', img: '/landing/forecast.webp' },
+  { t: 'Канбан-доска с WIP-лимитами', d: 'Колонки, лимиты WIP с алертами, классы обслуживания, drag-n-drop, фильтры и быстрые действия.', slot: 'w-board', img: '/landing/board.webp' },
+  { t: 'Спринты и бэклог', d: 'Планирование спринтов, перенос задач между ними, добавление из бэклога в один клик.', slot: 'w-sprints', img: '/landing/sprints.webp' },
+  { t: 'Real-time через SSE', d: 'Доска и задачи обновляются у всей команды мгновенно — без перезагрузок и конфликтов.', slot: 'w-rt', img: '/landing/board.webp' },
+  { t: 'Воркспейсы, роли, RLS', d: 'Несколько команд в одном аккаунте, роли от владельца до наблюдателя, изоляция данных на уровне строк базы.', slot: 'w-members', img: '/landing/members.webp' },
 ]
 
 const active = ref(0)
@@ -27,7 +27,7 @@ const pad2 = (n: number) => String(n).padStart(2, '0')
         <div class="works2__stage">
           <div class="works2__num">{{ pad2(active + 1) }}<span class="of">/ 06 · готово</span></div>
           <div class="works2__media">
-            <LandingImageSlot :key="current!.slot" :placeholder="current!.ph" shape="rounded" :radius="18" />
+            <img :key="current!.slot" :src="current!.img" :alt="current!.t" style="width:100%;height:100%;object-fit:cover;display:block">
           </div>
           <div class="works2__cap-body">
             <h3>{{ current!.t }}</h3>
