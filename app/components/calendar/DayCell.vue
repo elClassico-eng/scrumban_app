@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   date: Date
   inMonth: boolean
   isToday: boolean
