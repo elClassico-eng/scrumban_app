@@ -11,18 +11,13 @@ const props = defineProps<{
 }>()
 const open = defineModel<boolean>('open', { default: false })
 
-const schema = z
-  .object({
-    title: z.string().trim().min(1, 'Введи название').max(255),
-    description: z.string().max(20_000).optional(),
-    serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']),
-    dueDate: z.string().optional(),
-    assigneeId: z.string().nullable(),
-  })
-  .refine(d => d.serviceClass !== 'fixed_date' || (d.dueDate && d.dueDate.length > 0), {
-    message: 'Для класса «С дедлайном» нужен дедлайн',
-    path: ['dueDate'],
-  })
+const schema = z.object({
+  title: z.string().trim().min(1, 'Введи название').max(255),
+  description: z.string().max(20_000).optional(),
+  serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']),
+  dueDate: z.string().optional(),
+  assigneeId: z.string().nullable(),
+})
 
 type State = z.infer<typeof schema>
 const state = reactive<State>({
@@ -109,19 +104,7 @@ watch(open, (v) => {
         <UFormField label="Описание" name="description">
           <UTextarea v-model="state.description" :rows="4" class="w-full" />
         </UFormField>
-        <UFormField
-          label="Класс обслуживания"
-          name="serviceClass"
-          :description="SERVICE_CLASS_INFO[state.serviceClass].hint"
-          required
-        >
-          <USelect v-model="state.serviceClass" :items="SERVICE_CLASS_OPTIONS" class="w-full" />
-        </UFormField>
-        <UFormField
-          label="Дедлайн"
-          name="dueDate"
-          :required="state.serviceClass === 'fixed_date'"
-        >
+        <UFormField label="Дедлайн" name="dueDate">
           <UInput v-model="state.dueDate" type="date" class="w-full" />
         </UFormField>
         <UFormField label="Исполнитель" name="assigneeId">
