@@ -7,6 +7,7 @@ const props = defineProps<{
   columnId: string
   parentTaskId?: string | null
   parentTitle?: string | null
+  initialDueDate?: string | null
 }>()
 const open = defineModel<boolean>('open', { default: false })
 
@@ -54,7 +55,7 @@ function resetForm() {
   state.title = ''
   state.description = ''
   state.serviceClass = 'standard'
-  state.dueDate = ''
+  state.dueDate = props.initialDueDate ?? ''
   state.assigneeId = null
   create.reset()
 }
@@ -81,7 +82,8 @@ async function onSubmit() {
 }
 
 watch(open, (v) => {
-  if (!v) resetForm()
+  if (v) state.dueDate = props.initialDueDate ?? ''
+  else resetForm()
 })
 </script>
 
