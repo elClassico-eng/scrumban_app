@@ -35,7 +35,7 @@ const groups = computed(() => {
   const out: Array<{ key: string, label: string, tasks: Task[] }> = []
   const index = new Map<string, number>()
   for (const t of dated.value) {
-    const d = new Date(t.dueDate!)
+    const d = dueLocalDay(t.dueDate!)
     const key = dayKey(d)
     let i = index.get(key)
     if (i === undefined) {

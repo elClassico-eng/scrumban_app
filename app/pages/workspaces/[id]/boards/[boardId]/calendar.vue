@@ -42,7 +42,7 @@ const filtered = computed(() => filterTasks(tasks.value, filters.value, currentU
 const tasksByDay = computed(() => groupTasksByDay(filtered.value))
 const agendaTasks = computed(() =>
   selectedDay.value
-    ? filtered.value.filter(t => t.dueDate && sameDay(new Date(t.dueDate), selectedDay.value!))
+    ? filtered.value.filter(t => t.dueDate && sameDay(dueLocalDay(t.dueDate), selectedDay.value!))
     : filtered.value,
 )
 

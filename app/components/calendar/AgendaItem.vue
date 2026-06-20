@@ -12,8 +12,8 @@ const emit = defineEmits<{
   open: [taskId: string]
 }>()
 
-const dueDate = computed(() => props.task.dueDate ? new Date(props.task.dueDate) : null)
-const due = computed(() => dueInfo(props.task.dueDate))
+const dueDate = computed(() => props.task.dueDate ? dueLocalDay(props.task.dueDate) : null)
+const due = computed(() => props.task.dueDate ? dueDayInfo(props.task.dueDate) : null)
 const isDone = computed(() => !!props.task.closedAt)
 const sc = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 

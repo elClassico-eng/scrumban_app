@@ -32,11 +32,30 @@ export function endOfDayIso(d: Date): string {
   return new Date(`${y}-${m}-${day}T23:59:59Z`).toISOString()
 }
 
+export function dueLocalDay(dueDate: string): Date {
+  const d = new Date(dueDate)
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+}
+
+export type DueDayTone = 'overdue' | 'today' | 'soon' | 'normal'
+
+export function dueDayInfo(dueDate: string): { diff: number, tone: DueDayTone } {
+  const day = dueLocalDay(dueDate)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diff = Math.round((day.getTime() - today.getTime()) / 86_400_000)
+  let tone: DueDayTone = 'normal'
+  if (diff < 0) tone = 'overdue'
+  else if (diff === 0) tone = 'today'
+  else if (diff <= 3) tone = 'soon'
+  return { diff, tone }
+}
+
 export function groupTasksByDay(tasks: Task[]): Map<string, Task[]> {
   const map = new Map<string, Task[]>()
   for (const t of tasks) {
     if (!t.dueDate) continue
-    const key = dayKey(new Date(t.dueDate))
+    const key = dayKey(dueLocalDay(t.dueDate))
     const arr = map.get(key) ?? []
     arr.push(t)
     map.set(key, arr)

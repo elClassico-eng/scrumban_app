@@ -28,7 +28,7 @@ const cells = computed(() =>
       isSelected: !!props.selectedDay && sameDay(day, props.selectedDay),
       dotClasses: tasks.slice(0, 3).map(t => SERVICE_CLASS_INFO[t.serviceClass].dotClass),
       extraCount: Math.max(0, tasks.length - 3),
-      hasOverdue: tasks.some(t => !t.closedAt && dueInfo(t.dueDate)?.tone === 'overdue'),
+      hasOverdue: tasks.some(t => !t.closedAt && !!t.dueDate && dueDayInfo(t.dueDate).tone === 'overdue'),
     }
   }),
 )

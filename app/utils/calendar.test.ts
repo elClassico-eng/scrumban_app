@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import type { Task } from '#shared/types/task'
 import {
   startOfMonth, addMonths, sameDay, monthGridDays,
-  dayKey, endOfDayIso, groupTasksByDay, filterTasks,
+  dayKey, endOfDayIso, dueLocalDay, dueDayInfo, groupTasksByDay, filterTasks,
 } from './calendar'
 
 function task(p: Partial<Task>): Task {
@@ -50,13 +50,30 @@ describe('endOfDayIso', () => {
   })
 })
 
+describe('dueLocalDay', () => {
+  it('extracts the UTC calendar day regardless of machine timezone', () => {
+    const d = dueLocalDay('2025-12-26T23:59:59.000Z')
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2025, 11, 26])
+  })
+})
+
+describe('dueDayInfo', () => {
+  it('marks a far-future deadline as normal with a positive diff', () => {
+    const far = new Date()
+    far.setUTCFullYear(far.getUTCFullYear() + 1)
+    const info = dueDayInfo(far.toISOString())
+    expect(info.tone).toBe('normal')
+    expect(info.diff).toBeGreaterThan(3)
+  })
+})
+
 describe('groupTasksByDay', () => {
-  it('buckets by due day and skips tasks without dueDate', () => {
+  it('buckets by the UTC due day and skips tasks without dueDate', () => {
     const a = task({ id: 'a', dueDate: '2025-12-20T23:59:59.000Z' })
     const b = task({ id: 'b', dueDate: '2025-12-20T23:59:59.000Z' })
     const c = task({ id: 'c', dueDate: null })
     const map = groupTasksByDay([a, b, c])
-    expect(map.get(dayKey(new Date('2025-12-20T23:59:59.000Z')))?.map(t => t.id)).toEqual(['a', 'b'])
+    expect(map.get('2025-12-20')?.map(t => t.id)).toEqual(['a', 'b'])
     expect([...map.values()].flat()).toHaveLength(2)
   })
 })
