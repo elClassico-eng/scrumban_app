@@ -42,9 +42,9 @@ function onSelect(day: Date) {
 <template>
   <div class="flex flex-col gap-3">
     <div class="flex items-center gap-2">
-      <h2 class="text-base sm:text-lg font-semibold mr-auto">
+      <h2 class="text-base sm:text-lg font-semibold mr-auto flex items-baseline gap-1.5">
         <span class="capitalize">{{ monthName }}</span>
-        <span class="text-muted font-normal"> {{ anchor.getFullYear() }}</span>
+        <span class="text-muted font-normal">{{ anchor.getFullYear() }}</span>
       </h2>
       <UButton
         icon="i-lucide-chevron-left"

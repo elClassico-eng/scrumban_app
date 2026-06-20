@@ -40,25 +40,46 @@ const relative = computed(() => {
   return `через ${n} дн.`
 })
 
+let ghostEl: HTMLElement | null = null
+
 function onDragStart(e: DragEvent) {
-  e.dataTransfer?.setData('text/task-id', props.task.id)
-  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+  if (!e.dataTransfer) return
+  e.dataTransfer.setData('text/task-id', props.task.id)
+  e.dataTransfer.effectAllowed = 'move'
+  const ghost = document.createElement('div')
+  ghost.textContent = props.task.title
+  ghost.style.cssText = [
+    'position:fixed', 'top:-1000px', 'left:-1000px',
+    'max-width:240px', 'padding:6px 12px', 'border-radius:8px',
+    'background:#18181b', 'color:#fff', 'font-size:12px', 'font-weight:500',
+    'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis',
+    'box-shadow:0 8px 20px -8px rgba(0,0,0,.45)',
+  ].join(';')
+  document.body.appendChild(ghost)
+  e.dataTransfer.setDragImage(ghost, 14, 16)
+  ghostEl = ghost
+}
+
+function onDragEnd() {
+  ghostEl?.remove()
+  ghostEl = null
 }
 </script>
 
 <template>
   <div
     draggable="true"
-    class="flex gap-3 p-3 rounded-xl border border-default bg-default hover:border-accent-500/40 transition-colors cursor-grab active:cursor-grabbing"
+    class="flex items-stretch gap-3 p-3 rounded-xl border border-default bg-default hover:border-accent-500/40 transition-colors cursor-grab active:cursor-grabbing"
     @dragstart="onDragStart"
+    @dragend="onDragEnd"
     @click="emit('open', task.id)"
   >
-    <div class="w-11 shrink-0 text-center">
+    <div class="w-10 shrink-0 flex flex-col items-center justify-center text-center">
       <div class="text-lg font-semibold tabular-nums leading-none">{{ dayNum }}</div>
       <div class="text-[11px] uppercase text-muted mt-0.5">{{ weekday }}</div>
     </div>
 
-    <div class="min-w-0 flex-1 flex flex-col gap-1.5">
+    <div class="min-w-0 flex-1 flex flex-col justify-center gap-1.5 border-l border-default pl-3">
       <div class="flex items-start justify-between gap-2">
         <p class="text-sm font-medium text-default truncate">{{ task.title }}</p>
         <span

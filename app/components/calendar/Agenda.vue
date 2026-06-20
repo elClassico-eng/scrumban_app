@@ -65,7 +65,7 @@ function primaryMember(t: Task): MemberView | null {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-0 gap-3">
+  <div class="flex flex-col lg:min-h-0 gap-3">
     <div class="flex items-center gap-2">
       <h2 class="text-base sm:text-lg font-semibold mr-auto">Дедлайны</h2>
       <CalendarFilters
@@ -101,7 +101,7 @@ function primaryMember(t: Task): MemberView | null {
       </UButton>
     </div>
 
-    <div v-else class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 pr-1">
+    <div v-else class="lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-4 pr-1">
       <div v-for="g in groups" :key="g.key" class="flex flex-col gap-2">
         <p class="text-xs uppercase tracking-wide text-muted capitalize px-1">{{ g.label }}</p>
         <CalendarAgendaItem

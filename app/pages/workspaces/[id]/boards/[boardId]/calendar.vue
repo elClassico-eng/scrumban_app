@@ -97,8 +97,8 @@ function closeTaskModal() {
       :board="board"
     />
 
-    <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] gap-5 lg:gap-7">
-      <div class="lg:border-r lg:border-default lg:pr-7">
+    <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-5 lg:gap-7 overflow-y-auto lg:overflow-hidden">
+      <div class="shrink-0 lg:w-[40%] lg:max-w-md lg:border-r lg:border-default lg:pr-7">
         <CalendarMonthGrid
           :anchor="anchor"
           :selected-day="selectedDay"
@@ -109,7 +109,7 @@ function closeTaskModal() {
         />
       </div>
 
-      <div class="min-h-0 flex flex-col">
+      <div class="lg:flex-1 lg:min-h-0 flex flex-col">
         <CalendarAgenda
           :tasks="agendaTasks"
           :selected-day="selectedDay"
