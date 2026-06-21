@@ -34,16 +34,19 @@ const { list: boardsList } = useBoardsApi(computed(() => current.value?.id ?? ''
 const boards = computed(() => boardsList.data.value?.boards ?? [])
 const activeBoardId = computed(() => (route.params.boardId as string) || null)
 
-const secondaryLinks = computed(() => {
+const workspaceLinks = computed(() => {
   if (!current.value) return []
-  const out = [
+  return [
     { label: 'Участники', icon: 'i-lucide-users', to: pageRoutes.workspaceMembers(current.value.id) },
     { label: 'Активность', icon: 'i-lucide-activity', to: pageRoutes.workspaceActivity(current.value.id) },
   ]
-  if (hasRole(current.value.role, 'admin')) {
-    out.push({ label: 'Настройки', icon: 'i-lucide-settings', to: pageRoutes.workspaceSettings(current.value.id) })
-  }
-  return out
+})
+
+const manageLinks = computed(() => {
+  if (!current.value || !hasRole(current.value.role, 'admin')) return []
+  return [
+    { label: 'Настройки', icon: 'i-lucide-settings', to: pageRoutes.workspaceSettings(current.value.id) },
+  ]
 })
 </script>
 
@@ -75,7 +78,7 @@ const secondaryLinks = computed(() => {
     </Transition>
     <div v-if="collapsed" class="mx-3 my-2 border-t border-default" />
 
-    <nav class="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-3 py-2">
+    <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-2">
       <SidebarNavItem
         :to="pageRoutes.workspaces"
         icon="i-lucide-folder"
@@ -83,23 +86,42 @@ const secondaryLinks = computed(() => {
         :collapsed="collapsed"
         exact
       />
-      <SidebarBoardsGroup
-        v-if="current"
-        :workspace-id="current.id"
-        :boards="boards"
-        :active-board-id="activeBoardId"
-        :collapsed="collapsed"
-        :expanded="uiStore.boardsExpanded"
-        @toggle="uiStore.toggleBoards"
-      />
-      <SidebarNavItem
-        v-for="link in secondaryLinks"
-        :key="link.label"
-        :to="link.to"
-        :icon="link.icon"
-        :label="link.label"
-        :collapsed="collapsed"
-      />
+
+      <template v-if="current">
+        <SidebarSectionLabel label="Рабочее пространство" :collapsed="collapsed" />
+        <div class="flex flex-col gap-1">
+          <SidebarBoardsGroup
+            :workspace-id="current.id"
+            :boards="boards"
+            :active-board-id="activeBoardId"
+            :collapsed="collapsed"
+            :expanded="uiStore.boardsExpanded"
+            @toggle="uiStore.toggleBoards"
+          />
+          <SidebarNavItem
+            v-for="link in workspaceLinks"
+            :key="link.label"
+            :to="link.to"
+            :icon="link.icon"
+            :label="link.label"
+            :collapsed="collapsed"
+          />
+        </div>
+
+        <template v-if="manageLinks.length">
+          <SidebarSectionLabel label="Управление" :collapsed="collapsed" />
+          <div class="flex flex-col gap-1">
+            <SidebarNavItem
+              v-for="link in manageLinks"
+              :key="link.label"
+              :to="link.to"
+              :icon="link.icon"
+              :label="link.label"
+              :collapsed="collapsed"
+            />
+          </div>
+        </template>
+      </template>
     </nav>
 
     <SidebarUserCard :collapsed="collapsed" />
