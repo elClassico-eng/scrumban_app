@@ -5,6 +5,11 @@ const AUTH_ROUTES: ReadonlyArray<string> = [
   pageRoutes.register,
   pageRoutes.forgotPassword,
 ]
+// Public pages reachable by guests and authenticated users alike — unlike
+// AUTH_ROUTES, signed-in users are not bounced away from these.
+const PUBLIC_ROUTES: ReadonlyArray<string> = [
+  pageRoutes.privacy,
+]
 const PUBLIC_PREFIXES: ReadonlyArray<string> = [
   '/verify-email/',
   '/reset-password/',
@@ -12,7 +17,9 @@ const PUBLIC_PREFIXES: ReadonlyArray<string> = [
 ]
 
 function isPublicRoute(path: string): boolean {
-  return AUTH_ROUTES.includes(path) || PUBLIC_PREFIXES.some(p => path.startsWith(p))
+  return AUTH_ROUTES.includes(path)
+    || PUBLIC_ROUTES.includes(path)
+    || PUBLIC_PREFIXES.some(p => path.startsWith(p))
 }
 
 export default defineNuxtRouteMiddleware(async (to) => {
