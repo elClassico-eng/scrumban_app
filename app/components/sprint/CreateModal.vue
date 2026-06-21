@@ -9,11 +9,11 @@ const schema = z.object({
   goal: z.string().max(10_000).optional(),
   plannedStartAt: z.string().optional(),
   plannedEndAt: z.string().optional(),
-  capacity: z.string().optional(),
+  capacity: z.number().int().min(0).max(10_000).nullable().optional(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: '', goal: '', plannedStartAt: '', plannedEndAt: '', capacity: '' })
+const state = reactive<State>({ name: '', goal: '', plannedStartAt: '', plannedEndAt: '', capacity: null })
 
 const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
@@ -28,7 +28,7 @@ function resetForm() {
   state.goal = ''
   state.plannedStartAt = ''
   state.plannedEndAt = ''
-  state.capacity = ''
+  state.capacity = null
   create.reset()
 }
 
@@ -40,13 +40,12 @@ function toIsoOrNull(value: string | undefined): string | null {
 
 async function onSubmit() {
   try {
-    const capacityNum = state.capacity ? Number(state.capacity) : null
     await create.mutateAsync({
       name: state.name,
       goal: state.goal || undefined,
       plannedStartAt: toIsoOrNull(state.plannedStartAt),
       plannedEndAt: toIsoOrNull(state.plannedEndAt),
-      capacity: capacityNum && Number.isFinite(capacityNum) ? capacityNum : null,
+      capacity: state.capacity ?? null,
     })
     open.value = false
     resetForm()
@@ -85,12 +84,13 @@ watch(open, (v) => {
           hint="Целевой бюджет story points команды на спринт. Можно оставить пустым."
         >
           <UInput
-            v-model="state.capacity"
+            :model-value="state.capacity ?? undefined"
             type="number"
             min="0"
             max="10000"
             placeholder="например, 32"
             class="w-full"
+            @update:model-value="(v: string | number) => state.capacity = v === '' || v == null ? null : Number(v)"
           />
         </UFormField>
         <UAlert
