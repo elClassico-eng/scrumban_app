@@ -36,7 +36,7 @@ function onLaneScroll() {
 </script>
 
 <template>
-  <div class="flex flex-col h-full border border-default rounded-lg overflow-hidden">
+  <div class="flex flex-col max-h-full border border-default rounded-lg overflow-hidden">
     <div class="flex shrink-0 border-b border-default bg-elevated/40">
       <div class="shrink-0 border-r border-default" :style="{ width: `${LABEL_W}px` }" />
       <div ref="axisEl" class="flex-1 overflow-hidden">
@@ -84,15 +84,28 @@ function onLaneScroll() {
             class="absolute left-0 right-0 border-b border-default/40"
             :style="{ top: `${(i + 1) * ROW_HEIGHT}px` }"
           />
+          <template v-if="horizonX != null">
+            <div
+              class="absolute top-0 bottom-0 border-l-2 border-dashed border-red-400/70"
+              :style="{ left: `${horizonX}px` }"
+            />
+            <div
+              class="absolute top-0 -translate-x-1/2 px-1.5 py-0.5 rounded bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-[10px] font-medium whitespace-nowrap z-[2]"
+              :style="{ left: `${horizonX}px` }"
+            >
+              горизонт
+            </div>
+          </template>
           <div
-            v-if="horizonX != null"
-            class="absolute top-0 bottom-0 border-l-2 border-dashed border-default/70"
-            :style="{ left: `${horizonX}px` }"
-          />
-          <div
-            class="absolute top-0 bottom-0 w-0.5 bg-accent-500"
+            class="absolute top-0 bottom-0 w-0.5 bg-sky-500"
             :style="{ left: `${todayX}px` }"
           />
+          <div
+            class="absolute top-0 -translate-x-1/2 px-1.5 py-0.5 rounded bg-sky-500 text-white text-[10px] font-medium whitespace-nowrap z-[2]"
+            :style="{ left: `${todayX}px` }"
+          >
+            сегодня
+          </div>
 
           <GanttArrows :segments="segments" :width="laneWidth" :height="laneHeight" />
 

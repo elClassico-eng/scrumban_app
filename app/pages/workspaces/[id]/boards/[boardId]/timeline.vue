@@ -145,6 +145,15 @@ function closeTaskModal() {
         Для сетевого плана нужно ещё {{ insufficient.missing }} закрытых задач — пока показан факт.
       </div>
 
+      <div v-if="!isEmpty" class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted">
+        <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-4 rounded-sm bg-accent-500" />критический путь</span>
+        <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-4 rounded-sm bg-slate-400" />задача</span>
+        <span class="inline-flex items-center gap-1.5"><span class="h-1 w-4 rounded-full bg-slate-400/40" />резерв</span>
+        <span class="inline-flex items-center gap-1.5"><span class="h-3 w-0.5 bg-sky-500" />сегодня</span>
+        <span class="inline-flex items-center gap-1.5"><span class="h-3 border-l-2 border-dashed border-red-400" />горизонт спринта</span>
+        <span class="inline-flex items-center gap-1.5"><UIcon name="i-lucide-move-right" class="size-3.5" />зависимость</span>
+      </div>
+
       <div
         v-if="isEmpty"
         class="flex-1 flex flex-col items-center justify-center text-center gap-2 border border-default rounded-lg"
@@ -160,7 +169,7 @@ function closeTaskModal() {
         :now="now"
         :anchor="anchor"
         :horizon-days="horizonDays"
-        class="flex-1 min-h-0"
+        class="min-h-0"
         @open-task="openTask"
       />
     </template>

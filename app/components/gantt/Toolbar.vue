@@ -38,6 +38,12 @@ const ZOOMS: Array<{ value: GanttZoom, label: string }> = [
         </span>
         <span>· P85 {{ summary.p85 }}д</span>
         <span v-if="summary.prob != null">· уложимся в горизонт: {{ Math.round(summary.prob * 100) }}%</span>
+        <UTooltip
+          text="P50/P85 — срок, к которому спринт завершится с вероятностью 50%/85% (симуляция Монте-Карло по истории закрытых задач). «Горизонт» — плановая длительность спринта."
+          :content="{ side: 'bottom' }"
+        >
+          <UIcon name="i-lucide-info" class="size-3.5 text-dimmed cursor-help" />
+        </UTooltip>
       </span>
     </div>
 
