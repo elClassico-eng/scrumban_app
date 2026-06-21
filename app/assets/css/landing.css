@@ -383,11 +383,41 @@
   & .check.on { border-color: var(--orange); background: var(--orange-soft); color: var(--ink); }
   & .check .box { width: 17px; height: 17px; border-radius: 5px; border: 1.5px solid var(--ink-4); display: grid; place-items: center; transition: all .2s; }
   & .check.on .box { background: var(--orange); border-color: var(--orange); color: #fff; }
+  & .cta__agree { display: flex; align-items: flex-start; gap: 11px; margin-top: 18px; cursor: pointer; font-size: 13px; color: var(--ink-3); line-height: 1.5; user-select: none; }
+  & .cta__agree-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  & .cta__agree .box { flex: none; margin-top: 1px; width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--ink-4); display: grid; place-items: center; color: #fff; transition: all .2s; }
+  & .cta__agree:hover .box { border-color: var(--ink-3); }
+  & .cta__agree.on .box { background: var(--orange); border-color: var(--orange); }
+  & .cta__agree a { color: var(--orange-2); text-decoration: underline; text-underline-offset: 2px; }
+  & .cta__agree a:hover { color: var(--orange); }
   & .cta__submit { margin-top: 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   & .cta__submit .btn { height: 54px; font-size: 15px; }
   & .cta__submit .agree { font-size: 12px; color: var(--ink-4); max-width: 32ch; line-height: 1.4; }
   & .cta__done { text-align: center; padding: 30px; font-size: 17px; color: var(--ink); }
   & .cta__done .o { color: var(--orange); }
+
+  & .legal__bar { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(12px); background: rgba(10,10,10,0.7); border-bottom: 1px solid var(--line); }
+  & .legal__bar-in { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+  & .legal__back { font-size: 14px; color: var(--ink-2); transition: color .2s; }
+  & .legal__back:hover { color: var(--orange-2); }
+  & .legal__wordmark { font-weight: 600; letter-spacing: -0.02em; }
+  & .legal__wordmark b span { color: var(--orange-2); }
+  & .legal__wordmark .star { color: var(--orange); font-style: normal; font-size: 0.6em; vertical-align: super; margin-left: 1px; }
+  & .legal { padding: 56px 0 30px; position: relative; z-index: 1; }
+  & .legal__wrap { max-width: 760px; }
+  & .legal__tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 18px; }
+  & .legal h1 { font-size: clamp(30px, 4vw, 46px); line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; }
+  & .legal__meta { color: var(--ink-4); font-size: 13px; margin-top: 14px; font-family: var(--font-mono); }
+  & .legal__lead { color: var(--ink-2); font-size: 16px; line-height: 1.62; margin-top: 24px; }
+  & .legal h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 42px 0 0; color: var(--ink); }
+  & .legal h2 .num { color: var(--orange); font-family: var(--font-mono); font-size: 14px; margin-right: 10px; }
+  & .legal p { color: var(--ink-2); font-size: 15px; line-height: 1.66; margin-top: 14px; }
+  & .legal ul { margin: 14px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  & .legal li { position: relative; padding-left: 20px; color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+  & .legal li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border-radius: 999px; background: var(--orange); }
+  & .legal a { color: var(--orange-2); text-decoration: underline; text-underline-offset: 2px; }
+  & .legal a:hover { color: var(--orange); }
+  & .legal__note { margin-top: 38px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,0.02); color: var(--ink-3); font-size: 13.5px; line-height: 1.62; }
 
   & .footer { border-top: 1px solid var(--line); padding: 56px 0 40px; }
   & .footer__top { display: flex; justify-content: space-between; gap: 30px; flex-wrap: wrap; align-items: flex-start; }
@@ -401,6 +431,8 @@
   & .footer__col a:hover { color: var(--orange-2); }
   & .footer__bottom { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 50px; padding-top: 24px; border-top: 1px solid var(--line); }
   & .footer__bottom span { font-size: 12.5px; color: var(--ink-4); }
+  & .footer__legal { font-size: 12.5px; color: var(--ink-4); transition: color .2s; }
+  & .footer__legal:hover { color: var(--orange-2); }
 
   & .landing-slot {
     width: 100%; height: 100%;

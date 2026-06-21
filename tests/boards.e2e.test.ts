@@ -261,6 +261,46 @@ describe('PATCH /api/workspaces/:id/boards/:boardId', () => {
     expect(res.body.board.name).toBe('New')
   })
 
+  it('admin can change a board slug', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const created = await fetchWithJar<{ board: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'Old', slug: 'old' } },
+    )
+
+    const res = await fetchWithJar<{ board: { slug: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${created.body.board.id}`,
+      { method: 'PATCH', body: { slug: 'renamed' } },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.board.slug).toBe('renamed')
+  })
+
+  it('rejects changing slug to one already used in the workspace (409)', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'First', slug: 'first' } },
+    )
+    const second = await fetchWithJar<{ board: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'Second', slug: 'second' } },
+    )
+
+    const res = await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${second.body.board.id}`,
+      { method: 'PATCH', body: { slug: 'first' } },
+    )
+    expect(res.status).toBe(409)
+  })
+
   it('admin can change board color', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)

@@ -97,8 +97,18 @@ const displayViews = computed<ViewEntry[]>(() => {
   ]
 })
 
-const currentView = computed<ViewEntry>(
-  () => displayViews.value.find(v => v.isActive) ?? displayViews.value[0]!,
+const ui = useUiStore()
+
+const activeView = computed(() => displayViews.value.find(v => v.isActive) ?? null)
+
+watchEffect(() => {
+  if (activeView.value) ui.setLastBoardView(activeView.value.key)
+})
+
+const targetView = computed<ViewEntry>(() =>
+  activeView.value
+  ?? displayViews.value.find(v => v.key === ui.lastBoardView)
+  ?? displayViews.value[0]!,
 )
 
 const dropdownItems = computed<DropdownMenuItem[]>(() =>
@@ -156,17 +166,29 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
       </div>
 
       <div class="flex items-center gap-1.5 overflow-x-auto [&>*]:shrink-0 sm:ml-auto sm:overflow-visible">
-        <UDropdownMenu :items="dropdownItems">
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-            :class="isViewActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
+        <div
+          class="inline-flex items-stretch rounded-md"
+          :class="isViewActive ? 'bg-primary/10' : ''"
+        >
+          <NuxtLink
+            :to="targetView.to"
+            class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-l-md text-sm font-medium transition-colors"
+            :class="isViewActive ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
           >
-            <UIcon :name="currentView.icon" class="size-4 shrink-0" />
-            {{ currentView.label }}
-            <UIcon name="i-lucide-chevron-down" class="size-3.5 shrink-0 opacity-60" />
-          </button>
-        </UDropdownMenu>
+            <UIcon :name="targetView.icon" class="size-4 shrink-0" />
+            {{ targetView.label }}
+          </NuxtLink>
+          <UDropdownMenu :items="dropdownItems">
+            <button
+              type="button"
+              class="inline-flex items-center px-1.5 py-1.5 rounded-r-md transition-colors"
+              :class="isViewActive ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
+              title="Выбрать вид"
+            >
+              <UIcon name="i-lucide-chevron-down" class="size-3.5 shrink-0 opacity-60" />
+            </button>
+          </UDropdownMenu>
+        </div>
         <NuxtLink
           :to="sprintsPath"
           class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"

@@ -24,9 +24,9 @@ const boardsActive = computed(() =>
         :to="pageRoutes.boards(workspaceId)"
         :aria-current="boardsActive ? 'page' : undefined"
         :class="[
-          'flex items-center justify-center rounded-xl p-2.5 transition-all duration-200',
+          'flex items-center justify-center rounded-xl p-2.5 transition-colors duration-200',
           boardsActive
-            ? 'bg-accent-500/15 text-accent-600 dark:text-accent-400'
+            ? 'bg-accent-500/10 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300'
             : 'text-muted hover:bg-elevated hover:text-default',
         ]"
       >
@@ -37,22 +37,18 @@ const boardsActive = computed(() =>
     <div
       v-else
       :class="[
-        'group relative flex items-center rounded-xl pr-1 transition-all duration-200',
+        'group flex items-center rounded-xl pr-1 transition-colors duration-200',
         boardsActive
-          ? 'bg-accent-50 shadow-sm ring-1 ring-accent-500/10 dark:bg-accent-500/15 dark:ring-accent-500/20'
+          ? 'bg-accent-500/10 dark:bg-accent-500/15'
           : 'hover:bg-elevated',
       ]"
     >
-      <span
-        v-if="boardsActive"
-        class="absolute left-1 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-accent-500"
-      />
       <NuxtLink
         :to="pageRoutes.boards(workspaceId)"
         :class="[
           'flex flex-1 items-center gap-3 rounded-l-xl py-2.5 pl-3 text-sm font-medium transition-colors',
           boardsActive
-            ? 'text-accent-700 font-semibold dark:text-accent-300'
+            ? 'text-accent-700 dark:text-accent-300'
             : 'text-muted group-hover:text-default',
         ]"
       >
@@ -88,7 +84,7 @@ const boardsActive = computed(() =>
         :class="[
           'relative flex items-center gap-2.5 rounded-lg py-2 pr-3 pl-3 text-sm font-medium transition-all duration-200',
           String(activeBoardId) === String(b.id)
-            ? 'bg-accent-50 text-accent-700 font-semibold shadow-sm ring-1 ring-accent-500/10 dark:bg-accent-500/15 dark:text-accent-300 dark:ring-accent-500/20'
+            ? 'bg-accent-500/10 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300'
             : 'text-muted hover:bg-elevated hover:text-default',
         ]"
       >

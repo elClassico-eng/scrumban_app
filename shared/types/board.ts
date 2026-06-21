@@ -29,6 +29,7 @@ export interface CreateBoardInput {
 
 export interface UpdateBoardInput {
   name?: string
+  slug?: string
   color?: string
   sleDays?: number | null
   sleProbability?: number

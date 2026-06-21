@@ -5,6 +5,7 @@ const email = ref('')
 const team = ref('')
 const intents = reactive<Record<IntentKey, boolean>>({ try: true, partner: false, follow: false })
 const company = ref('')
+const consent = ref(false)
 const sent = ref(false)
 const loading = ref(false)
 const error = ref('')
@@ -20,7 +21,7 @@ function toggle(k: IntentKey) {
 }
 
 async function submit() {
-  if (!email.value.trim() || loading.value) return
+  if (!email.value.trim() || !consent.value || loading.value) return
   loading.value = true
   error.value = ''
   try {
@@ -32,6 +33,7 @@ async function submit() {
         team: team.value.trim() || undefined,
         intents: selected,
         company: company.value,
+        consent: consent.value,
       },
     })
     sent.value = true
@@ -77,8 +79,18 @@ async function submit() {
               {{ label }}
             </button>
           </div>
+          <label class="cta__agree" :class="{ on: consent }">
+            <input v-model="consent" type="checkbox" class="cta__agree-input">
+            <span class="box">
+              <svg v-if="consent" width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 3 3 7-7" /></svg>
+            </span>
+            <span class="cta__agree-text">
+              Даю согласие на обработку моих персональных данных и принимаю условия
+              <NuxtLink to="/privacy" target="_blank" rel="noopener" @click.stop>Политики обработки данных</NuxtLink>.
+            </span>
+          </label>
           <div class="cta__submit">
-            <button class="btn btn--primary btn--static" :disabled="!email.trim() || loading" @click="submit">
+            <button class="btn btn--primary btn--static" :disabled="!email.trim() || !consent || loading" @click="submit">
               {{ loading ? 'Отправляем…' : 'Получить ранний доступ' }}
               <svg class="arr" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4M6 4h6v6" /></svg>
             </button>

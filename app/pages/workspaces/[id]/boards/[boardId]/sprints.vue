@@ -142,15 +142,13 @@ const taskIdsInOtherSprints = computed(() => {
 const backlogForAddPanel = computed(() => {
   const sprint = addTaskPanel.value?.sprint
   if (!sprint) return [] as Task[]
-  const alreadyInThisSprint = new Set(
-    (membershipBySprint.value.get(sprint.id) ?? []).map(it => it.taskId),
-  )
-  const otherSprintIds = taskIdsInOtherSprints.value
-  return allTasks.value.filter((t) => {
-    if (alreadyInThisSprint.has(t.id)) return false
-    if (otherSprintIds.has(t.id)) return false
-    if (t.closedAt) return false
-    return true
+  const excludeTaskIds = new Set<string>([
+    ...(membershipBySprint.value.get(sprint.id) ?? []).map(it => it.taskId),
+    ...taskIdsInOtherSprints.value,
+  ])
+  return filterSprintCandidates(allTasks.value, {
+    excludeTaskIds,
+    terminalColumnIds: terminalColumnIds(columns.value),
   })
 })
 

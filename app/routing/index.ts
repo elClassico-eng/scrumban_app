@@ -133,6 +133,7 @@ export const apiRoutes = {
 
 export const pageRoutes = {
   home: '/',
+  privacy: '/privacy',
   login: '/login',
   register: '/register',
   verifyEmail: (token: string) => `/verify-email/${token}`,

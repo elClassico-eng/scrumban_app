@@ -9,7 +9,7 @@ const workspaceStore = useWorkspaceStore()
 workspaceStore.setCurrent(wsId.value)
 
 const { list: workspacesList } = useWorkspacesApi()
-const { list: boardsList, update: updateBoard, remove: removeBoard } = useBoardsApi(wsId)
+const { list: boardsList, remove: removeBoard } = useBoardsApi(wsId)
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -26,20 +26,19 @@ useHead({
 
 const createOpen = ref(false)
 const confirm = useConfirm()
-const toast = useToast()
 
-const renameTarget = ref<Board | null>(null)
-const renameOpen = computed({
-  get: () => renameTarget.value !== null,
-  set: (v) => { if (!v) renameTarget.value = null },
+const editTarget = ref<Board | null>(null)
+const editOpen = computed({
+  get: () => editTarget.value !== null,
+  set: (v) => { if (!v) editTarget.value = null },
 })
 
 function menuItems(board: Board) {
   return [
     {
-      label: 'Переименовать',
+      label: 'Изменить',
       icon: 'i-lucide-pencil',
-      onSelect: () => { renameTarget.value = board },
+      onSelect: () => { editTarget.value = board },
     },
     {
       label: 'Удалить',
@@ -48,17 +47,6 @@ function menuItems(board: Board) {
       onSelect: () => onRemove(board),
     },
   ]
-}
-
-async function onRename(name: string) {
-  if (!renameTarget.value) return
-  try {
-    await updateBoard.mutateAsync({ boardId: renameTarget.value.id, name })
-    renameTarget.value = null
-  }
-  catch {
-    toast.add({ title: 'Не удалось переименовать', color: 'error', icon: 'i-lucide-alert-circle' })
-  }
 }
 
 async function onRemove(board: Board) {
@@ -147,13 +135,11 @@ async function onRemove(board: Board) {
 
     <BoardCreateModal v-if="canCreate" v-model:open="createOpen" :workspace-id="wsId" />
 
-    <CommonRenameModal
-      v-if="renameTarget"
-      v-model:open="renameOpen"
-      entity-label="доску"
-      :current-name="renameTarget.name"
-      :loading="updateBoard.isPending.value"
-      @submit="onRename"
+    <BoardEditModal
+      v-if="editTarget"
+      v-model:open="editOpen"
+      :workspace-id="wsId"
+      :board="editTarget"
     />
   </div>
 </template>
