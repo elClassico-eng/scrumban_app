@@ -5,7 +5,12 @@ import { apiRoutes } from '~/routing'
 useHead({ title: 'Личный кабинет — Scrumban' })
 
 const { me, update } = useProfileApi()
+const { logout } = useAuthApi()
 const toast = useToast()
+
+function onLogout() {
+  logout.mutate()
+}
 
 const verifiedAt = computed(() => me.data.value?.user.emailVerifiedAt ?? null)
 const isVerified = computed(() => verifiedAt.value !== null)
@@ -256,5 +261,26 @@ const previewInitials = computed(() => initials({
         </UButton>
       </div>
     </UForm>
+
+    <UCard v-if="me.data.value">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="min-w-0 space-y-1">
+          <h2 class="font-semibold">Аккаунт</h2>
+          <p class="text-sm text-muted">
+            Завершить сессию на этом устройстве — вы вернётесь на страницу входа.
+          </p>
+        </div>
+        <UButton
+          icon="i-lucide-log-out"
+          color="error"
+          variant="soft"
+          class="shrink-0"
+          :loading="logout.isPending.value"
+          @click="onLogout"
+        >
+          Выйти из аккаунта
+        </UButton>
+      </div>
+    </UCard>
   </div>
 </template>
