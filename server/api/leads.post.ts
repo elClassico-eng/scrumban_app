@@ -8,6 +8,7 @@ const LeadSchema = z.object({
   team: z.string().max(200).optional(),
   intents: z.array(z.enum(['try', 'partner', 'follow'])).max(3).default([]),
   company: z.string().optional(),
+  consent: z.literal(true),
 })
 
 const INTENT_LABEL: Record<string, string> = {
