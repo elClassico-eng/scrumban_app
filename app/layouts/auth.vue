@@ -10,8 +10,8 @@ const cardMaxWidth = computed(() => (route.meta.cardMaxWidth as string | undefin
 
     <div class="relative z-10 hidden lg:flex flex-1 flex-col justify-between p-12 text-white">
       <NuxtLink to="/" class="flex items-center gap-2 w-fit hover:opacity-80 transition-opacity">
-        <UIcon name="i-lucide-layout-dashboard" class="size-7" />
-        <span class="font-bold tracking-tight text-xl">Scrumban</span>
+        <TaktMark class="size-7" />
+        <span class="font-bold tracking-tight text-xl">Такт</span>
       </NuxtLink>
 
       <div class="space-y-8 max-w-md">

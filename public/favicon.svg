@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Такт">
+  <rect x="0" y="0" width="64" height="64" rx="16" fill="#28262B"></rect>
+  <circle cx="32" cy="18" r="3.6" fill="#EDEAE0"></circle>
+  <path d="M32 18 L44 42" fill="none" stroke="#EDEAE0" stroke-width="5.6" stroke-linecap="round"></path>
+  <circle cx="44.5" cy="43" r="7.6" fill="#e85002"></circle>
+</svg>

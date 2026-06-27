@@ -30,7 +30,7 @@ const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 const currentUserId = computed(() => authStore.user?.id ?? null)
 
 useHead({
-  title: () => board.value ? `${board.value.name} — Календарь` : 'Календарь — Scrumban',
+  title: () => board.value ? `${board.value.name} — Календарь` : 'Календарь — Такт',
 })
 
 const anchor = ref(startOfMonth(new Date()))

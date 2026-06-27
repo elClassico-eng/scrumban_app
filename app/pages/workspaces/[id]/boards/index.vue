@@ -21,7 +21,7 @@ const canManage = canCreate
 useHead({
   title: () => workspace.value
     ? `${workspace.value.name} — Доски`
-    : 'Доски — Scrumban',
+    : 'Доски — Такт',
 })
 
 const createOpen = ref(false)

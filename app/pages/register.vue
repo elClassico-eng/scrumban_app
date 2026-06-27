@@ -4,7 +4,7 @@ import { passwordSchema } from '#shared/validation/password'
 import { apiRoutes, pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-xl' })
-useHead({ title: 'Регистрация — Scrumban' })
+useHead({ title: 'Регистрация — Такт' })
 
 type Step = 1 | 2 | 3
 const step = ref<Step>(1)
@@ -201,7 +201,7 @@ async function finishOnboarding() {
       <div class="space-y-2">
         <h1 class="text-3xl font-bold tracking-tight">Учётные данные</h1>
         <p class="text-sm text-muted leading-relaxed">
-          С этим email и паролем будете заходить в Scrumban.
+          С этим email и паролем будете заходить в Такт.
         </p>
       </div>
       <div class="space-y-4">

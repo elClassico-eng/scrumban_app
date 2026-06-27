@@ -50,7 +50,7 @@ services:
       SMTP_SECURE: ${SMTP_SECURE:-true}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-Scrumban <noreply@takt34.tech>}
+      SMTP_FROM: ${SMTP_FROM:-Такт <noreply@takt34.tech>}
       LEADS_NOTIFY_EMAIL: ${LEADS_NOTIFY_EMAIL:-}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     healthcheck:

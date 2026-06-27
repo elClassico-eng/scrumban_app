@@ -2,7 +2,7 @@
 import { apiRoutes, pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-md' })
-useHead({ title: 'Подтверждение email — Scrumban' })
+useHead({ title: 'Подтверждение email — Такт' })
 
 type State =
   | { kind: 'loading' }

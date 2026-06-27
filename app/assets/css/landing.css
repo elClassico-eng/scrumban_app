@@ -112,9 +112,9 @@
     background: rgba(12,12,13,0.82); border-color: var(--line);
     box-shadow: 0 16px 50px -22px rgba(0,0,0,0.9);
   }
-  & .nav__logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; padding-right: 6px; }
+  & .nav__logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; padding-right: 6px; }
+  & .nav__logo .nav__logo-mark { width: 22px; height: 22px; flex: none; }
   & .nav__logo b { font-weight: 600; }
-  & .nav__logo b span { color: var(--orange-2); }
   & .nav__div { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
   & .nav__links { display: flex; gap: 2px; }
   & .nav__link {

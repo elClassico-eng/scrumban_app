@@ -2,7 +2,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import type { WorkspaceListItem } from '#shared/types/workspace'
 
-useHead({ title: 'Воркспейсы — Scrumban' })
+useHead({ title: 'Воркспейсы — Такт' })
 
 const { list, update, remove, setLabel } = useWorkspacesApi()
 const workspaceStore = useWorkspaceStore()

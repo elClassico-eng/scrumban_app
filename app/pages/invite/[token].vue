@@ -3,7 +3,7 @@ import type { Role } from '#shared/types/domain'
 import { apiRoutes, pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-md' })
-useHead({ title: 'Приглашение в workspace — Scrumban' })
+useHead({ title: 'Приглашение в workspace — Такт' })
 
 type InspectResponse =
   | { valid: true, workspaceName: string, role: string, emailBound: string | null }

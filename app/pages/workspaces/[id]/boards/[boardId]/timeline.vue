@@ -30,7 +30,7 @@ const board = computed(() =>
 const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 useHead({
-  title: () => board.value ? `${board.value.name} — Timeline` : 'Timeline — Scrumban',
+  title: () => board.value ? `${board.value.name} — Timeline` : 'Timeline — Такт',
 })
 
 const now = new Date()

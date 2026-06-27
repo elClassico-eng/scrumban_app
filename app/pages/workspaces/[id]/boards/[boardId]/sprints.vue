@@ -38,7 +38,7 @@ const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 useHead({
   title: () => board.value
     ? `${board.value.name} — Спринты`
-    : 'Спринты — Scrumban',
+    : 'Спринты — Такт',
 })
 
 type FilterKey = 'all' | SprintState

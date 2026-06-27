@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import { apiRoutes } from '~/routing'
 
-useHead({ title: 'Личный кабинет — Scrumban' })
+useHead({ title: 'Личный кабинет — Такт' })
 
 const { me, update } = useProfileApi()
 const { logout } = useAuthApi()

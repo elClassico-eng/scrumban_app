@@ -5,6 +5,13 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false,
 
+  app: {
+    head: {
+      title: 'Такт',
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+    },
+  },
+
   modules: [
     '@nuxt/ui',
     '@nuxt/eslint',

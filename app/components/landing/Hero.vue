@@ -11,13 +11,12 @@ useWordmarkFit(wordmark)
     <div class="grain hero__grain" />
 
     <div class="wrap hero__meta">
-      <div class="hero__kicker reveal"><span class="dot" />(01) — Открытая бета</div>
-      <div class="hero__kicker right reveal">Scrumban OS · v0.9</div>
+      <div class="hero__kicker reveal"><span class="dot" />Открытая бета v0.1</div>
     </div>
 
     <div class="wrap hero__content">
       <div ref="wordmark" class="hero__wordmark reveal">
-        <span class="line-mask"><span class="fit">ScrumBan<i class="star">*</i></span></span>
+        <span class="line-mask"><span class="fit">Такт<i class="star">*</i></span></span>
       </div>
       <div class="hero__lower">
         <div class="hero__tagline reveal">
