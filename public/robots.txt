@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /$
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /invite
+Disallow: /me
+Disallow: /workspaces
+Disallow: /admin
+
+Sitemap: https://takt34.tech/sitemap.xml

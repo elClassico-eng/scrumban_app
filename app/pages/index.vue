@@ -8,8 +8,20 @@ useReveal(root)
 useLenis()
 
 useHead({
-  title: 'Такт — Scrumban-доска с прогнозом сроков для команд 30+',
   bodyAttrs: { class: 'landing-page' },
+  link: [{ rel: 'canonical', href: 'https://takt34.tech/' }],
+})
+
+useSeoMeta({
+  title: 'Такт — Scrumban-доска с прогнозом сроков для команд 30+',
+  description: 'Scrumban-доска для IT-команд от 30 человек. Спринты задают ритм, аналитика потока — предсказуемость, а сроки спринта считает математика (Monte Carlo, CPM/PERT), а не интуиция.',
+  ogType: 'website',
+  ogSiteName: 'Такт',
+  ogTitle: 'Такт — Scrumban-доска с прогнозом сроков',
+  ogDescription: 'Спринты задают ритм, аналитика потока — предсказуемость, а сроки спринта считает математика, а не интуиция. Для IT-команд от 30 человек.',
+  ogUrl: 'https://takt34.tech/',
+  ogImage: 'https://takt34.tech/landing/hero-scene.jpg',
+  ogLocale: 'ru_RU',
 })
 </script>
 

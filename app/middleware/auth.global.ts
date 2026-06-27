@@ -23,6 +23,11 @@ function isPublicRoute(path: string): boolean {
 }
 
 export default defineNuxtRouteMiddleware(async (to) => {
+  // During prerender/SSR there is no session cookie, so the prerendered '/'
+  // is always the guest landing. The client re-runs this middleware after
+  // hydration and redirects authenticated users to their workspaces.
+  if (import.meta.server) return
+
   const { sessionQuery } = useAuthApi()
   if (sessionQuery.isLoading.value) {
     await sessionQuery.suspense()
