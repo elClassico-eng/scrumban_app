@@ -133,6 +133,7 @@ async function finishOnboarding() {
 
 <template>
   <div class="space-y-8">
+    <TaktLoader v-if="submitting" label="Создаём аккаунт…" />
     <div class="space-y-3">
       <p class="text-[11px] uppercase tracking-[0.18em] text-muted font-medium">
         Шаг {{ step }} из 3

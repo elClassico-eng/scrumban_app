@@ -12,7 +12,7 @@ const emit = defineEmits<{ toggle: [], close: [] }>()
       collapsed ? 'flex-col items-center gap-2 px-0 pt-4 pb-2' : 'h-14 items-center gap-2.5 px-4',
     ]"
   >
-    <NuxtLink :to="pageRoutes.home" class="flex min-w-0 items-center gap-2.5 text-highlighted">
+    <NuxtLink :to="pageRoutes.home" class="takt-logo flex min-w-0 items-center gap-2.5 text-highlighted">
       <TaktMark class="size-6 shrink-0" />
       <span v-if="!collapsed" class="truncate text-base font-semibold tracking-tight">
         Такт

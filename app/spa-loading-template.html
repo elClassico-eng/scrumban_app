@@ -1,0 +1,39 @@
+<div class="takt-spa">
+  <svg viewBox="0 0 64 64" width="76" height="76" fill="none" aria-label="Такт" xmlns="http://www.w3.org/2000/svg">
+    <path d="M19 45 Q32 13 45 45" stroke="#f4f1ea" stroke-width="3" stroke-linecap="round" opacity="0.3" />
+    <circle cx="32" cy="18" r="3" fill="#f4f1ea" />
+    <g class="takt-spa__pendulum">
+      <path d="M32 18 L44 42" stroke="#f4f1ea" stroke-width="4.4" stroke-linecap="round" />
+      <circle cx="44.5" cy="43" r="6.4" fill="#e85002" />
+    </g>
+  </svg>
+  <div class="takt-spa__word">Такт</div>
+</div>
+<style>
+  .takt-spa {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: #090909;
+    color: #f4f1ea;
+    font-family: 'Unbounded', system-ui, -apple-system, sans-serif;
+  }
+  .takt-spa__pendulum {
+    transform-box: view-box;
+    transform-origin: 32px 18px;
+    animation: takt-spa-swing 1.5s ease-in-out infinite;
+  }
+  .takt-spa__word {
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  @keyframes takt-spa-swing {
+    0%, 100% { transform: rotate(-15deg); }
+    50% { transform: rotate(15deg); }
+  }
+</style>
