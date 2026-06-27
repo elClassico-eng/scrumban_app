@@ -14,3 +14,7 @@
 
 	reverse_proxy app:3000
 }
+
+scrumban-thesis.ru, www.scrumban-thesis.ru {
+	redir https://{$DOMAIN}{uri} permanent
+}

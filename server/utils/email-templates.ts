@@ -135,7 +135,7 @@ function baseTemplate(opts: { preheader: string, body: string }): string {
           </td></tr>
         </table>
         <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;">
-          Scrumban · scrumban-thesis.ru
+          Scrumban · takt34.tech
         </p>
       </td>
     </tr>

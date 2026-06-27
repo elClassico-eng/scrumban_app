@@ -83,7 +83,7 @@ async function sendViaSMTP(options: SendEmailOptions, from: string): Promise<voi
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
-  const from = process.env.SMTP_FROM ?? 'Scrumban <noreply@scrumban-thesis.ru>'
+  const from = process.env.SMTP_FROM ?? 'Scrumban <noreply@takt34.tech>'
   if (process.env.SES_ACCESS_KEY_ID) {
     return sendViaSES(options, from)
   }
