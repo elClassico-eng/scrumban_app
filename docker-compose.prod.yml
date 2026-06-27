@@ -18,10 +18,7 @@ services:
       retries: 10
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: scrumban-app:latest
+    image: ghcr.io/elclassico-eng/scrumban_app:latest
     restart: unless-stopped
     depends_on:
       db:
