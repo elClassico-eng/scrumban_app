@@ -55,7 +55,7 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
       <div ref="sheet" class="why__sheet" />
       <div ref="inner" class="why__inner">
         <div class="why__bar">
-          <div class="why__eyebrow"><span class="ln" />02 — Почему ScrumBan</div>
+          <div class="why__eyebrow"><span class="ln" />02 — Почему Такт</div>
           <div class="sp" />
           <div class="why__progress"><i ref="fill" /></div>
           <div class="why__count"><b>{{ pad2(cur + 1) }}</b> / 06</div>

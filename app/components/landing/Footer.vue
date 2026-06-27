@@ -21,7 +21,7 @@
         </div>
       </div>
       <div class="footer__bottom">
-        <span>© ScrumBan 2027 · дипломный проект ВолГУ</span>
+        <span>© Такт 2027 · дипломный проект ВолГУ</span>
         <NuxtLink to="/privacy" class="footer__legal">Политика обработки данных</NuxtLink>
       </div>
     </div>

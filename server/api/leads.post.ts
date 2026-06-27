@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       try {
         await sendEmail({
           to: notifyTo,
-          subject: `ScrumBan — новая заявка: ${body.email}`,
+          subject: `Такт — новая заявка: ${body.email}`,
           html: `<p><b>Email:</b> ${esc(body.email)}</p>`
             + `<p><b>Команда / роль:</b> ${esc(team ?? '—')}</p>`
             + `<p><b>Интерес:</b> ${esc(intentText)}</p>`,

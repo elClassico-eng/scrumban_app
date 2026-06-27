@@ -21,7 +21,7 @@ const invitations = computed(() => invitationsList.data.value?.invitations ?? []
 useHead({
   title: () => workspace.value
     ? `${workspace.value.name} — Участники`
-    : 'Участники — Scrumban',
+    : 'Участники — Такт',
 })
 
 const canManage = computed(() => hasRole(workspace.value?.role, 'admin'))

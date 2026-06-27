@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { apiRoutes, pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth' })
-useHead({ title: 'Забыли пароль — Scrumban' })
+useHead({ title: 'Забыли пароль — Такт' })
 
 const schema = z.object({
   email: z.string().email('Введи корректный email').max(255),

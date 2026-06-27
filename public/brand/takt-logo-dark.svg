@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 210" width="660" height="210" role="img" aria-label="Такт">
+  
+  <text class="wm" x="330" y="150" text-anchor="middle" font-size="150" letter-spacing="-2" fill="#F4F1EB">Такт</text>
+  <path d="M398 46 Q438 22 476 48" fill="none" stroke="#e85002" stroke-width="13" stroke-linecap="round"></path>
+  <path d="M214 168 Q258 192 302 168" fill="none" stroke="#e85002" stroke-width="13" stroke-linecap="round"></path>
+</svg>

@@ -26,7 +26,7 @@ watchEffect(() => {
 useHead({
   title: () => workspace.value
     ? `${workspace.value.name} — Настройки`
-    : 'Настройки — Scrumban',
+    : 'Настройки — Такт',
 })
 
 const schema = z.object({

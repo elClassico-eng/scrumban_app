@@ -181,8 +181,8 @@ function closeTaskModal() {
 
 useHead({
   title: () => board.value
-    ? `${board.value.name} — Scrumban`
-    : 'Доска — Scrumban',
+    ? `${board.value.name} — Такт`
+    : 'Доска — Такт',
 })
 
 const createColumnOpen = ref(false)

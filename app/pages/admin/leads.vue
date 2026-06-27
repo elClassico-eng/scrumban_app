@@ -43,7 +43,7 @@ function formatDate(iso: string): string {
   })
 }
 
-useHead({ title: 'Заявки — ScrumBan' })
+useHead({ title: 'Заявки — Такт' })
 </script>
 
 <template>

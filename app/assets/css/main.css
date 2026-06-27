@@ -220,3 +220,22 @@ body {
 .h-32 { height: 8rem; }
 .h-48 { height: 12rem; }
 .h-64 { height: 16rem; }
+
+/* Metronome (TaktMark) pendulum swing — used by the loader (always) and by
+   logo links on hover. Pivots at the mark's top point (32,18 in viewBox). */
+.takt-mark__pendulum {
+  transform-box: view-box;
+  transform-origin: 32px 18px;
+}
+.takt-mark--swing .takt-mark__pendulum,
+.takt-logo:hover .takt-mark__pendulum {
+  animation: takt-swing 1.5s ease-in-out infinite;
+}
+@keyframes takt-swing {
+  0%, 100% { transform: rotate(-15deg); }
+  50% { transform: rotate(15deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .takt-mark--swing .takt-mark__pendulum,
+  .takt-logo:hover .takt-mark__pendulum { animation: none; }
+}

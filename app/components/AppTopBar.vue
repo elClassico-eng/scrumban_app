@@ -21,8 +21,9 @@ const unread = computed(() => unreadCount.data.value?.count ?? 0)
       <UIcon name="i-lucide-menu" class="size-5" />
     </button>
 
-    <NuxtLink :to="pageRoutes.workspaces" class="flex min-w-0 items-center">
-      <span class="font-semibold tracking-tight truncate">Scrumban</span>
+    <NuxtLink :to="pageRoutes.workspaces" class="takt-logo flex min-w-0 items-center gap-2">
+      <TaktMark class="size-6 shrink-0" />
+      <span class="font-semibold tracking-tight truncate">Такт</span>
     </NuxtLink>
 
     <div class="flex-1" />

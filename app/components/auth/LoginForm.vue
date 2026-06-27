@@ -46,4 +46,6 @@ function onSubmit() {
       Войти
     </UButton>
   </UForm>
+
+  <TaktLoader v-if="login.isPending.value" label="Входим…" />
 </template>

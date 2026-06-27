@@ -23,8 +23,9 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 <template>
   <nav class="nav" :class="{ dense }">
     <div class="nav__bar">
-      <a class="nav__logo" href="#top">
-        <b>Scrum<span>Ban</span></b>
+      <a class="nav__logo takt-logo" href="#top">
+        <TaktMark class="nav__logo-mark" />
+        <b>Такт</b>
       </a>
       <span class="nav__div" />
       <div class="nav__links">
