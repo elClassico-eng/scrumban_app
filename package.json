@@ -39,6 +39,7 @@
     "pino": "^10.3.1",
     "postgres": "^3.4.9",
     "slugify": "^1.6.9",
+    "three": "^0.185.0",
     "vue-echarts": "^8.0.1",
     "vuedraggable": "^4.1.0",
     "zod": "^4.3.6"
