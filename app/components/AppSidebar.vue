@@ -122,6 +122,16 @@ const manageLinks = computed(() => {
           </div>
         </template>
       </template>
+
+      <div class="mt-auto pt-2">
+        <SidebarNavItem
+          to="/docs"
+          icon="i-lucide-book-open"
+          label="Документация"
+          :collapsed="collapsed"
+          external
+        />
+      </div>
     </nav>
 
     <SidebarUserCard :collapsed="collapsed" />
