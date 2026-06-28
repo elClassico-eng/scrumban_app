@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { ru } from '@nuxt/ui/locale'
+
 const online = useOnline()
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="ru">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
