@@ -90,6 +90,13 @@ const manageLinks = computed(() => {
       <template v-if="current">
         <SidebarSectionLabel label="Рабочее пространство" :collapsed="collapsed" />
         <div class="flex flex-col gap-1">
+          <SidebarNavItem
+            :to="pageRoutes.workspace(current.id)"
+            icon="i-lucide-layout-dashboard"
+            label="Обзор"
+            :collapsed="collapsed"
+            exact
+          />
           <SidebarBoardsGroup
             :workspace-id="current.id"
             :boards="boards"
