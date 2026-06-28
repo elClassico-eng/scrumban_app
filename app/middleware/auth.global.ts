@@ -14,6 +14,7 @@ const PUBLIC_PREFIXES: ReadonlyArray<string> = [
   '/verify-email/',
   '/reset-password/',
   '/invite/',
+  '/docs',
 ]
 
 function isPublicRoute(path: string): boolean {
