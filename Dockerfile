@@ -15,14 +15,20 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile --ignore-scripts
 
 # Stage 2: build Nuxt — produces self-contained .output/
-FROM oven/bun:1.2.21 AS builder
+# Build under Node, not Bun: @nuxt/content resolves its SQLite connector at
+# build time and unconditionally picks bun:sqlite whenever it detects Bun
+# (process.versions.bun). The Node runtime below can't import 'bun:sqlite'
+# (ERR_UNSUPPORTED_ESM_URL_SCHEME). Building under Node, together with
+# content.experimental.sqliteConnector: 'native', bakes node:sqlite into the
+# bundle (built into Node 22.5+, no native module needed).
+FROM node:22 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Vite/Rollup cache survives between builds so unchanged modules don't
 # get re-transformed (~30-60s saved on typical app-code-only changes).
 RUN --mount=type=cache,target=/app/node_modules/.cache \
-    bunx nuxt build
+    node node_modules/nuxt/bin/nuxt.mjs build
 
 # Stage 3: production runtime (slim).
 FROM node:22-slim AS runner
