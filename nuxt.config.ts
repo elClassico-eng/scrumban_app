@@ -7,6 +7,7 @@ export default defineNuxtConfig({
   routeRules: {
     '/**': { ssr: false },
     '/': { prerender: true, ssr: true },
+    '/docs/**': { prerender: true, ssr: true },
   },
 
   app: {
@@ -22,6 +23,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/icon',
     '@nuxt/image',
+    '@nuxt/content',
     '@nuxtjs/google-fonts',
     'nuxt-auth-utils',
     '@pinia/nuxt',
@@ -53,8 +55,8 @@ export default defineNuxtConfig({
   nitro: {
     experimental: { tasks: true },
     prerender: {
-      crawlLinks: false,
-      routes: ['/'],
+      crawlLinks: true,
+      routes: ['/', '/docs'],
     },
     scheduledTasks: {
       '0 * * * *': ['notifications:check-sle-breaches'],
