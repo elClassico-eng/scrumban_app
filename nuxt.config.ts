@@ -30,6 +30,10 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
   ],
 
+  content: {
+    experimental: { sqliteConnector: 'native' },
+  },
+
   css: ['~/assets/css/main.css'],
 
   ui: {
