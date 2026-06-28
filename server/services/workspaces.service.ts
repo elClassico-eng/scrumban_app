@@ -3,12 +3,13 @@
 // userId, so callers cannot accidentally expose data to non-members.
 // (RLS will enforce the same rules at the DB layer in the next step;
 // service-level guards remain as defence in depth.)
-import { and, eq } from 'drizzle-orm'
+import { and, count, eq, inArray, sql } from 'drizzle-orm'
 import {
   workspaceMembers,
   workspaceUserLabels,
   workspaces,
   type Workspace,
+  type WorkspaceCardStyle,
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { NotFoundError } from '../utils/errors'
@@ -18,7 +19,12 @@ export interface WorkspaceWithRole extends Workspace {
   role: WorkspaceMemberRole
 }
 
-export type WorkspaceListItem = WorkspaceWithRole & { myLabel: string | null }
+export type WorkspaceListItem = WorkspaceWithRole & {
+  myLabel: string | null
+  boardCount: number
+  openTaskCount: number
+  memberCount: number
+}
 
 type Tx = Parameters<Parameters<ReturnType<typeof useDB>['transaction']>[0]>[0]
 
@@ -70,14 +76,15 @@ const workspaceWithRoleSelect = {
   purpose: workspaces.purpose,
   industry: workspaces.industry,
   logoUrl: workspaces.logoUrl,
+  cardStyle: workspaces.cardStyle,
   createdAt: workspaces.createdAt,
   updatedAt: workspaces.updatedAt,
   role: workspaceMembers.role,
 } as const
 
 export async function listWorkspacesForUser(userId: string): Promise<WorkspaceListItem[]> {
-  return withUser(userId, tx =>
-    tx
+  return withUser(userId, async (tx) => {
+    const rows = await tx
       .select({ ...workspaceWithRoleSelect, myLabel: workspaceUserLabels.label })
       .from(workspaceMembers)
       .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
@@ -88,8 +95,43 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceLi
           eq(workspaceUserLabels.userId, userId),
         ),
       )
-      .where(eq(workspaceMembers.userId, userId)),
-  )
+      .where(eq(workspaceMembers.userId, userId))
+
+    const ids = rows.map(r => r.id)
+    if (ids.length === 0) return []
+
+    const memberCounts = await tx
+      .select({ workspaceId: workspaceMembers.workspaceId, n: count() })
+      .from(workspaceMembers)
+      .where(inArray(workspaceMembers.workspaceId, ids))
+      .groupBy(workspaceMembers.workspaceId)
+    const byMembers = new Map(
+      memberCounts.map(r => [r.workspaceId, Number(r.n)] as [string, number]),
+    )
+
+    // boards/tasks are tenant-isolated by app.workspace_id (see withTenant),
+    // so they can't be aggregated across workspaces in one query — count per
+    // workspace by switching the tenant GUC inside this same transaction.
+    const byBoards = new Map<string, number>()
+    const byOpenTasks = new Map<string, number>()
+    for (const id of ids) {
+      await tx.execute(sql`SELECT set_config('app.workspace_id', ${id}, true)`)
+      const res = (await tx.execute(sql`
+        SELECT
+          (SELECT count(*)::int FROM boards) AS boards,
+          (SELECT count(*)::int FROM tasks WHERE closed_at IS NULL) AS open_tasks
+      `)) as unknown as { boards: number; open_tasks: number }[]
+      byBoards.set(id, res[0]?.boards ?? 0)
+      byOpenTasks.set(id, res[0]?.open_tasks ?? 0)
+    }
+
+    return rows.map(r => ({
+      ...r,
+      boardCount: byBoards.get(r.id) ?? 0,
+      openTaskCount: byOpenTasks.get(r.id) ?? 0,
+      memberCount: byMembers.get(r.id) ?? 0,
+    }))
+  })
 }
 
 // Returns the workspace if the user is a member of it (with their role).
@@ -133,6 +175,7 @@ export async function updateWorkspace(input: {
     purpose?: string | null
     industry?: string | null
     logoUrl?: string | null
+    cardStyle?: WorkspaceCardStyle
   }
   actorRole: WorkspaceMemberRole
 }): Promise<WorkspaceWithRole> {
@@ -146,6 +189,7 @@ export async function updateWorkspace(input: {
   if ('purpose' in input.patch) set.purpose = input.patch.purpose ?? null
   if ('industry' in input.patch) set.industry = input.patch.industry ?? null
   if ('logoUrl' in input.patch) set.logoUrl = input.patch.logoUrl ?? null
+  if (input.patch.cardStyle !== undefined) set.cardStyle = input.patch.cardStyle
 
   const [updated] = await useDB()
     .update(workspaces)

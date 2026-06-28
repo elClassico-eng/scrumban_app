@@ -1,5 +1,7 @@
 import type { Role } from './domain'
 
+export type WorkspaceCardStyle = 'cover' | 'compact'
+
 export interface Workspace {
   id: string
   name: string
@@ -8,6 +10,7 @@ export interface Workspace {
   purpose: string | null
   industry: string | null
   logoUrl: string | null
+  cardStyle: WorkspaceCardStyle
   createdAt: string
   updatedAt: string
 }
@@ -16,7 +19,12 @@ export interface WorkspaceWithRole extends Workspace {
   role: Role
 }
 
-export type WorkspaceListItem = WorkspaceWithRole & { myLabel: string | null }
+export type WorkspaceListItem = WorkspaceWithRole & {
+  myLabel: string | null
+  boardCount: number
+  openTaskCount: number
+  memberCount: number
+}
 
 export interface WorkspacesListResponse {
   workspaces: WorkspaceListItem[]
@@ -40,6 +48,7 @@ export interface UpdateWorkspaceInput {
   purpose?: string | null
   industry?: string | null
   logoUrl?: string | null
+  cardStyle?: WorkspaceCardStyle
 }
 
 export interface MemberView {

@@ -14,6 +14,7 @@ const BodySchema = z
     purpose: z.string().trim().max(2000).nullable().optional(),
     industry: z.string().trim().max(100).nullable().optional(),
     logoUrl: z.url().max(2000).nullable().optional(),
+    cardStyle: z.enum(['cover', 'compact']).optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
     message: 'Provide at least one field to update',

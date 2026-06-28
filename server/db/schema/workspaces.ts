@@ -15,6 +15,11 @@ import {
 } from 'drizzle-orm/pg-core'
 import { users } from './users'
 
+// Controls how the workspace renders on its card in the Workspaces list:
+// 'cover' uses the logo as a full-bleed background, 'compact' keeps the
+// logo in the corner. Per-workspace, editable in workspace settings.
+export const workspaceCardStyle = pgEnum('workspace_card_style', ['cover', 'compact'])
+
 export const workspaces = pgTable('workspaces', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: varchar('name', { length: 255 }).notNull(),
@@ -26,12 +31,14 @@ export const workspaces = pgTable('workspaces', {
   purpose: text('purpose'),
   industry: varchar('industry', { length: 100 }),
   logoUrl: text('logo_url'),
+  cardStyle: workspaceCardStyle('card_style').notNull().default('cover'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export type Workspace = typeof workspaces.$inferSelect
 export type NewWorkspace = typeof workspaces.$inferInsert
+export type WorkspaceCardStyle = (typeof workspaceCardStyle.enumValues)[number]
 
 // Role hierarchy is documented in docs/uml/01-use-case/roles-guide.md.
 // Higher roles inherit permissions of lower ones at the application layer
