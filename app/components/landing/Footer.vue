@@ -22,7 +22,7 @@
       </div>
       <div class="footer__bottom">
         <span>© Такт 2027 · дипломный проект ВолГУ</span>
-        <NuxtLink to="/privacy" class="footer__legal">Политика обработки данных</NuxtLink>
+        <NuxtLink to="/privacy" external class="footer__legal">Политика обработки данных</NuxtLink>
       </div>
     </div>
   </footer>

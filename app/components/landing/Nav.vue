@@ -30,7 +30,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
       <span class="nav__div" />
       <div class="nav__links">
         <a v-for="[label, href] in links" :key="label + href" class="nav__link" :href="href">{{ label }}</a>
-        <NuxtLink class="nav__link" to="/docs">Документация</NuxtLink>
+        <NuxtLink class="nav__link" to="/docs" external>Документация</NuxtLink>
       </div>
       <button class="nav__cta" @click="goToApp">
         Ранний доступ

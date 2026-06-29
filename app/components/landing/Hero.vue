@@ -39,6 +39,7 @@ const palette = useBrandPalette()
       <div class="hero__cta-row reveal">
         <ClientOnly>
           <UiGlassSurface
+            class="hero__cta-glass"
             :width="'auto'"
             :height="50"
             :border-radius="999"
@@ -49,12 +50,12 @@ const palette = useBrandPalette()
             :green-offset="12"
             :blue-offset="20"
           >
-            <NuxtLink class="hero__cta-link" to="/docs">
+            <NuxtLink class="hero__cta-link" to="/docs" external>
               Документация
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6a1.5 1.5 0 0 1 1.5 1.5v9.5l-2-1.4-2 1.4-2-1.4-2 1.4V4A1.5 1.5 0 0 1 4 2.5Z" /></svg>
             </NuxtLink>
             <template #fallback>
-              <NuxtLink class="btn btn--ghost" to="/docs">
+              <NuxtLink class="btn btn--ghost" to="/docs" external>
                 Документация
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6a1.5 1.5 0 0 1 1.5 1.5v9.5l-2-1.4-2 1.4-2-1.4-2 1.4V4A1.5 1.5 0 0 1 4 2.5Z" /></svg>
               </NuxtLink>

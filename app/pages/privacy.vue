@@ -18,8 +18,8 @@ useHead({
 
     <header class="legal__bar">
       <div class="wrap legal__bar-in">
-        <NuxtLink to="/" class="legal__back">← На главную</NuxtLink>
-        <NuxtLink to="/" class="legal__wordmark"><b>Такт</b><i class="star">★</i></NuxtLink>
+        <NuxtLink to="/" external class="legal__back">← На главную</NuxtLink>
+        <NuxtLink to="/" external class="legal__wordmark"><b>Такт</b><i class="star">★</i></NuxtLink>
       </div>
     </header>
 

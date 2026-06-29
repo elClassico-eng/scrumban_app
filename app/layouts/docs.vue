@@ -151,7 +151,7 @@ function toggleTheme() {
               Открыть приложение
               <UIcon name="i-lucide-arrow-up-right" class="size-4" />
             </button>
-            <NuxtLink to="/" class="docs__toc-extlink">
+            <NuxtLink to="/" class="docs__toc-extlink" external>
               <UIcon name="i-lucide-home" class="size-[15px]" /> На сайт
             </NuxtLink>
             <a class="docs__toc-extlink" href="https://github.com/elClassico-eng/scrumban_app" target="_blank" rel="noopener">
