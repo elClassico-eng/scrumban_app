@@ -45,6 +45,7 @@ useHead({
         :is-loading="throughput.isLoading.value"
       />
       <AnalyticsMonteCarloCard :workspace-id="wsId" :board-id="bId" />
+      <AnalyticsForecastAccuracyCard :workspace-id="wsId" :board-id="bId" />
       <AnalyticsWipRecommendationsCard
         :report="wipRecommendations.data.value"
         :is-loading="wipRecommendations.isLoading.value"
