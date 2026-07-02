@@ -3,6 +3,7 @@ defineProps<{
   answers: string
   formula?: string
   note?: string
+  action?: string
 }>()
 </script>
 
@@ -20,6 +21,7 @@ defineProps<{
         <p class="text-sm text-default leading-snug">{{ answers }}</p>
         <p v-if="formula" class="font-mono text-[11.5px] text-muted bg-elevated rounded-md px-2 py-1.5 leading-relaxed">{{ formula }}</p>
         <p v-if="note" class="text-xs text-dimmed leading-snug">{{ note }}</p>
+        <p v-if="action" class="text-xs text-default leading-snug"><b>Что делать:</b> {{ action }}</p>
       </div>
     </template>
   </UPopover>
