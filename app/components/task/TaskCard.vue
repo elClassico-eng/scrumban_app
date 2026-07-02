@@ -21,6 +21,9 @@ const { byTaskId: depCountsByTaskId } = useBoardDependencyCountsApi(wsId, bId)
 
 const blockerCount = computed(() => depCountsByTaskId.value.get(props.task.id)?.blockerCount ?? 0)
 
+const { memberships: taskSprints } = useTaskSprintMembership(wsId, bId, computed(() => props.task.id))
+const sprintChip = computed(() => taskSprints.value.find(s => s.state === 'active') ?? taskSprints.value[0] ?? null)
+
 const memberById = computed(() => {
   const m = new Map<string, NonNullable<typeof membersList.data.value>['members'][number]>()
   for (const member of membersList.data.value?.members ?? []) m.set(member.userId, member)
@@ -157,6 +160,24 @@ const isDone = computed(() => props.task.closedAt != null)
     >
       <UIcon name="i-lucide-alert-triangle" class="size-3.5 shrink-0 mt-px" />
       <span class="line-clamp-2">{{ task.blockedReason }}</span>
+    </div>
+
+    <div class="mb-1.5">
+      <span
+        v-if="sprintChip"
+        class="inline-flex items-center gap-1 max-w-full h-[18px] px-1.5 rounded bg-elevated text-muted text-[10.5px] font-medium"
+        :title="`В спринте: ${sprintChip.name}`"
+      >
+        <UIcon name="i-lucide-iteration-ccw" class="size-3 shrink-0" />
+        <span class="truncate">{{ sprintChip.name }}</span>
+      </span>
+      <span
+        v-else
+        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded border border-dashed border-default text-dimmed text-[10.5px] font-medium"
+      >
+        <UIcon name="i-lucide-iteration-ccw" class="size-3 shrink-0" />
+        Не в спринте
+      </span>
     </div>
 
     <div class="flex items-center gap-2 min-h-[22px]">

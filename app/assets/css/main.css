@@ -214,12 +214,12 @@ body {
 
 @media (max-width: 640px) {
   [style*="--kl-cols"] { --kl-cols: 1fr !important; }
-  .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
+  .col-class, .col-sp, .col-sprint, .col-clist, .col-time { display: none !important; }
 }
 
 @media (min-width: 641px) and (max-width: 1000px) {
   [style*="--kl-cols"] { --kl-cols: minmax(0, 1fr) 96px 132px !important; }
-  .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
+  .col-class, .col-sp, .col-sprint, .col-clist, .col-time { display: none !important; }
 }
 
 /* These height utilities are used only by the analytics chart components and

@@ -202,6 +202,15 @@ const assigneeMenu = computed(() =>
             </span>
           </span>
         </TaskFocusPropRow>
+
+        <TaskFocusSprintRow
+          :workspace-id="workspaceId"
+          :board-id="boardId"
+          :task-id="task.id"
+          :task-title="task.title"
+          :task-story-points="task.storyPoints"
+          :can-edit="canEdit"
+        />
       </div>
     </section>
 

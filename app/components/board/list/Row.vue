@@ -285,6 +285,10 @@ const classDotClass = computed(() => {
         <BoardListSpCell :task="task" :can-edit="canCreate" :workspace-id="workspaceId" :board-id="boardId" />
       </div>
 
+      <div class="flex items-center px-2.5 h-full min-w-0 col-sprint">
+        <BoardListSprintCell :task="task" :workspace-id="workspaceId" :board-id="boardId" />
+      </div>
+
       <div class="flex items-center px-2.5 h-full col-clist">
         <span v-if="task.checklistTotal > 0" class="inline-flex items-center gap-2 w-full">
           <span class="flex-1 h-[5px] bg-elevated dark:bg-accented rounded-full overflow-hidden min-w-[28px]">
