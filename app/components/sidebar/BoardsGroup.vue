@@ -26,11 +26,11 @@ const boardsActive = computed(() =>
         :class="[
           'flex items-center justify-center rounded-xl p-2.5 transition-colors duration-200',
           boardsActive
-            ? 'bg-accent-500/10 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300'
+            ? 'bg-accented text-highlighted'
             : 'text-muted hover:bg-elevated hover:text-default',
         ]"
       >
-        <UIcon name="i-lucide-kanban-square" class="size-4 shrink-0" />
+        <UIcon name="i-lucide-square-kanban" class="size-4 shrink-0" />
       </NuxtLink>
     </UTooltip>
 
@@ -39,7 +39,7 @@ const boardsActive = computed(() =>
       :class="[
         'group flex items-center rounded-xl pr-1 transition-colors duration-200',
         boardsActive
-          ? 'bg-accent-500/10 dark:bg-accent-500/15'
+          ? 'bg-accented'
           : 'hover:bg-elevated',
       ]"
     >
@@ -48,11 +48,11 @@ const boardsActive = computed(() =>
         :class="[
           'flex flex-1 items-center gap-3 rounded-l-xl py-2.5 pl-3 text-sm font-medium transition-colors',
           boardsActive
-            ? 'text-accent-700 dark:text-accent-300'
+            ? 'text-highlighted font-semibold'
             : 'text-muted group-hover:text-default',
         ]"
       >
-        <UIcon name="i-lucide-kanban-square" class="size-4 shrink-0" />
+        <UIcon name="i-lucide-square-kanban" class="size-4 shrink-0" />
         <span class="truncate">Доски</span>
       </NuxtLink>
       <button
@@ -84,13 +84,13 @@ const boardsActive = computed(() =>
         :class="[
           'relative flex items-center gap-2.5 rounded-lg py-2 pr-3 pl-3 text-sm font-medium transition-all duration-200',
           String(activeBoardId) === String(b.id)
-            ? 'bg-accent-500/10 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300'
+            ? 'bg-accented text-highlighted font-semibold'
             : 'text-muted hover:bg-elevated hover:text-default',
         ]"
       >
         <span
           class="absolute top-1/2 left-[-15px] h-px w-[11px] -translate-y-1/2"
-          :class="String(activeBoardId) === String(b.id) ? 'bg-accent-500' : 'bg-[var(--ui-border)]'"
+          :class="String(activeBoardId) === String(b.id) ? 'bg-[var(--ui-border-accented)]' : 'bg-[var(--ui-border)]'"
         />
         <span class="size-[7px] shrink-0 rounded-full" :style="{ background: b.color }" />
         <span class="truncate">{{ b.name }}</span>

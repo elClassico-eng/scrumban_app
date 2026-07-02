@@ -132,8 +132,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
       <div
         v-for="dep in blockers"
         :key="dep.blockerTaskId"
-        class="flex gap-3 p-3.5 rounded-lg border border-red-100 mb-2"
-        style="background:#fef4f4"
+        class="flex gap-3 p-3.5 rounded-lg border border-red-100 dark:border-red-900/40 mb-2 bg-red-50 dark:bg-red-950/40"
       >
         <div class="size-7 rounded-md bg-red-500 text-white grid place-items-center shrink-0">
           <UIcon name="i-lucide-alert-triangle" class="size-3.5" />
@@ -170,8 +169,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
 
       <div
         v-if="task.blockedReason || isEditingReason"
-        class="rounded-lg border border-red-100 p-3.5"
-        style="background:#fef4f4"
+        class="rounded-lg border border-red-100 dark:border-red-900/40 p-3.5 bg-red-50 dark:bg-red-950/40"
       >
         <div class="flex items-center gap-2 mb-1.5">
           <UIcon name="i-lucide-alert-triangle" class="size-3.5 text-red-500" />
@@ -185,7 +183,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
           rows="2"
           autofocus
           placeholder="Опиши, почему задача заблокирована"
-          class="w-full bg-default border border-red-200 rounded-md px-2.5 py-1.5 text-[13px] text-default leading-snug outline-none focus:border-red-500"
+          class="w-full bg-default border border-red-200 dark:border-red-900 rounded-md px-2.5 py-1.5 text-[13px] text-default leading-snug outline-none focus:border-red-500"
           @blur="commitEditReason"
           @keyup.esc="isEditingReason = false"
         />

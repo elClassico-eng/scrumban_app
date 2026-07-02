@@ -32,9 +32,19 @@ export default defineNuxtConfig({
 
   content: {
     experimental: { sqliteConnector: 'native' },
+    build: {
+      markdown: {
+        remarkPlugins: {
+          'remark-math': {},
+        },
+        rehypePlugins: {
+          'rehype-katex': {},
+        },
+      },
+    },
   },
 
-  css: ['~/assets/css/main.css'],
+  css: ['katex/dist/katex.min.css', '~/assets/css/main.css'],
 
   ui: {
     theme: {
@@ -61,11 +71,14 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: true,
       routes: ['/', '/docs'],
+      // A not-yet-added docs screenshot (IPX 404) must not fail the whole build.
+      ignore: ['/_ipx'],
     },
     scheduledTasks: {
       '0 * * * *': ['notifications:check-sle-breaches'],
       '0 9 * * *': ['notifications:check-replenishment'],
       '0 */6 * * *': ['notifications:check-sprint-forecast'],
+      '0 3 * * *': ['forecast:daily-snapshots'],
     },
     externals: {
       inline: ['zod'],

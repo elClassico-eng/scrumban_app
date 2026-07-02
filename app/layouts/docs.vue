@@ -151,7 +151,7 @@ function toggleTheme() {
               Открыть приложение
               <UIcon name="i-lucide-arrow-up-right" class="size-4" />
             </button>
-            <NuxtLink to="/" class="docs__toc-extlink">
+            <NuxtLink to="/" class="docs__toc-extlink" external>
               <UIcon name="i-lucide-home" class="size-[15px]" /> На сайт
             </NuxtLink>
             <a class="docs__toc-extlink" href="https://github.com/elClassico-eng/scrumban_app" target="_blank" rel="noopener">
@@ -357,6 +357,44 @@ function toggleTheme() {
   color: var(--island-ink-2);
 }
 .docs-prose hr { border: none; border-top: 1px solid var(--island-line); margin: 32px 0; }
+.docs-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 18px;
+  font-size: 14.5px;
+}
+.docs-prose th, .docs-prose td {
+  border: 1px solid var(--island-line);
+  padding: 8px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+.docs-prose th {
+  background: var(--island-fill);
+  color: var(--island-ink);
+  font-weight: 600;
+}
+.docs-prose td { color: var(--island-ink-2); }
+.docs-prose figure { margin: 0 0 22px; }
+.docs-prose img {
+  display: block;
+  max-width: 100%;
+  border: 1px solid var(--island-line);
+  border-radius: 12px;
+  margin: 0 auto;
+}
+.docs-prose figcaption {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--island-ink-3);
+  text-align: center;
+}
+.docs-prose .katex-display {
+  margin: 18px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
 
 /* ── Right TOC ──────────────────────────────────────── */
 .docs__toc {

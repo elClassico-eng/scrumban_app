@@ -9,7 +9,7 @@ const cardMaxWidth = computed(() => (route.meta.cardMaxWidth as string | undefin
     <div class="pointer-events-none absolute -bottom-32 right-10 size-[28rem] rounded-full bg-black/30 blur-3xl" />
 
     <div class="relative z-10 hidden lg:flex flex-1 flex-col justify-between p-12 text-white">
-      <NuxtLink to="/" class="takt-logo flex items-center gap-2 w-fit hover:opacity-80 transition-opacity">
+      <NuxtLink to="/" external class="takt-logo flex items-center gap-2 w-fit hover:opacity-80 transition-opacity">
         <TaktMark class="size-7" />
         <span class="font-bold tracking-tight text-xl">Такт</span>
       </NuxtLink>
@@ -29,7 +29,7 @@ const cardMaxWidth = computed(() => (route.meta.cardMaxWidth as string | undefin
 
     <div class="relative z-10 flex-1 flex lg:items-center lg:justify-center lg:p-12">
       <div :class="['w-full bg-default p-6 sm:p-10 flex-1 lg:flex-none lg:rounded-3xl lg:shadow-xl lg:shadow-black/20', cardMaxWidth]">
-        <NuxtLink to="/" class="inline-flex items-center gap-1.5 text-sm text-muted hover:text-default mb-6 transition-colors">
+        <NuxtLink to="/" external class="inline-flex items-center gap-1.5 text-sm text-muted hover:text-default mb-6 transition-colors">
           <UIcon name="i-lucide-arrow-left" class="size-4" /> На главную
         </NuxtLink>
         <slot />

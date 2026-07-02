@@ -128,9 +128,13 @@ const unread = computed(() => props.notifs.filter(n => n.unread).length)
       <template v-if="hasBoardMetrics">
         <ControlCenterMetricTile
           icon="i-lucide-sparkles"
-          label="Прогноз"
+          label="SLE"
           :value="sleLabel ?? '—'"
           accent
+          :info="{
+            answers: 'Service Level Expectation. Читается как «N% задач закрывается за ≤ M дней» — перцентиль времени выполнения по закрытым задачам доски.',
+            action: 'От этого порога краснеют зависшие карточки на доске (aging). Пересчитать из истории — в настройках доски.',
+          }"
         />
         <ControlCenterMetricTile
           icon="i-lucide-calendar"

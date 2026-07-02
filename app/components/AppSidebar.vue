@@ -62,8 +62,8 @@ const manageLinks = computed(() => {
       'flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
       'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 ease-out',
       uiStore.mobileNavOpen ? 'translate-x-0' : '-translate-x-[110%]',
-      'lg:static lg:z-auto lg:m-3 lg:max-w-none lg:translate-x-0 lg:rounded-3xl lg:shadow-xl lg:transition-[width]',
-      collapsed ? 'lg:w-20' : 'lg:w-64',
+      'lg:static lg:z-auto lg:max-w-none lg:translate-x-0 lg:transition-[width] lg:border-0 lg:bg-transparent lg:shadow-none lg:pt-3',
+      collapsed ? 'lg:w-20' : 'lg:w-64 lg:pl-3',
     ]"
   >
     <SidebarBrand :collapsed="collapsed" :mobile="!isDesktop" @toggle="uiStore.toggleSidebar" @close="uiStore.closeMobileNav" />
@@ -81,7 +81,7 @@ const manageLinks = computed(() => {
     <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-2">
       <SidebarNavItem
         :to="pageRoutes.workspaces"
-        icon="i-lucide-folder"
+        icon="i-lucide-layout-grid"
         label="Все workspaces"
         :collapsed="collapsed"
         exact
@@ -92,7 +92,7 @@ const manageLinks = computed(() => {
         <div class="flex flex-col gap-1">
           <SidebarNavItem
             :to="pageRoutes.workspace(current.id)"
-            icon="i-lucide-layout-dashboard"
+            icon="i-lucide-house"
             label="Обзор"
             :collapsed="collapsed"
             exact

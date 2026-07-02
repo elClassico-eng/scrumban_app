@@ -218,6 +218,13 @@
       "when": 1782654608711,
       "tag": "0030_sour_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1783019736961,
+      "tag": "0031_vengeful_matthew_murdock",
+      "breakpoints": true
     }
   ]
 }

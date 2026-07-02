@@ -98,6 +98,10 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/burndown`,
   sprintNetwork: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/network`,
+  sprintForecastHistory: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/forecast-history`,
+  forecastAccuracy: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/analytics/forecast-accuracy`,
   sprintTasks: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/tasks`,
   sprintTask: (wsId: string, boardId: string, sprintId: string, taskId: string) =>

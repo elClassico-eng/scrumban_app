@@ -1,6 +1,7 @@
 // POST /sprints/:sprintId/start — transition planned → active.
 // At most one active sprint per board (enforced by partial unique index).
 import { z } from 'zod'
+import { takeSprintSnapshot } from '../../../../../../../services/forecast-snapshots.service'
 import { startSprint } from '../../../../../../../services/sprints.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../../utils/auth'
@@ -15,13 +16,24 @@ const ParamsSchema = z.object({
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const { id, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { id, boardId, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
     const sprint = await startSprint({
       workspaceId: id,
       sprintId,
       actorRole: workspace.role,
     })
+    try {
+      await takeSprintSnapshot({
+        workspaceId: id,
+        boardId,
+        sprintId,
+        trigger: 'sprint_start',
+        actorRole: workspace.role,
+      })
+    } catch (err) {
+      console.error('forecast snapshot on sprint start failed', err)
+    }
     return { sprint }
   } catch (err) {
     throw toHttpError(err)

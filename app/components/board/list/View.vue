@@ -95,7 +95,7 @@ watch(() => y.value > 6, v => emit('update:compact', v), { immediate: true })
 </script>
 
 <template>
-  <div ref="scrollEl" class="overflow-auto pb-16" style="--kl-cols: minmax(0,1fr) 96px 132px 138px 52px 124px 86px">
+  <div ref="scrollEl" class="overflow-auto pb-16" style="--kl-cols: minmax(0,1fr) 96px 132px 138px 52px 110px 124px 86px">
     <div class="rounded-2xl border border-default bg-default shadow-[0_1px_0_rgba(255,255,255,0.06)_inset,0_18px_44px_-28px_rgba(10,10,10,0.18)] dark:shadow-[0_1px_0_rgba(255,255,255,0.04)_inset,0_18px_44px_-28px_rgba(0,0,0,0.5)] overflow-hidden mx-3 sm:mx-5 mt-3">
       <div class="hidden sm:grid grid-cols-[var(--kl-cols)] items-center h-[42px] sticky top-0 z-30 bg-muted/60 dark:bg-muted/40 border-b border-default backdrop-blur-sm px-[18px]">
         <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">Задача</span>
@@ -103,6 +103,7 @@ watch(() => y.value > 6, v => emit('update:compact', v), { immediate: true })
         <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">Срок</span>
         <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-class">Класс</span>
         <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-sp">SP</span>
+        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-sprint">Спринт</span>
         <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-clist">Чек-лист</span>
         <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-time">Время</span>
       </div>

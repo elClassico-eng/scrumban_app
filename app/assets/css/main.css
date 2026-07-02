@@ -119,6 +119,10 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
+@utility app-canvas {
+  background: #f4f4f5;
+}
+
 @utility brand-gradient {
   background: linear-gradient(135deg, #000000 0%, #c10801 35%, #f16001 70%, #d9c3ab 100%);
 }
@@ -184,6 +188,10 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+.dark .app-canvas {
+  background: #000000;
+}
+
 .dark .glass {
   background: rgba(20, 20, 22, 0.85);
   border-color: #27272a;
@@ -206,12 +214,12 @@ body {
 
 @media (max-width: 640px) {
   [style*="--kl-cols"] { --kl-cols: 1fr !important; }
-  .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
+  .col-class, .col-sp, .col-sprint, .col-clist, .col-time { display: none !important; }
 }
 
 @media (min-width: 641px) and (max-width: 1000px) {
   [style*="--kl-cols"] { --kl-cols: minmax(0, 1fr) 96px 132px !important; }
-  .col-class, .col-sp, .col-clist, .col-time { display: none !important; }
+  .col-class, .col-sp, .col-sprint, .col-clist, .col-time { display: none !important; }
 }
 
 /* These height utilities are used only by the analytics chart components and

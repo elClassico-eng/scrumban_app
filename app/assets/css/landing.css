@@ -493,7 +493,8 @@
   .landing .hero__lower { grid-template-columns: 1fr; gap: 20px; align-items: stretch; }
   .landing .hero__desc { max-width: none; justify-self: stretch; }
   .landing .hero__cta-row { width: 100%; }
-  .landing .hero__cta-row .btn { flex: 1 1 auto; justify-content: center; }
+  .landing .hero__cta-row > * { flex: 1 1 100%; width: 100%; justify-content: center; }
+  .landing .hero__cta-row .hero__cta-glass { width: 100% !important; }
   .landing .manifesto { padding: 88px 0 80px; }
   .landing .manifesto__foot { gap: 26px 40px; margin-top: 40px; padding-top: 26px; }
   .landing .what { padding: 80px 0 64px; }
