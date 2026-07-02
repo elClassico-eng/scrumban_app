@@ -151,6 +151,8 @@ function onAddClick(e: Event) {
       </span>
     </div>
 
+    <SprintForecastVsFact v-if="sprint.state === 'closed'" :sprint="sprint" />
+
     <div v-if="tasks.length > 0" class="grid grid-cols-3 gap-2">
       <div class="bg-muted rounded-lg px-3 py-2">
         <div class="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-muted">Задач</div>
