@@ -172,6 +172,12 @@ function pct(p: number | null | undefined): string {
           </div>
         </div>
 
+        <SprintForecastConvergence
+          :workspace-id="workspaceId"
+          :board-id="boardId"
+          :sprint-id="sprintId"
+        />
+
         <SprintNetworkGraph
           v-if="showGraph"
           :tasks="okData.tasks"

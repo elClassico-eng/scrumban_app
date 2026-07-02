@@ -59,5 +59,12 @@ const view = computed(() => {
     <div v-if="view.prob !== null" class="text-[11px] text-muted">
       Вероятность уложиться к дате оценивалась в {{ view.prob }}%
     </div>
+    <SprintForecastConvergence
+      :workspace-id="sprint.workspaceId"
+      :board-id="sprint.boardId"
+      :sprint-id="sprint.id"
+      :actual-days="view.actual"
+      class="pt-1"
+    />
   </div>
 </template>
