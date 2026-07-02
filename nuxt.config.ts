@@ -32,9 +32,19 @@ export default defineNuxtConfig({
 
   content: {
     experimental: { sqliteConnector: 'native' },
+    build: {
+      markdown: {
+        remarkPlugins: {
+          'remark-math': {},
+        },
+        rehypePlugins: {
+          'rehype-katex': {},
+        },
+      },
+    },
   },
 
-  css: ['~/assets/css/main.css'],
+  css: ['katex/dist/katex.min.css', '~/assets/css/main.css'],
 
   ui: {
     theme: {
