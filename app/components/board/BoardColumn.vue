@@ -81,13 +81,18 @@ function onChange(evt: ChangeEvent) {
 
 const createOpen = ref(false)
 
-const wipState = computed(() => {
-  if (props.column.wipLimit == null) return null
-  const count = localTasks.value.length
+const { wipRecommendations } = useAnalyticsApi(wsId, bId)
+const wipReco = computed(() => {
+  const r = wipRecommendations.data.value
+  if (!r || !r.ok) return null
+  const row = r.columns.find(c => c.columnId === props.column.id)
+  if (!row) return null
+  if (props.column.wipLimit != null && row.recommendedWip === props.column.wipLimit) return null
   return {
-    limit: props.column.wipLimit,
-    count,
-    over: count > props.column.wipLimit,
+    recommended: row.recommendedWip,
+    throughput: r.throughputPerDay.toFixed(1),
+    cycle: r.meanCycleTimeDays.toFixed(1),
+    sample: r.sampleSize,
   }
 })
 
@@ -234,6 +239,12 @@ const wipBarState = computed(() => {
           >{{ localTasks.length }}</b>
           <template v-if="wipBarState"> / {{ wipBarState.limit }}</template>
         </span>
+        <AnalyticsInfo
+          v-if="wipReco"
+          :answers="`Поток поддерживает ~${wipReco.recommended} задач в работе одновременно${column.wipLimit != null ? ` (лимит сейчас ${column.wipLimit})` : ' (лимит не задан)'}. Лимит — политика команды, рекомендация — математика.`"
+          :formula="`Закон Литтла: WIP = throughput × cycle time = ${wipReco.throughput} задач/дн × ${wipReco.cycle} дн ≈ ${wipReco.recommended} (по ${wipReco.sample} закрытым задачам)`"
+          action="Если лимит сильно выше рекомендации — колонка копит очередь: понизьте лимит или ищите узкое место."
+        />
         <UDropdownMenu v-if="canManage" :items="menuItems" :ui="{ content: 'w-44' }">
           <button
             type="button"
