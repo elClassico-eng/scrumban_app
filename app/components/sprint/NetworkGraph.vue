@@ -7,6 +7,15 @@ const props = defineProps<{
   criticalPathIds: string[]
 }>()
 
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
+const labelColor = computed(() => (isDark.value ? '#b7b8c0' : '#52525b'))
+const accent = computed(() => (isDark.value ? '#ff6a1a' : '#e85002'))
+const nodeMuted = computed(() => (isDark.value ? '#7e7f8a' : '#a1a1aa'))
+const nodeBorder = computed(() => (isDark.value ? '#f4f4f6' : '#000000'))
+const edgeMuted = computed(() => (isDark.value ? '#52525b' : '#d4d4d8'))
+
 const chainEdges = computed(() => {
   const set = new Set<string>()
   for (let i = 0; i < props.criticalPathIds.length - 1; i++) {
@@ -52,7 +61,7 @@ const option = computed(() => {
       roam: true,
       edgeSymbol: ['none', 'arrow'],
       edgeSymbolSize: 8,
-      label: { show: true, position: 'bottom', fontSize: 11, width: 110, overflow: 'truncate', color: '#52525b' },
+      label: { show: true, position: 'bottom', fontSize: 11, width: 110, overflow: 'truncate', color: labelColor.value },
       data: props.tasks.map(t => ({
         id: t.taskId,
         name: t.title,
@@ -60,8 +69,8 @@ const option = computed(() => {
         y: positions.value.get(t.taskId)?.y ?? 0,
         symbolSize: Math.min(40, 14 + t.expectedDays * 4),
         itemStyle: {
-          color: critical.has(t.taskId) ? '#E85002' : '#a1a1aa',
-          borderColor: critical.has(t.taskId) ? '#000000' : 'transparent',
+          color: critical.has(t.taskId) ? accent.value : nodeMuted.value,
+          borderColor: critical.has(t.taskId) ? nodeBorder.value : 'transparent',
           borderWidth: critical.has(t.taskId) ? 1.5 : 0,
         },
       })),
@@ -70,7 +79,7 @@ const option = computed(() => {
           source: dep,
           target: t.taskId,
           lineStyle: {
-            color: chainEdges.value.has(`${dep}->${t.taskId}`) ? '#E85002' : '#d4d4d8',
+            color: chainEdges.value.has(`${dep}->${t.taskId}`) ? accent.value : edgeMuted.value,
             width: chainEdges.value.has(`${dep}->${t.taskId}`) ? 2.5 : 1.2,
             curveness: 0.08,
           },
@@ -82,7 +91,7 @@ const option = computed(() => {
 </script>
 
 <template>
-  <div class="bg-white border border-default rounded-lg p-4">
+  <div class="bg-default border border-default rounded-lg p-4">
     <VChart :option="option" autoresize class="w-full h-[320px]" />
     <p class="text-[11px] text-muted m-0 mt-1.5">
       Слева направо — раннее время старта · <span class="text-accent-600 font-medium">оранжевое</span> — критический путь · размер узла — ожидаемая длительность
