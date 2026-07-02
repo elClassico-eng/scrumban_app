@@ -162,7 +162,7 @@ function actorLabel(e: ActivityEvent): string {
       <div
         class="relative flex flex-col justify-center overflow-hidden rounded-3xl px-5 py-5 sm:h-[180px] sm:px-8
                bg-gradient-to-br from-accent-50 via-white to-accent-100/40
-               dark:from-accent-950/30 dark:via-zinc-900 dark:to-zinc-900"
+              dark:from-accent-950/30 dark:via-zinc-900 dark:to-zinc-900"
       >
         <div class="absolute -right-16 -top-24 size-72 rounded-full bg-accent-400/15 blur-3xl" />
         <div class="relative sm:pr-60">

@@ -301,6 +301,7 @@ const wipBarState = computed(() => {
       :workspace-id="workspaceId"
       :board-id="boardId"
       :column-id="column.id"
+      :column-name="column.name"
     />
 
     <UModal
