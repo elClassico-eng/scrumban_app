@@ -210,3 +210,62 @@ describe('forecast snapshots anchors', () => {
     expect(payload.resolution!.doneCount).toBe(1)
   })
 })
+
+describe('forecast journal endpoints', () => {
+  it('forecast-history returns snapshots ordered by takenAt', async () => {
+    const owner = await registerUser('owner4@example.com')
+    const wsId = await createWorkspace(owner, 'acme4')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+
+    const res = await fetchWithJar<{ snapshots: { trigger: string, payload: { simulation: { p85Days: number } } }[] }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/forecast-history`,
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.snapshots).toHaveLength(1)
+    expect(res.body.snapshots[0]!.trigger).toBe('sprint_start')
+  })
+
+  it('forecast-accuracy reports calibration over closed sprints with anchors', async () => {
+    const owner = await registerUser('owner5@example.com')
+    const wsId = await createWorkspace(owner, 'acme5')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+    await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, { method: 'POST' })
+
+    const res = await fetchWithJar<{ report: { total: number, p85HitCount: number, rows: { sprintId: string, actualDays: number, p85Hit: boolean }[] } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${ctx.boardId}/analytics/forecast-accuracy`,
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.report.total).toBe(1)
+    expect(res.body.report.rows[0]!.sprintId).toBe(sprintId)
+    expect(res.body.report.rows[0]!.p85Hit).toBe(true)
+    expect(res.body.report.p85HitCount).toBe(1)
+  })
+
+  it('sprint closed without start anchor is excluded from accuracy', async () => {
+    const owner = await registerUser('owner6@example.com')
+    const wsId = await createWorkspace(owner, 'acme6')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, { method: 'POST' })
+
+    const res = await fetchWithJar<{ report: { total: number } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${ctx.boardId}/analytics/forecast-accuracy`,
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.report.total).toBe(0)
+  })
+})

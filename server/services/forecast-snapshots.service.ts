@@ -1,7 +1,8 @@
 import { and, desc, eq } from 'drizzle-orm'
-import type { ForecastSnapshotPayload } from '#shared/types/forecast'
+import type { ForecastAccuracyReport, ForecastAccuracyRow, ForecastSnapshotPayload } from '#shared/types/forecast'
 import {
   forecastSnapshots,
+  sprints,
   sprintTasks,
   tasks,
   type ForecastSnapshot,
@@ -97,4 +98,57 @@ export async function listSprintSnapshots(input: {
       .where(eq(forecastSnapshots.sprintId, input.sprintId))
       .orderBy(forecastSnapshots.takenAt),
   )
+}
+
+const DAY_MS = 86_400_000
+
+export async function computeBoardForecastAccuracy(input: {
+  workspaceId: string
+  boardId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<ForecastAccuracyReport> {
+  requireMinRole(input.actorRole, 'viewer')
+
+  return withTenant(input.workspaceId, async (tx) => {
+    const closed = await tx
+      .select()
+      .from(sprints)
+      .where(and(eq(sprints.boardId, input.boardId), eq(sprints.state, 'closed')))
+
+    const rows: ForecastAccuracyRow[] = []
+    for (const s of closed) {
+      if (!s.startedAt || !s.endedAt) continue
+      const [anchor] = await tx
+        .select()
+        .from(forecastSnapshots)
+        .where(and(
+          eq(forecastSnapshots.sprintId, s.id),
+          eq(forecastSnapshots.trigger, 'sprint_start'),
+        ))
+        .orderBy(forecastSnapshots.takenAt)
+        .limit(1)
+      if (!anchor) continue
+
+      const payload = anchor.payload as ForecastSnapshotPayload
+      const actualDays = Math.round(((s.endedAt.getTime() - s.startedAt.getTime()) / DAY_MS) * 10) / 10
+      rows.push({
+        sprintId: s.id,
+        sprintName: s.name,
+        endedAt: s.endedAt.toISOString(),
+        p50Days: payload.simulation.p50Days,
+        p85Days: payload.simulation.p85Days,
+        actualDays,
+        p50Hit: actualDays <= payload.simulation.p50Days,
+        p85Hit: actualDays <= payload.simulation.p85Days,
+      })
+    }
+
+    rows.sort((a, b) => a.endedAt.localeCompare(b.endedAt))
+    return {
+      rows,
+      p50HitCount: rows.filter(r => r.p50Hit).length,
+      p85HitCount: rows.filter(r => r.p85Hit).length,
+      total: rows.length,
+    }
+  })
 }
