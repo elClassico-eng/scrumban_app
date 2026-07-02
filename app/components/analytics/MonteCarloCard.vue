@@ -13,6 +13,29 @@ const theme = computed(() => colorMode.value === 'dark' ? 'dark' : undefined)
 const tasksRemaining = ref(10)
 const horizonDays = ref(30)
 
+const { list: tasksList } = useTasksApi(computed(() => props.workspaceId), computed(() => props.boardId))
+const { list: sprintsList } = useSprintsApi(computed(() => props.workspaceId), computed(() => props.boardId))
+const userEdited = ref(false)
+const whatIfOpen = ref(false)
+
+const boardRemaining = computed(() => {
+  const tasks = tasksList.data.value?.tasks
+  if (!tasks) return null
+  return tasks.filter(t => t.closedAt == null).length
+})
+
+const sprintHorizon = computed(() => {
+  const s = sprintsList.data.value?.sprints.find(x => x.state === 'active')
+  if (!s?.plannedEndAt) return null
+  return Math.max(1, Math.ceil((new Date(s.plannedEndAt).getTime() - Date.now()) / 86_400_000))
+})
+
+watch([boardRemaining, sprintHorizon], ([rem, hor]) => {
+  if (userEdited.value) return
+  if (rem != null && rem > 0) tasksRemaining.value = rem
+  if (hor != null) horizonDays.value = hor
+}, { immediate: true })
+
 const params = computed(() => ({
   tasksRemaining: tasksRemaining.value,
   horizonDays: horizonDays.value,
@@ -25,6 +48,13 @@ const mc = monteCarlo(params)
 
 const isOk = computed(() => mc.data.value?.ok === true)
 const report = computed(() => mc.data.value as MonteCarloReport | undefined)
+
+const p85Date = computed(() => {
+  const r = report.value
+  if (!r?.ok) return null
+  return new Date(Date.now() + r.percentileDays.p85 * 86_400_000)
+    .toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
+})
 
 const histogramOption = computed(() => {
   if (!report.value || !report.value.ok) return {}
@@ -61,15 +91,27 @@ const histogramOption = computed(() => {
       </div>
     </template>
 
-    <div class="flex items-end gap-3 mb-4">
-      <div>
-        <p class="text-xs text-muted mb-1">Осталось задач</p>
-        <UInput v-model="tasksRemaining" type="number" min="1" size="sm" class="w-28" />
+    <button
+      type="button"
+      class="inline-flex items-center gap-1.5 text-xs text-muted hover:text-accent-600 transition-colors mb-3"
+      @click="whatIfOpen = !whatIfOpen"
+    >
+      <UIcon :name="whatIfOpen ? 'i-lucide-chevron-up' : 'i-lucide-flask-conical'" class="size-3.5" />
+      Что-если: изменить вводные
+    </button>
+
+    <div v-if="whatIfOpen" class="mb-4 space-y-2">
+      <div class="flex items-end gap-3">
+        <div>
+          <p class="text-xs text-muted mb-1">Осталось задач</p>
+          <UInput v-model="tasksRemaining" type="number" min="1" size="sm" class="w-28" @update:model-value="userEdited = true" />
+        </div>
+        <div>
+          <p class="text-xs text-muted mb-1">Горизонт (дни)</p>
+          <UInput v-model="horizonDays" type="number" min="1" size="sm" class="w-28" @update:model-value="userEdited = true" />
+        </div>
       </div>
-      <div>
-        <p class="text-xs text-muted mb-1">Горизонт (дни)</p>
-        <UInput v-model="horizonDays" type="number" min="1" size="sm" class="w-28" />
-      </div>
+      <p class="text-[11px] text-muted">Заполнено из реальных данных доски (открытые задачи, дедлайн активного спринта). Измените вводные, чтобы проверить сценарий.</p>
     </div>
 
     <div v-if="mc.isLoading.value" class="h-48 flex items-center justify-center text-muted">
@@ -85,6 +127,9 @@ const histogramOption = computed(() => {
     </div>
 
     <template v-else-if="report && isOk && report.ok">
+      <p v-if="p85Date" class="text-center text-sm text-default mb-3">
+        При текущем темпе: с вероятностью 85% — к <b>{{ p85Date }}</b>
+      </p>
       <div class="grid grid-cols-3 gap-3 mb-4 text-center">
         <div>
           <p class="text-xs text-muted">P50</p>
