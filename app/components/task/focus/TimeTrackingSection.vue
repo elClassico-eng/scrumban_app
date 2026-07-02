@@ -237,11 +237,7 @@ async function commitAdd() {
           </div>
           <div class="flex items-center gap-2">
             <label class="text-[11px] text-muted w-[56px] shrink-0">Дата</label>
-            <input
-              v-model="editDate"
-              type="date"
-              class="flex-1 bg-elevated border border-default rounded-md px-2 py-0.5 text-[12.5px] text-default focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-50"
-            >
+            <CommonDatePicker v-model="editDate" size="sm" class="flex-1" />
           </div>
           <div class="flex items-center gap-2">
             <label class="text-[11px] text-muted w-[56px] shrink-0">Описание</label>
@@ -344,11 +340,7 @@ async function commitAdd() {
         </div>
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-muted w-[56px] shrink-0">Дата</label>
-          <input
-            v-model="addDate"
-            type="date"
-            class="flex-1 bg-elevated border border-default rounded-md px-2 py-0.5 text-[12.5px] text-default focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-50"
-          >
+          <CommonDatePicker v-model="addDate" size="sm" class="flex-1" />
         </div>
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-muted w-[56px] shrink-0">Описание</label>

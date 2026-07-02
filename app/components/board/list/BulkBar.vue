@@ -54,8 +54,7 @@ const assignItems = computed(() =>
 )
 
 const dueOpen = ref(false)
-function applyDue(e: Event) {
-  const v = (e.target as HTMLInputElement).value
+function applyDue(v: string) {
   const iso = v ? new Date(`${v}T23:59:59Z`).toISOString() : null
   dueOpen.value = false
   runBulk(async () => {
@@ -92,7 +91,7 @@ function closeSelected() {
           <UIcon name="i-lucide-calendar" class="size-3.5" /> <span class="hidden sm:inline">Срок</span>
         </button>
         <template #content>
-          <div class="p-2"><input type="date" class="h-8 px-2 rounded-md bg-default border border-default text-sm text-default" @change="applyDue"></div>
+          <div class="p-2"><CommonDateCalendar @update:model-value="applyDue" /></div>
         </template>
       </UPopover>
 

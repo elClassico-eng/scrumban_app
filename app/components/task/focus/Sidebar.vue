@@ -73,8 +73,7 @@ const CLASS_ICON: Record<ServiceClass, string> = {
 
 const localDueDate = ref(props.dueDate)
 watch(() => props.dueDate, (v) => { localDueDate.value = v })
-function onDueInput(e: Event) {
-  const next = (e.target as HTMLInputElement).value
+function onDuePicked(next: string) {
   localDueDate.value = next
   emit('due-date-change', next)
 }
@@ -144,12 +143,11 @@ const assigneeMenu = computed(() =>
 
         <TaskFocusPropRow icon="i-lucide-calendar" label="Дедлайн" align-start>
           <span class="flex flex-col gap-1 w-full">
-            <input
-              :value="localDueDate"
-              type="date"
-              class="bg-default border border-default rounded-md px-2 py-1 text-[12.5px] text-default font-sans focus:outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-50 transition-colors"
-              @input="onDueInput"
-            >
+            <CommonDatePicker
+              :model-value="localDueDate"
+              size="sm"
+              @update:model-value="onDuePicked"
+            />
             <span
               v-if="deadlineMeta"
               class="text-[11.5px] px-1.5 py-px rounded-full font-medium self-start"

@@ -25,8 +25,7 @@ const pill = computed(() => {
   return { cls: 'bg-elevated text-toned', text: d.dateLabel }
 })
 
-function onInput(e: Event) {
-  const v = (e.target as HTMLInputElement).value
+function onPick(v: string) {
   const iso = v ? new Date(`${v}T23:59:59Z`).toISOString() : null
   update.mutate({ taskId: props.task.id, dueDate: iso })
   open.value = false
@@ -48,7 +47,7 @@ function clearDue() {
     </button>
     <template #content>
       <div class="p-2 flex flex-col gap-2">
-        <input type="date" :value="localDate" class="h-8 px-2 rounded-md bg-default border border-default text-sm text-default" @change="onInput">
+        <CommonDateCalendar :model-value="localDate" @update:model-value="onPick" />
         <button class="text-xs text-muted hover:text-red-500 text-left" @click="clearDue">Очистить срок</button>
       </div>
     </template>

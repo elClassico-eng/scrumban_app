@@ -34,7 +34,7 @@ function resetForm() {
 
 function toIsoOrNull(value: string | undefined): string | null {
   if (!value) return null
-  // <input type="date"> gives "YYYY-MM-DD"; backend expects ISO datetime.
+  // CommonDatePicker gives "YYYY-MM-DD"; backend expects ISO datetime.
   return new Date(value + 'T00:00:00Z').toISOString()
 }
 
@@ -72,10 +72,10 @@ watch(open, (v) => {
         </UFormField>
         <div class="grid grid-cols-2 gap-3">
           <UFormField label="Старт" name="plannedStartAt">
-            <UInput v-model="state.plannedStartAt" type="date" class="w-full" />
+            <CommonDatePicker v-model="state.plannedStartAt" />
           </UFormField>
           <UFormField label="Конец" name="plannedEndAt">
-            <UInput v-model="state.plannedEndAt" type="date" class="w-full" />
+            <CommonDatePicker v-model="state.plannedEndAt" />
           </UFormField>
         </div>
         <UFormField
