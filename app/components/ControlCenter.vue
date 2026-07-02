@@ -187,15 +187,22 @@ const sprintCaption = computed(() => {
 const ccActions = useControlCenterActions()
 const { list: activeTimer } = useActiveTimerApi(workspaceId)
 const active = computed(() => activeTimer.data.value?.active ?? null)
-const timerActive = computed(() => active.value !== null)
-const activeBoardId = computed(() => active.value?.boardId ?? '')
-const activeTaskId = computed(() => active.value?.entry.taskId ?? '')
-const timerTaskId = computed(() => active.value?.taskShortId ?? '')
-const timerTaskTitle = computed(() => active.value?.taskTitle ?? '')
 
-const { stop: stopTimerMut } = useTaskTimeApi(workspaceId, activeBoardId, activeTaskId)
+type PausedTask = { boardId: string; taskId: string; shortId: string; title: string }
+const paused = ref<PausedTask | null>(null)
+
+const running = computed(() => active.value !== null)
+const hasTask = computed(() => running.value || paused.value !== null)
+const currentBoardId = computed(() => active.value?.boardId ?? paused.value?.boardId ?? '')
+const currentTaskId = computed(() => active.value?.entry.taskId ?? paused.value?.taskId ?? '')
+const timerTaskId = computed(() => active.value?.taskShortId ?? paused.value?.shortId ?? '')
+const timerTaskTitle = computed(() => active.value?.taskTitle ?? paused.value?.title ?? '')
+
+const { start: startTimerMut, stop: stopTimerMut } = useTaskTimeApi(workspaceId, currentBoardId, currentTaskId)
 
 const elapsed = ref(0)
+const sessionBase = ref(0)
+let sessionTaskId = ''
 let tick: ReturnType<typeof setInterval> | null = null
 
 function stopTick() {
@@ -204,23 +211,46 @@ function stopTick() {
 
 function startTick() {
   stopTick()
-  if (!timerActive.value) return
   tick = setInterval(() => { elapsed.value++ }, 1000)
 }
 
 watch(active, (a) => {
-  elapsed.value = a?.entry.elapsedSeconds ?? 0
-  startTick()
+  if (a) {
+    paused.value = null
+    if (a.entry.taskId !== sessionTaskId) {
+      sessionTaskId = a.entry.taskId
+      sessionBase.value = 0
+    }
+    elapsed.value = sessionBase.value + a.entry.elapsedSeconds
+    startTick()
+  }
+  else {
+    stopTick()
+  }
 }, { immediate: true })
 
 function onTimerToggle(e: Event) {
   e.stopPropagation()
-  if (timerActive.value) stopTimerMut.mutate()
+  if (running.value) {
+    const a = active.value
+    if (!a) return
+    stopTick()
+    sessionBase.value = elapsed.value
+    paused.value = { boardId: a.boardId, taskId: a.entry.taskId, shortId: a.taskShortId, title: a.taskTitle }
+    stopTimerMut.mutate()
+  }
+  else if (paused.value) {
+    startTimerMut.mutate()
+  }
 }
 
 function onTimerStop(e: Event) {
   e.stopPropagation()
-  if (timerActive.value) stopTimerMut.mutate()
+  if (running.value) stopTimerMut.mutate()
+  paused.value = null
+  sessionBase.value = 0
+  sessionTaskId = ''
+  elapsed.value = 0
 }
 
 function onQuickTask(e: Event) {
@@ -345,8 +375,8 @@ onUnmounted(() => {
           :weekday="weekday"
           :timer-task-id="timerTaskId"
           :seconds="elapsed"
-          :running="timerActive"
-          :active="timerActive"
+          :running="running"
+          :active="hasTask"
           :unread="unreadCount"
           :expanded="hovered"
           @bell.stop
@@ -374,8 +404,8 @@ onUnmounted(() => {
           :timer-task-id="timerTaskId"
           :timer-task-title="timerTaskTitle"
           :seconds="elapsed"
-          :running="timerActive"
-          :timer-active="timerActive"
+          :running="running"
+          :timer-active="hasTask"
           :sprint-pct="sprintPct"
           :sprint-caption="sprintCaption"
           :sprint-active="hasSprint"
@@ -451,8 +481,8 @@ onUnmounted(() => {
             :timer-task-id="timerTaskId"
             :timer-task-title="timerTaskTitle"
             :seconds="elapsed"
-            :running="timerActive"
-            :timer-active="timerActive"
+            :running="running"
+            :timer-active="hasTask"
             :sprint-pct="sprintPct"
             :sprint-caption="sprintCaption"
             :sprint-active="hasSprint"
