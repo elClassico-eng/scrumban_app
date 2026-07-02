@@ -55,7 +55,10 @@ const agingTier = computed(() =>
 const agingTooltip = computed(() => {
   if (agingTier.value.level === 'fresh') return undefined
   const days = ageDaysFromIso(props.task.createdAt).toFixed(1)
-  return `Возраст ${days} дн (SLE ${board.value?.sleDays} дн)`
+  const sle = board.value?.sleDays
+  const pct = board.value?.sleProbability != null ? Math.round(Number(board.value.sleProbability) * 100) : null
+  if (sle == null || pct == null) return `Возраст ${days} дн`
+  return `Возраст ${days} дн · SLE доски: ${pct}% задач ≤ ${sle} дн — эта висит дольше типичного`
 })
 
 interface DueState {

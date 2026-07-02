@@ -104,8 +104,10 @@ async function onSave() {
         <div class="pt-4 border-t border-default">
           <p class="text-xs uppercase tracking-wide text-muted mb-2">Service Level Expectation</p>
           <p class="text-sm text-muted mb-3">
-            Вероятностный прогноз: какой процент задач завершается за N дней.
-            Используется для aging WIP индикаторов и алертов.
+            SLE — вероятностное обещание: «N% задач закрывается за ≤ M дней».
+            Считается как перцентиль времени выполнения по закрытым задачам доски.
+            Показывается плашкой «SLE» в центре управления; от этого же порога
+            краснеют зависшие карточки на доске (aging).
           </p>
 
           <div class="grid grid-cols-2 gap-3">

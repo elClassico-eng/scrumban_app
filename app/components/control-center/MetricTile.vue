@@ -5,6 +5,7 @@ defineProps<{
   value: string
   accent?: boolean
   clickable?: boolean
+  info?: { answers: string, formula?: string, action?: string }
 }>()
 
 defineEmits<{
@@ -24,6 +25,7 @@ defineEmits<{
     <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)]">
       {{ label }}
       <UIcon v-if="clickable" name="i-lucide-check-circle" class="w-3 h-3" />
+      <AnalyticsInfo v-if="info && !clickable" :answers="info.answers" :formula="info.formula" :action="info.action" />
     </div>
     <div
       class="flex items-center gap-[5px] text-[13px] font-semibold"

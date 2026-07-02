@@ -148,7 +148,7 @@ const sleLabel = computed(() => {
   const b = board.value
   if (!b) return null
   if (b.sleDays == null) return null
-  return `${Math.round(Number(b.sleProbability) * 100)}% · ${b.sleDays} дн`
+  return `${Math.round(Number(b.sleProbability) * 100)}% · ≤ ${b.sleDays} дн`
 })
 const replenishmentLabel = computed(() => {
   const b = board.value
