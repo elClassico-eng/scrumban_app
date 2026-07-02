@@ -323,7 +323,7 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="fixed top-2 left-1/2 z-[100] -translate-x-1/2 hidden lg:flex items-start gap-2"
+    class="fixed top-3 left-1/2 z-[100] -translate-x-1/2 hidden lg:flex items-start gap-2"
     @mouseenter="onPointerEnter"
     @mouseleave="onPointerLeave"
   >

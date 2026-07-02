@@ -119,6 +119,10 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
+@utility app-canvas {
+  background: #f4f4f5;
+}
+
 @utility brand-gradient {
   background: linear-gradient(135deg, #000000 0%, #c10801 35%, #f16001 70%, #d9c3ab 100%);
 }
@@ -182,6 +186,10 @@ body {
   background: #1c1c1f;
   border-color: #27272a;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.dark .app-canvas {
+  background: #000000;
 }
 
 .dark .glass {
