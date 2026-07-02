@@ -269,3 +269,45 @@ describe('forecast journal endpoints', () => {
     expect(res.body.report.total).toBe(0)
   })
 })
+
+async function runDailyTask(actor: UserCtx): Promise<void> {
+  const res = await fetchWithJar<{ result: { result: string } }>(
+    actor.jar,
+    `/api/_dev/tasks/${encodeURIComponent('forecast:daily-snapshots')}/run`,
+    { method: 'POST', body: {} },
+  )
+  expect(res.status).toBe(200)
+  expect(res.body.result.result).toBe('success')
+}
+
+describe('forecast daily snapshots task', () => {
+  it('takes a daily snapshot for an active sprint and dedupes the second run', async () => {
+    const owner = await registerUser('owner7@example.com')
+    const wsId = await createWorkspace(owner, 'acme7')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+
+    await runDailyTask(owner)
+    let rows = await snapshotRows(sprintId)
+    expect(rows.map(r => r.trigger)).toEqual(['sprint_start', 'daily'])
+
+    await runDailyTask(owner)
+    rows = await snapshotRows(sprintId)
+    expect(rows.filter(r => r.trigger === 'daily')).toHaveLength(1)
+  })
+
+  it('ignores planned sprints', async () => {
+    const owner = await registerUser('owner8@example.com')
+    const wsId = await createWorkspace(owner, 'acme8')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1])
+
+    await runDailyTask(owner)
+    expect(await snapshotRows(sprintId)).toHaveLength(0)
+  })
+})

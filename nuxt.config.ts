@@ -66,6 +66,7 @@ export default defineNuxtConfig({
       '0 * * * *': ['notifications:check-sle-breaches'],
       '0 9 * * *': ['notifications:check-replenishment'],
       '0 */6 * * *': ['notifications:check-sprint-forecast'],
+      '0 3 * * *': ['forecast:daily-snapshots'],
     },
     externals: {
       inline: ['zod'],

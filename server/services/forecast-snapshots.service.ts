@@ -5,11 +5,12 @@ import {
   sprints,
   sprintTasks,
   tasks,
+  workspaces,
   type ForecastSnapshot,
   type ForecastTrigger,
   type WorkspaceMemberRole,
 } from '../db/schema'
-import { withTenant } from '../utils/db'
+import { useDB, withTenant } from '../utils/db'
 import { shouldSkipDailySnapshot } from '../utils/forecast-dedupe'
 import { requireMinRole } from '../utils/rbac'
 import { computeSprintNetwork } from './network-forecast.service'
@@ -151,4 +152,34 @@ export async function computeBoardForecastAccuracy(input: {
       total: rows.length,
     }
   })
+}
+
+export async function runDailyForecastSnapshots(): Promise<{ sprintsChecked: number, snapshotsTaken: number }> {
+  const wsList = await useDB().select({ id: workspaces.id }).from(workspaces)
+  let sprintsChecked = 0
+  let snapshotsTaken = 0
+  for (const ws of wsList) {
+    const active = await withTenant(ws.id, tx =>
+      tx
+        .select({ id: sprints.id, boardId: sprints.boardId })
+        .from(sprints)
+        .where(eq(sprints.state, 'active')),
+    )
+    for (const s of active) {
+      sprintsChecked += 1
+      try {
+        const row = await takeSprintSnapshot({
+          workspaceId: ws.id,
+          boardId: s.boardId,
+          sprintId: s.id,
+          trigger: 'daily',
+          actorRole: 'owner',
+        })
+        if (row) snapshotsTaken += 1
+      } catch (err) {
+        console.error('daily forecast snapshot failed', { workspaceId: ws.id, sprintId: s.id }, err)
+      }
+    }
+  }
+  return { sprintsChecked, snapshotsTaken }
 }
