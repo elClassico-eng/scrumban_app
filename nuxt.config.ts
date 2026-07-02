@@ -71,6 +71,8 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: true,
       routes: ['/', '/docs'],
+      // A not-yet-added docs screenshot (IPX 404) must not fail the whole build.
+      ignore: ['/_ipx'],
     },
     scheduledTasks: {
       '0 * * * *': ['notifications:check-sle-breaches'],
