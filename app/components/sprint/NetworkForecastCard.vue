@@ -139,6 +139,7 @@ function pct(p: number | null | undefined): string {
           P85 <b class="text-default">{{ okData.simulation.p85Days }}</b> дн ·
           P95 <b class="text-default">{{ okData.simulation.p95Days }}</b> дн ·
           история: {{ okData.closedSamples }} закрытых задач · {{ okData.edgeCount }} зависимостей
+          <AnalyticsPercentileHint class="inline-block align-middle ml-1" />
         </div>
 
         <div v-if="criticalChainTitles.length > 0" class="space-y-1.5">

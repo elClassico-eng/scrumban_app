@@ -91,7 +91,7 @@ const histogramOption = computed(() => {
           <p class="font-mono font-semibold text-lg">{{ report.percentileDays.p50 }} дн</p>
         </div>
         <div>
-          <p class="text-xs text-muted">P85</p>
+          <p class="text-xs text-muted inline-flex items-center gap-1">P85 <AnalyticsPercentileHint /></p>
           <p class="font-mono font-semibold text-lg">{{ report.percentileDays.p85 }} дн</p>
         </div>
         <div>
