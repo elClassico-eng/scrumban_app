@@ -2,7 +2,7 @@
 import type { SprintState } from '#shared/types/domain'
 import type { Sprint } from '#shared/types/sprint'
 import type { Task } from '#shared/types/task'
-import { apiRoutes } from '~/routing'
+import { apiRoutes, pageRoutes } from '~/routing'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -413,6 +413,18 @@ const isFilteredEmpty = computed(() =>
           @close="onClose(s)"
         />
 
+        <div v-if="activeSprintForBurndown" class="flex justify-end">
+          <UButton
+            size="sm"
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-flask-conical"
+            :to="pageRoutes.sprintSimulator(wsId, bId, activeSprintForBurndown.id)"
+          >
+            Симулятор решений
+          </UButton>
+        </div>
+
         <SprintNetworkForecastCard
           v-if="activeSprintForBurndown"
           :workspace-id="wsId"
@@ -441,6 +453,7 @@ const isFilteredEmpty = computed(() =>
             :columns="columns"
             :members="members"
             :can-manage="canManage"
+            :simulator-to="pageRoutes.sprintSimulator(wsId, bId, s.id)"
             @add-task="addTaskPanel = { sprint: s }"
             @start="onStart(s)"
             @delete="onDelete(s)"

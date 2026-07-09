@@ -15,6 +15,7 @@ const props = defineProps<{
   columns: BoardColumn[]
   members: MemberView[]
   canManage: boolean
+  simulatorTo?: string
 }>()
 
 const emit = defineEmits<{
@@ -272,6 +273,14 @@ function onAddClick(e: Event) {
           @click="emit('delete')"
         >Удалить</UButton>
       </template>
+      <UButton
+        v-if="simulatorTo && sprint.state !== 'closed'"
+        size="xs"
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-flask-conical"
+        :to="simulatorTo"
+      >Симулятор</UButton>
       <template v-else-if="sprint.state === 'closed'">
         <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-eye">
           Отчёт
