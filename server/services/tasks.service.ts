@@ -226,6 +226,7 @@ export async function updateTaskFields(input: {
     blockedReason?: string | null
     isEpic?: boolean
     storyPoints?: number | null
+    estimateDays?: number | null
   }
   actorId?: string
   actorRole: WorkspaceMemberRole
@@ -253,6 +254,7 @@ export async function updateTaskFields(input: {
   }
   if (input.patch.isEpic !== undefined) set.isEpic = input.patch.isEpic
   if ('storyPoints' in input.patch) set.storyPoints = input.patch.storyPoints ?? null
+  if ('estimateDays' in input.patch) set.estimateDays = input.patch.estimateDays ?? null
 
   // Parent change needs cycle + same-board validation. Run it inside the
   // same transaction as the UPDATE so check and write are atomic — a

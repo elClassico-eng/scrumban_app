@@ -243,6 +243,33 @@ describe('GET /sprints/:sprintId/network', () => {
     }
   })
 
+  it('manual estimate overrides history and reports manual source', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const a = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'A')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [a])
+
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${ctx.boardId}/tasks/${a}`,
+      { method: 'PATCH', body: { estimateDays: 10 } },
+    )
+
+    const res = await fetchWithJar<SprintNetworkReport>(
+      owner.jar,
+      networkPath(wsId, ctx.boardId, sprintId),
+    )
+    expect(res.body.ok).toBe(true)
+    if (res.body.ok) {
+      const view = res.body.tasks.find(t => t.taskId === a)!
+      expect(view.estimateSource.kind).toBe('manual')
+      expect(view.estimate.mostLikelyDays).toBe(10)
+      expect(view.estimate.pessimisticDays).toBeGreaterThanOrEqual(10)
+    }
+  })
+
   it('requires auth and workspace membership', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)
