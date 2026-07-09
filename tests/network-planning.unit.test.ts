@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   analyzeNetwork,
+  applyChangesToNetwork,
   buildEstimateCatalog,
   createSeededRng,
+  detectCycle,
   normalCdf,
   probabilityWithin,
   sampleTriangular,
+  scaleEstimateToM,
   simulateNetwork,
   type NetworkNode,
   type PertEstimate,
@@ -184,5 +187,99 @@ describe('buildEstimateCatalog', () => {
     const catalog = buildEstimateCatalog([mk(null, 1), mk(null, 2)])
     expect(catalog.estimateFor(null)).toBeNull()
     expect(catalog.totalSamples).toBe(2)
+  })
+})
+const est = (o: number, m: number, p: number): PertEstimate => ({
+  optimisticDays: o,
+  mostLikelyDays: m,
+  pessimisticDays: p,
+})
+
+const chain: NetworkNode[] = [
+  { id: 'a', estimate: est(1, 2, 3), dependsOn: [] },
+  { id: 'b', estimate: est(2, 3, 5), dependsOn: ['a'] },
+  { id: 'c', estimate: est(1, 1, 2), dependsOn: ['b'] },
+]
+
+describe('applyChangesToNetwork', () => {
+  it('exclude убирает узел и каскадно чистит рёбра', () => {
+    const out = applyChangesToNetwork(chain, [{ type: 'exclude', id: 'b' }])
+    expect(out.map(n => n.id)).toEqual(['a', 'c'])
+    expect(out.find(n => n.id === 'c')!.dependsOn).toEqual([])
+    expect(chain.find(n => n.id === 'c')!.dependsOn).toEqual(['b'])
+  })
+
+  it('setEstimate заменяет оценку узла', () => {
+    const out = applyChangesToNetwork(chain, [
+      { type: 'setEstimate', id: 'b', estimate: est(4, 6, 10) },
+    ])
+    expect(out.find(n => n.id === 'b')!.estimate.mostLikelyDays).toBe(6)
+    expect(chain.find(n => n.id === 'b')!.estimate.mostLikelyDays).toBe(3)
+  })
+
+  it('removeEdge и addEdge правят dependsOn', () => {
+    const out = applyChangesToNetwork(chain, [
+      { type: 'removeEdge', blockerId: 'a', blockedId: 'b' },
+      { type: 'addEdge', blockerId: 'a', blockedId: 'c' },
+    ])
+    expect(out.find(n => n.id === 'b')!.dependsOn).toEqual([])
+    expect(out.find(n => n.id === 'c')!.dependsOn).toEqual(['b', 'a'])
+  })
+
+  it('addEdge на исключённый узел игнорируется', () => {
+    const out = applyChangesToNetwork(chain, [
+      { type: 'exclude', id: 'a' },
+      { type: 'addEdge', blockerId: 'a', blockedId: 'c' },
+    ])
+    expect(out.find(n => n.id === 'c')!.dependsOn).toEqual(['b'])
+  })
+})
+
+describe('scaleEstimateToM', () => {
+  it('масштабирует O и P пропорционально', () => {
+    expect(scaleEstimateToM(est(2, 4, 8), 6)).toEqual(est(3, 6, 12))
+  })
+
+  it('деградирует в точечную оценку при M=0', () => {
+    expect(scaleEstimateToM(est(0, 0, 0), 5)).toEqual(est(5, 5, 5))
+  })
+})
+
+describe('detectCycle', () => {
+  it('false на ациклической сети', () => {
+    expect(detectCycle(chain)).toBe(false)
+  })
+
+  it('true когда addEdge замыкает цикл', () => {
+    const cyclic = applyChangesToNetwork(chain, [
+      { type: 'addEdge', blockerId: 'c', blockedId: 'a' },
+    ])
+    expect(detectCycle(cyclic)).toBe(true)
+  })
+})
+
+describe('common random numbers', () => {
+  it('одинаковый seed даёт идентичные результаты симуляции', () => {
+    const r1 = simulateNetwork(chain, { iterations: 2000, horizonDays: 8, rng: createSeededRng(42) })
+    const r2 = simulateNetwork(chain, { iterations: 2000, horizonDays: 8, rng: createSeededRng(42) })
+    expect(r1).toEqual(r2)
+  })
+
+  it('исключение критической задачи даёт большую дельту, чем некритической', () => {
+    const net: NetworkNode[] = [
+      { id: 'long', estimate: est(4, 5, 7), dependsOn: [] },
+      { id: 'short', estimate: est(0.5, 1, 1.5), dependsOn: [] },
+      { id: 'end', estimate: est(1, 2, 3), dependsOn: ['long', 'short'] },
+    ]
+    const base = simulateNetwork(net, { iterations: 3000, horizonDays: null, rng: createSeededRng(7) })
+    const noLong = simulateNetwork(
+      applyChangesToNetwork(net, [{ type: 'exclude', id: 'long' }]),
+      { iterations: 3000, horizonDays: null, rng: createSeededRng(7) },
+    )
+    const noShort = simulateNetwork(
+      applyChangesToNetwork(net, [{ type: 'exclude', id: 'short' }]),
+      { iterations: 3000, horizonDays: null, rng: createSeededRng(7) },
+    )
+    expect(base.p50Days - noLong.p50Days).toBeGreaterThan(base.p50Days - noShort.p50Days)
   })
 })
