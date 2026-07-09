@@ -7,12 +7,17 @@ import type {
   SprintScenario,
 } from '../../shared/types/scenario'
 import {
+  sprints,
   sprintScenarios,
+  sprintTasks,
+  taskEvents,
+  tasks,
   type SprintScenarioRow,
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant } from '../utils/db'
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
+import { publishBoardEvent } from '../utils/events'
 import {
   applyChangesToNetwork,
   createSeededRng,
@@ -32,8 +37,10 @@ import {
   type SprintNetworkData,
   type SprintNodes,
 } from './network-forecast.service'
+import { addDependencyTx, removeDependencyTx } from './task-dependencies.service'
 
 const SIMULATION_SEED = 20260709
+const DAY_MS = 86_400_000
 
 export async function simulateScenario(input: {
   workspaceId: string
@@ -326,4 +333,139 @@ function assertCanManage(
   if (row.createdBy !== actorId) {
     throw new ForbiddenError('Изменять можно только свой сценарий')
   }
+}
+
+export async function applyScenario(input: {
+  workspaceId: string
+  boardId: string
+  sprintId: string
+  scenarioId: string
+  actorId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<SprintScenario> {
+  requireMinRole(input.actorRole, 'scrum_master')
+
+  const row = await withTenant(input.workspaceId, async (tx) => {
+    const [scenario] = await tx
+      .select()
+      .from(sprintScenarios)
+      .where(and(
+        eq(sprintScenarios.id, input.scenarioId),
+        eq(sprintScenarios.sprintId, input.sprintId),
+      ))
+      .for('update')
+    if (!scenario) throw new NotFoundError('Сценарий не найден')
+    if (scenario.appliedAt) throw new ConflictError('Сценарий уже применён')
+
+    const [sprint] = await tx
+      .select()
+      .from(sprints)
+      .where(eq(sprints.id, input.sprintId))
+      .for('update')
+    if (!sprint) throw new NotFoundError('Спринт не найден')
+    if (sprint.state === 'closed') throw new ConflictError('Спринт закрыт')
+
+    for (const change of scenario.changes) {
+      switch (change.type) {
+        case 'exclude_task': {
+          const res = await tx
+            .delete(sprintTasks)
+            .where(and(
+              eq(sprintTasks.sprintId, input.sprintId),
+              eq(sprintTasks.taskId, change.taskId),
+            ))
+          if ((res.count ?? 0) === 0) {
+            throw new ConflictError('Сценарий устарел: задача уже не в спринте')
+          }
+          await tx.insert(taskEvents).values({
+            workspaceId: input.workspaceId,
+            taskId: change.taskId,
+            eventType: 'task_updated',
+            actorId: input.actorId,
+            payload: { scenarioId: scenario.id, action: 'scenario_exclude_from_sprint' },
+          })
+          break
+        }
+        case 'reestimate_task': {
+          const [member] = await tx
+            .select({ taskId: sprintTasks.taskId })
+            .from(sprintTasks)
+            .where(and(
+              eq(sprintTasks.sprintId, input.sprintId),
+              eq(sprintTasks.taskId, change.taskId),
+            ))
+          if (!member) {
+            throw new ConflictError('Сценарий устарел: задача уже не в спринте')
+          }
+          const updated = await tx
+            .update(tasks)
+            .set({ estimateDays: change.estimateDays, updatedAt: new Date() })
+            .where(eq(tasks.id, change.taskId))
+          if ((updated.count ?? 0) === 0) {
+            throw new ConflictError('Сценарий устарел: задача не найдена')
+          }
+          await tx.insert(taskEvents).values({
+            workspaceId: input.workspaceId,
+            taskId: change.taskId,
+            eventType: 'task_updated',
+            actorId: input.actorId,
+            payload: { scenarioId: scenario.id, action: 'scenario_reestimate', estimateDays: change.estimateDays },
+          })
+          break
+        }
+        case 'remove_dependency': {
+          try {
+            await removeDependencyTx(tx, {
+              blockerTaskId: change.blockerTaskId,
+              blockedTaskId: change.blockedTaskId,
+            })
+          }
+          catch (err) {
+            if (err instanceof NotFoundError) {
+              throw new ConflictError('Сценарий устарел: зависимость уже удалена')
+            }
+            throw err
+          }
+          break
+        }
+        case 'add_dependency': {
+          await addDependencyTx(tx, {
+            workspaceId: input.workspaceId,
+            blockerTaskId: change.blockerTaskId,
+            blockedTaskId: change.blockedTaskId,
+            actorId: input.actorId,
+          })
+          break
+        }
+        case 'shift_deadline': {
+          if (!sprint.plannedEndAt) {
+            throw new ConflictError('У спринта нет планового дедлайна')
+          }
+          await tx
+            .update(sprints)
+            .set({
+              plannedEndAt: new Date(sprint.plannedEndAt.getTime() + change.days * DAY_MS),
+              updatedAt: new Date(),
+            })
+            .where(eq(sprints.id, input.sprintId))
+          break
+        }
+      }
+    }
+
+    const [updated] = await tx
+      .update(sprintScenarios)
+      .set({ appliedAt: new Date(), appliedBy: input.actorId, updatedAt: new Date() })
+      .where(eq(sprintScenarios.id, input.scenarioId))
+      .returning()
+    return updated!
+  })
+
+  publishBoardEvent({
+    type: 'task.updated',
+    workspaceId: input.workspaceId,
+    boardId: input.boardId,
+    payload: { scenarioApplied: row.id },
+  })
+  return toScenarioView(row)
 }

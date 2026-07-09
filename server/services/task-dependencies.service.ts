@@ -6,7 +6,7 @@ import {
   type TaskDependency,
   type WorkspaceMemberRole,
 } from '../db/schema'
-import { withTenant } from '../utils/db'
+import { withTenant, type DbTransaction } from '../utils/db'
 import { ConflictError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { requireMinRole } from '../utils/rbac'
@@ -19,6 +19,75 @@ export interface DependencyView {
   createdAt: Date
 }
 
+export async function addDependencyTx(
+  tx: DbTransaction,
+  input: {
+    workspaceId: string
+    blockerTaskId: string
+    blockedTaskId: string
+    actorId: string
+  },
+): Promise<{ row: TaskDependency; boardId: string }> {
+  if (input.blockerTaskId === input.blockedTaskId) {
+    throw new ValidationError('Задача не может блокировать саму себя')
+  }
+
+  const taskRows = await tx
+    .select({ id: tasks.id, boardId: tasks.boardId })
+    .from(tasks)
+    .where(or(eq(tasks.id, input.blockerTaskId), eq(tasks.id, input.blockedTaskId)))
+  const blocker = taskRows.find(t => t.id === input.blockerTaskId)
+  const blocked = taskRows.find(t => t.id === input.blockedTaskId)
+  if (!blocker || !blocked) throw new NotFoundError('Одна из задач не найдена')
+  if (blocker.boardId !== blocked.boardId) {
+    throw new ValidationError('Зависимости можно ставить только в пределах одной доски')
+  }
+
+  // Lock the board row so concurrent dependency writes on this board
+  // serialize — otherwise two parallel adds (A→B and B→A) each pass the
+  // cycle check against pre-insert state and together close a loop.
+  await tx.select({ id: boards.id }).from(boards).where(eq(boards.id, blocker.boardId)).for('update')
+
+  // Cycle check: walking forward from blocked (following "what does
+  // this task in turn block"), if we reach blocker the new edge would
+  // close a loop. WITH RECURSIVE handles transitive paths in one round-trip.
+  const cycleRows = await tx.execute<{ found: number }>(sql`
+    WITH RECURSIVE downstream AS (
+      SELECT blocked_task_id AS node
+      FROM task_dependencies
+      WHERE blocker_task_id = ${input.blockedTaskId}
+      UNION
+      SELECT td.blocked_task_id
+      FROM task_dependencies td
+      JOIN downstream d ON td.blocker_task_id = d.node
+    )
+    SELECT 1 AS found FROM downstream WHERE node = ${input.blockerTaskId} LIMIT 1
+  `)
+  if (cycleRows.length > 0) {
+    throw new ValidationError('Цикл в графе зависимостей')
+  }
+
+  try {
+    const [row] = await tx
+      .insert(taskDependencies)
+      .values({
+        workspaceId: input.workspaceId,
+        blockerTaskId: input.blockerTaskId,
+        blockedTaskId: input.blockedTaskId,
+        createdBy: input.actorId,
+      })
+      .returning()
+    return { row: row!, boardId: blocked.boardId }
+  }
+  catch (err) {
+    // PK collision: edge already exists.
+    if (isPgUniqueViolation(err)) {
+      throw new ConflictError('Такая зависимость уже существует')
+    }
+    throw err
+  }
+}
+
 export async function addDependency(input: {
   workspaceId: string
   blockerTaskId: string
@@ -27,73 +96,40 @@ export async function addDependency(input: {
   actorRole: WorkspaceMemberRole
 }): Promise<TaskDependency> {
   requireMinRole(input.actorRole, 'member')
-  if (input.blockerTaskId === input.blockedTaskId) {
-    throw new ValidationError('Задача не может блокировать саму себя')
-  }
 
   return withTenant(input.workspaceId, async (tx) => {
-    const taskRows = await tx
-      .select({ id: tasks.id, boardId: tasks.boardId })
-      .from(tasks)
-      .where(or(eq(tasks.id, input.blockerTaskId), eq(tasks.id, input.blockedTaskId)))
-    const blocker = taskRows.find(t => t.id === input.blockerTaskId)
-    const blocked = taskRows.find(t => t.id === input.blockedTaskId)
-    if (!blocker || !blocked) throw new NotFoundError('Одна из задач не найдена')
-    if (blocker.boardId !== blocked.boardId) {
-      throw new ValidationError('Зависимости можно ставить только в пределах одной доски')
-    }
-
-    // Lock the board row so concurrent dependency writes on this board
-    // serialize — otherwise two parallel adds (A→B and B→A) each pass the
-    // cycle check against pre-insert state and together close a loop.
-    await tx.select({ id: boards.id }).from(boards).where(eq(boards.id, blocker.boardId)).for('update')
-
-    // Cycle check: walking forward from blocked (following "what does
-    // this task in turn block"), if we reach blocker the new edge would
-    // close a loop. WITH RECURSIVE handles transitive paths in one round-trip.
-    const cycleRows = await tx.execute<{ found: number }>(sql`
-      WITH RECURSIVE downstream AS (
-        SELECT blocked_task_id AS node
-        FROM task_dependencies
-        WHERE blocker_task_id = ${input.blockedTaskId}
-        UNION
-        SELECT td.blocked_task_id
-        FROM task_dependencies td
-        JOIN downstream d ON td.blocker_task_id = d.node
-      )
-      SELECT 1 AS found FROM downstream WHERE node = ${input.blockerTaskId} LIMIT 1
-    `)
-    if (cycleRows.length > 0) {
-      throw new ValidationError('Цикл в графе зависимостей')
-    }
-
-    try {
-      const [row] = await tx
-        .insert(taskDependencies)
-        .values({
-          workspaceId: input.workspaceId,
-          blockerTaskId: input.blockerTaskId,
-          blockedTaskId: input.blockedTaskId,
-          createdBy: input.actorId,
-        })
-        .returning()
-
-      publishBoardEvent({
-        type: 'task.updated',
-        workspaceId: input.workspaceId,
-        boardId: blocked.boardId,
-        payload: { taskId: input.blockedTaskId, dependencyAdded: row },
-      })
-      return row!
-    }
-    catch (err) {
-      // PK collision: edge already exists.
-      if (isPgUniqueViolation(err)) {
-        throw new ConflictError('Такая зависимость уже существует')
-      }
-      throw err
-    }
+    const { row, boardId } = await addDependencyTx(tx, input)
+    publishBoardEvent({
+      type: 'task.updated',
+      workspaceId: input.workspaceId,
+      boardId,
+      payload: { taskId: input.blockedTaskId, dependencyAdded: row },
+    })
+    return row
   })
+}
+
+export async function removeDependencyTx(
+  tx: DbTransaction,
+  input: { blockerTaskId: string; blockedTaskId: string },
+): Promise<string | null> {
+  const [target] = await tx
+    .select({ boardId: tasks.boardId })
+    .from(tasks)
+    .where(eq(tasks.id, input.blockedTaskId))
+
+  const result = await tx
+    .delete(taskDependencies)
+    .where(
+      and(
+        eq(taskDependencies.blockerTaskId, input.blockerTaskId),
+        eq(taskDependencies.blockedTaskId, input.blockedTaskId),
+      ),
+    )
+  if ((result.count ?? 0) === 0) {
+    throw new NotFoundError('Зависимость не найдена')
+  }
+  return target?.boardId ?? null
 }
 
 export async function removeDependency(input: {
@@ -104,25 +140,8 @@ export async function removeDependency(input: {
 }): Promise<void> {
   requireMinRole(input.actorRole, 'member')
 
-  const blockedBoardId = await withTenant(input.workspaceId, async (tx) => {
-    const [target] = await tx
-      .select({ boardId: tasks.boardId })
-      .from(tasks)
-      .where(eq(tasks.id, input.blockedTaskId))
-
-    const result = await tx
-      .delete(taskDependencies)
-      .where(
-        and(
-          eq(taskDependencies.blockerTaskId, input.blockerTaskId),
-          eq(taskDependencies.blockedTaskId, input.blockedTaskId),
-        ),
-      )
-    if ((result.count ?? 0) === 0) {
-      throw new NotFoundError('Зависимость не найдена')
-    }
-    return target?.boardId ?? null
-  })
+  const blockedBoardId = await withTenant(input.workspaceId, async (tx) =>
+    removeDependencyTx(tx, input))
 
   if (blockedBoardId) {
     publishBoardEvent({

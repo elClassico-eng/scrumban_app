@@ -367,3 +367,125 @@ describe('scenarios CRUD', () => {
     expect(list.body.scenarios).toHaveLength(0)
   })
 })
+
+describe('POST /scenarios/:id/apply', () => {
+  it('применяет все 4 типа изменений транзакционно', async () => {
+    const f = await setupFixture()
+    const created = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      {
+        method: 'POST',
+        body: {
+          name: 'Full apply',
+          changes: [
+            { type: 'exclude_task', taskId: f.c },
+            { type: 'reestimate_task', taskId: f.b, estimateDays: 7 },
+            { type: 'remove_dependency', blockerTaskId: f.a, blockedTaskId: f.b },
+            { type: 'shift_deadline', days: 3 },
+          ],
+        },
+      },
+    )
+    const scenarioId = created.body.scenario.id
+
+    const before = await fetchWithJar<{ sprint: { plannedEndAt: string } }>(
+      f.owner.jar,
+      `/api/workspaces/${f.wsId}/boards/${f.ctx.boardId}/sprints/${f.sprintId}`,
+    )
+
+    const res = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      `${scenariosPath(f)}/${scenarioId}/apply`,
+      { method: 'POST' },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.scenario.appliedAt).toBeTruthy()
+    expect(res.body.scenario.appliedBy).toBe(f.owner.id)
+
+    const memberships = await fetchWithJar<{ tasks: { id: string }[] }>(
+      f.owner.jar,
+      `/api/workspaces/${f.wsId}/boards/${f.ctx.boardId}/sprints/${f.sprintId}/tasks`,
+    )
+    const ids = JSON.stringify(memberships.body)
+    expect(ids).toContain(f.a)
+    expect(ids).toContain(f.b)
+    expect(ids).not.toContain(f.c)
+
+    const taskB = await fetchWithJar<{ task: { estimateDays: number | null } }>(
+      f.owner.jar,
+      `/api/workspaces/${f.wsId}/boards/${f.ctx.boardId}/tasks/${f.b}`,
+    )
+    expect(taskB.body.task.estimateDays).toBe(7)
+
+    const depsB = await fetchWithJar<{ blockers: unknown[]; blocks: unknown[] }>(
+      f.owner.jar,
+      `/api/workspaces/${f.wsId}/boards/${f.ctx.boardId}/tasks/${f.b}/dependencies`,
+    )
+    expect(depsB.body.blockers).toHaveLength(0)
+
+    const after = await fetchWithJar<{ sprint: { plannedEndAt: string } }>(
+      f.owner.jar,
+      `/api/workspaces/${f.wsId}/boards/${f.ctx.boardId}/sprints/${f.sprintId}`,
+    )
+    const shiftMs = new Date(after.body.sprint.plannedEndAt).getTime()
+      - new Date(before.body.sprint.plannedEndAt).getTime()
+    expect(shiftMs).toBe(3 * 86_400_000)
+  })
+
+  it('403 для member, 200 для scrum_master', async () => {
+    const f = await setupFixture()
+    const created = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      { method: 'POST', body: { name: 'SM only', changes: [{ type: 'shift_deadline', days: 1 }] } },
+    )
+    const scenarioId = created.body.scenario.id
+
+    const member = await registerUser('member2@example.com')
+    await inviteMember(f.owner, f.wsId, member.email, 'member')
+    const sm = await registerUser('sm@example.com')
+    await inviteMember(f.owner, f.wsId, sm.email, 'scrum_master')
+
+    const denied = await fetchWithJar(member.jar, `${scenariosPath(f)}/${scenarioId}/apply`, { method: 'POST' })
+    expect(denied.status).toBe(403)
+
+    const ok = await fetchWithJar(sm.jar, `${scenariosPath(f)}/${scenarioId}/apply`, { method: 'POST' })
+    expect(ok.status).toBe(200)
+  })
+
+  it('409 на повторный apply', async () => {
+    const f = await setupFixture()
+    const created = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      { method: 'POST', body: { name: 'Twice', changes: [{ type: 'shift_deadline', days: 1 }] } },
+    )
+    const scenarioId = created.body.scenario.id
+    await fetchWithJar(f.owner.jar, `${scenariosPath(f)}/${scenarioId}/apply`, { method: 'POST' })
+    const second = await fetchWithJar(f.owner.jar, `${scenariosPath(f)}/${scenarioId}/apply`, { method: 'POST' })
+    expect(second.status).toBe(409)
+  })
+
+  it('409 когда сценарий протух (задача уже вне спринта)', async () => {
+    const f = await setupFixture()
+    const created = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      { method: 'POST', body: { name: 'Stale', changes: [{ type: 'exclude_task', taskId: f.c }] } },
+    )
+    const scenarioId = created.body.scenario.id
+
+    await fetchWithJar(
+      f.owner.jar,
+      `/api/workspaces/${f.wsId}/boards/${f.ctx.boardId}/sprints/${f.sprintId}/tasks/${f.c}`,
+      { method: 'DELETE' },
+    )
+
+    const res = await fetchWithJar(f.owner.jar, `${scenariosPath(f)}/${scenarioId}/apply`, { method: 'POST' })
+    expect(res.status).toBe(409)
+
+    const list = await fetchWithJar<{ scenarios: SprintScenario[] }>(f.owner.jar, scenariosPath(f))
+    expect(list.body.scenarios[0]!.appliedAt).toBeNull()
+  })
+})
