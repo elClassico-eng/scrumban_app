@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { setup } from '@nuxt/test-utils/e2e'
-import { closeTestSql, resetDb } from './helpers/db'
+import { closeTestSql, getTestSql, resetDb } from './helpers/db'
 import { CookieJar, fetchWithJar } from './helpers/http'
 import { TEST_URL } from './setup.global'
 import type { ScenarioSimulationReport, SprintScenario } from '../shared/types/scenario'
@@ -257,5 +257,113 @@ describe('POST /scenarios/simulate', () => {
       expect(r1.body.scenario.simulation.p50Days).toBe(r2.body.scenario.simulation.p50Days)
       expect(r1.body.scenario.simulation.p85Days).toBe(r2.body.scenario.simulation.p85Days)
     }
+  })
+})
+
+describe('scenarios CRUD', () => {
+  it('create сохраняет снимки прогнозов и возвращает 201', async () => {
+    const f = await setupFixture()
+    const res = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      { method: 'POST', body: { name: 'План Б', changes: [{ type: 'exclude_task', taskId: f.c }] } },
+    )
+    expect(res.status).toBe(201)
+    expect(res.body.scenario.name).toBe('План Б')
+    expect(res.body.scenario.baselineResult).not.toBeNull()
+    expect(res.body.scenario.scenarioResult).not.toBeNull()
+    expect(res.body.scenario.computedAt).toBeTruthy()
+    expect(res.body.scenario.appliedAt).toBeNull()
+  })
+
+  it('list возвращает сценарии спринта, viewer имеет доступ, но не создаёт', async () => {
+    const f = await setupFixture()
+    await fetchWithJar(f.owner.jar, scenariosPath(f), {
+      method: 'POST',
+      body: { name: 'S1', changes: [{ type: 'exclude_task', taskId: f.c }] },
+    })
+
+    const viewer = await registerUser('viewer@example.com')
+    await inviteMember(f.owner, f.wsId, viewer.email, 'viewer')
+
+    const list = await fetchWithJar<{ scenarios: SprintScenario[] }>(viewer.jar, scenariosPath(f))
+    expect(list.status).toBe(200)
+    expect(list.body.scenarios).toHaveLength(1)
+
+    const denied = await fetchWithJar(viewer.jar, scenariosPath(f), {
+      method: 'POST',
+      body: { name: 'S2', changes: [{ type: 'shift_deadline', days: 2 }] },
+    })
+    expect(denied.status).toBe(403)
+  })
+
+  it('RLS: сценарии не видны постороннему', async () => {
+    const f = await setupFixture()
+    const stranger = await registerUser('stranger@example.com')
+    const res = await fetchWithJar(stranger.jar, scenariosPath(f))
+    expect(res.status).toBe(404)
+  })
+
+  it('member не может править чужой сценарий, admin может', async () => {
+    const f = await setupFixture()
+    const created = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      { method: 'POST', body: { name: 'Own', changes: [{ type: 'shift_deadline', days: 2 }] } },
+    )
+    const scenarioId = created.body.scenario.id
+
+    const member = await registerUser('member@example.com')
+    await inviteMember(f.owner, f.wsId, member.email, 'member')
+    const admin = await registerUser('admin@example.com')
+    await inviteMember(f.owner, f.wsId, admin.email, 'admin')
+
+    const memberPatch = await fetchWithJar(member.jar, `${scenariosPath(f)}/${scenarioId}`, {
+      method: 'PATCH',
+      body: { name: 'Hacked' },
+    })
+    expect(memberPatch.status).toBe(403)
+
+    const adminPatch = await fetchWithJar<{ scenario: SprintScenario }>(
+      admin.jar,
+      `${scenariosPath(f)}/${scenarioId}`,
+      { method: 'PATCH', body: { name: 'Renamed' } },
+    )
+    expect(adminPatch.status).toBe(200)
+    expect(adminPatch.body.scenario.name).toBe('Renamed')
+  })
+
+  it('применённый сценарий не редактируется и не удаляется автором-member', async () => {
+    const f = await setupFixture()
+    const created = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      { method: 'POST', body: { name: 'Applied', changes: [{ type: 'shift_deadline', days: 2 }] } },
+    )
+    const scenarioId = created.body.scenario.id
+
+    const sql = getTestSql()
+    await sql`UPDATE sprint_scenarios SET applied_at = now() WHERE id = ${scenarioId}`
+
+    const patch = await fetchWithJar(f.owner.jar, `${scenariosPath(f)}/${scenarioId}`, {
+      method: 'PATCH',
+      body: { name: 'Too late' },
+    })
+    expect(patch.status).toBe(409)
+  })
+
+  it('delete удаляет сценарий', async () => {
+    const f = await setupFixture()
+    const created = await fetchWithJar<{ scenario: SprintScenario }>(
+      f.owner.jar,
+      scenariosPath(f),
+      { method: 'POST', body: { name: 'Doomed', changes: [{ type: 'shift_deadline', days: 1 }] } },
+    )
+    const del = await fetchWithJar(f.owner.jar, `${scenariosPath(f)}/${created.body.scenario.id}`, {
+      method: 'DELETE',
+    })
+    expect(del.status).toBe(200)
+    const list = await fetchWithJar<{ scenarios: SprintScenario[] }>(f.owner.jar, scenariosPath(f))
+    expect(list.body.scenarios).toHaveLength(0)
   })
 })

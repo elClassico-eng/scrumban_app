@@ -1,12 +1,18 @@
+import { and, desc, eq } from 'drizzle-orm'
 import type {
   ScenarioChange,
   ScenarioDelta,
   ScenarioForecast,
   ScenarioSimulationReport,
+  SprintScenario,
 } from '../../shared/types/scenario'
-import { type WorkspaceMemberRole } from '../db/schema'
+import {
+  sprintScenarios,
+  type SprintScenarioRow,
+  type WorkspaceMemberRole,
+} from '../db/schema'
 import { withTenant } from '../utils/db'
-import { ValidationError } from '../utils/errors'
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
 import {
   applyChangesToNetwork,
   createSeededRng,
@@ -15,7 +21,7 @@ import {
   type NetworkChange,
   type NetworkNode,
 } from '../utils/network-planning'
-import { requireMinRole } from '../utils/rbac'
+import { requireMinRole, roleAtLeast } from '../utils/rbac'
 import {
   buildForecast,
   buildSprintNodes,
@@ -158,4 +164,166 @@ function computeDelta(baseline: ScenarioForecast, scenario: ScenarioForecast): S
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+export function toScenarioView(row: SprintScenarioRow): SprintScenario {
+  return {
+    id: row.id,
+    sprintId: row.sprintId,
+    name: row.name,
+    changes: row.changes,
+    baselineResult: row.baselineResult ?? null,
+    scenarioResult: row.scenarioResult ?? null,
+    computedAt: row.computedAt?.toISOString() ?? null,
+    createdBy: row.createdBy,
+    appliedAt: row.appliedAt?.toISOString() ?? null,
+    appliedBy: row.appliedBy,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }
+}
+
+export async function listScenarios(input: {
+  workspaceId: string
+  sprintId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<SprintScenario[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  const rows = await withTenant(input.workspaceId, tx =>
+    tx
+      .select()
+      .from(sprintScenarios)
+      .where(eq(sprintScenarios.sprintId, input.sprintId))
+      .orderBy(desc(sprintScenarios.createdAt)))
+  return rows.map(toScenarioView)
+}
+
+export async function createScenario(input: {
+  workspaceId: string
+  boardId: string
+  sprintId: string
+  name: string
+  changes: ScenarioChange[]
+  actorId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<SprintScenario> {
+  requireMinRole(input.actorRole, 'member')
+
+  const report = await simulateScenario({
+    workspaceId: input.workspaceId,
+    boardId: input.boardId,
+    sprintId: input.sprintId,
+    changes: input.changes,
+    actorRole: input.actorRole,
+  })
+
+  const [row] = await withTenant(input.workspaceId, tx =>
+    tx
+      .insert(sprintScenarios)
+      .values({
+        workspaceId: input.workspaceId,
+        sprintId: input.sprintId,
+        name: input.name,
+        changes: input.changes,
+        baselineResult: report.ok ? report.baseline : null,
+        scenarioResult: report.ok ? report.scenario : null,
+        computedAt: new Date(),
+        createdBy: input.actorId,
+      })
+      .returning())
+  return toScenarioView(row!)
+}
+
+export async function updateScenario(input: {
+  workspaceId: string
+  boardId: string
+  sprintId: string
+  scenarioId: string
+  patch: { name?: string; changes?: ScenarioChange[] }
+  actorId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<SprintScenario> {
+  requireMinRole(input.actorRole, 'member')
+
+  const existing = await getScenarioOrThrow(input.workspaceId, input.sprintId, input.scenarioId)
+  assertCanManage(existing, input.actorId, input.actorRole)
+  if (existing.appliedAt) {
+    throw new ConflictError('Применённый сценарий нельзя редактировать')
+  }
+
+  const set: Partial<typeof sprintScenarios.$inferInsert> = { updatedAt: new Date() }
+  if (input.patch.name !== undefined) set.name = input.patch.name
+  if (input.patch.changes !== undefined) {
+    const report = await simulateScenario({
+      workspaceId: input.workspaceId,
+      boardId: input.boardId,
+      sprintId: input.sprintId,
+      changes: input.patch.changes,
+      actorRole: input.actorRole,
+    })
+    set.changes = input.patch.changes
+    set.baselineResult = report.ok ? report.baseline : null
+    set.scenarioResult = report.ok ? report.scenario : null
+    set.computedAt = new Date()
+  }
+
+  const [row] = await withTenant(input.workspaceId, tx =>
+    tx
+      .update(sprintScenarios)
+      .set(set)
+      .where(and(
+        eq(sprintScenarios.id, input.scenarioId),
+        eq(sprintScenarios.sprintId, input.sprintId),
+      ))
+      .returning())
+  if (!row) throw new NotFoundError('Сценарий не найден')
+  return toScenarioView(row)
+}
+
+export async function removeScenario(input: {
+  workspaceId: string
+  sprintId: string
+  scenarioId: string
+  actorId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<void> {
+  requireMinRole(input.actorRole, 'member')
+  const existing = await getScenarioOrThrow(input.workspaceId, input.sprintId, input.scenarioId)
+  assertCanManage(existing, input.actorId, input.actorRole)
+
+  await withTenant(input.workspaceId, tx =>
+    tx
+      .delete(sprintScenarios)
+      .where(and(
+        eq(sprintScenarios.id, input.scenarioId),
+        eq(sprintScenarios.sprintId, input.sprintId),
+      )))
+}
+
+async function getScenarioOrThrow(
+  workspaceId: string,
+  sprintId: string,
+  scenarioId: string,
+): Promise<SprintScenarioRow> {
+  const [row] = await withTenant(workspaceId, tx =>
+    tx
+      .select()
+      .from(sprintScenarios)
+      .where(and(
+        eq(sprintScenarios.id, scenarioId),
+        eq(sprintScenarios.sprintId, sprintId),
+      )))
+  if (!row) throw new NotFoundError('Сценарий не найден')
+  return row
+}
+
+function assertCanManage(
+  row: SprintScenarioRow,
+  actorId: string,
+  actorRole: WorkspaceMemberRole,
+): void {
+  if (roleAtLeast(actorRole, 'admin')) return
+  if (row.createdBy !== actorId) {
+    throw new ForbiddenError('Изменять можно только свой сценарий')
+  }
 }
