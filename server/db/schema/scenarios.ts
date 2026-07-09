@@ -1,4 +1,5 @@
 import { index, jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import type { ScenarioChange, ScenarioForecast } from '../../../shared/types/scenario'
 import { sprints } from './sprints'
 import { users } from './users'
 import { workspaces } from './workspaces'
@@ -14,9 +15,9 @@ export const sprintScenarios = pgTable(
       .notNull()
       .references(() => sprints.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 255 }).notNull(),
-    changes: jsonb('changes').notNull(),
-    baselineResult: jsonb('baseline_result'),
-    scenarioResult: jsonb('scenario_result'),
+    changes: jsonb('changes').$type<ScenarioChange[]>().notNull(),
+    baselineResult: jsonb('baseline_result').$type<ScenarioForecast | null>(),
+    scenarioResult: jsonb('scenario_result').$type<ScenarioForecast | null>(),
     computedAt: timestamp('computed_at', { withTimezone: true }),
     createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
     appliedAt: timestamp('applied_at', { withTimezone: true }),

@@ -8,7 +8,7 @@ export type PertEstimate = {
 }
 
 export type EstimateSource = {
-  kind: 'story_points_bucket' | 'board_global'
+  kind: 'story_points_bucket' | 'board_global' | 'manual'
   sampleCount: number
 }
 
