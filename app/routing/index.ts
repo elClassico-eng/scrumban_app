@@ -162,6 +162,7 @@ export const pageRoutes = {
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
   workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
   workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
+  workspaceSimulator: (id: string) => `/workspaces/${id}/simulator`,
 
   boards: (wsId: string) => `/workspaces/${wsId}/boards`,
   board: (wsId: string, boardId: string) => `/workspaces/${wsId}/boards/${boardId}`,
