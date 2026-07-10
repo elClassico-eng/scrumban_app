@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { pageRoutes } from '~/routing'
+
 const HINT_KEY = 'simulator-intro'
+
+const route = useRoute()
+const wsId = computed(() => route.params.id as string)
 
 const { ready, isDismissed, dismiss } = useHints()
 
-const closing = ref(false)
-const show = computed(() => ready.value && !closing.value && !isDismissed(HINT_KEY))
+const expanded = computed(() => !isDismissed(HINT_KEY))
 
 function tryIt() {
-  closing.value = true
   dismiss(HINT_KEY)
 }
 
@@ -31,102 +34,127 @@ const steps = [
 </script>
 
 <template>
-  <Transition name="absorb">
-    <div v-if="show" class="absorb-block relative overflow-hidden rounded-2xl bg-black text-white">
-      <div class="absolute -top-24 -right-16 size-72 rounded-full bg-accent-600/30 blur-3xl pointer-events-none" />
-      <div class="relative px-6 py-7 lg:px-9 lg:py-9 grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-7">
-        <div class="space-y-3.5">
-          <div class="inline-flex items-center gap-2 text-accent-400">
-            <UIcon name="i-lucide-flask-conical" class="size-5" />
-          </div>
-          <h2 class="text-[26px] lg:text-[32px] font-semibold tracking-tight m-0 leading-tight text-white">
-            Симулятор решений
-          </h2>
-          <p class="text-[15px] m-0 leading-relaxed text-white/90 max-w-md">
-            Проверьте решение на симуляторе <b>до того</b>, как вы приняли его в спринте.
-          </p>
-          <p class="text-[12.5px] m-0 leading-relaxed text-white/55 max-w-md">
-            Что резать из скоупа, стоит ли просить пару дней, какая блокировка на самом деле
-            держит спринт — каждый вариант считается на модели и показывает эффект числом.
-            Внутри — CPM, PERT и Монте-Карло по сети зависимостей; оценки берутся из истории
-            вашей команды, а не из ощущений.
-          </p>
-          <div class="flex items-center gap-2.5 pt-1.5">
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[13px] font-semibold bg-white text-black hover:bg-white/90 transition-colors cursor-pointer"
-              @click="tryIt"
-            >
-              Попробовать
-              <UIcon name="i-lucide-arrow-right" class="size-3.5" />
-            </button>
-            <NuxtLink
-              to="/docs/math/simulator"
-              class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-[13px] font-medium text-white/80 ring-1 ring-white/20 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              Как это работает
-            </NuxtLink>
-          </div>
-        </div>
+  <div
+    v-if="ready"
+    class="hero relative overflow-hidden rounded-2xl bg-black text-white"
+    :class="expanded ? 'hero-expanded' : 'hero-compact'"
+  >
+    <div
+      class="absolute rounded-full bg-accent-600/30 blur-3xl pointer-events-none transition-all duration-700"
+      :class="expanded ? '-top-32 -right-10 size-[28rem]' : '-top-24 -right-16 size-72'"
+    />
 
-        <div class="space-y-3.5 lg:pt-1">
-          <div
-            v-for="(s, i) in steps"
-            :key="s.title"
-            class="flex items-start gap-3"
+    <div
+      class="relative grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] transition-all duration-700"
+      :class="expanded
+        ? 'gap-10 px-8 py-10 lg:px-14 lg:py-14 items-center'
+        : 'gap-7 px-6 py-7 lg:px-9 lg:py-8 items-start'"
+    >
+      <div :class="expanded ? 'space-y-5' : 'space-y-3'">
+        <UIcon
+          name="i-lucide-flask-conical"
+          class="text-accent-400 transition-all duration-700"
+          :class="expanded ? 'size-8' : 'size-5'"
+        />
+        <h2
+          class="font-semibold tracking-tight m-0 leading-tight text-white transition-all duration-700"
+          :class="expanded ? 'text-[34px] lg:text-[44px]' : 'text-[22px] lg:text-[26px]'"
+        >
+          Симулятор решений
+        </h2>
+        <p
+          class="m-0 leading-relaxed text-white/90 transition-all duration-700"
+          :class="expanded ? 'text-[17px] max-w-lg' : 'text-[13.5px] max-w-md'"
+        >
+          Проверьте решение на симуляторе <b>до того</b>, как вы приняли его в спринте.
+        </p>
+        <p
+          class="m-0 leading-relaxed text-white/55 transition-all duration-700"
+          :class="expanded ? 'text-[13.5px] max-w-lg' : 'text-[12px] max-w-md'"
+        >
+          Что резать из скоупа, стоит ли просить пару дней, какая блокировка на самом деле
+          держит спринт — каждый вариант считается на модели и показывает эффект числом.
+          Внутри — CPM, PERT и Монте-Карло по сети зависимостей; оценки берутся из истории
+          вашей команды, а не из ощущений.
+        </p>
+        <div class="flex flex-wrap items-center gap-2.5 pt-1.5">
+          <button
+            v-if="expanded"
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg px-5 py-2.5 text-[14px] font-semibold bg-white text-black hover:bg-white/90 transition-colors cursor-pointer"
+            @click="tryIt"
           >
-            <div class="size-7 rounded-lg bg-accent-600/20 flex items-center justify-center shrink-0 mt-0.5">
-              <UIcon :name="s.icon" class="size-3.5 text-accent-400" />
-            </div>
-            <div class="min-w-0">
-              <div class="text-[12.5px] font-semibold text-white">{{ i + 1 }}. {{ s.title }}</div>
-              <div class="text-[11.5px] text-white/55 leading-relaxed">{{ s.text }}</div>
-            </div>
+            Попробовать
+            <UIcon name="i-lucide-arrow-right" class="size-4" />
+          </button>
+          <NuxtLink
+            to="/docs/math/simulator"
+            class="inline-flex items-center gap-1.5 rounded-lg font-medium text-white/80 ring-1 ring-white/20 hover:text-white hover:bg-white/10 transition-colors"
+            :class="expanded ? 'px-5 py-2.5 text-[14px]' : 'px-3.5 py-1.5 text-[12.5px]'"
+          >
+            Как это работает
+          </NuxtLink>
+          <NuxtLink
+            :to="pageRoutes.simulatorDemo(wsId)"
+            class="inline-flex items-center gap-1.5 rounded-lg font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+            :class="expanded ? 'px-4 py-2.5 text-[14px]' : 'px-3 py-1.5 text-[12.5px]'"
+          >
+            <UIcon name="i-lucide-play" class="size-3.5" />
+            Демо-пример
+          </NuxtLink>
+        </div>
+      </div>
+
+      <div :class="expanded ? 'space-y-5' : 'space-y-3'">
+        <div
+          v-for="(s, i) in steps"
+          :key="s.title"
+          class="flex items-start gap-3.5"
+        >
+          <div
+            class="rounded-lg bg-accent-600/20 flex items-center justify-center shrink-0 mt-0.5 transition-all duration-700"
+            :class="expanded ? 'size-9' : 'size-7'"
+          >
+            <UIcon :name="s.icon" class="text-accent-400 transition-all duration-700" :class="expanded ? 'size-4.5' : 'size-3.5'" />
+          </div>
+          <div class="min-w-0">
+            <div
+              class="font-semibold text-white transition-all duration-700"
+              :class="expanded ? 'text-[15px]' : 'text-[12.5px]'"
+            >{{ i + 1 }}. {{ s.title }}</div>
+            <div
+              class="text-white/55 leading-relaxed transition-all duration-700"
+              :class="expanded ? 'text-[13px]' : 'text-[11.5px]'"
+            >{{ s.text }}</div>
           </div>
         </div>
       </div>
     </div>
-  </Transition>
+  </div>
 </template>
 
 <style scoped>
-.absorb-block {
-  max-height: 640px;
+.hero {
+  transition:
+    min-height 700ms cubic-bezier(0.5, 0, 0.15, 1),
+    border-radius 700ms cubic-bezier(0.5, 0, 0.15, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.absorb-leave-active {
-  animation: absorb 640ms cubic-bezier(0.55, -0.02, 0.2, 1) forwards;
-  transform-origin: 50% 24%;
-  pointer-events: none;
+.hero-expanded {
+  min-height: calc(100dvh - 11rem);
 }
 
-@keyframes absorb {
-  0% {
-    max-height: 640px;
-    opacity: 1;
-    transform: scale(1);
-    border-radius: 16px;
-  }
-  45% {
-    opacity: 0.85;
-    transform: scale(0.965);
-    border-radius: 36px;
-  }
-  100% {
-    max-height: 0;
-    opacity: 0;
-    transform: scale(0.8);
-    border-radius: 120px;
-  }
+.hero-compact {
+  min-height: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .absorb-leave-active {
-    animation: none;
-    transition: opacity 200ms ease;
-  }
-  .absorb-leave-to {
-    opacity: 0;
+  .hero,
+  .hero :deep(*) {
+    transition: none !important;
   }
 }
 </style>
