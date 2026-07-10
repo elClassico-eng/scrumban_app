@@ -47,7 +47,12 @@ const openSprints = computed(() => {
       <NuxtLink
         :to="pageRoutes.boardSprints(wsId, board.id)"
         class="underline decoration-dotted hover:text-default transition-colors"
-      >создайте спринт</NuxtLink>, чтобы было что симулировать.
+      >создайте спринт</NuxtLink>
+      или
+      <NuxtLink
+        :to="pageRoutes.simulatorDemo(wsId)"
+        class="underline decoration-dotted hover:text-default transition-colors"
+      >откройте демо-пример</NuxtLink>.
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">

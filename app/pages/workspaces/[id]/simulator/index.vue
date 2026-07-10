@@ -25,6 +25,13 @@ useHead({ title: 'Симулятор — Такт' })
       </h1>
       <div class="flex-1" />
       <NuxtLink
+        :to="pageRoutes.simulatorDemo(wsId)"
+        class="text-[12px] text-muted hover:text-default transition-colors"
+      >
+        Демо-пример
+      </NuxtLink>
+      <span class="text-dimmed text-[12px]">·</span>
+      <NuxtLink
         to="/docs/math/simulator"
         class="text-[12px] text-muted hover:text-default transition-colors"
       >
@@ -44,11 +51,16 @@ useHead({ title: 'Симулятор — Такт' })
     >
       <UIcon name="i-lucide-square-kanban" class="size-8 text-dimmed" />
       <p class="text-[13px] text-muted m-0">
-        В этом workspace пока нет досок — симулировать нечего.
+        В этом workspace пока нет досок — но симулятор можно попробовать прямо сейчас на учебном примере.
       </p>
-      <UButton size="sm" variant="outline" color="neutral" :to="pageRoutes.boards(wsId)">
-        К доскам
-      </UButton>
+      <div class="flex items-center justify-center gap-2">
+        <UButton size="sm" :to="pageRoutes.simulatorDemo(wsId)" icon="i-lucide-flask-conical">
+          Открыть демо-пример
+        </UButton>
+        <UButton size="sm" variant="outline" color="neutral" :to="pageRoutes.boards(wsId)">
+          К доскам
+        </UButton>
+      </div>
     </div>
 
     <template v-else>

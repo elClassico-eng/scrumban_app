@@ -17,6 +17,9 @@ export const apiRoutes = {
 
   healthz: '/api/healthz',
 
+  sandboxSimulatorNetwork: '/api/sandbox/simulator/network',
+  sandboxSimulatorSimulate: '/api/sandbox/simulator/simulate',
+
   workspaces: '/api/workspaces',
   workspace: (id: string) => `/api/workspaces/${id}`,
   workspaceLabel: (wsId: string) => `/api/workspaces/${wsId}/label`,
@@ -173,6 +176,7 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
   sprintSimulator: (wsId: string, boardId: string, sprintId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/simulator/${sprintId}`,
+  simulatorDemo: (wsId: string) => `/workspaces/${wsId}/simulator/demo`,
   boardCalendar: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/calendar`,
   boardTimeline: (wsId: string, boardId: string) =>
