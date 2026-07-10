@@ -13,6 +13,7 @@ export const apiRoutes = {
   authResetPasswordStatus: (token: string) => `/api/auth/password/reset/${token}`,
 
   usersMe: '/api/users/me',
+  usersDismissHint: '/api/users/me/dismiss-hint',
 
   healthz: '/api/healthz',
 

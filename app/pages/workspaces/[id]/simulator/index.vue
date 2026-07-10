@@ -10,11 +10,28 @@ workspaceStore.setCurrent(wsId.value)
 const { list: boardsList } = useBoardsApi(wsId)
 const boards = computed(() => boardsList.data.value?.boards ?? [])
 
+const { ready: hintsReady, isDismissed } = useHints()
+const introDismissed = computed(() => hintsReady.value && isDismissed('simulator-intro'))
+
 useHead({ title: 'Симулятор — Такт' })
 </script>
 
 <template>
   <div class="space-y-5">
+    <div v-if="introDismissed" class="flex items-center gap-2.5">
+      <h1 class="text-[20px] font-semibold tracking-tight text-highlighted m-0 inline-flex items-center gap-2">
+        <UIcon name="i-lucide-flask-conical" class="size-5 text-accent-500" />
+        Симулятор решений
+      </h1>
+      <div class="flex-1" />
+      <NuxtLink
+        to="/docs/math/simulator"
+        class="text-[12px] text-muted hover:text-default transition-colors"
+      >
+        Как это работает →
+      </NuxtLink>
+    </div>
+
     <SimulatorHubHero />
 
     <div v-if="boardsList.isLoading.value" class="text-[12.5px] text-muted py-6">
