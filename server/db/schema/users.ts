@@ -3,7 +3,7 @@
 // the library default. Argon2id is supported but requires @node-rs/argon2
 // (not installed). Email uniqueness is enforced at the DB level; case-folding
 // to lowercase is the responsibility of the service layer.
-import { pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core'
+import { jsonb, pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -15,6 +15,9 @@ export const users = pgTable('users', {
   avatarUrl: text('avatar_url'),
   jobTitle: varchar('job_title', { length: 150 }),
   bio: text('bio'),
+  // One-time UI hints the user has dismissed (e.g. onboarding blocks),
+  // keyed by string identifiers like 'simulator-intro'.
+  dismissedHints: jsonb('dismissed_hints').$type<string[]>().notNull().default([]),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
