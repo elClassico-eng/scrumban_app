@@ -38,6 +38,15 @@ export interface UpdateSprintInput {
   plannedStartAt?: string | null
   plannedEndAt?: string | null
   capacity?: number | null
+  datesChangeReason?: string
+}
+
+export type CarryOverDecision = 'next_sprint' | 'backlog' | 'keep'
+
+export type CloseSprintInput = {
+  goalAchieved?: boolean | null
+  goalComment?: string
+  carryOver?: { taskId: string; decision: CarryOverDecision }[]
 }
 
 export interface AddTaskToSprintInput {

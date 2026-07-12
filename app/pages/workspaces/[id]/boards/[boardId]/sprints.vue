@@ -204,15 +204,34 @@ async function onStart(sprint: Sprint) {
   }
 }
 
-async function onClose(sprint: Sprint) {
-  const ok = await confirm({
-    title: `Закрыть спринт «${sprint.name}»?`,
-    description: 'Закрытый спринт больше нельзя запустить — состав задач замораживается для аналитики.',
-    confirmLabel: 'Закрыть',
-  })
-  if (!ok) return
+const closeTarget = ref<Sprint | null>(null)
+const closeDialogOpen = ref(false)
+
+const closeOpenTasks = computed(() => {
+  if (!closeTarget.value) return []
+  return tasksForSprint(closeTarget.value)
+    .map(t => t.task)
+    .filter(t => t.closedAt === null)
+})
+
+function onClose(sprint: Sprint) {
+  closeTarget.value = sprint
+  closeDialogOpen.value = true
+}
+
+async function onCloseConfirm(payload: import('#shared/types/sprint').CloseSprintInput) {
+  const sprint = closeTarget.value
+  if (!sprint) return
   try {
-    await close.mutateAsync(sprint.id)
+    await close.mutateAsync({ sprintId: sprint.id, ...payload })
+    closeDialogOpen.value = false
+    tasksList.refetch()
+    membershipsList.refetch()
+    toast.add({
+      title: `Спринт «${sprint.name}» закрыт`,
+      icon: 'i-lucide-check-square',
+      duration: 1500,
+    })
   }
   catch (err) {
     toast.add({
@@ -221,6 +240,14 @@ async function onClose(sprint: Sprint) {
       icon: 'i-lucide-alert-circle',
     })
   }
+}
+
+const editTarget = ref<Sprint | null>(null)
+const editModalOpen = ref(false)
+
+function onEdit(sprint: Sprint) {
+  editTarget.value = sprint
+  editModalOpen.value = true
 }
 
 async function onDelete(sprint: Sprint) {
@@ -411,6 +438,7 @@ const isFilteredEmpty = computed(() =>
           :can-manage="canManage"
           @add-task="addTaskPanel = { sprint: s }"
           @close="onClose(s)"
+          @edit="onEdit(s)"
         />
 
         <div v-if="activeSprintForBurndown" class="flex justify-end">
@@ -457,6 +485,7 @@ const isFilteredEmpty = computed(() =>
             @add-task="addTaskPanel = { sprint: s }"
             @start="onStart(s)"
             @delete="onDelete(s)"
+            @edit="onEdit(s)"
           />
         </div>
       </section>
@@ -492,6 +521,22 @@ const isFilteredEmpty = computed(() =>
       v-model:open="createOpen"
       :workspace-id="wsId"
       :board-id="bId"
+    />
+
+    <SprintEditModal
+      v-model:open="editModalOpen"
+      :workspace-id="wsId"
+      :board-id="bId"
+      :sprint="editTarget"
+    />
+
+    <SprintCloseDialog
+      v-model:open="closeDialogOpen"
+      :sprint="closeTarget"
+      :open-tasks="closeOpenTasks"
+      :has-next-planned="plannedSprints.length > 0"
+      :closing="close.isPending.value"
+      @confirm="onCloseConfirm"
     />
 
     <SprintAddTasksPanel

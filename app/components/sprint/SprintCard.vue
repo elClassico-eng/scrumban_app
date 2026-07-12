@@ -23,6 +23,7 @@ const emit = defineEmits<{
   start: []
   close: []
   delete: []
+  edit: []
 }>()
 
 const expanded = ref(false)
@@ -265,6 +266,13 @@ function onAddClick(e: Event) {
     <div class="flex items-center gap-1.5 pt-1">
       <template v-if="sprint.state === 'planned' && canManage">
         <UButton size="xs" icon="i-lucide-play" @click="emit('start')">Запустить</UButton>
+        <UButton
+          size="xs"
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-pencil"
+          @click="emit('edit')"
+        >Редактировать</UButton>
         <UButton
           size="xs"
           variant="outline"

@@ -21,6 +21,7 @@ const props = defineProps<{
 defineEmits<{
   'add-task': []
   close: []
+  edit: []
 }>()
 
 const columnById = computed(() => {
@@ -136,6 +137,7 @@ const sprintGoals = computed(() => {
         <UDropdownMenu
           v-if="canManage"
           :items="[
+            { label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => $emit('edit') },
             { label: 'Завершить спринт', icon: 'i-lucide-check-square', onSelect: () => $emit('close') },
           ]"
         >
