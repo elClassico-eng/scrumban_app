@@ -2,6 +2,7 @@
 // Once closed, sprint membership freezes so velocity stays reproducible.
 import { z } from 'zod'
 import { takeSprintSnapshot } from '../../../../../../../services/forecast-snapshots.service'
+import { generateSprintReport } from '../../../../../../../services/sprint-reports.service'
 import { closeSprint } from '../../../../../../../services/sprints.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../../utils/auth'
@@ -54,6 +55,16 @@ export default defineEventHandler(async (event) => {
       })
     } catch (err) {
       console.error('forecast snapshot on sprint close failed', err)
+    }
+    try {
+      await generateSprintReport({
+        workspaceId: id,
+        sprintId,
+        actorId: user.id,
+        actorRole: workspace.role,
+      })
+    } catch (err) {
+      console.error('sprint report generation on close failed', err)
     }
     return { sprint }
   } catch (err) {
