@@ -66,3 +66,37 @@ export interface BurndownReport {
   doneSp: number
   points: BurndownPoint[]
 }
+export type SprintPreviewRisk =
+  | { type: 'unestimated'; taskIds: string[] }
+  | { type: 'external_dependency'; taskId: string; blockerTaskId: string; blockerTitle: string }
+
+export type SprintPreviewReport =
+  | {
+      ok: true
+      horizonDays: number | null
+      taskCount: number
+      edgeCount: number
+      totalStoryPoints: number
+      tasks: import('./network').NetworkTaskView[]
+      criticalPathIds: string[]
+      pert: {
+        expectedDurationDays: number
+        sigmaDays: number
+        probabilityWithinHorizon: number | null
+      }
+      simulation: {
+        iterations: number
+        p50Days: number
+        p85Days: number
+        p95Days: number
+        probabilityWithinHorizon: number | null
+      }
+      risks: SprintPreviewRisk[]
+    }
+  | {
+      ok: false
+      reason: 'insufficient_data'
+      closedSamples: number
+      requiredSamples: number
+      risks: SprintPreviewRisk[]
+    }

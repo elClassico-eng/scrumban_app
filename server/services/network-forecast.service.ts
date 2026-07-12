@@ -97,6 +97,38 @@ export type SprintNetworkData = {
   edges: { blockerTaskId: string; blockedTaskId: string }[]
 }
 
+export async function loadBoardCycleHistory(
+  tx: DbTransaction,
+  boardId: string,
+): Promise<{ storyPoints: number | null; cycleDays: number }[]> {
+  const lookbackIso = new Date(Date.now() - HISTORY_LOOKBACK_DAYS * DAY_MS).toISOString()
+  const historyRaw = await tx.execute<{ storyPoints: number | null; cycleDays: string | number }>(sql`
+    WITH closed AS (
+      SELECT e.task_id, MAX(e.created_at) AS closed_at
+      FROM task_events e
+      JOIN tasks t ON t.id = e.task_id
+      WHERE e.event_type = 'task_closed'
+        AND t.board_id = ${boardId}
+        AND e.created_at >= ${lookbackIso}::timestamptz
+      GROUP BY e.task_id
+    ),
+    created AS (
+      SELECT DISTINCT ON (e.task_id) e.task_id, e.created_at AS first_at
+      FROM task_events e
+      WHERE e.event_type = 'task_created'
+      ORDER BY e.task_id, e.created_at ASC
+    )
+    SELECT
+      t.story_points AS "storyPoints",
+      GREATEST(EXTRACT(EPOCH FROM (c.closed_at - COALESCE(cr.first_at, t.created_at))) / 86400, 0.01) AS "cycleDays"
+    FROM closed c
+    JOIN tasks t ON t.id = c.task_id
+    LEFT JOIN created cr ON cr.task_id = c.task_id
+  `)
+  return (historyRaw as unknown as { storyPoints: number | null; cycleDays: string | number }[])
+    .map(r => ({ storyPoints: r.storyPoints, cycleDays: Number(r.cycleDays) }))
+}
+
 export async function loadSprintNetworkData(
   tx: DbTransaction,
   input: { sprintId: string; boardId: string },
@@ -116,32 +148,7 @@ export async function loadSprintNetworkData(
     .innerJoin(tasks, eq(tasks.id, sprintTasks.taskId))
     .where(eq(sprintTasks.sprintId, input.sprintId))
 
-  const lookbackIso = new Date(Date.now() - HISTORY_LOOKBACK_DAYS * DAY_MS).toISOString()
-  const historyRaw = await tx.execute<{ storyPoints: number | null; cycleDays: string | number }>(sql`
-    WITH closed AS (
-      SELECT e.task_id, MAX(e.created_at) AS closed_at
-      FROM task_events e
-      JOIN tasks t ON t.id = e.task_id
-      WHERE e.event_type = 'task_closed'
-        AND t.board_id = ${input.boardId}
-        AND e.created_at >= ${lookbackIso}::timestamptz
-      GROUP BY e.task_id
-    ),
-    created AS (
-      SELECT DISTINCT ON (e.task_id) e.task_id, e.created_at AS first_at
-      FROM task_events e
-      WHERE e.event_type = 'task_created'
-      ORDER BY e.task_id, e.created_at ASC
-    )
-    SELECT
-      t.story_points AS "storyPoints",
-      GREATEST(EXTRACT(EPOCH FROM (c.closed_at - COALESCE(cr.first_at, t.created_at))) / 86400, 0.01) AS "cycleDays"
-    FROM closed c
-    JOIN tasks t ON t.id = c.task_id
-    LEFT JOIN created cr ON cr.task_id = c.task_id
-  `)
-  const history = (historyRaw as unknown as { storyPoints: number | null; cycleDays: string | number }[])
-    .map(r => ({ storyPoints: r.storyPoints, cycleDays: Number(r.cycleDays) }))
+  const history = await loadBoardCycleHistory(tx, input.boardId)
 
   const remaining = memberRows.filter(r => r.closedAt === null)
   const remainingIds = remaining.map(r => r.taskId)
@@ -168,7 +175,9 @@ export type SprintNodes = {
   dependsOn: Map<string, string[]>
 }
 
-export function buildSprintNodes(data: SprintNetworkData): SprintNodes | null {
+export type SprintNodesInput = Pick<SprintNetworkData, 'history' | 'remaining' | 'edges'>
+
+export function buildSprintNodes(data: SprintNodesInput): SprintNodes | null {
   if (data.history.length < MIN_CLOSED_SAMPLES) return null
 
   const catalog = buildEstimateCatalog(data.history)
