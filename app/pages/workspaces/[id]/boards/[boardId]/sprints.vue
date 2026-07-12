@@ -129,6 +129,22 @@ const { list: burndownQuery } = useSprintBurndownApi(wsId, bId, burndownSprintId
 const createOpen = ref(false)
 const addTaskPanel = ref<{ sprint: Sprint } | null>(null)
 
+const taskIdsInOpenSprints = computed(() => {
+  const openSprintIds = new Set(
+    sprints.value.filter(s => s.state !== 'closed').map(s => s.id),
+  )
+  const ids = new Set<string>()
+  for (const it of memberships.value) {
+    if (openSprintIds.has(it.sprintId)) ids.add(it.taskId)
+  }
+  return ids
+})
+
+function onWizardCreated() {
+  tasksList.refetch()
+  membershipsList.refetch()
+}
+
 const taskIdsInOtherSprints = computed(() => {
   if (!addTaskPanel.value) return new Set<string>()
   const ids = new Set<string>()
@@ -516,11 +532,15 @@ const isFilteredEmpty = computed(() =>
       </template>
     </div>
 
-    <SprintCreateModal
+    <SprintWizardModal
       v-if="canManage"
       v-model:open="createOpen"
       :workspace-id="wsId"
       :board-id="bId"
+      :all-tasks="allTasks"
+      :columns="columns"
+      :task-ids-in-sprints="taskIdsInOpenSprints"
+      @created="onWizardCreated"
     />
 
     <SprintEditModal

@@ -40,6 +40,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sle/recompute`,
   boardReplenishment: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/replenishment`,
+  sprintPreview: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/sprint-preview`,
 
   columns: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/columns`,
   column: (wsId: string, boardId: string, columnId: string) =>
