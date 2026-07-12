@@ -239,6 +239,13 @@
       "when": 1783701432472,
       "tag": "0033_wooden_tyger_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1783886719657,
+      "tag": "0034_massive_patriot",
+      "breakpoints": true
     }
   ]
 }
