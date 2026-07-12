@@ -161,7 +161,7 @@ async function createSprint(andStart: boolean) {
     :ui="{ content: 'max-w-[1400px] w-[calc(100vw-4rem)] h-[min(820px,92dvh)] rounded-2xl overflow-hidden m-auto' }"
   >
     <template #content>
-      <div class="grid grid-cols-1 lg:grid-cols-2 h-full min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full min-h-0">
         <aside class="relative hidden lg:flex flex-col bg-black text-white overflow-hidden">
           <div class="absolute -top-24 -right-20 size-80 rounded-full bg-accent-600/20 blur-3xl pointer-events-none" />
           <div class="absolute -bottom-32 -left-24 size-[24rem] rounded-full bg-[#c10801]/15 blur-3xl pointer-events-none" />
