@@ -17,6 +17,10 @@ const EVENT_ICON: Record<TaskEventType, string> = {
   task_archived: 'i-lucide-archive',
   task_commented: 'i-lucide-message-square',
   task_comment_deleted: 'i-lucide-message-square-off',
+  task_added_to_sprint: 'i-lucide-circle-plus',
+  task_removed_from_sprint: 'i-lucide-circle-minus',
+  task_blocked: 'i-lucide-octagon-x',
+  task_unblocked: 'i-lucide-octagon',
 }
 
 const EVENT_COLOR: Record<TaskEventType, string> = {
@@ -29,6 +33,10 @@ const EVENT_COLOR: Record<TaskEventType, string> = {
   task_archived: 'text-muted',
   task_commented: 'text-info',
   task_comment_deleted: 'text-muted',
+  task_added_to_sprint: 'text-muted',
+  task_removed_from_sprint: 'text-muted',
+  task_blocked: 'text-red-500',
+  task_unblocked: 'text-emerald-600',
 }
 
 function formatDateTime(iso: string): string {

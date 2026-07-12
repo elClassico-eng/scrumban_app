@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
     const body = await readValidatedBody(event, BodySchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
     await addTaskToSprint({
+      actorId: user.id,
       workspaceId: id,
       sprintId,
       taskId: body.taskId,

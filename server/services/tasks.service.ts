@@ -269,7 +269,12 @@ export async function updateTaskFields(input: {
       await validateParentAssignment(tx, input.taskId, newParentId)
     }
     const [prev] = await tx
-      .select({ assigneeId: tasks.assigneeId, title: tasks.title, boardId: tasks.boardId })
+      .select({
+        assigneeId: tasks.assigneeId,
+        title: tasks.title,
+        boardId: tasks.boardId,
+        blockedReason: tasks.blockedReason,
+      })
       .from(tasks)
       .where(eq(tasks.id, input.taskId))
     if (!prev) throw new NotFoundError('Задача не найдена')
@@ -280,6 +285,22 @@ export async function updateTaskFields(input: {
       .where(eq(tasks.id, input.taskId))
       .returning()
     if (!updated) throw new NotFoundError('Задача не найдена')
+
+    if ('blockedReason' in input.patch) {
+      const wasBlocked = prev.blockedReason !== null
+      const isBlocked = updated.blockedReason !== null
+      if (wasBlocked !== isBlocked) {
+        await tx.insert(taskEvents).values({
+          workspaceId: input.workspaceId,
+          taskId: input.taskId,
+          eventType: isBlocked ? 'task_blocked' : 'task_unblocked',
+          actorId: input.actorId ?? null,
+          payload: isBlocked
+            ? { reason: updated.blockedReason }
+            : { previousReason: prev.blockedReason },
+        })
+      }
+    }
 
     const assignmentChanged =
       'assigneeId' in input.patch && updated.assigneeId !== prev.assigneeId

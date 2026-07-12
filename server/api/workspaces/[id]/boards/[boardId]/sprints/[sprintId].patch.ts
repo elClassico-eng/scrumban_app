@@ -18,6 +18,7 @@ const BodySchema = z
     plannedStartAt: z.iso.datetime().nullable().optional(),
     plannedEndAt: z.iso.datetime().nullable().optional(),
     capacity: z.number().int().min(0).max(10_000).nullable().optional(),
+    datesChangeReason: z.string().trim().max(500).optional(),
   })
   .refine(
     (d) =>
@@ -40,22 +41,18 @@ export default defineEventHandler(async (event) => {
       workspaceId: id,
       sprintId,
       patch: {
-        name: body.name,
-        goal: body.goal,
-        plannedStartAt:
-          body.plannedStartAt === undefined
-            ? undefined
-            : body.plannedStartAt === null
-              ? null
-              : new Date(body.plannedStartAt),
-        plannedEndAt:
-          body.plannedEndAt === undefined
-            ? undefined
-            : body.plannedEndAt === null
-              ? null
-              : new Date(body.plannedEndAt),
-        ...('capacity' in body ? { capacity: body.capacity } : {}),
+        ...(body.name !== undefined ? { name: body.name } : {}),
+        ...(body.goal !== undefined ? { goal: body.goal } : {}),
+        ...(body.plannedStartAt !== undefined
+          ? { plannedStartAt: body.plannedStartAt === null ? null : new Date(body.plannedStartAt) }
+          : {}),
+        ...(body.plannedEndAt !== undefined
+          ? { plannedEndAt: body.plannedEndAt === null ? null : new Date(body.plannedEndAt) }
+          : {}),
+        ...(body.capacity !== undefined ? { capacity: body.capacity } : {}),
       },
+      datesChangeReason: body.datesChangeReason,
+      actorId: user.id,
       actorRole: workspace.role,
     })
     return { sprint }

@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
     const { id, sprintId, taskId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
     await removeTaskFromSprint({
+      actorId: user.id,
       workspaceId: id,
       sprintId,
       taskId,

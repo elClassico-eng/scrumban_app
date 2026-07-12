@@ -14,3 +14,7 @@ export type TaskEventType =
   | 'task_archived'
   | 'task_commented'
   | 'task_comment_deleted'
+  | 'task_added_to_sprint'
+  | 'task_removed_from_sprint'
+  | 'task_blocked'
+  | 'task_unblocked'

@@ -13,15 +13,36 @@ const ParamsSchema = z.object({
   sprintId: z.uuid(),
 })
 
+const BodySchema = z
+  .object({
+    goalAchieved: z.boolean().nullable().optional(),
+    goalComment: z.string().max(2000).optional(),
+    carryOver: z
+      .array(
+        z.object({
+          taskId: z.uuid(),
+          decision: z.enum(['next_sprint', 'backlog', 'keep']),
+        }),
+      )
+      .max(500)
+      .optional(),
+  })
+  .optional()
+
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
     const { id, boardId, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
+    const body = (await readValidatedBody(event, BodySchema.parse)) ?? {}
     const sprint = await closeSprint({
       workspaceId: id,
       sprintId,
+      actorId: user.id,
       actorRole: workspace.role,
+      goalAchieved: body.goalAchieved ?? null,
+      goalComment: body.goalComment,
+      carryOver: body.carryOver,
     })
     try {
       await takeSprintSnapshot({

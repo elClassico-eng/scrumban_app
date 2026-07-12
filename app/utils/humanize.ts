@@ -24,6 +24,10 @@ export function humanizeTaskEventType(type: TaskEventType): string {
     task_archived: 'Архивирована',
     task_commented: 'Прокомментирована',
     task_comment_deleted: 'Удалён комментарий',
+    task_added_to_sprint: 'Добавлена в спринт',
+    task_removed_from_sprint: 'Убрана из спринта',
+    task_blocked: 'Заблокирована',
+    task_unblocked: 'Разблокирована',
   }
   return map[type]
 }

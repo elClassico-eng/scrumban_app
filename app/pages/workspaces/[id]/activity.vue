@@ -34,6 +34,10 @@ const EVENT_OPTIONS: { value: TaskEventType; label: string }[] = [
   { value: 'task_archived', label: 'Архивирована' },
   { value: 'task_commented', label: 'Прокомментирована' },
   { value: 'task_comment_deleted', label: 'Удалён комментарий' },
+  { value: 'task_added_to_sprint', label: 'Добавлена в спринт' },
+  { value: 'task_removed_from_sprint', label: 'Убрана из спринта' },
+  { value: 'task_blocked', label: 'Заблокирована' },
+  { value: 'task_unblocked', label: 'Разблокирована' },
 ]
 
 const EVENT_ICON: Record<TaskEventType, string> = {
@@ -46,6 +50,10 @@ const EVENT_ICON: Record<TaskEventType, string> = {
   task_archived: 'i-lucide-archive',
   task_commented: 'i-lucide-message-square',
   task_comment_deleted: 'i-lucide-message-square-off',
+  task_added_to_sprint: 'i-lucide-circle-plus',
+  task_removed_from_sprint: 'i-lucide-circle-minus',
+  task_blocked: 'i-lucide-octagon-x',
+  task_unblocked: 'i-lucide-octagon',
 }
 
 const filters = computed(() => ({

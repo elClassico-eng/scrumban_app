@@ -380,9 +380,9 @@ export async function applyScenario(input: {
           await tx.insert(taskEvents).values({
             workspaceId: input.workspaceId,
             taskId: change.taskId,
-            eventType: 'task_updated',
+            eventType: 'task_removed_from_sprint',
             actorId: input.actorId,
-            payload: { scenarioId: scenario.id, action: 'scenario_exclude_from_sprint' },
+            payload: { sprintId: input.sprintId, scenarioId: scenario.id, reason: 'scenario_exclude' },
           })
           break
         }

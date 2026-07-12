@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
     const sprint = await startSprint({
       workspaceId: id,
       sprintId,
+      actorId: user.id,
       actorRole: workspace.role,
     })
     try {
