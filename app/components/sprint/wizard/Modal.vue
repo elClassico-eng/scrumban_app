@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { watchDebounced } from '@vueuse/core'
+import { useLocalStorage, watchDebounced } from '@vueuse/core'
 import type { Task } from '#shared/types/task'
 import type { BoardColumn } from '#shared/types/column'
 import type { SprintPreviewReport } from '#shared/types/sprint'
 import type { WizardBasics } from './StepBasics.vue'
+import { pageRoutes } from '~/routing'
 
 const props = defineProps<{
   workspaceId: string
@@ -36,15 +37,25 @@ const STEPS = [
 
 const step = ref(0)
 
-const basics = ref<WizardBasics>({
-  name: '',
-  goal: '',
-  plannedStartAt: '',
-  plannedEndAt: '',
-  capacity: null,
-})
+function defaultBasics(): WizardBasics {
+  return { name: '', goal: '', plannedStartAt: '', plannedEndAt: '', capacity: null }
+}
+
+const basics = ref<WizardBasics>(defaultBasics())
 const selected = ref<Set<string>>(new Set())
 const previewReport = ref<SprintPreviewReport | null>(null)
+
+type WizardDraft = { step: number; basics: WizardBasics; selected: string[] }
+
+const draft = useLocalStorage<WizardDraft>(
+  `sprint-wizard:${props.boardId}`,
+  { step: 0, basics: defaultBasics(), selected: [] },
+  { deep: true },
+)
+
+function clearDraft() {
+  draft.value = { step: 0, basics: defaultBasics(), selected: [] }
+}
 
 const basicsRef = ref<{ valid: boolean } | null>(null)
 
@@ -61,11 +72,27 @@ const toast = useToast()
 
 watch(open, (isOpen) => {
   if (!isOpen) return
-  step.value = 0
-  basics.value = { name: '', goal: '', plannedStartAt: '', plannedEndAt: '', capacity: null }
-  selected.value = new Set()
+  const saved = draft.value
+  basics.value = { ...defaultBasics(), ...saved.basics }
+  const knownIds = new Set(props.allTasks.map(t => t.id))
+  selected.value = new Set((saved.selected ?? []).filter(id => knownIds.has(id)))
+  step.value = Math.min(Math.max(saved.step ?? 0, 0), STEPS.length - 1)
   previewReport.value = null
+  if (step.value === 2 && selected.value.size > 0) runPreview()
 })
+
+watch(
+  [step, basics, selected],
+  () => {
+    if (!open.value) return
+    draft.value = {
+      step: step.value,
+      basics: { ...basics.value },
+      selected: [...selected.value],
+    }
+  },
+  { deep: true },
+)
 
 const candidates = computed(() =>
   filterSprintCandidates(props.allTasks, {
@@ -116,7 +143,7 @@ function back() {
 
 const creating = ref(false)
 
-async function createSprint(andStart: boolean) {
+async function createSprint(mode: 'plan' | 'simulator' | 'start') {
   if (creating.value) return
   creating.value = true
   try {
@@ -128,18 +155,22 @@ async function createSprint(andStart: boolean) {
       capacity: basics.value.capacity,
       taskIds: [...selected.value],
     })
-    if (andStart) {
+    if (mode === 'start') {
       await start.mutateAsync(res.sprint.id)
     }
     toast.add({
-      title: andStart
+      title: mode === 'start'
         ? `Спринт «${res.sprint.name}» создан и запущен`
-        : `Спринт «${res.sprint.name}» создан`,
-      icon: andStart ? 'i-lucide-play' : 'i-lucide-check',
+        : `Спринт «${res.sprint.name}» запланирован`,
+      icon: mode === 'start' ? 'i-lucide-play' : 'i-lucide-calendar-check',
       duration: 2000,
     })
+    clearDraft()
     emit('created')
     open.value = false
+    if (mode === 'simulator') {
+      await navigateTo(pageRoutes.sprintSimulator(props.workspaceId, props.boardId, res.sprint.id))
+    }
   }
   catch (err) {
     toast.add({
@@ -161,7 +192,7 @@ async function createSprint(andStart: boolean) {
     :ui="{ content: 'max-w-[1400px] w-[calc(100vw-4rem)] h-[min(820px,92dvh)] rounded-2xl overflow-hidden m-auto' }"
   >
     <template #content>
-      <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-2 h-full min-h-0">
         <aside class="relative hidden lg:flex flex-col bg-black text-white overflow-hidden">
           <div class="absolute -top-24 -right-20 size-80 rounded-full bg-accent-600/20 blur-3xl pointer-events-none" />
           <div class="absolute -bottom-32 -left-24 size-[24rem] rounded-full bg-[#c10801]/15 blur-3xl pointer-events-none" />
@@ -270,7 +301,7 @@ async function createSprint(andStart: boolean) {
           </div>
 
           <div class="shrink-0 border-t border-default">
-            <div class="max-w-[640px] mx-auto w-full flex items-center gap-2.5 px-6 py-5">
+            <div class="max-w-[640px] mx-auto w-full flex flex-wrap items-center gap-2.5 px-6 py-5">
             <UButton
               v-if="step > 0"
               size="lg"
@@ -295,18 +326,29 @@ async function createSprint(andStart: boolean) {
             <template v-else>
               <UButton
                 size="lg"
+                variant="ghost"
+                color="neutral"
+                icon="i-lucide-flask-conical"
+                :loading="creating"
+                @click="createSprint('simulator')"
+              >
+                В симулятор
+              </UButton>
+              <UButton
+                size="lg"
                 variant="outline"
                 color="neutral"
+                icon="i-lucide-calendar-check"
                 :loading="creating"
-                @click="createSprint(false)"
+                @click="createSprint('plan')"
               >
-                Создать
+                Запланировать
               </UButton>
               <UButton
                 size="lg"
                 icon="i-lucide-play"
                 :loading="creating"
-                @click="createSprint(true)"
+                @click="createSprint('start')"
               >
                 Создать и запустить
               </UButton>
