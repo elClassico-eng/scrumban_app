@@ -42,7 +42,7 @@ export function buildSandboxData(): SprintNetworkData {
       goal: 'Показать симулятор на учебных данных',
       state: 'active',
       plannedStartAt: new Date(now - 2 * DAY_MS),
-      plannedEndAt: new Date(now + 8 * DAY_MS),
+      plannedEndAt: new Date(now + 12 * DAY_MS),
       startedAt: new Date(now - 2 * DAY_MS),
       endedAt: null,
       capacity: null,

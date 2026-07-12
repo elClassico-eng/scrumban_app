@@ -6,6 +6,7 @@ import {
 } from '../../../services/network-forecast.service'
 import { requireAuth } from '../../../utils/auth'
 import { toHttpError } from '../../../utils/errors'
+import { createSeededRng } from '../../../utils/network-planning'
 import { buildSandboxData, SANDBOX_SPRINT_ID } from '../../../utils/sandbox-fixture'
 
 export default defineEventHandler(async (event) => {
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
     const data = buildSandboxData()
     const built = buildSprintNodes(data)!
     const horizonDays = computeHorizonDays(data.sprint)
-    const core = buildForecast(built.nodes, horizonDays)
+    const core = buildForecast(built.nodes, horizonDays, { rng: createSeededRng(20260710) })
     const meta = new Map(data.remaining.map(r => [r.taskId, { title: r.title, storyPoints: r.storyPoints }]))
 
     return {
