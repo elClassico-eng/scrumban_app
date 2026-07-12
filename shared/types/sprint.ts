@@ -30,6 +30,7 @@ export interface CreateSprintInput {
   plannedStartAt?: string | null
   plannedEndAt?: string | null
   capacity?: number | null
+  taskIds?: string[]
 }
 
 export interface UpdateSprintInput {

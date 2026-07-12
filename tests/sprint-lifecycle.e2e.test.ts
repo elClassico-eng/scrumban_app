@@ -316,3 +316,71 @@ describe('close dialog', () => {
     expect(res.status).toBe(422)
   })
 })
+
+describe('createSprint with taskIds', () => {
+  it('создаёт спринт с составом атомарно и пишет события', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const a = await createTask(owner, wsId, boardId, columns.backlog, 'A')
+    const b = await createTask(owner, wsId, boardId, columns.backlog, 'B')
+
+    const res = await fetchWithJar<{ sprint: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/sprints`,
+      {
+        method: 'POST',
+        body: {
+          name: 'Wizard sprint',
+          plannedStartAt: new Date().toISOString(),
+          plannedEndAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+          taskIds: [a, b],
+        },
+      },
+    )
+    expect(res.status).toBe(200)
+    const sId = res.body.sprint.id
+
+    const tasksRes = await fetchWithJar<unknown>(owner.jar, `${sprintPath(wsId, boardId, sId)}/tasks`)
+    const str = JSON.stringify(tasksRes.body)
+    expect(str).toContain(a)
+    expect(str).toContain(b)
+
+    const sql = getTestSql()
+    const events = await sql`
+      SELECT task_id FROM task_events
+      WHERE event_type = 'task_added_to_sprint' AND payload->>'sprintId' = ${sId}
+    `
+    expect(events).toHaveLength(2)
+  })
+
+  it('чужая задача → 422 и спринт не создан', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId } = await createBoardWithColumns(owner, wsId)
+    const other = await fetchWithJar<{ board: { id: string } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'Other', slug: 'other' } },
+    )
+    const otherCols = await fetchWithJar<{ columns: { id: string; columnRole: string }[] }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${other.body.board.id}/columns`,
+    )
+    const foreignTask = await createTask(
+      owner, wsId, other.body.board.id,
+      otherCols.body.columns.find(c => c.columnRole === 'backlog')!.id,
+      'Foreign',
+    )
+
+    const res = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/sprints`, {
+      method: 'POST',
+      body: { name: 'Broken', taskIds: [foreignTask] },
+    })
+    expect(res.status).toBe(422)
+
+    const sql = getTestSql()
+    const sprints = await sql`SELECT id FROM sprints WHERE board_id = ${boardId}`
+    expect(sprints).toHaveLength(0)
+  })
+})

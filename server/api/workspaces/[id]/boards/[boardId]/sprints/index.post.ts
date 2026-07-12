@@ -14,6 +14,7 @@ const BodySchema = z.object({
   plannedStartAt: z.iso.datetime().optional().nullable(),
   plannedEndAt: z.iso.datetime().optional().nullable(),
   capacity: z.number().int().min(0).max(10_000).nullable().optional(),
+  taskIds: z.array(z.uuid()).max(200).optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -31,6 +32,8 @@ export default defineEventHandler(async (event) => {
       plannedStartAt: body.plannedStartAt ? new Date(body.plannedStartAt) : null,
       plannedEndAt: body.plannedEndAt ? new Date(body.plannedEndAt) : null,
       capacity: body.capacity,
+      taskIds: body.taskIds,
+      actorId: user.id,
       actorRole: workspace.role,
     })
     return { sprint }

@@ -110,6 +110,8 @@ export async function createSprint(input: {
   plannedStartAt?: Date | null
   plannedEndAt?: Date | null
   capacity?: number | null
+  taskIds?: string[]
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Sprint> {
   requireMinRole(input.actorRole, 'scrum_master')
@@ -122,8 +124,30 @@ export async function createSprint(input: {
     throw new ValidationError('Дата окончания должна быть позже даты начала')
   }
 
-  const [row] = await withTenant(input.workspaceId, async (tx) =>
-    tx
+  const taskIds = [...new Set(input.taskIds ?? [])]
+
+  return withTenant(input.workspaceId, async (tx) => {
+    if (taskIds.length > 0) {
+      const rows = await tx
+        .select({ id: tasks.id, title: tasks.title, boardId: tasks.boardId, closedAt: tasks.closedAt })
+        .from(tasks)
+        .where(inArray(tasks.id, taskIds))
+      if (rows.length !== taskIds.length) {
+        throw new ValidationError('Некоторые задачи не найдены')
+      }
+      const foreign = rows.filter(r => r.boardId !== input.boardId)
+      if (foreign.length > 0) {
+        throw new ValidationError('Все задачи должны принадлежать этой доске')
+      }
+      const closedRows = rows.filter(r => r.closedAt !== null)
+      if (closedRows.length > 0) {
+        throw new ValidationError(
+          `Закрытые задачи нельзя брать в спринт: ${closedRows.map(r => `«${r.title}»`).join(', ')}`,
+        )
+      }
+    }
+
+    const [row] = await tx
       .insert(sprints)
       .values({
         workspaceId: input.workspaceId,
@@ -134,9 +158,25 @@ export async function createSprint(input: {
         plannedEndAt: input.plannedEndAt ?? null,
         capacity: input.capacity ?? null,
       })
-      .returning(),
-  )
-  return row!
+      .returning()
+
+    for (const taskId of taskIds) {
+      await tx.insert(sprintTasks).values({
+        sprintId: row!.id,
+        taskId,
+        workspaceId: input.workspaceId,
+      })
+      await logMembershipEvent(tx, {
+        workspaceId: input.workspaceId,
+        taskId,
+        sprintId: row!.id,
+        added: true,
+        actorId: input.actorId,
+        extra: { reason: 'wizard_create' },
+      })
+    }
+    return row!
+  })
 }
 
 export async function updateSprint(input: {
