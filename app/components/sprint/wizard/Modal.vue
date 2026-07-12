@@ -163,14 +163,8 @@ async function createSprint(andStart: boolean) {
     <template #content>
       <div class="grid grid-cols-1 lg:grid-cols-2 h-full min-h-0">
         <aside class="relative hidden lg:flex flex-col bg-black text-white overflow-hidden">
-          <img
-            src="/img/sprint-bg.webp"
-            alt=""
-            class="absolute inset-0 size-full object-cover object-top pointer-events-none select-none brightness-[.68] saturate-[.72]"
-          >
-          <div class="absolute inset-0 bg-black/25 pointer-events-none" />
-          <div class="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
-          <div class="absolute inset-x-0 bottom-0 h-[68%] bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none" />
+          <div class="absolute -top-24 -right-20 size-80 rounded-full bg-accent-600/20 blur-3xl pointer-events-none" />
+          <div class="absolute -bottom-32 -left-24 size-[24rem] rounded-full bg-[#c10801]/15 blur-3xl pointer-events-none" />
 
           <div class="relative flex items-center gap-3 px-10 pt-9">
             <div class="size-9 rounded-xl bg-white grid place-items-center shrink-0 shadow-lg shadow-black/30">
