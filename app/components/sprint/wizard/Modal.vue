@@ -161,18 +161,23 @@ async function createSprint(andStart: boolean) {
     :ui="{ content: 'max-w-5xl h-[min(720px,92dvh)] rounded-2xl overflow-hidden m-auto' }"
   >
     <template #content>
-      <div class="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] h-full min-h-0">
+      <div class="grid grid-cols-1 lg:grid-cols-2 h-full min-h-0">
         <aside class="relative hidden lg:flex flex-col bg-black text-white overflow-hidden">
-          <div class="absolute -bottom-40 -left-24 size-[26rem] rounded-full bg-accent-600/25 blur-3xl pointer-events-none" />
-          <div class="absolute top-1/3 -right-20 size-64 rounded-full bg-[#c10801]/20 blur-3xl pointer-events-none" />
+          <img
+            src="/img/sprint-bg.webp"
+            alt=""
+            class="absolute inset-0 size-full object-cover pointer-events-none select-none"
+          >
+          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20 pointer-events-none" />
+          <div class="absolute inset-0 bg-black/15 pointer-events-none" />
 
-          <div class="relative flex items-center gap-2.5 px-8 pt-8">
+          <div class="relative flex items-center gap-2.5 px-8 pt-8 drop-shadow-sm">
             <TaktMark class="size-6 shrink-0 takt-mark--swing" />
             <span class="text-[15px] font-semibold tracking-tight">Такт</span>
           </div>
 
           <div class="relative flex-1 flex flex-col justify-center px-8 py-6">
-            <div class="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-accent-400 mb-3">
+            <div class="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-white/80 mb-3">
               Мастер создания спринта
             </div>
             <Transition name="step-text" mode="out-in">
@@ -180,7 +185,7 @@ async function createSprint(andStart: boolean) {
                 <h2 class="text-[26px] font-semibold tracking-tight leading-tight m-0 text-white">
                   {{ STEPS[step]!.heading }}
                 </h2>
-                <p class="text-[13px] text-white/60 leading-relaxed mt-3 m-0 max-w-xs">
+                <p class="text-[13px] text-white/75 leading-relaxed mt-3 m-0 max-w-xs">
                   {{ STEPS[step]!.description }}
                 </p>
               </div>
@@ -206,7 +211,7 @@ async function createSprint(andStart: boolean) {
               </div>
               <span
                 class="text-[13px] font-medium transition-colors"
-                :class="i === step ? 'text-white' : i < step ? 'text-white/70' : 'text-white/35'"
+                :class="i === step ? 'text-white' : i < step ? 'text-white/75' : 'text-white/45'"
               >
                 {{ s.title }}
               </span>
