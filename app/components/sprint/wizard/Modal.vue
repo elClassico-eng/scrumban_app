@@ -158,7 +158,7 @@ async function createSprint(andStart: boolean) {
   <UModal
     v-model:open="open"
     fullscreen
-    :ui="{ content: 'max-w-5xl h-[min(720px,92dvh)] rounded-2xl overflow-hidden m-auto' }"
+    :ui="{ content: 'max-w-[1400px] w-[calc(100vw-4rem)] h-[min(820px,92dvh)] rounded-2xl overflow-hidden m-auto' }"
   >
     <template #content>
       <div class="grid grid-cols-1 lg:grid-cols-2 h-full min-h-0">
