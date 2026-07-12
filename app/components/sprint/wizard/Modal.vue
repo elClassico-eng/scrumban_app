@@ -166,97 +166,116 @@ async function createSprint(andStart: boolean) {
           <img
             src="/img/sprint-bg.webp"
             alt=""
-            class="absolute inset-0 size-full object-cover pointer-events-none select-none"
+            class="absolute inset-0 size-full object-cover object-top pointer-events-none select-none"
           >
-          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20 pointer-events-none" />
-          <div class="absolute inset-0 bg-black/15 pointer-events-none" />
+          <div class="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+          <div class="absolute inset-x-0 bottom-0 h-[68%] bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none" />
 
-          <div class="relative flex items-center gap-2.5 px-8 pt-8 drop-shadow-sm">
-            <TaktMark class="size-6 shrink-0 takt-mark--swing" />
-            <span class="text-[15px] font-semibold tracking-tight">Такт</span>
-          </div>
-
-          <div class="relative flex-1 flex flex-col justify-center px-8 py-6">
-            <div class="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-white/80 mb-3">
-              Мастер создания спринта
+          <div class="relative flex items-center gap-3 px-10 pt-9">
+            <div class="size-9 rounded-xl bg-white grid place-items-center shrink-0 shadow-lg shadow-black/30">
+              <TaktMark class="size-6 text-black takt-mark--swing" />
             </div>
-            <Transition name="step-text" mode="out-in">
-              <div :key="step">
-                <h2 class="text-[26px] font-semibold tracking-tight leading-tight m-0 text-white">
-                  {{ STEPS[step]!.heading }}
-                </h2>
-                <p class="text-[13px] text-white/75 leading-relaxed mt-3 m-0 max-w-xs">
-                  {{ STEPS[step]!.description }}
-                </p>
-              </div>
-            </Transition>
+            <span class="text-[16px] font-semibold tracking-tight drop-shadow">Такт</span>
           </div>
 
-          <div class="relative px-8 pb-8 space-y-1">
-            <div
-              v-for="(s, i) in STEPS"
-              :key="s.title"
-              class="flex items-center gap-3 py-2"
-            >
-              <div
-                class="size-7 rounded-full grid place-items-center text-[12px] font-bold shrink-0 transition-colors"
-                :class="i < step
-                  ? 'bg-accent-500 text-white'
-                  : i === step
-                    ? 'bg-white text-black'
-                    : 'bg-white/10 text-white/40'"
-              >
-                <UIcon v-if="i < step" name="i-lucide-check" class="size-3.5" />
-                <template v-else>{{ i + 1 }}</template>
+          <div class="relative mt-auto px-10 pb-10 space-y-8">
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-400 mb-4">
+                Мастер создания спринта
               </div>
-              <span
-                class="text-[13px] font-medium transition-colors"
-                :class="i === step ? 'text-white' : i < step ? 'text-white/75' : 'text-white/45'"
+              <Transition name="step-text" mode="out-in">
+                <div :key="step">
+                  <h2 class="text-[30px] font-semibold tracking-tight leading-[1.15] m-0 text-white text-balance">
+                    {{ STEPS[step]!.heading }}
+                  </h2>
+                  <p class="text-[13.5px] text-white/65 leading-relaxed mt-3.5 m-0 max-w-md">
+                    {{ STEPS[step]!.description }}
+                  </p>
+                </div>
+              </Transition>
+            </div>
+
+            <div class="h-px bg-white/12" />
+
+            <div class="space-y-0">
+              <div
+                v-for="(s, i) in STEPS"
+                :key="s.title"
+                class="relative flex items-center gap-3.5"
+                :class="i < STEPS.length - 1 ? 'pb-5' : ''"
               >
-                {{ s.title }}
-              </span>
+                <div
+                  v-if="i < STEPS.length - 1"
+                  class="absolute left-[11px] top-7 bottom-1 w-px transition-colors"
+                  :class="i < step ? 'bg-accent-500' : 'bg-white/15'"
+                />
+                <div
+                  class="relative size-[23px] rounded-full grid place-items-center text-[11px] font-bold shrink-0 transition-all"
+                  :class="i < step
+                    ? 'bg-accent-500 text-white'
+                    : i === step
+                      ? 'bg-white text-black ring-4 ring-white/20'
+                      : 'ring-1 ring-inset ring-white/30 text-white/50'"
+                >
+                  <UIcon v-if="i < step" name="i-lucide-check" class="size-3" />
+                  <template v-else>{{ i + 1 }}</template>
+                </div>
+                <span
+                  class="text-[13px] transition-colors"
+                  :class="i === step ? 'text-white font-semibold' : i < step ? 'text-white/70 font-medium' : 'text-white/45 font-medium'"
+                >
+                  {{ s.title }}
+                </span>
+              </div>
             </div>
           </div>
         </aside>
 
         <div class="flex flex-col min-h-0 bg-default">
-          <div class="flex items-center gap-3 px-6 lg:px-8 pt-6 pb-4 border-b border-default shrink-0">
-            <div class="lg:hidden text-[12px] font-semibold text-muted">
-              Шаг {{ step + 1 }} из {{ STEPS.length }}
+          <div class="shrink-0 border-b border-default">
+            <div class="max-w-[640px] mx-auto w-full flex items-center gap-3 px-6 pt-7 pb-5">
+              <div>
+                <div class="text-[11px] font-semibold text-muted tabular-nums">
+                  Шаг {{ step + 1 }} из {{ STEPS.length }}
+                </div>
+                <h3 class="text-[18px] font-semibold tracking-tight m-0 mt-0.5">
+                  {{ STEPS[step]!.title }}
+                </h3>
+              </div>
+              <div class="flex-1" />
+              <button
+                type="button"
+                class="size-8 rounded-lg grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
+                @click="open = false"
+              >
+                <UIcon name="i-lucide-x" class="size-4" />
+              </button>
             </div>
-            <h3 class="hidden lg:block text-[16px] font-semibold tracking-tight m-0">
-              {{ STEPS[step]!.title }}
-            </h3>
-            <div class="flex-1" />
-            <button
-              type="button"
-              class="size-8 rounded-lg grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
-              @click="open = false"
-            >
-              <UIcon name="i-lucide-x" class="size-4" />
-            </button>
           </div>
 
-          <div class="flex-1 overflow-y-auto px-6 lg:px-8 py-6">
-            <SprintWizardStepBasics v-if="step === 0" ref="basicsRef" v-model="basics" />
-            <SprintWizardStepTasks
-              v-else-if="step === 1"
-              v-model="selected"
-              :candidates="candidates"
-              :all-tasks="allTasks"
-              :capacity="basics.capacity"
-              :external-risks="previewReport?.risks ?? []"
-            />
-            <SprintWizardStepForecast
-              v-else
-              v-model="selected"
-              :report="previewReport"
-              :pending="preview.isPending.value"
-              :all-tasks="allTasks"
-            />
+          <div class="flex-1 overflow-y-auto">
+            <div class="max-w-[640px] mx-auto w-full px-6 py-7">
+              <SprintWizardStepBasics v-if="step === 0" ref="basicsRef" v-model="basics" />
+              <SprintWizardStepTasks
+                v-else-if="step === 1"
+                v-model="selected"
+                :candidates="candidates"
+                :all-tasks="allTasks"
+                :capacity="basics.capacity"
+                :external-risks="previewReport?.risks ?? []"
+              />
+              <SprintWizardStepForecast
+                v-else
+                v-model="selected"
+                :report="previewReport"
+                :pending="preview.isPending.value"
+                :all-tasks="allTasks"
+              />
+            </div>
           </div>
 
-          <div class="flex items-center gap-2.5 px-6 lg:px-8 py-5 border-t border-default shrink-0">
+          <div class="shrink-0 border-t border-default">
+            <div class="max-w-[640px] mx-auto w-full flex items-center gap-2.5 px-6 py-5">
             <UButton
               v-if="step > 0"
               size="lg"
@@ -297,6 +316,7 @@ async function createSprint(andStart: boolean) {
                 Создать и запустить
               </UButton>
             </template>
+            </div>
           </div>
         </div>
       </div>
