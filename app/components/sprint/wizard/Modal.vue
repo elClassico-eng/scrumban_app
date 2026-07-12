@@ -301,10 +301,10 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
           </div>
 
           <div class="shrink-0 border-t border-default">
-            <div class="max-w-[640px] mx-auto w-full flex flex-wrap items-center gap-2.5 px-6 py-5">
+            <div class="max-w-[640px] mx-auto w-full flex items-center gap-2 px-6 py-5">
             <UButton
               v-if="step > 0"
-              size="lg"
+              size="md"
               variant="ghost"
               color="neutral"
               icon="i-lucide-arrow-left"
@@ -324,28 +324,29 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
               </UButton>
             </template>
             <template v-else>
+              <UTooltip text="Запланировать спринт и открыть его в симуляторе решений">
+                <UButton
+                  size="md"
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-flask-conical"
+                  :loading="creating"
+                  @click="createSprint('simulator')"
+                >
+                  В симулятор
+                </UButton>
+              </UTooltip>
               <UButton
-                size="lg"
-                variant="ghost"
-                color="neutral"
-                icon="i-lucide-flask-conical"
-                :loading="creating"
-                @click="createSprint('simulator')"
-              >
-                В симулятор
-              </UButton>
-              <UButton
-                size="lg"
+                size="md"
                 variant="outline"
                 color="neutral"
-                icon="i-lucide-calendar-check"
                 :loading="creating"
                 @click="createSprint('plan')"
               >
                 Запланировать
               </UButton>
               <UButton
-                size="lg"
+                size="md"
                 icon="i-lucide-play"
                 :loading="creating"
                 @click="createSprint('start')"
