@@ -526,6 +526,7 @@ const isFilteredEmpty = computed(() =>
             :columns="columns"
             :members="members"
             :can-manage="canManage"
+            :report-to="pageRoutes.sprintReportPage(wsId, bId, s.id)"
           />
         </div>
       </section>

@@ -16,6 +16,7 @@ const props = defineProps<{
   members: MemberView[]
   canManage: boolean
   simulatorTo?: string
+  reportTo?: string
 }>()
 
 const emit = defineEmits<{
@@ -290,10 +291,19 @@ function onAddClick(e: Event) {
         :to="simulatorTo"
       >Симулятор</UButton>
       <template v-else-if="sprint.state === 'closed'">
-        <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-eye">
+        <UButton
+          v-if="reportTo"
+          size="xs"
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-file-bar-chart-2"
+          :to="reportTo"
+        >
           Отчёт
         </UButton>
-        <UButton size="xs" variant="ghost" color="neutral">Ретроспектива</UButton>
+        <UTooltip text="Ретроспектива появится в следующем обновлении">
+          <UButton size="xs" variant="ghost" color="neutral" disabled>Ретроспектива</UButton>
+        </UTooltip>
       </template>
     </div>
   </div>

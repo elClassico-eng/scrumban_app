@@ -114,6 +114,10 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/scenarios/simulate`,
   sprintScenarioApply: (wsId: string, boardId: string, sprintId: string, scenarioId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/scenarios/${scenarioId}/apply`,
+  sprintReport: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/report`,
+  sprintReportGenerate: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/report/generate`,
   forecastAccuracy: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/forecast-accuracy`,
   sprintTasks: (wsId: string, boardId: string, sprintId: string) =>
@@ -178,6 +182,8 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
   sprintSimulator: (wsId: string, boardId: string, sprintId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/simulator/${sprintId}`,
+  sprintReportPage: (wsId: string, boardId: string, sprintId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/sprint-report/${sprintId}`,
   simulatorDemo: (wsId: string) => `/workspaces/${wsId}/simulator/demo`,
   boardCalendar: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/calendar`,
