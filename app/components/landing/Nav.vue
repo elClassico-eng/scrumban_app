@@ -1,12 +1,12 @@
 <script setup lang="ts">
 const goToApp = useAccessCta()
 const dense = ref(false)
+const open = ref(false)
 
 const links: Array<[string, string]> = [
-  ['Что работает', '#what'],
-  ['Почему мы', '#why'],
+  ['Почему Такт', '#why'],
+  ['Продукт', '#product'],
   ['Roadmap', '#roadmap'],
-  ['О проекте', '#about'],
 ]
 
 function onScroll() {
@@ -21,21 +21,25 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
 </script>
 
 <template>
-  <nav class="nav" :class="{ dense }">
-    <div class="nav__bar">
-      <a class="nav__logo takt-logo" href="#top">
-        <TaktMark class="nav__logo-mark" />
-        <b>Такт</b>
+  <nav class="pnav" :class="{ dense, open }">
+    <div class="pnav__pill">
+      <a class="pnav__logo" href="#top">
+        <TaktMark class="pnav__mark" />
+        <b>Такт<i>*</i></b>
       </a>
-      <span class="nav__div" />
-      <div class="nav__links">
-        <a v-for="[label, href] in links" :key="label + href" class="nav__link" :href="href">{{ label }}</a>
-        <NuxtLink class="nav__link" to="/docs" external>Документация</NuxtLink>
+      <div class="pnav__links">
+        <a v-for="[label, href] in links" :key="href" :href="href" @click="open = false">{{ label }}</a>
+        <NuxtLink to="/docs" external>Документация</NuxtLink>
       </div>
-      <button class="nav__cta" @click="goToApp">
-        Ранний доступ
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+      <button class="btn btn--dark pnav__cta" @click="goToApp">Ранний доступ</button>
+      <button class="pnav__burger" aria-label="Меню" :aria-expanded="open" @click="open = !open">
+        <span /><span />
       </button>
+    </div>
+    <div v-if="open" class="pnav__sheet">
+      <a v-for="[label, href] in links" :key="href" :href="href" @click="open = false">{{ label }}</a>
+      <NuxtLink to="/docs" external>Документация</NuxtLink>
+      <button class="btn btn--dark" @click="goToApp">Ранний доступ</button>
     </div>
   </nav>
 </template>
