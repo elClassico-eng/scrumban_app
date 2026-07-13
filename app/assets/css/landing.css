@@ -103,6 +103,15 @@
     font-family: var(--font-mono); font-size: 12px; color: var(--ink-3);
   }
 
+  & .shot {
+    display: block;
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(17, 17, 16, 0.07);
+  }
+
   /* ── nav ── */
   & .pnav {
     position: fixed; top: 16px; left: 50%; translate: -50% 0;
@@ -267,7 +276,7 @@
   & .bcard--stat { grid-column: span 7; justify-content: center; }
   & .bcard--stat .bcard__big { color: var(--orange); }
   & .bcard--shot { grid-column: span 5; grid-row: span 2; }
-  & .bcard--shot .slot { flex: 1; aspect-ratio: auto; min-height: 220px; }
+  & .bcard--shot .shot { flex: 1; object-fit: cover; object-position: left top; min-height: 220px; }
   & .bcard--dark { grid-column: span 4; background: var(--dark); border: 0; color: #fff; justify-content: center; }
   & .bcard--dark p { color: rgba(255, 255, 255, 0.68); }
   & .bcard--haze { grid-column: span 3; background: linear-gradient(160deg, var(--haze-1), #FFDFC9); border: 0; justify-content: center; }
@@ -339,6 +348,7 @@
   & .pcard__desc { max-width: 46ch; font-size: 15.5px; line-height: 1.6; color: var(--ink-2); }
   & .pcard__desc--top { margin-top: 6px; }
   & .pcard .slot { margin-top: auto; }
+  & .pcard .shot { margin-top: auto; }
 
   & .product__mini {
     display: grid;

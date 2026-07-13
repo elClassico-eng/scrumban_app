@@ -13,7 +13,7 @@
         </article>
 
         <article class="bcard bcard--shot">
-          <div class="slot">скриншот: доска</div>
+          <img class="shot" src="/landing/board.webp" alt="Доска Такта: колонки с WIP-лимитами, классы обслуживания, возраст задач" loading="lazy">
           <h3>Kanban и спринты вместе</h3>
           <p>Спринты задают ритм, поток даёт предсказуемость. Две методологии работают вместе, а не вместо.</p>
         </article>

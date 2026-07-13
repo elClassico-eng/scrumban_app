@@ -39,12 +39,12 @@ const MINI: MiniFeature[] = [
           <p class="eyebrow">Прогноз сроков</p>
           <div class="pcard__num">87%<span class="pcard__note">вероятность уложиться · пример</span></div>
           <p class="pcard__desc">Monte Carlo по сети зависимостей, критический путь и резервы по задачам. Честное «мало истории», когда данных не хватает.</p>
-          <div class="slot">скриншот: прогноз</div>
+          <img class="shot" src="/landing/forecast.webp" alt="Симулятор Такта: вероятность успеть, P50/P85, критический путь спринта" loading="lazy">
         </article>
         <article class="pcard pcard--b">
           <p class="eyebrow">Аналитика потока</p>
           <p class="pcard__desc pcard__desc--top">CFD, cycle time с перцентилями, throughput. Всё считается из событий перехода задач, а не из ручных оценок.</p>
-          <div class="slot">скриншот: аналитика</div>
+          <img class="shot" src="/landing/analytics.webp" alt="Аналитика Такта: cumulative flow diagram и обзор потока" loading="lazy">
         </article>
       </div>
 
