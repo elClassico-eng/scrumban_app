@@ -406,7 +406,7 @@ const isFilteredEmpty = computed(() =>
       </UButton>
     </div>
 
-    <div class="flex-1 min-h-0 overflow-y-auto pb-4">
+    <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-4">
       <div v-if="isLoading" class="text-center py-12 text-muted">
         <UIcon name="i-lucide-loader" class="animate-spin size-6" />
       </div>
@@ -424,7 +424,7 @@ const isFilteredEmpty = computed(() =>
 
       <div
         v-else
-        class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-x-8 gap-y-6 items-start"
+        class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-x-8 gap-y-6 items-start"
       >
         <div class="min-w-0 space-y-8">
           <div v-if="isFilteredEmpty" class="text-center py-16 text-muted">
@@ -474,7 +474,7 @@ const isFilteredEmpty = computed(() =>
                 <span class="flex-1 h-px bg-default" />
               </div>
 
-              <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <SprintCard
                   v-for="s in plannedSprints"
                   :key="s.id"
@@ -500,7 +500,7 @@ const isFilteredEmpty = computed(() =>
                 <span class="flex-1 h-px bg-default" />
               </div>
 
-              <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <SprintCard
                   v-for="s in closedSprints"
                   :key="s.id"

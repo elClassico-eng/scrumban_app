@@ -11,7 +11,7 @@ const hasActiveSprint = computed(() => props.sprints.some(s => s.state === 'acti
 </script>
 
 <template>
-  <aside class="lg:sticky lg:top-4 space-y-6">
+  <aside class="xl:sticky xl:top-4 space-y-6 min-w-0">
     <SprintSidebarSummary :sprints="sprints" />
 
     <div class="h-px bg-default" />
