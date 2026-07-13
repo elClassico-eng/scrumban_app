@@ -226,6 +226,16 @@ const activeCount = computed(() =>
       <div class="hidden lg:block lg:flex-1" />
 
       <button
+        type="button"
+        class="hidden lg:inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-default text-muted hover:text-default hover:border-accent-500 text-[13px] font-medium cursor-pointer transition-colors"
+        title="Дейли: повестка дня по доске"
+        @click="emit('open-daily')"
+      >
+        <UIcon name="i-lucide-sunrise" class="size-3.5" />
+        Дейли
+      </button>
+
+      <button
         v-if="canCreate"
         type="button"
         class="hidden lg:inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md bg-inverted hover:bg-accent-500 text-inverted hover:text-white text-[13px] font-medium cursor-pointer transition-colors"
