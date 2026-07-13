@@ -118,3 +118,14 @@ export async function dismissHint(userId: string, key: string): Promise<string[]
   if (!row) throw new NotFoundError('Пользователь не найден')
   return row.dismissedHints
 }
+
+export async function markChangelogSeen(userId: string): Promise<string> {
+  const seenAt = new Date()
+  const [row] = await useDB()
+    .update(users)
+    .set({ changelogSeenAt: seenAt, updatedAt: seenAt })
+    .where(eq(users.id, userId))
+    .returning({ changelogSeenAt: users.changelogSeenAt })
+  if (!row?.changelogSeenAt) throw new NotFoundError('Пользователь не найден')
+  return row.changelogSeenAt.toISOString()
+}

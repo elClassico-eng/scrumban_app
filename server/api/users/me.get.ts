@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
         jobTitle: user.jobTitle,
         bio: user.bio,
         dismissedHints: user.dismissedHints ?? [],
+        changelogSeenAt: user.changelogSeenAt ? user.changelogSeenAt.toISOString() : null,
         emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,

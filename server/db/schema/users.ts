@@ -19,6 +19,7 @@ export const users = pgTable('users', {
   // keyed by string identifiers like 'simulator-intro'.
   dismissedHints: jsonb('dismissed_hints').$type<string[]>().notNull().default([]),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  changelogSeenAt: timestamp('changelog_seen_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

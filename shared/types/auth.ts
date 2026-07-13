@@ -48,6 +48,7 @@ export interface UserProfile {
   jobTitle: string | null
   bio: string | null
   dismissedHints: string[]
+  changelogSeenAt: string | null
   emailVerifiedAt: string | null
   createdAt: string
   updatedAt: string

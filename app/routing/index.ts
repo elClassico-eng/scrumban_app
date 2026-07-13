@@ -14,6 +14,7 @@ export const apiRoutes = {
 
   usersMe: '/api/users/me',
   usersDismissHint: '/api/users/me/dismiss-hint',
+  usersChangelogSeen: '/api/users/me/changelog-seen',
 
   healthz: '/api/healthz',
 
