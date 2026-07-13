@@ -39,6 +39,7 @@ const workspaceLinks = computed(() => {
   return [
     { label: 'Участники', icon: 'i-lucide-users', to: pageRoutes.workspaceMembers(current.value.id) },
     { label: 'Активность', icon: 'i-lucide-activity', to: pageRoutes.workspaceActivity(current.value.id) },
+    { label: 'Отчёты', icon: 'i-lucide-clipboard-list', to: pageRoutes.workspaceReports(current.value.id) },
     { label: 'Симулятор', icon: 'i-lucide-flask-conical', to: pageRoutes.workspaceSimulator(current.value.id) },
   ]
 })

@@ -20,6 +20,10 @@ export interface SprintsListResponse {
   sprints: Sprint[]
 }
 
+export type WorkspaceSprintSummary = Sprint & { boardName: string }
+
+export type WorkspaceSprintsResponse = { sprints: WorkspaceSprintSummary[] }
+
 export interface SprintResponse {
   sprint: Sprint
 }

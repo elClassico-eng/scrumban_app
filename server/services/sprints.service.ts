@@ -14,6 +14,7 @@
 // and burndown analytics for that sprint stay reproducible.
 import { and, asc, desc, eq, gte, inArray, isNull } from 'drizzle-orm'
 import {
+  boards,
   sprintEvents,
   sprintTasks,
   sprints,
@@ -87,6 +88,23 @@ export async function listSprints(input: {
       .where(eq(sprints.boardId, input.boardId))
       .orderBy(desc(sprints.createdAt)),
   )
+}
+
+// Cross-board sprint listing for the workspace-level reports hub.
+// RLS scopes rows to the tenant; we join boards only to carry the board name.
+export async function listWorkspaceSprints(input: {
+  workspaceId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<Array<Sprint & { boardName: string }>> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) => {
+    const rows = await tx
+      .select({ sprint: sprints, boardName: boards.name })
+      .from(sprints)
+      .innerJoin(boards, eq(boards.id, sprints.boardId))
+      .orderBy(asc(boards.name), desc(sprints.createdAt))
+    return rows.map(r => ({ ...r.sprint, boardName: r.boardName }))
+  })
 }
 
 export async function getSprint(input: {

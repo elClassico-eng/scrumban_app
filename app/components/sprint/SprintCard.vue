@@ -65,23 +65,9 @@ const teamMembers = computed(() => {
   return props.members.filter(m => ids.has(m.userId)).slice(0, 4)
 })
 
-const statusLabel = computed(() => {
-  if (props.sprint.state === 'planned') return 'Запланирован'
-  if (props.sprint.state === 'closed') return 'Закрыт'
-  return 'Активный'
-})
-
-const statusClasses = computed(() => {
-  if (props.sprint.state === 'planned') return 'bg-elevated text-default'
-  if (props.sprint.state === 'closed') return 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-  return 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'
-})
-
-const statusDotClasses = computed(() => {
-  if (props.sprint.state === 'planned') return 'bg-zinc-400'
-  if (props.sprint.state === 'closed') return 'bg-emerald-500'
-  return 'bg-accent-500'
-})
+const statusLabel = computed(() => SPRINT_STATE_LABEL[props.sprint.state])
+const statusClasses = computed(() => SPRINT_STATE_BADGE[props.sprint.state])
+const statusDotClasses = computed(() => SPRINT_STATE_DOT[props.sprint.state])
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'

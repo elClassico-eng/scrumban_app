@@ -152,6 +152,8 @@ export const apiRoutes = {
 
   workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
 
+  workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
+
   workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
 
   notifications: '/api/notifications',
@@ -182,6 +184,7 @@ export const pageRoutes = {
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
   workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
   workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
+  workspaceReports: (id: string) => `/workspaces/${id}/reports`,
   workspaceSimulator: (id: string) => `/workspaces/${id}/simulator`,
 
   boards: (wsId: string) => `/workspaces/${wsId}/boards`,
