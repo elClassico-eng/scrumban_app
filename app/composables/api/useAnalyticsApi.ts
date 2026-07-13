@@ -11,26 +11,51 @@ import type {
 } from '#shared/types/analytics'
 import type { TimeReportResponse } from '#shared/types/time-entry'
 
-export function useAnalyticsApi(workspaceId: MaybeRef<string>, boardId: MaybeRef<string>) {
+export type AnalyticsRange = 14 | 30 | 90
+
+export function useAnalyticsApi(
+  workspaceId: MaybeRef<string>,
+  boardId: MaybeRef<string>,
+  rangeDays: MaybeRef<AnalyticsRange> = 30,
+) {
   const enabled = computed(() => !!unref(workspaceId) && !!unref(boardId))
 
+  const window = computed(() => {
+    const days = unref(rangeDays)
+    const to = new Date()
+    const from = new Date(to.getTime() - days * 86_400_000)
+    return { fromISO: from.toISOString(), toISO: to.toISOString(), days }
+  })
+
+  function rangeQs(extra?: Record<string, string>): string {
+    const qs = new URLSearchParams({
+      from: window.value.fromISO,
+      to: window.value.toISO,
+      ...(extra ?? {}),
+    })
+    return qs.toString()
+  }
+
   const cfd = useQuery({
-    queryKey: computed(() => ['analytics', 'cfd', unref(workspaceId), unref(boardId)]),
-    queryFn: () => $fetch<CfdReport>(apiRoutes.analyticsCfd(unref(workspaceId), unref(boardId))),
+    queryKey: computed(() => ['analytics', 'cfd', unref(workspaceId), unref(boardId), unref(rangeDays)]),
+    queryFn: () => $fetch<CfdReport>(`${apiRoutes.analyticsCfd(unref(workspaceId), unref(boardId))}?${rangeQs()}`),
     enabled,
     staleTime: 60_000,
   })
 
   const cycleTime = useQuery({
-    queryKey: computed(() => ['analytics', 'cycle-time', unref(workspaceId), unref(boardId)]),
-    queryFn: () => $fetch<CycleTimeReport>(apiRoutes.analyticsCycleTime(unref(workspaceId), unref(boardId))),
+    queryKey: computed(() => ['analytics', 'cycle-time', unref(workspaceId), unref(boardId), unref(rangeDays)]),
+    queryFn: () => $fetch<CycleTimeReport>(`${apiRoutes.analyticsCycleTime(unref(workspaceId), unref(boardId))}?${rangeQs()}`),
     enabled,
     staleTime: 60_000,
   })
 
   const throughput = useQuery({
-    queryKey: computed(() => ['analytics', 'throughput', unref(workspaceId), unref(boardId)]),
-    queryFn: () => $fetch<ThroughputReport>(apiRoutes.analyticsThroughput(unref(workspaceId), unref(boardId))),
+    queryKey: computed(() => ['analytics', 'throughput', unref(workspaceId), unref(boardId), unref(rangeDays)]),
+    queryFn: () => {
+      const period = window.value.days >= 90 ? 'week' : 'day'
+      return $fetch<ThroughputReport>(`${apiRoutes.analyticsThroughput(unref(workspaceId), unref(boardId))}?${rangeQs({ period })}`)
+    },
     enabled,
     staleTime: 60_000,
   })
