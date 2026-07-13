@@ -31,6 +31,7 @@ useSeoMeta({
     <LandingHero />
     <LandingBento />
     <LandingProduct />
+    <LandingSecurity />
     <LandingRoadmap />
     <LandingPilots />
     <LandingCtaForm />

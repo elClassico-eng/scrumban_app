@@ -6,6 +6,7 @@ const open = ref(false)
 const links: Array<[string, string]> = [
   ['Почему Такт', '#why'],
   ['Продукт', '#product'],
+  ['Безопасность', '#security'],
   ['Roadmap', '#roadmap'],
 ]
 
