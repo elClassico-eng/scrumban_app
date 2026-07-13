@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { pageRoutes } from '~/routing'
-
 const props = defineProps<{
   workspaceId: string
   boardId: string
   hasActiveSprint: boolean
 }>()
+
+const route = useRoute()
+const router = useRouter()
+
+function openTask(taskId: string) {
+  router.push({ path: route.path, query: { ...route.query, task: taskId } })
+}
 
 const { digest } = useDailyDigestApi(
   computed(() => props.workspaceId),
@@ -54,15 +59,19 @@ const items = computed<Item[]>(() => {
 
     <ul v-else class="space-y-1 m-0 p-0 list-none">
       <li v-for="(i, idx) in items" :key="idx">
-        <component
-          :is="i.taskId ? 'NuxtLink' : 'div'"
-          :to="i.taskId ? pageRoutes.task(workspaceId, boardId, i.taskId) : undefined"
-          class="flex items-start gap-2 rounded-lg px-2 py-1.5 -mx-2 transition-colors"
-          :class="i.taskId ? 'hover:bg-elevated/60 cursor-pointer' : ''"
+        <button
+          v-if="i.taskId"
+          type="button"
+          class="w-full flex items-start gap-2 rounded-lg px-2 py-1.5 -mx-2 text-left hover:bg-elevated/60 cursor-pointer transition-colors"
+          @click="openTask(i.taskId)"
         >
           <UIcon :name="i.icon" class="size-3.5 shrink-0 mt-0.5" :class="i.tone" />
           <span class="flex-1 min-w-0 text-[12.5px] leading-snug text-default">{{ i.text }}</span>
-        </component>
+        </button>
+        <div v-else class="flex items-start gap-2 px-2 py-1.5 -mx-2">
+          <UIcon :name="i.icon" class="size-3.5 shrink-0 mt-0.5" :class="i.tone" />
+          <span class="flex-1 min-w-0 text-[12.5px] leading-snug text-default">{{ i.text }}</span>
+        </div>
       </li>
     </ul>
   </section>

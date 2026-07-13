@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { SprintActivityItem, SprintActivityKind } from '#shared/types/sprint-activity'
-import { pageRoutes } from '~/routing'
 
 const props = defineProps<{
   workspaceId: string
@@ -36,9 +35,11 @@ function relTime(iso: string): string {
   return `${d} дн`
 }
 
-function itemLink(i: SprintActivityItem) {
-  if (i.taskId) return pageRoutes.task(props.workspaceId, props.boardId, i.taskId)
-  return undefined
+const route = useRoute()
+const router = useRouter()
+
+function openTask(taskId: string) {
+  router.push({ path: route.path, query: { ...route.query, task: taskId } })
 }
 </script>
 
@@ -63,16 +64,21 @@ function itemLink(i: SprintActivityItem) {
       class="space-y-0.5 m-0 p-0 list-none"
     >
       <li v-for="i in items" :key="i.id">
-        <component
-          :is="itemLink(i) ? 'NuxtLink' : 'div'"
-          :to="itemLink(i)"
-          class="flex items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 transition-colors"
-          :class="itemLink(i) ? 'hover:bg-elevated/60 cursor-pointer' : ''"
+        <button
+          v-if="i.taskId"
+          type="button"
+          class="w-full flex items-start gap-2.5 rounded-lg px-2 py-1.5 -mx-2 text-left hover:bg-elevated/60 cursor-pointer transition-colors"
+          @click="openTask(i.taskId)"
         >
           <UIcon :name="META[i.kind].icon" class="size-3.5 shrink-0 mt-0.5" :class="META[i.kind].tone" />
           <span class="flex-1 min-w-0 text-[12.5px] leading-snug text-default">{{ META[i.kind].verb(i) }}</span>
           <span class="shrink-0 text-[10.5px] text-dimmed tabular-nums mt-0.5">{{ relTime(i.atISO) }}</span>
-        </component>
+        </button>
+        <div v-else class="flex items-start gap-2.5 px-2 py-1.5 -mx-2">
+          <UIcon :name="META[i.kind].icon" class="size-3.5 shrink-0 mt-0.5" :class="META[i.kind].tone" />
+          <span class="flex-1 min-w-0 text-[12.5px] leading-snug text-default">{{ META[i.kind].verb(i) }}</span>
+          <span class="shrink-0 text-[10.5px] text-dimmed tabular-nums mt-0.5">{{ relTime(i.atISO) }}</span>
+        </div>
       </li>
     </TransitionGroup>
   </section>
