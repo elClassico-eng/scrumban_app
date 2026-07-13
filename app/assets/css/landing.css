@@ -237,6 +237,79 @@
     font-family: var(--font-mono); font-size: 11px;
     fill: var(--orange); opacity: 0.35;
   }
+
+  /* ── bento ── */
+  & .bento__head { text-align: right; margin-bottom: 44px; }
+  & .bento__head .eyebrow { margin-bottom: 10px; }
+  & .bento__grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: minmax(180px, auto);
+    gap: 18px;
+  }
+  & .bcard {
+    border-radius: var(--r-card);
+    padding: 28px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  & .bcard p { font-size: 14.5px; line-height: 1.55; color: var(--ink-2); }
+  & .bcard h3 { font-size: 19px; }
+  & .bcard__big {
+    font-family: var(--font-display);
+    font-size: clamp(30px, 3.4vw, 46px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  & .bcard__big.mono { font-family: var(--font-mono); font-weight: 500; }
+
+  & .bcard--stat { grid-column: span 7; justify-content: center; }
+  & .bcard--stat .bcard__big { color: var(--orange); }
+  & .bcard--shot { grid-column: span 5; grid-row: span 2; }
+  & .bcard--shot .slot { flex: 1; aspect-ratio: auto; min-height: 220px; }
+  & .bcard--dark { grid-column: span 4; background: var(--dark); border: 0; color: #fff; justify-content: center; }
+  & .bcard--dark p { color: rgba(255, 255, 255, 0.68); }
+  & .bcard--haze { grid-column: span 3; background: linear-gradient(160deg, var(--haze-1), #FFDFC9); border: 0; justify-content: center; }
+  & .bcard--cfd { grid-column: span 5; }
+  & .bcard--badge { grid-column: span 4; flex-direction: row; align-items: center; gap: 20px; }
+  & .bcard--badge p { flex: 1; }
+
+  & .bcfd {
+    position: relative;
+    height: 96px;
+    overflow: hidden;
+    border-radius: 14px;
+    background: var(--haze-2);
+  }
+  & .bcfd i {
+    position: absolute; bottom: 0;
+    border-radius: 60% 40% 0 0 / 100% 100% 0 0;
+  }
+  & .bcfd i:nth-child(1) { left: -10%; width: 120%; height: 88%; background: var(--haze-1); }
+  & .bcfd i:nth-child(2) { left: -6%; width: 112%; height: 60%; background: #FFD2B8; }
+  & .bcfd i:nth-child(3) { left: -2%; width: 104%; height: 32%; background: var(--orange); opacity: 0.55; }
+
+  & .sbadge {
+    position: relative;
+    display: grid; place-items: center;
+    width: 140px; height: 140px;
+    flex: 0 0 140px;
+  }
+  & .sbadge__ring { width: 100%; height: 100%; animation: sbadge-spin 18s linear infinite; }
+  & .sbadge__ring text {
+    font-family: var(--font-mono); font-size: 8.5px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    fill: var(--ink-2);
+  }
+  & .sbadge__center { position: absolute; width: 34px; height: 34px; color: var(--orange); }
+  & .sbadge__center svg { width: 100%; height: 100%; }
+
+  @media (max-width: 880px) {
+    & .bento__head { text-align: left; }
+    & .bento__grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
+    & .bcard--stat, & .bcard--shot, & .bcard--dark, & .bcard--haze, & .bcard--cfd, & .bcard--badge { grid-column: auto; grid-row: auto; }
+  }
 }
 
 @keyframes hl-in {
@@ -245,6 +318,10 @@
 
 @keyframes cone-in {
   from { opacity: 0; }
+}
+
+@keyframes sbadge-spin {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes landing-pulse {
@@ -258,4 +335,5 @@
   .landing .btn { transition: none; }
   .landing .hl { animation: none; background-size: 100% 24%; }
   .landing .cone { animation: none; }
+  .landing .sbadge__ring { animation: none; }
 }
