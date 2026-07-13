@@ -164,6 +164,87 @@
     & .pnav__burger { display: flex; }
     & .pnav__pill { justify-content: space-between; width: 100%; }
   }
+
+  /* ── hero ── */
+  & .hero {
+    position: relative;
+    min-height: 100svh;
+    display: grid; place-items: center;
+    text-align: center;
+    overflow: hidden;
+    padding-top: 90px;
+  }
+  & .hero__content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  & .hero__h1 {
+    margin-top: 26px;
+    font-size: clamp(44px, 7vw, 84px);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  & .hero__sub {
+    margin: 22px auto 0;
+    max-width: 56ch;
+    font-size: clamp(16px, 1.6vw, 19px);
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  & .hero__cta {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    margin-top: 34px;
+  }
+
+  & .hl {
+    background: linear-gradient(0deg, rgba(232, 80, 2, 0.28), rgba(232, 80, 2, 0.28)) no-repeat 0 86% / 0% 24%;
+    animation: hl-in 0.9s var(--ease) 0.9s forwards;
+  }
+
+  /* ── cone (signature) ── */
+  & .cone {
+    position: absolute; inset: auto 0 0 0;
+    height: 62vh;
+    pointer-events: none;
+    animation: cone-in 1.2s var(--ease) both;
+  }
+  & .cone__l {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.85;
+  }
+  & .cone__l--1 {
+    width: 130%; height: 120%; left: -15%; bottom: -70%;
+    background: radial-gradient(ellipse at 50% 0%, var(--haze-1), transparent 65%);
+  }
+  & .cone__l--2 {
+    width: 90%; height: 95%; left: 5%; bottom: -52%;
+    background: radial-gradient(ellipse at 50% 0%, #FFD8C2, transparent 62%);
+    opacity: 0.7;
+  }
+  & .cone__l--3 {
+    width: 60%; height: 70%; left: 20%; bottom: -34%;
+    background: radial-gradient(ellipse at 50% 0%, var(--haze-2), transparent 60%);
+  }
+  & .cone__arcs {
+    position: absolute; inset: auto 0 0 0;
+    width: 100%; height: 100%;
+    color: var(--orange);
+  }
+  & .cone__t {
+    font-family: var(--font-mono); font-size: 11px;
+    fill: var(--orange); opacity: 0.35;
+  }
+}
+
+@keyframes hl-in {
+  to { background-size: 100% 24%; }
+}
+
+@keyframes cone-in {
+  from { opacity: 0; }
 }
 
 @keyframes landing-pulse {
@@ -175,4 +256,6 @@
   .landing .reveal, .landing.is-js .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
   .landing .chip .pulse { animation: none; }
   .landing .btn { transition: none; }
+  .landing .hl { animation: none; background-size: 100% 24%; }
+  .landing .cone { animation: none; }
 }
