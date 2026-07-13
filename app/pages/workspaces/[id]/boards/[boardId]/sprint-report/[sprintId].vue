@@ -11,8 +11,26 @@ const sprintId = computed(() => route.params.sprintId as string)
 const workspaceStore = useWorkspaceStore()
 workspaceStore.setCurrent(wsId.value)
 
+const router = useRouter()
 const { list: workspacesList } = useWorkspacesApi()
+const { list: sprintsList } = useSprintsApi(wsId, bId)
 const { report, generate } = useSprintReportApi(wsId, bId, sprintId)
+
+const tab = ref<'report' | 'retro'>(route.query.tab === 'retro' ? 'retro' : 'report')
+watch(tab, (v) => {
+  router.replace({ query: { ...route.query, tab: v === 'retro' ? 'retro' : undefined } })
+})
+
+const prevSprintId = computed(() => {
+  const all = (sprintsList.data.value?.sprints ?? [])
+    .filter(s => s.state === 'closed' && s.id !== sprintId.value && s.endedAt)
+  const current = (sprintsList.data.value?.sprints ?? []).find(s => s.id === sprintId.value)
+  const currentEnd = current?.endedAt ? new Date(current.endedAt).getTime() : Infinity
+  const prev = all
+    .filter(s => new Date(s.endedAt!).getTime() < currentEnd)
+    .sort((a, b) => new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime())
+  return prev[0]?.id ?? null
+})
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -128,7 +146,7 @@ async function copyJson() {
         </p>
       </div>
       <div class="flex-1" />
-      <template v-if="payload">
+      <template v-if="payload && tab === 'report'">
         <UButton size="sm" variant="outline" color="neutral" icon="i-lucide-download" @click="downloadCsv">
           CSV
         </UButton>
@@ -138,7 +156,32 @@ async function copyJson() {
       </template>
     </div>
 
-    <div v-if="report.isLoading.value" class="text-[12.5px] text-muted py-6">
+    <div class="flex items-center gap-1 border-b border-default">
+      <button
+        v-for="t in [{ key: 'report', label: 'Отчёт', icon: 'i-lucide-file-bar-chart-2' }, { key: 'retro', label: 'Ретроспектива', icon: 'i-lucide-messages-square' }]"
+        :key="t.key"
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-colors cursor-pointer"
+        :class="tab === t.key
+          ? 'border-accent-500 text-highlighted'
+          : 'border-transparent text-muted hover:text-default'"
+        @click="tab = t.key as 'report' | 'retro'"
+      >
+        <UIcon :name="t.icon" class="size-4" />
+        {{ t.label }}
+      </button>
+    </div>
+
+    <SprintRetroBoard
+      v-if="tab === 'retro'"
+      :ws-id="wsId"
+      :board-id="bId"
+      :sprint-id="sprintId"
+      :payload="payload"
+      :prev-sprint-id="prevSprintId"
+    />
+
+    <div v-else-if="report.isLoading.value" class="text-[12.5px] text-muted py-6">
       Загружаем отчёт…
     </div>
 

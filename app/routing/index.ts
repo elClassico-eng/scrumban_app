@@ -118,6 +118,12 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/report`,
   sprintReportGenerate: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/report/generate`,
+  sprintRetro: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro`,
+  sprintRetroNote: (wsId: string, boardId: string, sprintId: string, noteId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro/${noteId}`,
+  sprintRetroConvert: (wsId: string, boardId: string, sprintId: string, noteId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro/${noteId}/convert`,
   forecastAccuracy: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/forecast-accuracy`,
   sprintTasks: (wsId: string, boardId: string, sprintId: string) =>

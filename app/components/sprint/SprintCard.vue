@@ -301,9 +301,14 @@ function onAddClick(e: Event) {
         >
           Отчёт
         </UButton>
-        <UTooltip text="Ретроспектива появится в следующем обновлении">
-          <UButton size="xs" variant="ghost" color="neutral" disabled>Ретроспектива</UButton>
-        </UTooltip>
+        <UButton
+          v-if="reportTo"
+          size="xs"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-messages-square"
+          :to="`${reportTo}?tab=retro`"
+        >Ретроспектива</UButton>
       </template>
     </div>
   </div>
