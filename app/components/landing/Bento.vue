@@ -2,7 +2,7 @@
   <section id="why" class="section bento">
     <div class="wrap">
       <div class="bento__head reveal">
-        <p class="eyebrow">Почему Такт</p>
+        <p class="eyebrow">Преимущества</p>
         <h2>Почему Такт?</h2>
       </div>
 
