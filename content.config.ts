@@ -12,5 +12,15 @@ export default defineContentConfig({
         order: z.number().default(0),
       }),
     }),
+    changelog: defineCollection({
+      type: 'page',
+      source: 'changelog/**',
+      schema: z.object({
+        date: z.string(),
+        area: z.string(),
+        tryRoute: z.string().optional(),
+        docsPath: z.string().optional(),
+      }),
+    }),
   },
 })
