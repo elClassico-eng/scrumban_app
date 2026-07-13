@@ -6,6 +6,7 @@ import { addTaskToSprint } from '../../../../../../../../services/sprints.servic
 import { getWorkspaceForUserOrThrow } from '../../../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../../../utils/auth'
 import { toHttpError } from '../../../../../../../../utils/errors'
+import { publishBoardEvent } from '../../../../../../../../utils/events'
 
 const ParamsSchema = z.object({
   id: z.uuid(),
@@ -17,7 +18,7 @@ const BodySchema = z.object({ taskId: z.uuid() })
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const { id, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { id, boardId, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const body = await readValidatedBody(event, BodySchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
     await addTaskToSprint({
@@ -27,6 +28,7 @@ export default defineEventHandler(async (event) => {
       taskId: body.taskId,
       actorRole: workspace.role,
     })
+    publishBoardEvent({ type: 'sprint.changed', workspaceId: id, boardId, payload: { sprintId, taskId: body.taskId, action: 'task_added' } })
     setResponseStatus(event, 201)
     return { ok: true }
   } catch (err) {

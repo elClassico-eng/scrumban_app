@@ -7,6 +7,7 @@ import { closeSprint } from '../../../../../../../services/sprints.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../../utils/auth'
 import { toHttpError } from '../../../../../../../utils/errors'
+import { publishBoardEvent } from '../../../../../../../utils/events'
 
 const ParamsSchema = z.object({
   id: z.uuid(),
@@ -66,6 +67,7 @@ export default defineEventHandler(async (event) => {
     } catch (err) {
       console.error('sprint report generation on close failed', err)
     }
+    publishBoardEvent({ type: 'sprint.changed', workspaceId: id, boardId, payload: { sprintId, action: 'closed' } })
     return { sprint }
   } catch (err) {
     throw toHttpError(err)
