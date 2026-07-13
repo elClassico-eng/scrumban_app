@@ -4,30 +4,43 @@ import type { CfdReport } from '#shared/types/analytics'
 
 const props = defineProps<{ report: CfdReport | undefined; isLoading: boolean }>()
 
-const colorMode = useColorMode()
-const theme = computed(() => colorMode.value === 'dark' ? 'dark' : undefined)
+const { tokens, flowRamp, textStyle, tooltip, categoryAxis, valueAxis } = useChartTheme()
 
 const option = computed(() => {
   if (!props.report) return {}
   const { columns, points } = props.report
+  const c = tokens.value
   const dates = points.map(p => p.date.slice(0, 10))
-  const series = columns.map(col => ({
+  const ramp = flowRamp(columns.length)
+  const series = columns.map((col, i) => ({
     name: col.name,
     type: 'line',
     stack: 'total',
-    areaStyle: {},
     smooth: 0.2,
     showSymbol: false,
+    lineStyle: { color: c.surface, width: 1.5 },
+    itemStyle: { color: ramp[i] },
+    areaStyle: { color: ramp[i], opacity: 0.9 },
     emphasis: { focus: 'series' },
     data: points.map(p => p.counts[col.id] ?? 0),
   }))
 
   return {
-    tooltip: { trigger: 'axis' },
-    legend: { top: 0, type: 'scroll' },
-    grid: { top: 40, left: 50, right: 20, bottom: 40 },
-    xAxis: { type: 'category', boundaryGap: false, data: dates },
-    yAxis: { type: 'value' },
+    color: ramp,
+    textStyle: textStyle.value,
+    tooltip: { ...tooltip.value, trigger: 'axis' },
+    legend: {
+      top: 0,
+      type: 'scroll',
+      icon: 'roundRect',
+      itemWidth: 10,
+      itemHeight: 10,
+      itemGap: 14,
+      textStyle: { color: c.sub, fontSize: 12, fontFamily: 'inherit' },
+    },
+    grid: { top: 40, left: 40, right: 16, bottom: 32 },
+    xAxis: categoryAxis({ boundaryGap: false, data: dates }),
+    yAxis: valueAxis(),
     series,
   }
 })
@@ -55,6 +68,6 @@ const hasData = computed(() => (props.report?.points.length ?? 0) > 0)
     <div v-else-if="!hasData" class="h-64 flex items-center justify-center text-muted text-sm">
       Пока нет данных для CFD — нужны движения задач по колонкам
     </div>
-    <VChart v-else :option="option" :theme="theme" autoresize class="h-64" />
+    <VChart v-else :option="option" autoresize class="h-64" />
   </UCard>
 </template>

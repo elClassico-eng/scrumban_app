@@ -7,8 +7,7 @@ const props = defineProps<{
   boardId: string
 }>()
 
-const colorMode = useColorMode()
-const theme = computed(() => colorMode.value === 'dark' ? 'dark' : undefined)
+const { tokens, textStyle, tooltip, categoryAxis, valueAxis } = useChartTheme()
 
 const tasksRemaining = ref(10)
 const horizonDays = ref(30)
@@ -63,13 +62,27 @@ const histogramOption = computed(() => {
   const counts = new Map<number, number>()
   for (const t of throughputs) counts.set(t, (counts.get(t) ?? 0) + 1)
   const keys = [...counts.keys()].sort((a, b) => a - b)
+  const c = tokens.value
   return {
-    tooltip: { trigger: 'axis' },
-    grid: { top: 10, left: 40, right: 20, bottom: 30 },
-    xAxis: { type: 'category', data: keys.map(String), name: 'задач/день' },
-    yAxis: { type: 'value', minInterval: 1 },
+    textStyle: textStyle.value,
+    tooltip: {
+      ...tooltip.value,
+      trigger: 'axis',
+      valueFormatter: (v: number) => `${v} дней`,
+    },
+    grid: { top: 10, left: 32, right: 12, bottom: 28 },
+    xAxis: categoryAxis({
+      data: keys.map(String),
+      name: 'задач/день',
+      nameGap: 22,
+      nameTextStyle: { color: c.axisLabel, fontSize: 10 },
+    }),
+    yAxis: valueAxis({ minInterval: 1 }),
     series: [{
       type: 'bar',
+      barMaxWidth: 26,
+      itemStyle: { color: c.accent, borderRadius: [4, 4, 0, 0] },
+      emphasis: { itemStyle: { color: c.accent, opacity: 0.85 } },
       data: keys.map(k => counts.get(k) ?? 0),
     }],
   }
@@ -152,7 +165,7 @@ const histogramOption = computed(() => {
       <p class="text-xs text-muted text-center mb-2">
         Распределение дневной throughput ({{ report.sampleDays }} дней истории, {{ report.iterations }} итераций):
       </p>
-      <VChart :option="histogramOption" :theme="theme" autoresize class="h-32" />
+      <VChart :option="histogramOption" autoresize class="h-32" />
     </template>
   </UCard>
 </template>

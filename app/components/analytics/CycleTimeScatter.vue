@@ -4,42 +4,64 @@ import type { CycleTimeReport } from '#shared/types/analytics'
 
 const props = defineProps<{ report: CycleTimeReport | undefined; isLoading: boolean }>()
 
-const colorMode = useColorMode()
-const theme = computed(() => colorMode.value === 'dark' ? 'dark' : undefined)
+const { tokens, textStyle, tooltip, valueAxis } = useChartTheme()
 
 const option = computed(() => {
   if (!props.report) return {}
   const { samples, stats } = props.report
+  const c = tokens.value
+
+  const mark = (label: string, hours: number, emphasis: boolean) => ({
+    name: label,
+    yAxis: hours / 24,
+    lineStyle: {
+      color: emphasis ? c.accent : c.axisLabel,
+      type: emphasis ? 'solid' as const : 'dashed' as const,
+      width: emphasis ? 1.5 : 1,
+      opacity: emphasis ? 0.9 : 0.7,
+    },
+    label: {
+      formatter: label,
+      position: 'end' as const,
+      color: emphasis ? c.accent : c.axisLabel,
+      fontSize: 11,
+      fontWeight: emphasis ? 600 : 400,
+    },
+  })
 
   const markLines = []
-  if (stats.p50Hours != null) {
-    markLines.push({ name: 'p50', yAxis: stats.p50Hours / 24, label: { formatter: 'p50' } })
-  }
-  if (stats.p85Hours != null) {
-    markLines.push({ name: 'p85', yAxis: stats.p85Hours / 24, label: { formatter: 'p85' } })
-  }
-  if (stats.p95Hours != null) {
-    markLines.push({ name: 'p95', yAxis: stats.p95Hours / 24, label: { formatter: 'p95' } })
-  }
+  if (stats.p50Hours != null) markLines.push(mark('P50', stats.p50Hours, false))
+  if (stats.p85Hours != null) markLines.push(mark('P85', stats.p85Hours, true))
+  if (stats.p95Hours != null) markLines.push(mark('P95', stats.p95Hours, false))
 
   return {
+    textStyle: textStyle.value,
     tooltip: {
+      ...tooltip.value,
       trigger: 'item',
       formatter: (p: { data: [string, number] }) => {
         const [date, days] = p.data
-        return `${new Date(date).toLocaleDateString('ru')}<br/>${days.toFixed(1)} дн`
+        return `${new Date(date).toLocaleDateString('ru')} · <b>${days.toFixed(1)} дн</b>`
       },
     },
-    grid: { top: 20, left: 50, right: 20, bottom: 50 },
-    xAxis: { type: 'time' },
-    yAxis: { type: 'value', name: 'Дни', nameTextStyle: { padding: [0, 0, 0, 30] } },
+    grid: { top: 16, left: 40, right: 28, bottom: 36 },
+    xAxis: {
+      type: 'time',
+      axisLine: { lineStyle: { color: c.axisLine } },
+      axisTick: { show: false },
+      axisLabel: { color: c.axisLabel, fontSize: 11, hideOverlap: true },
+      splitLine: { show: false },
+    },
+    yAxis: valueAxis({ name: 'дни', nameTextStyle: { color: c.axisLabel, fontSize: 11, align: 'right', padding: [0, 4, 0, 0] } }),
     series: [{
       type: 'scatter',
-      symbolSize: 10,
+      symbolSize: 9,
+      itemStyle: { color: c.accent, opacity: 0.55, borderColor: c.surface, borderWidth: 1 },
+      emphasis: { itemStyle: { opacity: 0.95, borderWidth: 1.5 }, scale: 1.3 },
       data: samples.map(s => [s.closedAt, s.cycleHours / 24]),
       markLine: {
         symbol: 'none',
-        lineStyle: { type: 'dashed' },
+        silent: true,
         data: markLines,
       },
     }],
@@ -94,7 +116,7 @@ const hasData = computed(() => (props.report?.samples.length ?? 0) > 0)
           </p>
         </div>
       </div>
-      <VChart :option="option" :theme="theme" autoresize class="h-64" />
+      <VChart :option="option" autoresize class="h-64" />
     </template>
   </UCard>
 </template>
