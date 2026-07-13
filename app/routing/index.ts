@@ -42,6 +42,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/replenishment`,
   boardDaily: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/daily`,
+  boardSprintActivity: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/sprint-activity`,
   sprintPreview: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/sprint-preview`,
 
