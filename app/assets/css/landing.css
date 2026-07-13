@@ -310,6 +310,68 @@
     & .bento__grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
     & .bcard--stat, & .bcard--shot, & .bcard--dark, & .bcard--haze, & .bcard--cfd, & .bcard--badge { grid-column: auto; grid-row: auto; }
   }
+
+  /* ── product ── */
+  & .product__head { max-width: 760px; margin-bottom: 44px; }
+  & .product__head .eyebrow { margin-bottom: 10px; }
+  & .product__sub { margin-top: 16px; font-size: 17px; color: var(--ink-2); }
+  & .product__big {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  & .pcard {
+    min-height: 520px;
+    border-radius: var(--r-card);
+    padding: 36px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  & .pcard--a { background: linear-gradient(160deg, var(--haze-1), #FFDFC9); }
+  & .pcard--b { background: linear-gradient(160deg, var(--haze-2), var(--haze-3)); }
+  & .pcard__num {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    font-family: var(--font-display);
+    font-size: clamp(56px, 6vw, 84px);
+    font-weight: 500; letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+  & .pcard__note { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); }
+  & .pcard__desc { max-width: 46ch; font-size: 15.5px; line-height: 1.6; color: var(--ink-2); }
+  & .pcard__desc--top { margin-top: 6px; }
+  & .pcard .slot { margin-top: auto; }
+
+  & .product__mini {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-top: 18px;
+  }
+  & .mcard {
+    border-radius: 20px;
+    padding: 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  & .mcard__ic {
+    display: grid; place-items: center;
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    background: var(--orange-soft);
+    color: var(--orange);
+    margin-bottom: 6px;
+  }
+  & .mcard h3 { font-size: 16.5px; }
+  & .mcard p { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+
+  @media (max-width: 880px) {
+    & .product__big { grid-template-columns: 1fr; }
+    & .pcard { min-height: 0; }
+    & .product__mini { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    & .product__mini { grid-template-columns: 1fr; }
+  }
 }
 
 @keyframes hl-in {
