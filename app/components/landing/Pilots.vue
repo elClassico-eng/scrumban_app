@@ -1,41 +1,50 @@
 <script setup lang="ts">
-type Perk = { icon: string, t: string, d: string }
+type Perk = { icon: string, title: string, desc: string }
 
 const PERKS: Perk[] = [
-  { icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>', t: 'Ранний доступ', d: 'Полный функционал бесплатно на всё время апробации.' },
-  { icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M16 7h5v5"/></svg>', t: 'Влияние на roadmap', d: 'Ваши кейсы напрямую задают приоритеты разработки.' },
-  { icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v11H7l-3 3V5z"/></svg>', t: 'Прямая связь с автором', d: 'Личный канал: баги, идеи и фичи без бюрократии.' },
+  {
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
+    title: 'Ранний доступ',
+    desc: 'Полный функционал бесплатно на всё время апробации.',
+  },
+  {
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-9"/><path d="M16 7h5v5"/></svg>',
+    title: 'Влияние на roadmap',
+    desc: 'Ваши кейсы напрямую задают приоритеты разработки.',
+  },
+  {
+    icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v11H7l-3 3V5z"/></svg>',
+    title: 'Прямая связь с автором',
+    desc: 'Личный канал: баги, идеи и фичи без бюрократии.',
+  },
 ]
 </script>
 
 <template>
-  <section id="pilots" class="section pilots section--light">
-    <div class="wrap">
-      <div class="pilots__head reveal">
-        <div>
-          <div class="section__tag"><span class="n">05</span> — Пилотам</div>
-          <h2>Команда 30+? <span class="o">Влияйте</span> на продукт.</h2>
+  <section id="pilots" class="section pilots2">
+    <div class="wrap pilots2__grid">
+      <article class="pilots2__invite reveal">
+        <p class="eyebrow">Пилотам</p>
+        <h2>Команда 30+?<br>Влияйте на продукт.</h2>
+        <p class="pilots2__lead">Я ищу пилотные команды, готовые попробовать Такт в реальной работе. Не нужно мигрировать всю команду: достаточно одного проекта и честного «что не так». Ваш фидбек идёт прямо в разработку.</p>
+        <div class="pilots2__perks">
+          <div v-for="p in PERKS" :key="p.title" class="perk">
+            <span class="perk__ic" v-html="p.icon" />
+            <div>
+              <h3>{{ p.title }}</h3>
+              <p>{{ p.desc }}</p>
+            </div>
+          </div>
         </div>
-        <p>Я ищу пилотные команды, готовые попробовать Такт в реальной работе. Не нужно мигрировать всю команду — достаточно одного проекта и честного «что не так». Ваш фидбек идёт прямо в разработку.</p>
-      </div>
+        <a class="btn btn--orange pilots2__cta" href="#cta">Стать пилотной командой</a>
+      </article>
 
-      <div class="pilots2 reveal">
-        <article v-for="(p, i) in PERKS" :key="p.t" class="pstep">
-          <div class="pstep__bignum">{{ i + 1 }}</div>
-          <div class="pstep__ic" v-html="p.icon" />
-          <div class="pstep__k">Что получаете</div>
-          <h3>{{ p.t }}</h3>
-          <p>{{ p.d }}</p>
-        </article>
-      </div>
-
-      <div class="pilots2__foot reveal">
-        <a class="btn btn--primary btn--static" href="#cta">
-          Стать пилотной командой
-          <svg class="arr" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 12 4M6 4h6v6" /></svg>
-        </a>
-        <span class="note">Обсудим формат под вашу команду — без обязательств.</span>
-      </div>
+      <aside class="pilots2__author reveal">
+        <span class="pilots2__photo" aria-hidden="true">ДЧ</span>
+        <p class="eyebrow">О проекте</p>
+        <p class="pilots2__about">Магистерский проект ВолГУ. Такт родился как исследование: можно ли честно соединить ритм Scrum и поток Kanban и подкрепить это математикой планирования. Сейчас – открытая бета и апробация.</p>
+        <p class="pilots2__sign"><b>Даниил Черкесов</b><span>автор · ВолГУ 2027</span></p>
+      </aside>
     </div>
   </section>
 </template>

@@ -441,6 +441,156 @@
     overflow: hidden;
   }
   & .rmap2__bar i { display: block; height: 100%; background: var(--orange); transition: width 0.15s linear; }
+
+  /* ── pilots + author ── */
+  & .pilots2__grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+  & .pilots2__invite {
+    border-radius: var(--r-card);
+    padding: 40px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  & .pilots2__invite .eyebrow { margin-bottom: -6px; }
+  & .pilots2__lead { max-width: 58ch; font-size: 15.5px; line-height: 1.6; color: var(--ink-2); }
+  & .pilots2__perks { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+  & .perk { display: flex; gap: 14px; align-items: flex-start; }
+  & .perk__ic {
+    display: grid; place-items: center;
+    width: 36px; height: 36px; flex: 0 0 36px;
+    border-radius: 50%;
+    background: var(--orange-soft); color: var(--orange);
+  }
+  & .perk h3 { font-size: 15.5px; }
+  & .perk p { font-size: 13.5px; color: var(--ink-2); margin-top: 2px; }
+  & .pilots2__cta { align-self: flex-start; margin-top: 10px; }
+  & .pilots2__author {
+    border-radius: var(--r-card);
+    padding: 40px;
+    background: linear-gradient(160deg, var(--haze-2), var(--haze-3));
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  & .pilots2__photo {
+    display: grid; place-items: center;
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    background: var(--dark); color: #fff;
+    font-family: var(--font-display); font-size: 26px; font-weight: 500;
+    margin-bottom: 8px;
+  }
+  & .pilots2__about { font-size: 15px; line-height: 1.6; color: var(--ink-2); }
+  & .pilots2__sign { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }
+  & .pilots2__sign b { font-size: 15.5px; }
+  & .pilots2__sign span { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+
+  @media (max-width: 880px) {
+    & .pilots2__grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── cta ── */
+  & .cta2__card {
+    position: relative;
+    border-radius: 32px;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    padding: clamp(48px, 7vw, 96px) clamp(24px, 5vw, 72px);
+    text-align: center;
+  }
+  & .cone--cta {
+    height: 100%;
+    opacity: 0.6;
+    animation: none;
+  }
+  & .cta2__content { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  & .cta2__lead { font-size: 16px; color: var(--ink-2); }
+  & .cta2__form { width: min(560px, 100%); display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }
+  & .cta2__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  & .cta2__row input {
+    height: 52px;
+    border: 1px solid var(--line); border-radius: 14px;
+    background: #fff;
+    padding: 0 18px;
+    font-family: var(--font-body); font-size: 15px; color: var(--ink);
+    transition: border-color 0.2s var(--ease);
+  }
+  & .cta2__row input::placeholder { color: var(--ink-3); }
+  & .cta2__row input:focus { outline: none; border-color: var(--orange); }
+  & .cta2__checks { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  & .check2 {
+    height: 38px; padding: 0 16px;
+    border: 1px solid var(--line); border-radius: var(--r-pill);
+    background: #fff; color: var(--ink-2);
+    font-family: var(--font-body); font-size: 13.5px;
+    cursor: pointer;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease);
+  }
+  & .check2.on { background: var(--dark); border-color: var(--dark); color: #fff; }
+  & .cta2__agree {
+    display: flex; gap: 10px; align-items: flex-start;
+    text-align: left;
+    cursor: pointer;
+    font-size: 13px; color: var(--ink-2);
+  }
+  & .cta2__agree-input { position: absolute; opacity: 0; pointer-events: none; }
+  & .cta2__agree .box {
+    display: grid; place-items: center;
+    width: 18px; height: 18px; flex: 0 0 18px;
+    margin-top: 1px;
+    border: 1px solid var(--line); border-radius: 5px;
+    background: #fff; color: #fff;
+    transition: background 0.15s var(--ease);
+  }
+  & .cta2__agree.on .box { background: var(--orange); border-color: var(--orange); }
+  & .cta2__agree-text a { text-decoration: underline; text-underline-offset: 2px; }
+  & .cta2__submit { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 4px; }
+  & .cta2__submit .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  & .cta2__note { font-size: 12.5px; color: var(--ink-3); }
+  & .cta2__note--err { color: var(--orange-press); }
+  & .cta2__done { font-size: 17px; color: var(--ink); padding: 18px 0; }
+
+  @media (max-width: 640px) {
+    & .cta2__row { grid-template-columns: 1fr; }
+  }
+
+  /* ── footer ── */
+  & .footer2 { border-top: 1px solid var(--line); padding: 56px 0 28px; margin-top: clamp(48px, 7vw, 100px); }
+  & .footer2__top {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 32px;
+    padding-bottom: 40px;
+  }
+  & .footer2__logo { font-family: var(--font-wordmark); font-size: 19px; font-weight: 600; }
+  & .footer2__logo i { font-style: normal; color: var(--orange); }
+  & .footer2__brand p { margin-top: 12px; max-width: 40ch; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+  & .footer2__cols { display: flex; gap: 56px; justify-content: flex-end; }
+  & .footer2__col { display: flex; flex-direction: column; gap: 10px; }
+  & .footer2__col h5 {
+    margin: 0 0 4px;
+    font-family: var(--font-mono); font-size: 11.5px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 500;
+  }
+  & .footer2__col a { font-size: 14px; color: var(--ink-2); }
+  & .footer2__col a:hover { color: var(--ink); }
+  & .footer2__bottom {
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--ink-3);
+  }
+  & .footer2__bottom a:hover { color: var(--ink); }
+
+  @media (max-width: 720px) {
+    & .footer2__top { grid-template-columns: 1fr; }
+    & .footer2__cols { justify-content: flex-start; }
+  }
 }
 
 @keyframes hl-in {
