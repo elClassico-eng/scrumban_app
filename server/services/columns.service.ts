@@ -6,9 +6,9 @@
 //
 // Authorisation matrix (enforced here):
 //   list             → viewer+
-//   create / update  → admin+
-//   delete           → admin+ (only when no tasks remain in the column)
-//   reorder          → admin+
+//   create / update  → scrum_master+ (column layout & WIP limits are flow discipline)
+//   delete           → scrum_master+ (only when no tasks remain in the column)
+//   reorder          → scrum_master+
 import { and, eq, sql } from 'drizzle-orm'
 import {
   boardColumns,
@@ -49,7 +49,7 @@ export async function createColumn(input: {
   wipLimit: number | null
   actorRole: WorkspaceMemberRole
 }): Promise<BoardColumn> {
-  requireMinRole(input.actorRole, 'admin')
+  requireMinRole(input.actorRole, 'scrum_master')
   return withTenant(input.workspaceId, async (tx) => {
     // Lock the board row so concurrent column creates on the same board
     // serialize — otherwise both compute the same MAX(position)+1 and collide
@@ -83,7 +83,7 @@ export async function updateColumn(input: {
   patch: { name?: string; wipLimit?: number | null; columnRole?: ColumnRole }
   actorRole: WorkspaceMemberRole
 }): Promise<BoardColumn> {
-  requireMinRole(input.actorRole, 'admin')
+  requireMinRole(input.actorRole, 'scrum_master')
 
   // Strip undefined keys so we never write SQL `NULL` for an unspecified field.
   // (wipLimit is intentionally allowed to be explicit-null — that means "no limit".)
@@ -104,7 +104,7 @@ export async function deleteColumn(input: {
   columnId: string
   actorRole: WorkspaceMemberRole
 }): Promise<void> {
-  requireMinRole(input.actorRole, 'admin')
+  requireMinRole(input.actorRole, 'scrum_master')
   try {
     const result = await withTenant(input.workspaceId, async (tx) =>
       tx.delete(boardColumns).where(eq(boardColumns.id, input.columnId)),
@@ -130,7 +130,7 @@ export async function reorderColumns(input: {
   orderedIds: string[]
   actorRole: WorkspaceMemberRole
 }): Promise<BoardColumn[]> {
-  requireMinRole(input.actorRole, 'admin')
+  requireMinRole(input.actorRole, 'scrum_master')
 
   if (new Set(input.orderedIds).size !== input.orderedIds.length) {
     throw new ValidationError('Список колонок не должен содержать дубликаты')

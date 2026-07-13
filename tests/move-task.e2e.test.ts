@@ -279,7 +279,7 @@ describe('WIP limit enforcement', () => {
     expect(res.status).toBe(422)
   })
 
-  it('non-admin member cannot use force=true even with a reason (403)', async () => {
+  it('member below scrum_master cannot use force=true even with a reason (403)', async () => {
     const owner = await registerUser('owner@example.com')
     const dev = await registerUser('dev@example.com')
     const wsId = await createWorkspace(owner)
@@ -307,6 +307,37 @@ describe('WIP limit enforcement', () => {
       },
     )
     expect(res.status).toBe(403)
+  })
+
+  it('scrum_master can use force=true to override the WIP limit (owns flow discipline)', async () => {
+    const owner = await registerUser('owner@example.com')
+    const sm = await registerUser('sm@example.com')
+    const wsId = await createWorkspace(owner)
+    await addMember(owner, wsId, 'sm@example.com', 'scrum_master')
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    await fetchWithJar(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/columns/${columns.in_progress}`,
+      { method: 'PATCH', body: { wipLimit: 1 } },
+    )
+    await createTaskIn(owner, wsId, boardId, columns.in_progress, 'occupant')
+    const newTaskId = await createTaskIn(owner, wsId, boardId, columns.backlog, 'newcomer')
+
+    const res = await fetchWithJar<{ task: { columnId: string } }>(
+      sm.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks/${newTaskId}/move`,
+      {
+        method: 'POST',
+        body: {
+          toColumnId: columns.in_progress,
+          toPosition: 0,
+          force: true,
+          forceReason: 'flow decision',
+        },
+      },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.task.columnId).toBe(columns.in_progress)
   })
 
   it('expedite task bypasses WIP limit without force', async () => {

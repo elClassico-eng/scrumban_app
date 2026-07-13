@@ -447,8 +447,10 @@ export async function deleteTask(input: {
 // WIP limit (Phase 5 Anderson rules):
 //   - service_class='expedite' ALWAYS bypasses (queue-jumping is the
 //     defining behaviour of the class)
-//   - Any other class + force=true requires actorRole >= admin AND a
-//     non-empty forceReason (logged into task_events.payload for audit)
+//   - Any other class + force=true requires actorRole >= scrum_master AND a
+//     non-empty forceReason (logged into task_events.payload for audit).
+//     The Scrum Master owns flow discipline, so overriding a WIP limit is
+//     their call, not an admin-only escalation.
 //   - Otherwise, WIP-full destination → 422
 const PARKING_POSITION = 1_000_000
 
@@ -465,7 +467,7 @@ export async function moveTask(input: {
   requireMinRole(input.actorRole, 'member')
     
   if (input.force) {
-    requireMinRole(input.actorRole, 'admin')
+    requireMinRole(input.actorRole, 'scrum_master')
     if (!input.forceReason || input.forceReason.trim().length === 0) {
       throw new ValidationError('При force=true нужно указать причину (forceReason)')
     }
@@ -515,7 +517,7 @@ export async function moveTask(input: {
         .where(eq(tasks.columnId, input.toColumnId))
       if ((agg!.n ?? 0) >= toCol.wipLimit) {
         throw new ValidationError(
-          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси админа принудительно переместить её с указанием причины.`,
+          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси Scrum Master принудительно переместить её с указанием причины.`,
         )
       }
     }
