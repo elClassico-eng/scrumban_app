@@ -34,7 +34,7 @@ const BodySchema = z
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const { id, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { id, boardId, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const body = await readValidatedBody(event, BodySchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
 
