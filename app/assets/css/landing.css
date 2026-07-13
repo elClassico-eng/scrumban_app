@@ -372,6 +372,75 @@
   @media (max-width: 560px) {
     & .product__mini { grid-template-columns: 1fr; }
   }
+
+  /* ── status chip ── */
+  & .schip {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 28px; padding: 0 12px;
+    border-radius: var(--r-pill);
+    font-family: var(--font-mono); font-size: 11.5px;
+  }
+  & .schip__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  & .schip--done { background: var(--orange-soft); color: var(--orange); }
+  & .schip--dev { background: var(--haze-3); color: var(--ink-2); }
+  & .schip--plan { border: 1px solid var(--line); color: var(--ink-3); }
+
+  /* ── roadmap carousel ── */
+  & .rmap2__head { text-align: right; margin-bottom: 40px; }
+  & .rmap2__head .eyebrow { margin-bottom: 10px; }
+  & .rmap2__track {
+    display: flex; gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 8px max(var(--gut), calc((100vw - var(--maxw)) / 2 + var(--gut)));
+    scrollbar-width: none;
+  }
+  & .rmap2__track::-webkit-scrollbar { display: none; }
+  & .rmap2__card {
+    flex: 0 0 min(520px, 86vw);
+    scroll-snap-align: start;
+    border-radius: var(--r-card);
+    padding: 32px;
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    min-height: 380px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  & .rmap2__card--haze1 { background: linear-gradient(160deg, var(--haze-1), #FFDFC9); border: 0; }
+  & .rmap2__card--haze2 { background: linear-gradient(160deg, var(--haze-2), var(--haze-3)); border: 0; }
+  & .rmap2__meta { display: flex; align-items: center; justify-content: space-between; }
+  & .rmap2__when { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  & .rmap2__card h3 { font-size: clamp(22px, 2.4vw, 30px); }
+  & .rmap2__card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  & .rmap2__card li {
+    position: relative;
+    padding-left: 18px;
+    font-size: 15px; line-height: 1.5; color: var(--ink-2);
+  }
+  & .rmap2__card li::before {
+    content: "";
+    position: absolute; left: 0; top: 9px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--orange);
+  }
+  & .rmap2__ctrl { display: flex; align-items: center; gap: 10px; margin-top: 28px; }
+  & .rmap2__arrow {
+    display: grid; place-items: center;
+    width: 44px; height: 44px;
+    border: 1px solid var(--line); border-radius: 50%;
+    background: var(--bg-card); color: var(--ink-2);
+    cursor: pointer;
+    transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+  }
+  & .rmap2__arrow:hover { color: var(--ink); border-color: var(--ink-3); }
+  & .rmap2__bar {
+    width: 120px; height: 2px;
+    background: var(--line);
+    border-radius: 2px;
+    margin-left: 8px;
+    overflow: hidden;
+  }
+  & .rmap2__bar i { display: block; height: 100%; background: var(--orange); transition: width 0.15s linear; }
 }
 
 @keyframes hl-in {

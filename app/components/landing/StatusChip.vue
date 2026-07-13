@@ -1,17 +1,17 @@
 <script setup lang="ts">
 type ChipKind = 'done' | 'dev' | 'plan'
 
-defineProps<{ kind: ChipKind, onLight?: boolean }>()
+defineProps<{ kind: ChipKind }>()
 
 const LABELS: Record<ChipKind, string> = {
-  done: 'готово',
+  done: 'работает',
   dev: 'в разработке',
   plan: 'в планах',
 }
 </script>
 
 <template>
-  <span class="chip" :class="[kind, { 'on-light': onLight }]">
-    <span class="ico" />{{ LABELS[kind] }}
+  <span class="schip" :class="`schip--${kind}`">
+    <span class="schip__dot" />{{ LABELS[kind] }}
   </span>
 </template>
