@@ -15,6 +15,8 @@ const props = defineProps<{
   columns: BoardColumn[]
   members: MemberView[]
   canManage: boolean
+  simulatorTo?: string
+  reportTo?: string
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +24,7 @@ const emit = defineEmits<{
   start: []
   close: []
   delete: []
+  edit: []
 }>()
 
 const expanded = ref(false)
@@ -62,23 +65,9 @@ const teamMembers = computed(() => {
   return props.members.filter(m => ids.has(m.userId)).slice(0, 4)
 })
 
-const statusLabel = computed(() => {
-  if (props.sprint.state === 'planned') return 'Запланирован'
-  if (props.sprint.state === 'closed') return 'Закрыт'
-  return 'Активный'
-})
-
-const statusClasses = computed(() => {
-  if (props.sprint.state === 'planned') return 'bg-elevated text-default'
-  if (props.sprint.state === 'closed') return 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-  return 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'
-})
-
-const statusDotClasses = computed(() => {
-  if (props.sprint.state === 'planned') return 'bg-zinc-400'
-  if (props.sprint.state === 'closed') return 'bg-emerald-500'
-  return 'bg-accent-500'
-})
+const statusLabel = computed(() => SPRINT_STATE_LABEL[props.sprint.state])
+const statusClasses = computed(() => SPRINT_STATE_BADGE[props.sprint.state])
+const statusDotClasses = computed(() => SPRINT_STATE_DOT[props.sprint.state])
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
@@ -268,15 +257,44 @@ function onAddClick(e: Event) {
           size="xs"
           variant="outline"
           color="neutral"
+          icon="i-lucide-pencil"
+          @click="emit('edit')"
+        >Редактировать</UButton>
+        <UButton
+          size="xs"
+          variant="outline"
+          color="neutral"
           icon="i-lucide-trash-2"
           @click="emit('delete')"
         >Удалить</UButton>
       </template>
+      <UButton
+        v-if="simulatorTo && sprint.state !== 'closed'"
+        size="xs"
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-flask-conical"
+        :to="simulatorTo"
+      >Симулятор</UButton>
       <template v-else-if="sprint.state === 'closed'">
-        <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-eye">
+        <UButton
+          v-if="reportTo"
+          size="xs"
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-file-bar-chart-2"
+          :to="reportTo"
+        >
           Отчёт
         </UButton>
-        <UButton size="xs" variant="ghost" color="neutral">Ретроспектива</UButton>
+        <UButton
+          v-if="reportTo"
+          size="xs"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-messages-square"
+          :to="`${reportTo}?tab=retro`"
+        >Ретроспектива</UButton>
       </template>
     </div>
   </div>

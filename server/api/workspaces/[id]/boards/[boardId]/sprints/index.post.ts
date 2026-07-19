@@ -6,6 +6,7 @@ import { createSprint } from '../../../../../../services/sprints.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../utils/auth'
 import { toHttpError } from '../../../../../../utils/errors'
+import { publishBoardEvent } from '../../../../../../utils/events'
 
 const ParamsSchema = z.object({ id: z.uuid(), boardId: z.uuid() })
 const BodySchema = z.object({
@@ -14,6 +15,7 @@ const BodySchema = z.object({
   plannedStartAt: z.iso.datetime().optional().nullable(),
   plannedEndAt: z.iso.datetime().optional().nullable(),
   capacity: z.number().int().min(0).max(10_000).nullable().optional(),
+  taskIds: z.array(z.uuid()).max(200).optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -31,8 +33,11 @@ export default defineEventHandler(async (event) => {
       plannedStartAt: body.plannedStartAt ? new Date(body.plannedStartAt) : null,
       plannedEndAt: body.plannedEndAt ? new Date(body.plannedEndAt) : null,
       capacity: body.capacity,
+      taskIds: body.taskIds,
+      actorId: user.id,
       actorRole: workspace.role,
     })
+    publishBoardEvent({ type: 'sprint.changed', workspaceId: id, boardId, payload: { sprintId: sprint.id, action: 'created' } })
     return { sprint }
   } catch (err) {
     throw toHttpError(err)

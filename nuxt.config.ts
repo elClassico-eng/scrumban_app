@@ -62,6 +62,7 @@ export default defineNuxtConfig({
       'JetBrains Mono': [400, 500, 600],
       Geist: [400, 500, 600, 700, 800],
       Unbounded: [500, 600, 700, 800],
+      Onest: [400, 500, 600],
     },
     display: 'swap',
   },

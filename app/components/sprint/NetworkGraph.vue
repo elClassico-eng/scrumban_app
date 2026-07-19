@@ -16,6 +16,10 @@ const nodeMuted = computed(() => (isDark.value ? '#7e7f8a' : '#a1a1aa'))
 const nodeBorder = computed(() => (isDark.value ? '#f4f4f6' : '#000000'))
 const edgeMuted = computed(() => (isDark.value ? '#52525b' : '#d4d4d8'))
 
+const hasEdges = computed(() =>
+  props.tasks.some(t => t.dependsOn.some(dep => props.tasks.some(x => x.taskId === dep))),
+)
+
 const chainEdges = computed(() => {
   const set = new Set<string>()
   for (let i = 0; i < props.criticalPathIds.length - 1; i++) {
@@ -92,9 +96,28 @@ const option = computed(() => {
 
 <template>
   <div class="bg-default border border-default rounded-lg p-4">
-    <VChart :option="option" autoresize class="w-full h-[320px]" />
-    <p class="text-[11px] text-muted m-0 mt-1.5">
-      Слева направо — раннее время старта · <span class="text-accent-600 font-medium">оранжевое</span> — критический путь · размер узла — ожидаемая длительность
-    </p>
+    <template v-if="hasEdges">
+      <VChart :option="option" autoresize class="w-full h-[320px]" />
+      <p class="text-[11px] text-muted m-0 mt-1.5">
+        Слева направо — раннее время старта · <span class="text-accent-600 font-medium">оранжевое</span> — критический путь · размер узла — ожидаемая длительность
+      </p>
+    </template>
+    <template v-else>
+      <div class="space-y-1.5">
+        <div
+          v-for="t in tasks"
+          :key="t.taskId"
+          class="flex items-center gap-2.5 px-2 py-1.5 text-[12.5px]"
+        >
+          <span class="size-1.5 rounded-full shrink-0 bg-zinc-300 dark:bg-zinc-600" />
+          <span class="truncate text-default">{{ t.title }}</span>
+          <span class="ml-auto shrink-0 tabular-nums text-[11px] text-muted">~{{ t.expectedDays }} дн</span>
+        </div>
+      </div>
+      <p class="text-[11px] text-muted m-0 mt-1.5">
+        Между открытыми задачами нет зависимостей — сеть вырождается в параллельный список.
+        Добавьте зависимости, чтобы увидеть граф и критический путь.
+      </p>
+    </template>
   </div>
 </template>

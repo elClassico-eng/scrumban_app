@@ -5,6 +5,7 @@ import { updateSprint } from '../../../../../../services/sprints.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../utils/auth'
 import { toHttpError } from '../../../../../../utils/errors'
+import { publishBoardEvent } from '../../../../../../utils/events'
 
 const ParamsSchema = z.object({
   id: z.uuid(),
@@ -18,6 +19,7 @@ const BodySchema = z
     plannedStartAt: z.iso.datetime().nullable().optional(),
     plannedEndAt: z.iso.datetime().nullable().optional(),
     capacity: z.number().int().min(0).max(10_000).nullable().optional(),
+    datesChangeReason: z.string().trim().max(500).optional(),
   })
   .refine(
     (d) =>
@@ -32,7 +34,7 @@ const BodySchema = z
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const { id, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { id, boardId, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const body = await readValidatedBody(event, BodySchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
 
@@ -40,24 +42,21 @@ export default defineEventHandler(async (event) => {
       workspaceId: id,
       sprintId,
       patch: {
-        name: body.name,
-        goal: body.goal,
-        plannedStartAt:
-          body.plannedStartAt === undefined
-            ? undefined
-            : body.plannedStartAt === null
-              ? null
-              : new Date(body.plannedStartAt),
-        plannedEndAt:
-          body.plannedEndAt === undefined
-            ? undefined
-            : body.plannedEndAt === null
-              ? null
-              : new Date(body.plannedEndAt),
-        ...('capacity' in body ? { capacity: body.capacity } : {}),
+        ...(body.name !== undefined ? { name: body.name } : {}),
+        ...(body.goal !== undefined ? { goal: body.goal } : {}),
+        ...(body.plannedStartAt !== undefined
+          ? { plannedStartAt: body.plannedStartAt === null ? null : new Date(body.plannedStartAt) }
+          : {}),
+        ...(body.plannedEndAt !== undefined
+          ? { plannedEndAt: body.plannedEndAt === null ? null : new Date(body.plannedEndAt) }
+          : {}),
+        ...(body.capacity !== undefined ? { capacity: body.capacity } : {}),
       },
+      datesChangeReason: body.datesChangeReason,
+      actorId: user.id,
       actorRole: workspace.role,
     })
+    publishBoardEvent({ type: 'sprint.changed', workspaceId: id, boardId, payload: { sprintId, action: 'updated' } })
     return { sprint }
   } catch (err) {
     throw toHttpError(err)

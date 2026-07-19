@@ -7,6 +7,7 @@
 //   create    → admin+
 //   update    → admin+
 //   delete    → owner (destructive: cascades to columns + tasks + events)
+//   replenishment / SLE recompute → scrum_master+ (flow discipline, primary persona)
 import { and, eq, sql } from 'drizzle-orm'
 import { boardColorForIndex } from '#shared/constants/board-colors'
 import {
@@ -187,7 +188,7 @@ export async function recordReplenishment(input: {
   boardId: string
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
-  requireMinRole(input.actorRole, 'admin')
+  requireMinRole(input.actorRole, 'scrum_master')
 
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx
@@ -206,14 +207,15 @@ export async function recordReplenishment(input: {
 // Returns the new sle_days value (null when there are too few samples).
 //
 // Reused inside the /sle/recompute endpoint. Anyone calling this needs
-// admin+ — it mutates board configuration that downstream aging-WIP
-// visuals key off of.
+// scrum_master+ — SLE is a flow-discipline metric the primary persona owns,
+// though it mutates board configuration that downstream aging-WIP visuals
+// key off of.
 export async function computeAndStoreSLE(input: {
   workspaceId: string
   boardId: string
   actorRole: WorkspaceMemberRole
 }): Promise<{ sleDays: number | null; sampleCount: number }> {
-  requireMinRole(input.actorRole, 'admin')
+  requireMinRole(input.actorRole, 'scrum_master')
 
   // Lookback window matches the rest of analytics (Phase 3 default).
   const now = new Date()

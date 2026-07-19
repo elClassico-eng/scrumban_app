@@ -1,14 +1,16 @@
-# Scrumban
+# Takt («Такт»)
 
 A lightweight Scrumban platform for Russian-speaking IT teams, with rigorous
 flow analytics and probabilistic forecasting. Built as a master's thesis at
 Volgograd State University.
 
 The product blends Kanban (board, columns, WIP limits, classes of service,
-SLE-driven aging) with Scrum (sprints, multi-assignee tasks, burndown) and
-adds an analytics layer that most trackers leave out: cumulative flow,
-cycle-time percentiles, Monte Carlo sprint forecasting, Little's-Law-based
-WIP recommendations, and flow-aware notifications.
+SLE-driven aging) with Scrum (sprints, ceremonies, multi-assignee tasks,
+burndown) and adds an analytics layer that most trackers leave out:
+cumulative flow, cycle-time percentiles, network-planning forecasts
+(CPM + data-driven PERT + Monte Carlo over the dependency network),
+Little's-Law-based WIP recommendations, forecast calibration against
+actual outcomes, and flow-aware notifications.
 
 ---
 
@@ -21,11 +23,14 @@ WIP recommendations, and flow-aware notifications.
 | 5 | Scrumban-distinct features: classes of service, SLE, aging WIP, pull enforcement, replenishment cadence | ✅ Done |
 | 6 / 6.7 | Hierarchy (subtasks, dependencies, checklists), multi-view, identity, editorial design system | ✅ Done |
 | 7 | Collaboration (comments + mentions, notifications, activity log), flow-aware alerts (SLE breach, replenishment overdue, sprint forecast drop), sprint backend depth (story points, capacity, burndown), sprints + Kanban page redesign | ✅ Done |
-| 8 | Analytics depth & calibration: percentile-based stuck-task alerts, Monte Carlo back-testing, variant analysis, per-CoS analytics, bottleneck detection | 🚧 Next |
-| 9 – 12 | RU integrations, production hardening, identity polish, empirical study | ⏳ Planned |
+| 8 | Network-planning core (CPM, data-driven PERT, Monte Carlo over the dependency network), forecast journal + calibration («прогноз vs факт»), math legibility in UI, public docs site (methodology / math / project, KaTeX) | ✅ Done |
+| 8.5 | Sprint ceremonies & simulation: creation wizard with probabilistic forecast, what-if scenario simulator, lifecycle event trail, close gates with carry-over decisions, immutable sprint reports (CSV/JSON), retro with executable action items, daily digest, activity feed, reports hub, analytics redesign | ✅ Done |
+| 10 | Production deployment: Docker + Caddy on Yandex Cloud, CI push-to-deploy, auth hardening (email verification, password reset, invitations) | ✅ Live |
+| 9, 11 – 12 | RU integrations (GitFlic, Pachca), identity polish, empirical study | ⏳ Planned |
 
-Master branch: 185 tests passing, 22 migrations, ~80 backend endpoints,
-12 schema files. Multi-tenancy enforced via PostgreSQL Row-Level Security.
+Current branch: 326 tests passing, 37 SQL migrations, 124 backend
+endpoints, 20 schema files. Multi-tenancy enforced via PostgreSQL
+Row-Level Security.
 
 ---
 
@@ -41,7 +46,8 @@ Single Nuxt 4 monorepo: `app/` (frontend SPA) + `server/` (Nitro backend) +
 - TypeScript strict
 - Nuxt UI v4 (built on Reka UI) + Tailwind CSS 4
 - Pinia (UI state) + `@tanstack/vue-query` (server state)
-- ECharts for analytics (CFD, scatter, Monte Carlo histogram)
+- ECharts for analytics (CFD, scatter, Monte Carlo histogram, network graph)
+- Nuxt Content + KaTeX — public documentation (methodology, math, project)
 - vuedraggable for drag-and-drop
 
 **Backend (Nitro)**
@@ -134,12 +140,13 @@ scrumban_app/
 │   └── utils/                    ← shared helpers (rbac, format, humanize)
 ├── server/                       ← Nitro backend
 │   ├── api/                      ← HTTP handlers (file routing)
-│   ├── services/                 ← business logic, transactional units
-│   ├── db/schema/                ← Drizzle schema (12 tables)
-│   ├── tasks/                    ← Nitro scheduled tasks (flow-aware alerts)
-│   └── utils/                    ← auth, db (RLS helpers), errors, events
+│   ├── services/                 ← business logic, transactional units (28 files)
+│   ├── db/schema/                ← Drizzle schema (20 files)
+│   ├── tasks/                    ← Nitro scheduled tasks (flow-aware alerts, daily forecast snapshots)
+│   └── utils/                    ← auth, db (RLS helpers), errors, events, network-planning math
 ├── shared/types/                 ← types shared by app and server
-├── drizzle/migrations/           ← SQL migrations (22 files)
+├── content/docs/                 ← public docs site content (Nuxt Content, KaTeX)
+├── drizzle/migrations/           ← SQL migrations (37 files)
 ├── db/init/                      ← PostgreSQL initdb scripts
 ├── caddy/Caddyfile               ← production reverse proxy
 ├── Dockerfile                    ← multi-stage production image
@@ -159,10 +166,14 @@ scrumban_app/
   `app.workspace_id` (and `app.user_id` for cross-workspace data such as
   notifications) before any tenant-scoped query. The `withTenant` /
   `withUser` helpers are the only sanctioned entry points.
-- **Append-only `task_events`** — every meaningful state change writes an
-  event row. This single log feeds the audit timeline, Cumulative Flow,
-  cycle-time analytics, Monte Carlo input, and the upcoming variant /
-  bottleneck analysis in Phase 8.
+- **Append-only event logs** — `task_events` records every meaningful task
+  state change and feeds the audit timeline, Cumulative Flow, cycle-time
+  analytics, and Monte Carlo input; `sprint_events` does the same for the
+  sprint lifecycle (start, date changes with mandatory reason, close with
+  carry-over decisions) and feeds immutable materialized sprint reports.
+- **Forecast calibration** — `forecast_snapshots` captures daily and
+  lifecycle-anchored forecasts, so the analytics page can honestly show
+  how past predictions compared to actual outcomes.
 - **Optimistic UI with toast-undo** — task moves, reassignments, and
   service-class changes apply locally first and commit after a 5-second
   defer window during which the user can undo without an extra dialog.

@@ -12,17 +12,20 @@
 //
 // Once a sprint enters `closed`, its task membership is frozen so velocity
 // and burndown analytics for that sprint stay reproducible.
-import { and, asc, desc, eq, gte, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNull } from 'drizzle-orm'
 import {
+  boards,
+  sprintEvents,
   sprintTasks,
   sprints,
   taskEvents,
   tasks,
   type Sprint,
+  type SprintEventType,
   type SprintState,
   type WorkspaceMemberRole,
 } from '../db/schema'
-import { withTenant } from '../utils/db'
+import { withTenant, type DbTransaction } from '../utils/db'
 import {
   ConflictError,
   ForbiddenError,
@@ -32,6 +35,45 @@ import {
 import { requireMinRole } from '../utils/rbac'
 
 const PG_UNIQUE_VIOLATION = '23505'
+
+async function logSprintEvent(
+  tx: DbTransaction,
+  input: {
+    workspaceId: string
+    sprintId: string
+    eventType: SprintEventType
+    actorId?: string | null
+    payload?: Record<string, unknown>
+  },
+): Promise<void> {
+  await tx.insert(sprintEvents).values({
+    workspaceId: input.workspaceId,
+    sprintId: input.sprintId,
+    eventType: input.eventType,
+    actorId: input.actorId ?? null,
+    payload: input.payload ?? {},
+  })
+}
+
+async function logMembershipEvent(
+  tx: DbTransaction,
+  input: {
+    workspaceId: string
+    taskId: string
+    sprintId: string
+    added: boolean
+    actorId?: string | null
+    extra?: Record<string, unknown>
+  },
+): Promise<void> {
+  await tx.insert(taskEvents).values({
+    workspaceId: input.workspaceId,
+    taskId: input.taskId,
+    eventType: input.added ? 'task_added_to_sprint' : 'task_removed_from_sprint',
+    actorId: input.actorId ?? null,
+    payload: { sprintId: input.sprintId, ...(input.extra ?? {}) },
+  })
+}
 
 export async function listSprints(input: {
   workspaceId: string
@@ -46,6 +88,23 @@ export async function listSprints(input: {
       .where(eq(sprints.boardId, input.boardId))
       .orderBy(desc(sprints.createdAt)),
   )
+}
+
+// Cross-board sprint listing for the workspace-level reports hub.
+// RLS scopes rows to the tenant; we join boards only to carry the board name.
+export async function listWorkspaceSprints(input: {
+  workspaceId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<Array<Sprint & { boardName: string }>> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) => {
+    const rows = await tx
+      .select({ sprint: sprints, boardName: boards.name })
+      .from(sprints)
+      .innerJoin(boards, eq(boards.id, sprints.boardId))
+      .orderBy(asc(boards.name), desc(sprints.createdAt))
+    return rows.map(r => ({ ...r.sprint, boardName: r.boardName }))
+  })
 }
 
 export async function getSprint(input: {
@@ -69,6 +128,8 @@ export async function createSprint(input: {
   plannedStartAt?: Date | null
   plannedEndAt?: Date | null
   capacity?: number | null
+  taskIds?: string[]
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Sprint> {
   requireMinRole(input.actorRole, 'scrum_master')
@@ -81,8 +142,30 @@ export async function createSprint(input: {
     throw new ValidationError('Дата окончания должна быть позже даты начала')
   }
 
-  const [row] = await withTenant(input.workspaceId, async (tx) =>
-    tx
+  const taskIds = [...new Set(input.taskIds ?? [])]
+
+  return withTenant(input.workspaceId, async (tx) => {
+    if (taskIds.length > 0) {
+      const rows = await tx
+        .select({ id: tasks.id, title: tasks.title, boardId: tasks.boardId, closedAt: tasks.closedAt })
+        .from(tasks)
+        .where(inArray(tasks.id, taskIds))
+      if (rows.length !== taskIds.length) {
+        throw new ValidationError('Некоторые задачи не найдены')
+      }
+      const foreign = rows.filter(r => r.boardId !== input.boardId)
+      if (foreign.length > 0) {
+        throw new ValidationError('Все задачи должны принадлежать этой доске')
+      }
+      const closedRows = rows.filter(r => r.closedAt !== null)
+      if (closedRows.length > 0) {
+        throw new ValidationError(
+          `Закрытые задачи нельзя брать в спринт: ${closedRows.map(r => `«${r.title}»`).join(', ')}`,
+        )
+      }
+    }
+
+    const [row] = await tx
       .insert(sprints)
       .values({
         workspaceId: input.workspaceId,
@@ -93,9 +176,25 @@ export async function createSprint(input: {
         plannedEndAt: input.plannedEndAt ?? null,
         capacity: input.capacity ?? null,
       })
-      .returning(),
-  )
-  return row!
+      .returning()
+
+    for (const taskId of taskIds) {
+      await tx.insert(sprintTasks).values({
+        sprintId: row!.id,
+        taskId,
+        workspaceId: input.workspaceId,
+      })
+      await logMembershipEvent(tx, {
+        workspaceId: input.workspaceId,
+        taskId,
+        sprintId: row!.id,
+        added: true,
+        actorId: input.actorId,
+        extra: { reason: 'wizard_create' },
+      })
+    }
+    return row!
+  })
 }
 
 export async function updateSprint(input: {
@@ -108,29 +207,90 @@ export async function updateSprint(input: {
     plannedEndAt?: Date | null
     capacity?: number | null
   }
+  datesChangeReason?: string
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Sprint> {
   requireMinRole(input.actorRole, 'scrum_master')
 
-  const set: Partial<typeof sprints.$inferInsert> & { updatedAt: Date } = {
-    updatedAt: new Date(),
-  }
-  if (input.patch.name !== undefined) set.name = input.patch.name
-  if (input.patch.goal !== undefined) set.goal = input.patch.goal
-  if ('plannedStartAt' in input.patch) set.plannedStartAt = input.patch.plannedStartAt ?? null
-  if ('plannedEndAt' in input.patch) set.plannedEndAt = input.patch.plannedEndAt ?? null
-  if ('capacity' in input.patch) set.capacity = input.patch.capacity ?? null
+  return withTenant(input.workspaceId, async (tx) => {
+    const [current] = await tx
+      .select()
+      .from(sprints)
+      .where(eq(sprints.id, input.sprintId))
+      .for('update')
+    if (!current) throw new NotFoundError('Спринт не найден')
+    if (current.state === 'closed') {
+      throw new ConflictError('Закрытый спринт нельзя редактировать — его история заморожена')
+    }
+    if (
+      current.state === 'active' &&
+      input.patch.goal !== undefined &&
+      input.patch.goal !== current.goal
+    ) {
+      throw new ValidationError('Цель активного спринта фиксирована до его закрытия')
+    }
 
-  const [row] = await withTenant(input.workspaceId, async (tx) =>
-    tx.update(sprints).set(set).where(eq(sprints.id, input.sprintId)).returning(),
-  )
-  if (!row) throw new NotFoundError('Спринт не найден')
+    const ts = (d: Date | null) => d?.getTime() ?? null
+    const startChanging =
+      'plannedStartAt' in input.patch &&
+      ts(input.patch.plannedStartAt ?? null) !== ts(current.plannedStartAt)
+    const endChanging =
+      'plannedEndAt' in input.patch &&
+      ts(input.patch.plannedEndAt ?? null) !== ts(current.plannedEndAt)
+    const datesChanging = startChanging || endChanging
+    const reason = input.datesChangeReason?.trim()
+    if (current.state === 'active' && datesChanging && !reason) {
+      throw new ValidationError('Для переноса дат активного спринта укажите причину')
+    }
 
-  // Belt-and-suspenders: also enforce the date order on update.
-  if (row.plannedStartAt && row.plannedEndAt && row.plannedStartAt >= row.plannedEndAt) {
-    throw new ValidationError('Дата окончания должна быть позже даты начала')
-  }
-  return row
+    const set: Partial<typeof sprints.$inferInsert> & { updatedAt: Date } = {
+      updatedAt: new Date(),
+    }
+    if (input.patch.name !== undefined) set.name = input.patch.name
+    if (input.patch.goal !== undefined) set.goal = input.patch.goal
+    if ('plannedStartAt' in input.patch) set.plannedStartAt = input.patch.plannedStartAt ?? null
+    if ('plannedEndAt' in input.patch) set.plannedEndAt = input.patch.plannedEndAt ?? null
+    if ('capacity' in input.patch) set.capacity = input.patch.capacity ?? null
+
+    const [row] = await tx
+      .update(sprints)
+      .set(set)
+      .where(eq(sprints.id, input.sprintId))
+      .returning()
+    if (!row) throw new NotFoundError('Спринт не найден')
+
+    if (row.plannedStartAt && row.plannedEndAt && row.plannedStartAt >= row.plannedEndAt) {
+      throw new ValidationError('Дата окончания должна быть позже даты начала')
+    }
+
+    if (datesChanging) {
+      await logSprintEvent(tx, {
+        workspaceId: input.workspaceId,
+        sprintId: input.sprintId,
+        eventType: 'dates_changed',
+        actorId: input.actorId,
+        payload: {
+          fromStart: current.plannedStartAt?.toISOString() ?? null,
+          toStart: row.plannedStartAt?.toISOString() ?? null,
+          fromEnd: current.plannedEndAt?.toISOString() ?? null,
+          toEnd: row.plannedEndAt?.toISOString() ?? null,
+          reason: reason ?? null,
+          sprintState: current.state,
+        },
+      })
+    }
+    if ('capacity' in input.patch && (input.patch.capacity ?? null) !== current.capacity) {
+      await logSprintEvent(tx, {
+        workspaceId: input.workspaceId,
+        sprintId: input.sprintId,
+        eventType: 'capacity_changed',
+        actorId: input.actorId,
+        payload: { from: current.capacity, to: row.capacity },
+      })
+    }
+    return row
+  })
 }
 
 export async function deleteSprint(input: {
@@ -148,6 +308,7 @@ export async function deleteSprint(input: {
 export async function startSprint(input: {
   workspaceId: string
   sprintId: string
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Sprint> {
   requireMinRole(input.actorRole, 'scrum_master')
@@ -168,6 +329,16 @@ export async function startSprint(input: {
         .set({ state: 'active', startedAt: new Date(), updatedAt: new Date() })
         .where(eq(sprints.id, input.sprintId))
         .returning()
+      await logSprintEvent(tx, {
+        workspaceId: input.workspaceId,
+        sprintId: input.sprintId,
+        eventType: 'sprint_started',
+        actorId: input.actorId,
+        payload: {
+          plannedStartAt: row!.plannedStartAt?.toISOString() ?? null,
+          plannedEndAt: row!.plannedEndAt?.toISOString() ?? null,
+        },
+      })
       return row!
     } catch (err) {
       // Partial unique index "sprints_one_active_per_board_idx" enforces
@@ -180,26 +351,131 @@ export async function startSprint(input: {
   })
 }
 
+export type CarryOverDecision = 'next_sprint' | 'backlog' | 'keep'
+
 export async function closeSprint(input: {
   workspaceId: string
   sprintId: string
+  actorId?: string
   actorRole: WorkspaceMemberRole
+  goalAchieved?: boolean | null
+  goalComment?: string
+  carryOver?: { taskId: string; decision: CarryOverDecision }[]
 }): Promise<Sprint> {
   requireMinRole(input.actorRole, 'scrum_master')
 
   return withTenant(input.workspaceId, async (tx) => {
-    const [current] = await tx.select().from(sprints).where(eq(sprints.id, input.sprintId))
+    const [current] = await tx
+      .select()
+      .from(sprints)
+      .where(eq(sprints.id, input.sprintId))
+      .for('update')
     if (!current) throw new NotFoundError('Спринт не найден')
     if (current.state === 'closed') {
       throw new ValidationError('Спринт уже закрыт')
     }
+
+    const openRows = await tx
+      .select({ taskId: tasks.id, title: tasks.title })
+      .from(sprintTasks)
+      .innerJoin(tasks, eq(tasks.id, sprintTasks.taskId))
+      .where(and(eq(sprintTasks.sprintId, input.sprintId), isNull(tasks.closedAt)))
+
+    const decisions = new Map(
+      (input.carryOver ?? []).map(c => [c.taskId, c.decision] as const),
+    )
+    const uncovered = openRows.filter(r => !decisions.has(r.taskId))
+    if (uncovered.length > 0) {
+      throw new ValidationError(
+        `Для незакрытых задач нужно решение (в следующий спринт / в бэклог / оставить): ${uncovered
+          .map(r => `«${r.title}»`)
+          .join(', ')}`,
+      )
+    }
+
+    let nextSprint: Sprint | null | undefined
+    const summary = { keep: 0, next_sprint: 0, backlog: 0 }
+
+    for (const row of openRows) {
+      const decision = decisions.get(row.taskId)!
+      summary[decision] += 1
+      if (decision === 'keep') continue
+
+      await tx
+        .delete(sprintTasks)
+        .where(and(eq(sprintTasks.sprintId, input.sprintId), eq(sprintTasks.taskId, row.taskId)))
+      await logMembershipEvent(tx, {
+        workspaceId: input.workspaceId,
+        taskId: row.taskId,
+        sprintId: input.sprintId,
+        added: false,
+        actorId: input.actorId,
+        extra: { reason: decision === 'backlog' ? 'close_to_backlog' : 'close_to_next_sprint' },
+      })
+
+      if (decision === 'next_sprint') {
+        if (nextSprint === undefined) {
+          nextSprint = await findNextPlannedSprint(tx, current.boardId, input.sprintId)
+        }
+        if (!nextSprint) {
+          throw new ValidationError(
+            'На доске нет запланированного спринта — создайте его или выберите другое решение для переноса',
+          )
+        }
+        await tx
+          .insert(sprintTasks)
+          .values({
+            sprintId: nextSprint.id,
+            taskId: row.taskId,
+            workspaceId: input.workspaceId,
+          })
+          .onConflictDoNothing()
+        await logMembershipEvent(tx, {
+          workspaceId: input.workspaceId,
+          taskId: row.taskId,
+          sprintId: nextSprint.id,
+          added: true,
+          actorId: input.actorId,
+          extra: { reason: 'carry_over', fromSprintId: input.sprintId },
+        })
+      }
+    }
+
     const [row] = await tx
       .update(sprints)
       .set({ state: 'closed', endedAt: new Date(), updatedAt: new Date() })
       .where(eq(sprints.id, input.sprintId))
       .returning()
+
+    await logSprintEvent(tx, {
+      workspaceId: input.workspaceId,
+      sprintId: input.sprintId,
+      eventType: 'sprint_closed',
+      actorId: input.actorId,
+      payload: {
+        goalAchieved: input.goalAchieved ?? null,
+        goalComment: input.goalComment?.trim() || null,
+        carryOver: openRows.map(r => ({ taskId: r.taskId, decision: decisions.get(r.taskId)! })),
+        keptCount: summary.keep,
+        movedCount: summary.next_sprint,
+        backlogCount: summary.backlog,
+      },
+    })
     return row!
   })
+}
+
+async function findNextPlannedSprint(
+  tx: DbTransaction,
+  boardId: string,
+  excludeSprintId: string,
+): Promise<Sprint | null> {
+  const rows = await tx
+    .select()
+    .from(sprints)
+    .where(and(eq(sprints.boardId, boardId), eq(sprints.state, 'planned')))
+    .orderBy(asc(sprints.plannedStartAt), asc(sprints.createdAt))
+  return rows.find(r => r.id !== excludeSprintId) ?? null
 }
 
 // Add a task to a sprint. Refuses to mutate a closed sprint so analytics
@@ -210,6 +486,7 @@ export async function addTaskToSprint(input: {
   workspaceId: string
   sprintId: string
   taskId: string
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<void> {
   requireMinRole(input.actorRole, 'member')
@@ -233,6 +510,14 @@ export async function addTaskToSprint(input: {
         taskId: input.taskId,
         workspaceId: input.workspaceId,
       })
+      await logMembershipEvent(tx, {
+        workspaceId: input.workspaceId,
+        taskId: input.taskId,
+        sprintId: input.sprintId,
+        added: true,
+        actorId: input.actorId,
+        extra: { sprintState: sprint.state },
+      })
     } catch (err) {
       if (isPgUniqueViolation(err)) {
         throw new ConflictError('Задача уже добавлена в этот спринт')
@@ -246,6 +531,7 @@ export async function removeTaskFromSprint(input: {
   workspaceId: string
   sprintId: string
   taskId: string
+  actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<void> {
   requireMinRole(input.actorRole, 'member')
@@ -264,6 +550,15 @@ export async function removeTaskFromSprint(input: {
     if ((result.count ?? 0) === 0) {
       throw new NotFoundError('Задача не входит в этот спринт')
     }
+
+    await logMembershipEvent(tx, {
+      workspaceId: input.workspaceId,
+      taskId: input.taskId,
+      sprintId: input.sprintId,
+      added: false,
+      actorId: input.actorId,
+      extra: { sprintState: sprint.state },
+    })
   })
 }
 

@@ -30,6 +30,9 @@ const current = computed(() => {
 
 const collapsed = computed(() => isDesktop.value && uiStore.sidebarCollapsed)
 
+const changelogOpen = ref(false)
+const { hasUnread: hasChangelogUnread } = useChangelog()
+
 const { list: boardsList } = useBoardsApi(computed(() => current.value?.id ?? ''))
 const boards = computed(() => boardsList.data.value?.boards ?? [])
 const activeBoardId = computed(() => (route.params.boardId as string) || null)
@@ -39,6 +42,8 @@ const workspaceLinks = computed(() => {
   return [
     { label: 'Участники', icon: 'i-lucide-users', to: pageRoutes.workspaceMembers(current.value.id) },
     { label: 'Активность', icon: 'i-lucide-activity', to: pageRoutes.workspaceActivity(current.value.id) },
+    { label: 'Отчёты', icon: 'i-lucide-clipboard-list', to: pageRoutes.workspaceReports(current.value.id) },
+    { label: 'Симулятор', icon: 'i-lucide-flask-conical', to: pageRoutes.workspaceSimulator(current.value.id) },
   ]
 })
 
@@ -130,7 +135,27 @@ const manageLinks = computed(() => {
         </template>
       </template>
 
-      <div class="mt-auto pt-2">
+      <div class="mt-auto flex flex-col gap-1 pt-2">
+        <UTooltip text="Что нового" :disabled="!collapsed" :popper="{ placement: 'right' }">
+          <button
+            type="button"
+            :class="[
+              'flex w-full items-center rounded-xl text-sm font-medium transition-colors duration-200',
+              collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+              'text-muted hover:bg-elevated hover:text-default',
+            ]"
+            @click="changelogOpen = true"
+          >
+            <span class="relative shrink-0">
+              <UIcon name="i-lucide-sparkles" class="size-4" />
+              <span
+                v-if="hasChangelogUnread"
+                class="absolute -right-1 -top-1 size-2 rounded-full bg-primary ring-2 ring-default"
+              />
+            </span>
+            <span v-if="!collapsed" class="truncate">Что нового</span>
+          </button>
+        </UTooltip>
         <SidebarNavItem
           to="/docs"
           icon="i-lucide-book-open"
@@ -142,5 +167,6 @@ const manageLinks = computed(() => {
     </nav>
 
     <SidebarUserCard :collapsed="collapsed" />
+    <ChangelogPanel v-model:open="changelogOpen" />
   </aside>
 </template>

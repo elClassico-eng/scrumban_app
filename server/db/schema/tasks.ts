@@ -11,6 +11,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import {
   boolean,
   check,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -72,6 +73,10 @@ export const tasks = pgTable(
     blockedReason: text('blocked_reason'),
     isEpic: boolean('is_epic').notNull().default(false),
     storyPoints: integer('story_points'),
+    // Manual duration estimate in days. When set, the network-planning layer
+    // uses it as the most-likely (M) value instead of the historical median,
+    // scaling O/P proportionally to keep the uncertainty shape.
+    estimateDays: doublePrecision('estimate_days'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -106,6 +111,10 @@ export const taskEventType = pgEnum('task_event_type', [
   'task_archived',
   'task_commented',
   'task_comment_deleted',
+  'task_added_to_sprint',
+  'task_removed_from_sprint',
+  'task_blocked',
+  'task_unblocked',
 ])
 
 export const taskEvents = pgTable(

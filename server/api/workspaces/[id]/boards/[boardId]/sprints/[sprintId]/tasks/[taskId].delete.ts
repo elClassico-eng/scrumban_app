@@ -5,6 +5,7 @@ import { removeTaskFromSprint } from '../../../../../../../../services/sprints.s
 import { getWorkspaceForUserOrThrow } from '../../../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../../../utils/auth'
 import { toHttpError } from '../../../../../../../../utils/errors'
+import { publishBoardEvent } from '../../../../../../../../utils/events'
 
 const ParamsSchema = z.object({
   id: z.uuid(),
@@ -16,14 +17,16 @@ const ParamsSchema = z.object({
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const { id, sprintId, taskId } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { id, boardId, sprintId, taskId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
     await removeTaskFromSprint({
+      actorId: user.id,
       workspaceId: id,
       sprintId,
       taskId,
       actorRole: workspace.role,
     })
+    publishBoardEvent({ type: 'sprint.changed', workspaceId: id, boardId, payload: { sprintId, taskId, action: 'task_removed' } })
     setResponseStatus(event, 204)
     return null
   } catch (err) {

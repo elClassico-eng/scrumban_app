@@ -22,6 +22,7 @@ const emit = defineEmits<{
   'toggle-assignee': [userId: string | null]
   'update:classFilter': [value: ClassFilter]
   'create-task': []
+  'open-daily': []
 }>()
 
 const SWIMLANE_OPTIONS: Array<{ key: SwimlaneMode; label: string }> = [
@@ -80,6 +81,16 @@ const activeCount = computed(() =>
       </button>
 
       <div class="flex-1" />
+
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-default text-muted hover:text-default hover:border-accent-500 text-[13px] font-medium cursor-pointer transition-colors"
+        title="Дейли: повестка дня по доске"
+        @click="emit('open-daily')"
+      >
+        <UIcon name="i-lucide-sunrise" class="size-3.5" />
+        Дейли
+      </button>
 
       <button
         v-if="canCreate"
@@ -213,6 +224,16 @@ const activeCount = computed(() =>
       </button>
 
       <div class="hidden lg:block lg:flex-1" />
+
+      <button
+        type="button"
+        class="hidden lg:inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-default text-muted hover:text-default hover:border-accent-500 text-[13px] font-medium cursor-pointer transition-colors"
+        title="Дейли: повестка дня по доске"
+        @click="emit('open-daily')"
+      >
+        <UIcon name="i-lucide-sunrise" class="size-3.5" />
+        Дейли
+      </button>
 
       <button
         v-if="canCreate"

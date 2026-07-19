@@ -24,6 +24,7 @@ const BodySchema = z
     blockedReason: z.string().max(500).nullable().optional(),
     isEpic: z.boolean().optional(),
     storyPoints: z.number().int().min(0).max(1000).nullable().optional(),
+    estimateDays: z.number().positive().max(365).nullable().optional(),
   })
   .refine(
     (d) =>
@@ -35,7 +36,8 @@ const BodySchema = z
       d.parentTaskId !== undefined ||
       d.blockedReason !== undefined ||
       d.isEpic !== undefined ||
-      d.storyPoints !== undefined,
+      d.storyPoints !== undefined ||
+      d.estimateDays !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -61,6 +63,7 @@ export default defineEventHandler(async (event) => {
         ...('blockedReason' in body ? { blockedReason: body.blockedReason } : {}),
         ...(body.isEpic !== undefined ? { isEpic: body.isEpic } : {}),
         ...('storyPoints' in body ? { storyPoints: body.storyPoints } : {}),
+        ...('estimateDays' in body ? { estimateDays: body.estimateDays } : {}),
       },
       actorId: user.id,
       actorRole: workspace.role,

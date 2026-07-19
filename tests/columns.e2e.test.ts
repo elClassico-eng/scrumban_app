@@ -157,6 +157,22 @@ describe('POST /columns', () => {
     expect(res.status).toBe(403)
   })
 
+  it('scrum_master can create a column (column layout is flow discipline)', async () => {
+    const owner = await registerUser('owner@example.com')
+    const sm = await registerUser('sm@example.com')
+    const wsId = await createWorkspace(owner)
+    await addMember(owner, wsId, 'sm@example.com', 'scrum_master')
+    const boardId = await createBoard(owner, wsId)
+
+    const res = await fetchWithJar<{ column: { name: string } }>(
+      sm.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/columns`,
+      { method: 'POST', body: { name: 'Blocked', columnRole: 'archived', wipLimit: 3 } },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.column.name).toBe('Blocked')
+  })
+
   it('rejects invalid columnRole (400)', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)

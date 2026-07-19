@@ -6,6 +6,7 @@ import { startSprint } from '../../../../../../../services/sprints.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../../utils/auth'
 import { toHttpError } from '../../../../../../../utils/errors'
+import { publishBoardEvent } from '../../../../../../../utils/events'
 
 const ParamsSchema = z.object({
   id: z.uuid(),
@@ -21,6 +22,7 @@ export default defineEventHandler(async (event) => {
     const sprint = await startSprint({
       workspaceId: id,
       sprintId,
+      actorId: user.id,
       actorRole: workspace.role,
     })
     try {
@@ -34,6 +36,7 @@ export default defineEventHandler(async (event) => {
     } catch (err) {
       console.error('forecast snapshot on sprint start failed', err)
     }
+    publishBoardEvent({ type: 'sprint.changed', workspaceId: id, boardId, payload: { sprintId, action: 'started' } })
     return { sprint }
   } catch (err) {
     throw toHttpError(err)

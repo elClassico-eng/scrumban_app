@@ -1,94 +1,70 @@
 <script setup lang="ts">
-type Phase = { cls: 'now' | 'soon' | 'vision', when: string, chip: 'done' | 'dev' | 'plan', title: string, items: string[][] }
+type Phase = { key: string, chip: 'done' | 'dev' | 'plan', when: string, title: string, tone: '' | 'haze1' | 'haze2', items: string[] }
 
 const PHASES: Phase[] = [
-  {
-    cls: 'now', when: 'Сейчас', chip: 'done', title: 'Рабочий продукт',
-    items: [
-      ['Доска, спринты, WIP-лимиты, классы обслуживания'],
-      ['Аналитика потока', ' — CFD, cycle time, throughput'],
-      ['Прогноз сроков', ' — Monte Carlo, CPM/PERT'],
-      ['Real-time (SSE), роли и изоляция данных (RLS)'],
-    ],
-  },
-  {
-    cls: 'soon', when: 'Скоро', chip: 'dev', title: 'Интеграции и полировка',
-    items: [
-      ['Нативные интеграции', ' — GitFlic, Pachca, Yandex Cloud, 1С'],
-      ['Уведомления и автоматизации потока'],
-      ['Редизайн аналитики и онбординг'],
-    ],
-  },
+  { key: 'now', chip: 'done', when: 'Сейчас', title: 'Рабочий продукт', tone: '', items: [
+    'Доска, спринты, WIP-лимиты, классы обслуживания',
+    'Аналитика потока: CFD, cycle time, throughput',
+    'Прогноз сроков: Monte Carlo, CPM/PERT',
+    'Отчёты спринтов, ретроспективы, дейли-дайджест',
+    'Симулятор решений what-if',
+    'Real-time (SSE), роли, изоляция данных (RLS)',
+  ] },
+  { key: 'soon', chip: 'dev', when: 'Скоро', title: 'Интеграции и автоматизации', tone: 'haze1', items: [
+    'GitFlic и Pachca',
+    'Уведомления в мессенджеры',
+    'Автоматизации потока: триггеры от математики',
+  ] },
+  { key: 'later', chip: 'plan', when: 'Дальше', title: 'Экосистема', tone: 'haze2', items: [
+    '1С и Yandex Cloud',
+    'On-prem / self-hosting',
+    'Публичный API',
+  ] },
 ]
 
-const line = ref<HTMLElement | null>(null)
-const fill = ref<HTMLElement | null>(null)
+const track = ref<HTMLElement | null>(null)
+const progress = ref(0)
 
-let raf = 0
-let done = false
-onMounted(() => {
-  const loop = () => {
-    raf = requestAnimationFrame(loop)
-    const l = line.value
-    const f = fill.value
-    if (!l || !f) return
-    const rect = l.getBoundingClientRect()
-    if (!done && rect.top < window.innerHeight * 0.8 && rect.bottom > 0) {
-      done = true
-      const rmap = l.parentElement
-      const phases = rmap ? [...rmap.querySelectorAll<HTMLElement>('.rphase')] : []
-      const first = phases[0]
-      if (first) {
-        const dotCenter = (p: HTMLElement) => {
-          const dot = p.querySelector('.rphase__dot')
-          if (!dot) return 0
-          const r = dot.getBoundingClientRect()
-          return r.top + r.height / 2 - rect.top
-        }
-        const firstY = dotCenter(first)
-        const pending = phases.find(p => !p.classList.contains('now'))
-        const targetY = dotCenter(pending ?? phases[phases.length - 1] ?? first)
-        f.style.top = `${Math.max(0, firstY)}px`
-        f.style.height = `${Math.max(0, targetY - firstY)}px`
-      }
-    }
-  }
-  loop()
-})
-onBeforeUnmount(() => cancelAnimationFrame(raf))
+function onTrackScroll() {
+  const el = track.value
+  if (!el) return
+  const max = el.scrollWidth - el.clientWidth
+  progress.value = max > 0 ? el.scrollLeft / max : 0
+}
+
+function shift(dir: -1 | 1) {
+  track.value?.scrollBy({ left: dir * 540, behavior: 'smooth' })
+}
 </script>
 
 <template>
-  <section id="roadmap" class="section roadmap section--light">
-    <div class="roadmap__glow" />
+  <section id="roadmap" class="section rmap2">
     <div class="wrap">
-      <div class="roadmap__head reveal">
-        <div class="section__tag center"><span class="n">04</span> — Куда движемся</div>
-        <h2>Честный <span class="o">roadmap</span></h2>
+      <div class="rmap2__head reveal">
+        <p class="eyebrow">Куда движемся</p>
+        <h2>Честный roadmap</h2>
       </div>
-
-      <div class="rmap">
-        <div ref="line" class="rmap__spine"><i ref="fill" /></div>
-        <div
-          v-for="(ph, i) in PHASES" :key="ph.cls"
-          class="rphase reveal" :class="ph.cls" :style="{ transitionDelay: `${i * 0.1}s` }"
-        >
-          <div class="rphase__dot" />
-          <div class="rphase__meta">
-            <div class="rphase__when">{{ ph.when }}</div>
-            <div class="rphase__chip"><LandingStatusChip :kind="ph.chip" /></div>
-          </div>
-          <div class="rphase__main">
-            <h3 class="rphase__title">{{ ph.title }}</h3>
-            <div class="rphase__items">
-              <div v-for="(it, j) in ph.items" :key="j" class="rphase__item">
-                <span class="pico" />
-                <span><b>{{ it[0] }}</b>{{ it[1] || '' }}</span>
-              </div>
-            </div>
-          </div>
+    </div>
+    <div ref="track" class="rmap2__track" @scroll.passive="onTrackScroll">
+      <article v-for="ph in PHASES" :key="ph.key" class="rmap2__card" :class="ph.tone && `rmap2__card--${ph.tone}`">
+        <div class="rmap2__meta">
+          <span class="rmap2__when">{{ ph.when }}</span>
+          <LandingStatusChip :kind="ph.chip" />
         </div>
-      </div>
+        <h3>{{ ph.title }}</h3>
+        <ul>
+          <li v-for="it in ph.items" :key="it">{{ it }}</li>
+        </ul>
+      </article>
+    </div>
+    <div class="wrap rmap2__ctrl">
+      <button class="rmap2__arrow" aria-label="Назад" @click="shift(-1)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8H3M7 4 3 8l4 4" /></svg>
+      </button>
+      <button class="rmap2__arrow" aria-label="Вперёд" @click="shift(1)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+      </button>
+      <div class="rmap2__bar"><i :style="{ width: `${8 + progress * 92}%` }" /></div>
     </div>
   </section>
 </template>

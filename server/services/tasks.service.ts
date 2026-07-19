@@ -226,6 +226,7 @@ export async function updateTaskFields(input: {
     blockedReason?: string | null
     isEpic?: boolean
     storyPoints?: number | null
+    estimateDays?: number | null
   }
   actorId?: string
   actorRole: WorkspaceMemberRole
@@ -253,6 +254,7 @@ export async function updateTaskFields(input: {
   }
   if (input.patch.isEpic !== undefined) set.isEpic = input.patch.isEpic
   if ('storyPoints' in input.patch) set.storyPoints = input.patch.storyPoints ?? null
+  if ('estimateDays' in input.patch) set.estimateDays = input.patch.estimateDays ?? null
 
   // Parent change needs cycle + same-board validation. Run it inside the
   // same transaction as the UPDATE so check and write are atomic — a
@@ -267,7 +269,12 @@ export async function updateTaskFields(input: {
       await validateParentAssignment(tx, input.taskId, newParentId)
     }
     const [prev] = await tx
-      .select({ assigneeId: tasks.assigneeId, title: tasks.title, boardId: tasks.boardId })
+      .select({
+        assigneeId: tasks.assigneeId,
+        title: tasks.title,
+        boardId: tasks.boardId,
+        blockedReason: tasks.blockedReason,
+      })
       .from(tasks)
       .where(eq(tasks.id, input.taskId))
     if (!prev) throw new NotFoundError('Задача не найдена')
@@ -278,6 +285,22 @@ export async function updateTaskFields(input: {
       .where(eq(tasks.id, input.taskId))
       .returning()
     if (!updated) throw new NotFoundError('Задача не найдена')
+
+    if ('blockedReason' in input.patch) {
+      const wasBlocked = prev.blockedReason !== null
+      const isBlocked = updated.blockedReason !== null
+      if (wasBlocked !== isBlocked) {
+        await tx.insert(taskEvents).values({
+          workspaceId: input.workspaceId,
+          taskId: input.taskId,
+          eventType: isBlocked ? 'task_blocked' : 'task_unblocked',
+          actorId: input.actorId ?? null,
+          payload: isBlocked
+            ? { reason: updated.blockedReason }
+            : { previousReason: prev.blockedReason },
+        })
+      }
+    }
 
     const assignmentChanged =
       'assigneeId' in input.patch && updated.assigneeId !== prev.assigneeId
@@ -424,8 +447,10 @@ export async function deleteTask(input: {
 // WIP limit (Phase 5 Anderson rules):
 //   - service_class='expedite' ALWAYS bypasses (queue-jumping is the
 //     defining behaviour of the class)
-//   - Any other class + force=true requires actorRole >= admin AND a
-//     non-empty forceReason (logged into task_events.payload for audit)
+//   - Any other class + force=true requires actorRole >= scrum_master AND a
+//     non-empty forceReason (logged into task_events.payload for audit).
+//     The Scrum Master owns flow discipline, so overriding a WIP limit is
+//     their call, not an admin-only escalation.
 //   - Otherwise, WIP-full destination → 422
 const PARKING_POSITION = 1_000_000
 
@@ -442,7 +467,7 @@ export async function moveTask(input: {
   requireMinRole(input.actorRole, 'member')
     
   if (input.force) {
-    requireMinRole(input.actorRole, 'admin')
+    requireMinRole(input.actorRole, 'scrum_master')
     if (!input.forceReason || input.forceReason.trim().length === 0) {
       throw new ValidationError('При force=true нужно указать причину (forceReason)')
     }
@@ -492,7 +517,7 @@ export async function moveTask(input: {
         .where(eq(tasks.columnId, input.toColumnId))
       if ((agg!.n ?? 0) >= toCol.wipLimit) {
         throw new ValidationError(
-          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси админа принудительно переместить её с указанием причины.`,
+          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси Scrum Master принудительно переместить её с указанием причины.`,
         )
       }
     }

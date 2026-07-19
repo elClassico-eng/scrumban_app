@@ -254,7 +254,7 @@ export type CycleSample = {
 }
 
 export type EstimateSource = {
-  kind: 'story_points_bucket' | 'board_global'
+  kind: 'story_points_bucket' | 'board_global' | 'manual'
   sampleCount: number
 }
 
@@ -306,4 +306,63 @@ export function buildEstimateCatalog(samples: CycleSample[]): EstimateCatalog {
       return null
     },
   }
+}
+export type NetworkChange =
+  | { type: 'exclude'; id: string }
+  | { type: 'setEstimate'; id: string; estimate: PertEstimate }
+  | { type: 'removeEdge'; blockerId: string; blockedId: string }
+  | { type: 'addEdge'; blockerId: string; blockedId: string }
+
+export function applyChangesToNetwork(nodes: NetworkNode[], changes: NetworkChange[]): NetworkNode[] {
+  let result = nodes.map(n => ({ ...n, dependsOn: [...n.dependsOn] }))
+  for (const c of changes) {
+    if (c.type === 'exclude') {
+      result = result.filter(n => n.id !== c.id)
+      for (const n of result) n.dependsOn = n.dependsOn.filter(d => d !== c.id)
+    }
+    else if (c.type === 'setEstimate') {
+      const node = result.find(n => n.id === c.id)
+      if (node) node.estimate = c.estimate
+    }
+    else if (c.type === 'removeEdge') {
+      const node = result.find(n => n.id === c.blockedId)
+      if (node) node.dependsOn = node.dependsOn.filter(d => d !== c.blockerId)
+    }
+    else {
+      const node = result.find(n => n.id === c.blockedId)
+      const blockerExists = result.some(n => n.id === c.blockerId)
+      if (node && blockerExists && !node.dependsOn.includes(c.blockerId)) {
+        node.dependsOn.push(c.blockerId)
+      }
+    }
+  }
+  return result
+}
+
+export function scaleEstimateToM(base: PertEstimate, m: number): PertEstimate {
+  if (base.mostLikelyDays <= 0) {
+    return { optimisticDays: m, mostLikelyDays: m, pessimisticDays: m }
+  }
+  const k = m / base.mostLikelyDays
+  return {
+    optimisticDays: base.optimisticDays * k,
+    mostLikelyDays: m,
+    pessimisticDays: base.pessimisticDays * k,
+  }
+}
+
+export function detectCycle(nodes: NetworkNode[]): boolean {
+  const byId = new Map(nodes.map(n => [n.id, n]))
+  const state = new Map<string, 1 | 2>()
+  const visit = (id: string): boolean => {
+    if (state.get(id) === 1) return true
+    if (state.get(id) === 2) return false
+    state.set(id, 1)
+    for (const dep of byId.get(id)?.dependsOn ?? []) {
+      if (byId.has(dep) && visit(dep)) return true
+    }
+    state.set(id, 2)
+    return false
+  }
+  return nodes.some(n => visit(n.id))
 }

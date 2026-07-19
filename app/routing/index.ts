@@ -13,8 +13,13 @@ export const apiRoutes = {
   authResetPasswordStatus: (token: string) => `/api/auth/password/reset/${token}`,
 
   usersMe: '/api/users/me',
+  usersDismissHint: '/api/users/me/dismiss-hint',
+  usersChangelogSeen: '/api/users/me/changelog-seen',
 
   healthz: '/api/healthz',
+
+  sandboxSimulatorNetwork: '/api/sandbox/simulator/network',
+  sandboxSimulatorSimulate: '/api/sandbox/simulator/simulate',
 
   workspaces: '/api/workspaces',
   workspace: (id: string) => `/api/workspaces/${id}`,
@@ -36,6 +41,12 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sle/recompute`,
   boardReplenishment: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/replenishment`,
+  boardDaily: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/daily`,
+  boardSprintActivity: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/sprint-activity`,
+  sprintPreview: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/sprint-preview`,
 
   columns: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/columns`,
   column: (wsId: string, boardId: string, columnId: string) =>
@@ -100,6 +111,24 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/network`,
   sprintForecastHistory: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/forecast-history`,
+  sprintScenarios: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/scenarios`,
+  sprintScenario: (wsId: string, boardId: string, sprintId: string, scenarioId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/scenarios/${scenarioId}`,
+  sprintScenarioSimulate: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/scenarios/simulate`,
+  sprintScenarioApply: (wsId: string, boardId: string, sprintId: string, scenarioId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/scenarios/${scenarioId}/apply`,
+  sprintReport: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/report`,
+  sprintReportGenerate: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/report/generate`,
+  sprintRetro: (wsId: string, boardId: string, sprintId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro`,
+  sprintRetroNote: (wsId: string, boardId: string, sprintId: string, noteId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro/${noteId}`,
+  sprintRetroConvert: (wsId: string, boardId: string, sprintId: string, noteId: string) =>
+    `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro/${noteId}/convert`,
   forecastAccuracy: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/forecast-accuracy`,
   sprintTasks: (wsId: string, boardId: string, sprintId: string) =>
@@ -123,6 +152,8 @@ export const apiRoutes = {
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
 
   workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
+
+  workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
 
   workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
 
@@ -154,6 +185,8 @@ export const pageRoutes = {
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
   workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
   workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
+  workspaceReports: (id: string) => `/workspaces/${id}/reports`,
+  workspaceSimulator: (id: string) => `/workspaces/${id}/simulator`,
 
   boards: (wsId: string) => `/workspaces/${wsId}/boards`,
   board: (wsId: string, boardId: string) => `/workspaces/${wsId}/boards/${boardId}`,
@@ -161,6 +194,11 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/analytics`,
   boardSprints: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
+  sprintSimulator: (wsId: string, boardId: string, sprintId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/simulator/${sprintId}`,
+  sprintReportPage: (wsId: string, boardId: string, sprintId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/sprint-report/${sprintId}`,
+  simulatorDemo: (wsId: string) => `/workspaces/${wsId}/simulator/demo`,
   boardCalendar: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/calendar`,
   boardTimeline: (wsId: string, boardId: string) =>

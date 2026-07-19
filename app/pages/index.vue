@@ -20,22 +20,21 @@ useSeoMeta({
   ogTitle: 'Такт — Scrumban-доска с прогнозом сроков',
   ogDescription: 'Спринты задают ритм, аналитика потока — предсказуемость, а сроки спринта считает математика, а не интуиция. Для IT-команд от 30 человек.',
   ogUrl: 'https://takt34.tech/',
-  ogImage: 'https://takt34.tech/landing/hero-scene.jpg',
+  ogImage: 'https://takt34.tech/landing/board.webp',
   ogLocale: 'ru_RU',
 })
 </script>
 
 <template>
   <div ref="root" class="landing">
-    <div class="grain" />
     <LandingNav />
     <LandingHero />
-    <LandingManifesto />
-    <LandingWhySection />
-    <LandingWhatWorks />
+    <LandingBento />
+    <LandingProduct />
+    <LandingForecastFlow />
+    <LandingSecurity />
     <LandingRoadmap />
     <LandingPilots />
-    <LandingAbout />
     <LandingCtaForm />
     <LandingFooter />
   </div>

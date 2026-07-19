@@ -225,6 +225,48 @@
       "when": 1783019736961,
       "tag": "0031_vengeful_matthew_murdock",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1783630258239,
+      "tag": "0032_past_war_machine",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1783701432472,
+      "tag": "0033_wooden_tyger_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1783886719657,
+      "tag": "0034_massive_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1783891951236,
+      "tag": "0035_glamorous_doctor_faustus",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1783892828793,
+      "tag": "0036_cute_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1783966818913,
+      "tag": "0037_big_winter_soldier",
+      "breakpoints": true
     }
   ]
 }

@@ -144,7 +144,7 @@ scrumban_app/
 
 Минимальный когерентный набор (каждая в своей папке `docs/uml/NN-*/`):
 
-1. **use-case** — одна общая (per-role диаграммы заменены RBAC-матрицей в `11-non-functional.md`).
+1. **use-case** — одна общая (`use-case.puml`) + **6 per-role диаграмм** (`01-use-case/per-role/`: anonymous, viewer, member, scrum-master, admin, owner; .puml+.png+.svg) + RBAC-матрица (`permission-matrix.md`). Per-role пересозданы 18.05.2026. Модель прав приведена в соответствие с кодом 03.07.2026 (см. COMPACT: RBAC align — SM владеет колонками/WIP/SLE/replenishment/force-move). **Источник истины прав** — `server/utils/rbac.ts` + `requireMinRole` в сервисах, диаграммы под него, не наоборот.
 2. **class** — доменная модель.
 3. **package** — модульная организация `app/` + `server/` + `shared/` (TBD, следующая задача после UML-cleanup).
 4. **component** — архитектура системы (Current).
@@ -162,6 +162,10 @@ scrumban_app/
 ## Обновление COMPACT.md
 
 После каждой значимой работы (новая секция дизайна, новый spec, диаграмма, plan) — обновить `COMPACT.md`, секции «Что сделано» и «Что дальше».
+
+## Журнал изменений (changelog)
+
+При мерже фичевой ветки — добавить запись `content/changelog/YYYY-MM-DD-slug.md` (пользовательский тон, не commit-стиль; опц. `tryRoute` без workspace-префикса + `docsPath`). При крупной вехе — обновить публичную страницу `content/docs/project/changelog.md`. In-app журнал: пункт «Что нового» в сайдбаре + панель; «прочитанность» — метка `users.changelog_seen_at`.
 
 ## Платформа и инструменты
 

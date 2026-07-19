@@ -31,6 +31,10 @@ const EVENT_ICON: Record<TaskEventType, string> = {
   task_archived: 'i-lucide-archive',
   task_commented: 'i-lucide-message-square',
   task_comment_deleted: 'i-lucide-message-square-off',
+  task_added_to_sprint: 'i-lucide-circle-plus',
+  task_removed_from_sprint: 'i-lucide-circle-minus',
+  task_blocked: 'i-lucide-octagon-x',
+  task_unblocked: 'i-lucide-octagon',
 }
 
 function actorMember(actorId: string | null) {

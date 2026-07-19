@@ -16,11 +16,13 @@ const props = defineProps<{
   members: MemberView[]
   burndown: BurndownReport | null
   canManage: boolean
+  simulatorTo?: string
 }>()
 
 defineEmits<{
   'add-task': []
   close: []
+  edit: []
 }>()
 
 const columnById = computed(() => {
@@ -136,6 +138,7 @@ const sprintGoals = computed(() => {
         <UDropdownMenu
           v-if="canManage"
           :items="[
+            { label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => $emit('edit') },
             { label: 'Завершить спринт', icon: 'i-lucide-check-square', onSelect: () => $emit('close') },
           ]"
         >
@@ -315,6 +318,17 @@ const sprintGoals = computed(() => {
       <div v-if="canManage" class="flex flex-col gap-2 mt-auto">
         <UButton block size="sm" icon="i-lucide-plus" @click="$emit('add-task')">
           Добавить задачу
+        </UButton>
+        <UButton
+          v-if="simulatorTo"
+          block
+          size="sm"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-flask-conical"
+          :to="simulatorTo"
+        >
+          Симулятор решений
         </UButton>
         <UButton block size="sm" variant="outline" color="neutral" icon="i-lucide-check-square" @click="$emit('close')">
           Завершить спринт

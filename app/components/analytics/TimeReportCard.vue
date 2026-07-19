@@ -7,8 +7,7 @@ const props = defineProps<{
   boardId: MaybeRef<string>
 }>()
 
-const colorMode = useColorMode()
-const theme = computed(() => colorMode.value === 'dark' ? 'dark' : undefined)
+const { tokens, textStyle, tooltip, categoryAxis, valueAxis } = useChartTheme()
 
 const wsId = computed(() => unref(props.workspaceId))
 const bId = computed(() => unref(props.boardId))
@@ -30,17 +29,21 @@ const barOption = computed(() => {
   const rows = report.value?.byUser ?? []
   if (rows.length === 0) return {}
   const sorted = [...rows].sort((a, b) => b.totalSeconds - a.totalSeconds)
+  const c = tokens.value
   return {
-    tooltip: { trigger: 'axis', formatter: (params: Array<{ name: string; value: number }>) =>
-      params[0] ? `${params[0].name}: ${formatDuration(params[0].value)}` : ''
+    textStyle: textStyle.value,
+    tooltip: { ...tooltip.value, trigger: 'axis', formatter: (params: Array<{ name: string; value: number }>) =>
+      params[0] ? `${params[0].name}: <b>${formatDuration(params[0].value)}</b>` : ''
     },
-    grid: { top: 10, left: 10, right: 60, bottom: 10, containLabel: true },
-    xAxis: { type: 'value', axisLabel: { formatter: (v: number) => formatDuration(v) } },
-    yAxis: { type: 'category', data: sorted.map(r => resolveDisplayName(r.userId)) },
+    grid: { top: 10, left: 10, right: 56, bottom: 6, containLabel: true },
+    xAxis: valueAxis({ axisLabel: { color: c.axisLabel, fontSize: 11, formatter: (v: number) => formatDuration(v) } }),
+    yAxis: categoryAxis({ data: sorted.map(r => resolveDisplayName(r.userId)) }),
     series: [{
       type: 'bar',
+      barMaxWidth: 22,
       data: sorted.map(r => r.totalSeconds),
-      itemStyle: { color: '#E85002' },
+      itemStyle: { color: c.accent, borderRadius: [0, 4, 4, 0] },
+      emphasis: { itemStyle: { color: c.accent, opacity: 0.85 } },
     }],
   }
 })
@@ -68,7 +71,7 @@ const hasSprintData = computed(() => (report.value?.bySprint.length ?? 0) > 0)
     </div>
 
     <template v-else>
-      <VChart v-if="hasUserData" :option="barOption" :theme="theme" autoresize class="h-48 mb-4" />
+      <VChart v-if="hasUserData" :option="barOption" autoresize class="h-48 mb-4" />
 
       <div v-if="hasSprintData" class="border-t border-default pt-3 space-y-1.5">
         <p class="text-xs text-muted mb-2">По спринтам</p>

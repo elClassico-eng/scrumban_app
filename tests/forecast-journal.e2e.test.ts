@@ -198,7 +198,7 @@ describe('forecast snapshots anchors', () => {
     const res = await fetchWithJar(
       owner.jar,
       `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`,
-      { method: 'POST' },
+      { method: 'POST', body: { carryOver: [{ taskId: t2, decision: 'keep' }] } },
     )
     expect(res.status).toBe(200)
 

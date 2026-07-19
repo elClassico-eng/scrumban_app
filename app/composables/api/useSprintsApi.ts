@@ -6,6 +6,7 @@ import type {
   SprintResponse,
   CreateSprintInput,
   UpdateSprintInput,
+  CloseSprintInput,
 } from '#shared/types/sprint'
 
 export function useSprintsApi(workspaceId: MaybeRef<string>, boardId: MaybeRef<string>) {
@@ -52,11 +53,15 @@ export function useSprintsApi(workspaceId: MaybeRef<string>, boardId: MaybeRef<s
   })
 
   const close = useMutation({
-    mutationFn: (sprintId: string) =>
+    mutationFn: ({ sprintId, ...input }: { sprintId: string } & CloseSprintInput) =>
       $fetch<SprintResponse>(apiRoutes.sprintClose(unref(workspaceId), unref(boardId), sprintId), {
         method: 'POST',
+        body: input,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKey.value })
+      qc.invalidateQueries({ queryKey: ['sprint-memberships', unref(workspaceId), unref(boardId)] })
+    },
   })
 
   return { queryKey, list, create, update, remove, start, close }

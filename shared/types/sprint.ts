@@ -20,6 +20,10 @@ export interface SprintsListResponse {
   sprints: Sprint[]
 }
 
+export type WorkspaceSprintSummary = Sprint & { boardName: string }
+
+export type WorkspaceSprintsResponse = { sprints: WorkspaceSprintSummary[] }
+
 export interface SprintResponse {
   sprint: Sprint
 }
@@ -30,6 +34,7 @@ export interface CreateSprintInput {
   plannedStartAt?: string | null
   plannedEndAt?: string | null
   capacity?: number | null
+  taskIds?: string[]
 }
 
 export interface UpdateSprintInput {
@@ -38,6 +43,15 @@ export interface UpdateSprintInput {
   plannedStartAt?: string | null
   plannedEndAt?: string | null
   capacity?: number | null
+  datesChangeReason?: string
+}
+
+export type CarryOverDecision = 'next_sprint' | 'backlog' | 'keep'
+
+export type CloseSprintInput = {
+  goalAchieved?: boolean | null
+  goalComment?: string
+  carryOver?: { taskId: string; decision: CarryOverDecision }[]
 }
 
 export interface AddTaskToSprintInput {
@@ -57,3 +71,37 @@ export interface BurndownReport {
   doneSp: number
   points: BurndownPoint[]
 }
+export type SprintPreviewRisk =
+  | { type: 'unestimated'; taskIds: string[] }
+  | { type: 'external_dependency'; taskId: string; blockerTaskId: string; blockerTitle: string }
+
+export type SprintPreviewReport =
+  | {
+      ok: true
+      horizonDays: number | null
+      taskCount: number
+      edgeCount: number
+      totalStoryPoints: number
+      tasks: import('./network').NetworkTaskView[]
+      criticalPathIds: string[]
+      pert: {
+        expectedDurationDays: number
+        sigmaDays: number
+        probabilityWithinHorizon: number | null
+      }
+      simulation: {
+        iterations: number
+        p50Days: number
+        p85Days: number
+        p95Days: number
+        probabilityWithinHorizon: number | null
+      }
+      risks: SprintPreviewRisk[]
+    }
+  | {
+      ok: false
+      reason: 'insufficient_data'
+      closedSamples: number
+      requiredSamples: number
+      risks: SprintPreviewRisk[]
+    }

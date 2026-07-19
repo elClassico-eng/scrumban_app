@@ -2,7 +2,7 @@
 // Normalises email to lowercase for predictable lookups, and translates
 // PostgreSQL unique-violation errors into a domain ConflictError so the
 // HTTP layer can map it to 409 without sniffing pg error codes itself.
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { users, type User } from '../db/schema'
 import { ConflictError, NotFoundError } from '../utils/errors'
 
@@ -100,4 +100,32 @@ function isPgUniqueViolation(err: unknown): boolean {
     'code' in candidate &&
     candidate.code === PG_UNIQUE_VIOLATION
   )
+}
+
+export async function dismissHint(userId: string, key: string): Promise<string[]> {
+  const keyJson = JSON.stringify([key])
+  const [row] = await useDB()
+    .update(users)
+    .set({
+      dismissedHints: sql`CASE
+        WHEN ${users.dismissedHints} @> ${keyJson}::jsonb THEN ${users.dismissedHints}
+        ELSE ${users.dismissedHints} || ${keyJson}::jsonb
+      END`,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId))
+    .returning({ dismissedHints: users.dismissedHints })
+  if (!row) throw new NotFoundError('Пользователь не найден')
+  return row.dismissedHints
+}
+
+export async function markChangelogSeen(userId: string): Promise<string> {
+  const seenAt = new Date()
+  const [row] = await useDB()
+    .update(users)
+    .set({ changelogSeenAt: seenAt, updatedAt: seenAt })
+    .where(eq(users.id, userId))
+    .returning({ changelogSeenAt: users.changelogSeenAt })
+  if (!row?.changelogSeenAt) throw new NotFoundError('Пользователь не найден')
+  return row.changelogSeenAt.toISOString()
 }

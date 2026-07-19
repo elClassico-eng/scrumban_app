@@ -14,12 +14,10 @@ useHead({
 
 <template>
   <div class="landing">
-    <div class="grain" />
-
     <header class="legal__bar">
       <div class="wrap legal__bar-in">
         <NuxtLink to="/" external class="legal__back">← На главную</NuxtLink>
-        <NuxtLink to="/" external class="legal__wordmark"><b>Такт</b><i class="star">★</i></NuxtLink>
+        <NuxtLink to="/" external class="legal__wordmark"><b>Такт</b><i>*</i></NuxtLink>
       </div>
     </header>
 
@@ -120,3 +118,105 @@ useHead({
     <LandingFooter />
   </div>
 </template>
+
+<style scoped>
+.legal__bar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(251, 250, 248, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+}
+.legal__bar-in {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.legal__back {
+  font-size: 14px; color: var(--ink-2);
+  transition: color 0.2s var(--ease);
+}
+.legal__back:hover { color: var(--ink); }
+.legal__wordmark {
+  font-family: var(--font-wordmark); font-size: 17px; font-weight: 600;
+  color: var(--ink);
+}
+.legal__wordmark i { font-style: normal; color: var(--orange); }
+
+.legal { padding: clamp(48px, 8vw, 96px) 0 clamp(64px, 9vw, 120px); }
+.legal__wrap { max-width: 760px; }
+
+.legal__tag {
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 16px;
+}
+.legal h1 {
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(32px, 4.5vw, 52px);
+  line-height: 1.1; letter-spacing: -0.02em;
+  margin: 0;
+}
+.legal__meta {
+  margin-top: 12px;
+  font-family: var(--font-mono); font-size: 13px;
+  color: var(--ink-3);
+}
+.legal__lead {
+  margin-top: 28px;
+  font-size: 18px; line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.legal h2 {
+  display: flex; align-items: baseline; gap: 14px;
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.25; letter-spacing: -0.01em;
+  margin: 52px 0 16px;
+}
+.legal h2 .num {
+  flex: 0 0 auto;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 500;
+  color: var(--orange);
+  transform: translateY(-2px);
+}
+
+.legal p {
+  font-size: 16px; line-height: 1.75;
+  color: var(--ink-2);
+  margin: 0 0 14px;
+}
+.legal ul {
+  margin: 0 0 14px; padding: 0;
+  list-style: none;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.legal li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 16px; line-height: 1.65;
+  color: var(--ink-2);
+}
+.legal li::before {
+  content: "";
+  position: absolute; left: 2px; top: 10px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--orange);
+}
+.legal a {
+  color: var(--orange);
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.legal a:hover { color: var(--orange-press); }
+
+.legal__note {
+  margin-top: 48px;
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, var(--haze-2), var(--haze-3));
+  font-size: 14.5px; line-height: 1.65;
+  color: var(--ink-2);
+}
+</style>
+

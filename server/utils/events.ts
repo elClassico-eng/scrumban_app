@@ -18,6 +18,7 @@ export type BoardEventType =
   | 'time.started'
   | 'time.stopped'
   | 'time.updated'
+  | 'sprint.changed'
 
 export interface BoardEvent {
   type: BoardEventType

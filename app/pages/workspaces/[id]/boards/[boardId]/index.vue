@@ -42,6 +42,7 @@ function onColumnsReorder() {
 type SwimlaneMode = 'none' | 'assignee' | 'service_class' | 'epic'
 type ClassFilter = 'all' | 'expedite' | 'blocker'
 
+const dailyOpen = ref(false)
 const swimlane = ref<SwimlaneMode>('none')
 const query = ref('')
 const selectedAssignees = ref<Set<string>>(new Set())
@@ -235,6 +236,13 @@ const isLoading = computed(() =>
       @toggle-assignee="toggleAssignee"
       @update:class-filter="classFilter = $event"
       @create-task="openCreateTask"
+      @open-daily="dailyOpen = true"
+    />
+
+    <BoardDailyPanel
+      v-model:open="dailyOpen"
+      :workspace-id="wsId"
+      :board-id="bId"
     />
 
     <div v-if="isLoading" class="text-center py-12 text-muted">

@@ -93,6 +93,16 @@ function back() {
   else if (step.value === 2) step.value = 1
 }
 
+provideAuthStepper({
+  step,
+  total: 3,
+  next: () => {
+    if (step.value === 1) goToCredentials()
+    else if (step.value === 2) goToTeam()
+  },
+  prev: back,
+})
+
 async function finishOnboarding() {
   const parsed = teamSchema.safeParse(teamState)
   if (!parsed.success) {

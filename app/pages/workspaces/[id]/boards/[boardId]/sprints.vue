@@ -2,7 +2,7 @@
 import type { SprintState } from '#shared/types/domain'
 import type { Sprint } from '#shared/types/sprint'
 import type { Task } from '#shared/types/task'
-import { apiRoutes } from '~/routing'
+import { apiRoutes, pageRoutes } from '~/routing'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -18,6 +18,8 @@ const { list: tasksList } = useTasksApi(wsId, bId)
 const { list: columnsList } = useColumnsApi(wsId, bId)
 const { list: membersList } = useMembersApi(wsId)
 const { list: membershipsList } = useBoardSprintMembershipsApi(wsId, bId)
+
+useSprintsRealtime(wsId, bId)
 
 const allTasks = computed(() => tasksList.data.value?.tasks ?? [])
 const columns = computed(() => columnsList.data.value?.columns ?? [])
@@ -129,6 +131,22 @@ const { list: burndownQuery } = useSprintBurndownApi(wsId, bId, burndownSprintId
 const createOpen = ref(false)
 const addTaskPanel = ref<{ sprint: Sprint } | null>(null)
 
+const taskIdsInOpenSprints = computed(() => {
+  const openSprintIds = new Set(
+    sprints.value.filter(s => s.state !== 'closed').map(s => s.id),
+  )
+  const ids = new Set<string>()
+  for (const it of memberships.value) {
+    if (openSprintIds.has(it.sprintId)) ids.add(it.taskId)
+  }
+  return ids
+})
+
+function onWizardCreated() {
+  tasksList.refetch()
+  membershipsList.refetch()
+}
+
 const taskIdsInOtherSprints = computed(() => {
   if (!addTaskPanel.value) return new Set<string>()
   const ids = new Set<string>()
@@ -204,15 +222,34 @@ async function onStart(sprint: Sprint) {
   }
 }
 
-async function onClose(sprint: Sprint) {
-  const ok = await confirm({
-    title: `Закрыть спринт «${sprint.name}»?`,
-    description: 'Закрытый спринт больше нельзя запустить — состав задач замораживается для аналитики.',
-    confirmLabel: 'Закрыть',
-  })
-  if (!ok) return
+const closeTarget = ref<Sprint | null>(null)
+const closeDialogOpen = ref(false)
+
+const closeOpenTasks = computed(() => {
+  if (!closeTarget.value) return []
+  return tasksForSprint(closeTarget.value)
+    .map(t => t.task)
+    .filter(t => t.closedAt === null)
+})
+
+function onClose(sprint: Sprint) {
+  closeTarget.value = sprint
+  closeDialogOpen.value = true
+}
+
+async function onCloseConfirm(payload: import('#shared/types/sprint').CloseSprintInput) {
+  const sprint = closeTarget.value
+  if (!sprint) return
   try {
-    await close.mutateAsync(sprint.id)
+    await close.mutateAsync({ sprintId: sprint.id, ...payload })
+    closeDialogOpen.value = false
+    tasksList.refetch()
+    membershipsList.refetch()
+    toast.add({
+      title: `Спринт «${sprint.name}» закрыт`,
+      icon: 'i-lucide-check-square',
+      duration: 1500,
+    })
   }
   catch (err) {
     toast.add({
@@ -221,6 +258,14 @@ async function onClose(sprint: Sprint) {
       icon: 'i-lucide-alert-circle',
     })
   }
+}
+
+const editTarget = ref<Sprint | null>(null)
+const editModalOpen = ref(false)
+
+function onEdit(sprint: Sprint) {
+  editTarget.value = sprint
+  editModalOpen.value = true
 }
 
 async function onDelete(sprint: Sprint) {
@@ -361,13 +406,12 @@ const isFilteredEmpty = computed(() =>
       </UButton>
     </div>
 
-    <div class="flex-1 min-h-0 overflow-y-auto space-y-4 pb-4">
+    <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-4">
       <div v-if="isLoading" class="text-center py-12 text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
-    </div>
+        <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      </div>
 
-    <UCard v-else-if="isEmpty" class="text-center py-10">
-      <div class="space-y-3">
+      <div v-else-if="isEmpty" class="max-w-md mx-auto text-center py-16 space-y-3">
         <UIcon name="i-lucide-calendar-check-2" class="size-12 text-muted mx-auto" />
         <p class="font-medium">Спринтов пока нет</p>
         <p class="text-sm text-muted">
@@ -377,108 +421,134 @@ const isFilteredEmpty = computed(() =>
           Создать спринт
         </UButton>
       </div>
-    </UCard>
 
-    <div v-else-if="isFilteredEmpty" class="text-center py-16 text-muted">
-      <UIcon name="i-lucide-search-x" class="size-10 mx-auto mb-2" />
-      <p class="text-sm">Ничего не нашлось — попробуй сбросить фильтр или поиск.</p>
-    </div>
+      <div
+        v-else
+        class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-x-8 gap-y-6 items-start"
+      >
+        <div class="min-w-0 space-y-8">
+          <div v-if="isFilteredEmpty" class="text-center py-16 text-muted">
+            <UIcon name="i-lucide-search-x" class="size-10 mx-auto mb-2" />
+            <p class="text-sm">Ничего не нашлось — попробуй сбросить фильтр или поиск.</p>
+          </div>
 
-    <template v-else>
-      <section v-if="activeSprints.length > 0" class="space-y-3">
-        <div class="flex items-center gap-2.5">
-          <h2 class="text-[12px] font-bold uppercase tracking-[0.08em] text-muted m-0 inline-flex items-center gap-2">
-            <span class="relative inline-flex">
-              <span class="size-2 rounded-full bg-accent-500" />
-              <span class="absolute inset-0 rounded-full ring-2 ring-accent-500/40 animate-ping" />
-            </span>
-            Активный
-          </h2>
-          <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full">
-            {{ activeSprints.length }}
-          </span>
-          <span class="flex-1 h-px bg-accented" />
+          <template v-else>
+            <section v-if="activeSprints.length > 0" class="space-y-3.5">
+              <div class="flex items-center gap-2.5">
+                <span class="relative inline-flex">
+                  <span class="size-2 rounded-full bg-accent-500" />
+                  <span class="absolute inset-0 rounded-full ring-2 ring-accent-500/40 animate-ping" />
+                </span>
+                <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Активный</h2>
+                <span class="flex-1 h-px bg-default" />
+              </div>
+
+              <SprintActiveCard
+                v-for="s in activeSprints"
+                :key="s.id"
+                :sprint="s"
+                :tasks="tasksForSprint(s)"
+                :columns="columns"
+                :members="members"
+                :burndown="s.id === activeSprintForBurndown?.id ? (burndownQuery.data.value ?? null) : null"
+                :can-manage="canManage"
+                :simulator-to="pageRoutes.sprintSimulator(wsId, bId, s.id)"
+                @add-task="addTaskPanel = { sprint: s }"
+                @close="onClose(s)"
+                @edit="onEdit(s)"
+              />
+
+              <SprintNetworkForecastCard
+                v-if="activeSprintForBurndown"
+                :workspace-id="wsId"
+                :board-id="bId"
+                :sprint-id="activeSprintForBurndown.id"
+              />
+            </section>
+
+            <section v-if="plannedSprints.length > 0" class="space-y-3.5">
+              <div class="flex items-center gap-2.5">
+                <UIcon name="i-lucide-calendar-plus" class="size-4 text-muted" />
+                <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Запланированы</h2>
+                <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full tabular-nums">{{ plannedSprints.length }}</span>
+                <span class="flex-1 h-px bg-default" />
+              </div>
+
+              <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+                <SprintCard
+                  v-for="s in plannedSprints"
+                  :key="s.id"
+                  :sprint="s"
+                  :tasks="tasksForSprint(s)"
+                  :columns="columns"
+                  :members="members"
+                  :can-manage="canManage"
+                  :simulator-to="pageRoutes.sprintSimulator(wsId, bId, s.id)"
+                  @add-task="addTaskPanel = { sprint: s }"
+                  @start="onStart(s)"
+                  @delete="onDelete(s)"
+                  @edit="onEdit(s)"
+                />
+              </div>
+            </section>
+
+            <section v-if="closedSprints.length > 0" class="space-y-3.5">
+              <div class="flex items-center gap-2.5">
+                <UIcon name="i-lucide-archive" class="size-4 text-muted" />
+                <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Закрытые</h2>
+                <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full tabular-nums">{{ closedSprints.length }}</span>
+                <span class="flex-1 h-px bg-default" />
+              </div>
+
+              <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4">
+                <SprintCard
+                  v-for="s in closedSprints"
+                  :key="s.id"
+                  :sprint="s"
+                  :tasks="tasksForSprint(s)"
+                  :columns="columns"
+                  :members="members"
+                  :can-manage="canManage"
+                  :report-to="pageRoutes.sprintReportPage(wsId, bId, s.id)"
+                />
+              </div>
+            </section>
+          </template>
         </div>
 
-        <SprintActiveCard
-          v-for="s in activeSprints"
-          :key="s.id"
-          :sprint="s"
-          :tasks="tasksForSprint(s)"
-          :columns="columns"
-          :members="members"
-          :burndown="s.id === activeSprintForBurndown?.id ? (burndownQuery.data.value ?? null) : null"
-          :can-manage="canManage"
-          @add-task="addTaskPanel = { sprint: s }"
-          @close="onClose(s)"
-        />
-
-        <SprintNetworkForecastCard
-          v-if="activeSprintForBurndown"
+        <SprintSidebar
           :workspace-id="wsId"
           :board-id="bId"
-          :sprint-id="activeSprintForBurndown.id"
+          :sprints="sprints"
         />
-      </section>
-
-      <section v-if="plannedSprints.length > 0" class="space-y-3">
-        <div class="flex items-center gap-2.5">
-          <h2 class="text-[12px] font-bold uppercase tracking-[0.08em] text-muted m-0">
-            Запланированы
-          </h2>
-          <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full">
-            {{ plannedSprints.length }}
-          </span>
-          <span class="flex-1 h-px bg-accented" />
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <SprintCard
-            v-for="s in plannedSprints"
-            :key="s.id"
-            :sprint="s"
-            :tasks="tasksForSprint(s)"
-            :columns="columns"
-            :members="members"
-            :can-manage="canManage"
-            @add-task="addTaskPanel = { sprint: s }"
-            @start="onStart(s)"
-            @delete="onDelete(s)"
-          />
-        </div>
-      </section>
-
-      <section v-if="closedSprints.length > 0" class="space-y-3">
-        <div class="flex items-center gap-2.5">
-          <h2 class="text-[12px] font-bold uppercase tracking-[0.08em] text-muted m-0">
-            Закрытые
-          </h2>
-          <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full">
-            {{ closedSprints.length }}
-          </span>
-          <span class="flex-1 h-px bg-accented" />
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <SprintCard
-            v-for="s in closedSprints"
-            :key="s.id"
-            :sprint="s"
-            :tasks="tasksForSprint(s)"
-            :columns="columns"
-            :members="members"
-            :can-manage="canManage"
-          />
-        </div>
-      </section>
-      </template>
+      </div>
     </div>
 
-    <SprintCreateModal
+    <SprintWizardModal
       v-if="canManage"
       v-model:open="createOpen"
       :workspace-id="wsId"
       :board-id="bId"
+      :all-tasks="allTasks"
+      :columns="columns"
+      :task-ids-in-sprints="taskIdsInOpenSprints"
+      @created="onWizardCreated"
+    />
+
+    <SprintEditModal
+      v-model:open="editModalOpen"
+      :workspace-id="wsId"
+      :board-id="bId"
+      :sprint="editTarget"
+    />
+
+    <SprintCloseDialog
+      v-model:open="closeDialogOpen"
+      :sprint="closeTarget"
+      :open-tasks="closeOpenTasks"
+      :has-next-planned="plannedSprints.length > 0"
+      :closing="close.isPending.value"
+      @confirm="onCloseConfirm"
     />
 
     <SprintAddTasksPanel
