@@ -6,9 +6,15 @@ export function useChangelog() {
   const qc = useQueryClient()
   const { me } = useProfileApi()
 
-  const { data } = useAsyncData('changelog', () =>
-    queryCollection('changelog').order('date', 'DESC').all(),
-  )
+  const { data } = useAsyncData('changelog', async () => {
+    try {
+      return await queryCollection('changelog').order('date', 'DESC').all()
+    }
+    catch (err) {
+      console.warn('[changelog] collection unavailable, hiding «Что нового»', err)
+      return []
+    }
+  }, { default: () => [] })
 
   const entries = computed(() => data.value ?? [])
 
