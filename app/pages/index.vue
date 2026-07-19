@@ -31,6 +31,7 @@ useSeoMeta({
     <LandingHero />
     <LandingBento />
     <LandingProduct />
+    <LandingForecastFlow />
     <LandingSecurity />
     <LandingRoadmap />
     <LandingPilots />
