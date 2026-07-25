@@ -31,7 +31,6 @@
     "@tanstack/vue-query": "^5.100.9",
     "@vueuse/core": "^14.3.0",
     "@vueuse/nuxt": "^14.3.0",
-    "animejs": "^4.5.0",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
     "echarts": "^6.0.0",
