@@ -63,11 +63,25 @@ const accuracy = computed(() => {
   if (!r || r.total === 0) return null
   return { pct: Math.round((r.p85HitCount / r.total) * 100), total: r.total }
 })
+
+// A row of four dashes reads as a broken page. Until the board has produced
+// something measurable, one honest line beats four empty tiles.
+const hasAny = computed(() =>
+  throughputTotal.value > 0
+  || cycleP50.value !== null
+  || wipData.value !== null
+  || accuracy.value !== null,
+)
 </script>
 
 <template>
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-    <div class="rounded-xl border border-default bg-default px-4 py-3.5">
+  <p v-if="!hasAny && !loading" class="surface-soft rounded-2xl px-5 py-4 text-sm text-muted">
+    Метрики появятся, когда на доске закроются первые задачи: пропускная способность,
+    cycle time и рекомендации по WIP считаются по факту закрытия.
+  </p>
+
+  <div v-else class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">Пропускная</span>
         <UIcon name="i-lucide-gauge" class="size-3.5 text-dimmed" />
@@ -93,7 +107,7 @@ const accuracy = computed(() => {
       </div>
     </div>
 
-    <div class="rounded-xl border border-default bg-default px-4 py-3.5">
+    <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">Cycle time</span>
         <UIcon name="i-lucide-timer" class="size-3.5 text-dimmed" />
@@ -106,7 +120,7 @@ const accuracy = computed(() => {
       </div>
     </div>
 
-    <div class="rounded-xl border border-default bg-default px-4 py-3.5">
+    <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">WIP</span>
         <UIcon name="i-lucide-layers" class="size-3.5 text-dimmed" />
@@ -123,7 +137,7 @@ const accuracy = computed(() => {
       </div>
     </div>
 
-    <div class="rounded-xl border border-default bg-default px-4 py-3.5">
+    <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">Точность</span>
         <UIcon name="i-lucide-target" class="size-3.5 text-dimmed" />

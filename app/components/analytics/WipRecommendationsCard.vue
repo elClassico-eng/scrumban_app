@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { WipRecommendationsReport } from '#shared/types/analytics'
 
-const props = defineProps<{ report: WipRecommendationsReport | undefined; isLoading: boolean }>()
+defineProps<{ report: WipRecommendationsReport | undefined; isLoading: boolean }>()
 
 function deltaIcon(current: number, recommended: number): { name: string; color: string } {
   if (current > recommended) return { name: 'i-lucide-arrow-down', color: 'text-warning' }
@@ -11,7 +11,7 @@ function deltaIcon(current: number, recommended: number): { name: string; color:
 </script>
 
 <template>
-  <UCard>
+  <UCard :ui="ANALYTICS_CARD_UI">
     <template #header>
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5">

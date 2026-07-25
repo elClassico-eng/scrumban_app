@@ -42,7 +42,7 @@ const hasData = computed(() => (props.report?.buckets.length ?? 0) > 0)
 </script>
 
 <template>
-  <UCard>
+  <UCard :ui="ANALYTICS_CARD_UI">
     <template #header>
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5">

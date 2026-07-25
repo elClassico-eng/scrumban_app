@@ -38,76 +38,64 @@ useHead({
   <div class="flex flex-col h-full min-h-0">
     <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" :board="board" />
 
-    <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pt-4 pb-8 space-y-8">
-      <section class="space-y-3">
-        <div class="flex items-center gap-3">
-          <h1 class="text-[22px] font-semibold tracking-tight text-default m-0">Обзор потока</h1>
-          <span class="flex-1 h-px bg-default" />
-          <div class="inline-flex items-center gap-0.5 bg-default border border-default rounded-lg p-0.5 shrink-0">
-            <button
-              v-for="r in RANGES"
-              :key="r.value"
-              type="button"
-              class="h-7 px-2.5 rounded-md text-[12px] font-medium tabular-nums cursor-pointer transition-colors"
-              :class="range === r.value ? 'bg-inverted text-inverted' : 'text-muted hover:text-default'"
-              @click="range = r.value"
-            >
-              {{ r.label }}
-            </button>
-          </div>
+    <div class="flex-1 min-h-0 space-y-4 overflow-y-auto overflow-x-hidden pt-4 pb-8">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 class="m-0 text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Аналитика</h1>
+          <p class="text-sm text-muted">Поток, прогноз и рекомендации по доске</p>
         </div>
+        <div class="inline-flex shrink-0 items-center gap-0.5 rounded-lg bg-elevated p-0.5">
+          <button
+            v-for="r in RANGES"
+            :key="r.value"
+            type="button"
+            class="h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium tabular-nums transition-colors"
+            :class="range === r.value ? 'bg-default text-default shadow-sm' : 'text-muted hover:text-default'"
+            @click="range = r.value"
+          >
+            {{ r.label }}
+          </button>
+        </div>
+      </div>
 
-        <AnalyticsOverview
-          :workspace-id="wsId"
-          :board-id="bId"
-          :range-days="range"
-          :throughput="throughput.data.value"
-          :cycle-time="cycleTime.data.value"
-          :wip="wipRecommendations.data.value"
-          :loading="throughput.isLoading.value"
+      <AnalyticsOverview
+        :workspace-id="wsId"
+        :board-id="bId"
+        :range-days="range"
+        :throughput="throughput.data.value"
+        :cycle-time="cycleTime.data.value"
+        :wip="wipRecommendations.data.value"
+        :loading="throughput.isLoading.value"
+      />
+
+      <AnalyticsCfdChart :report="cfd.data.value" :is-loading="cfd.isLoading.value" />
+
+      <div class="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-12">
+        <AnalyticsThroughputChart
+          class="xl:col-span-6"
+          :report="throughput.data.value"
+          :is-loading="throughput.isLoading.value"
         />
-      </section>
+        <AnalyticsCycleTimeScatter
+          class="xl:col-span-6"
+          :report="cycleTime.data.value"
+          :is-loading="cycleTime.isLoading.value"
+        />
+      </div>
 
-      <section class="space-y-3.5">
-        <div class="flex items-center gap-2.5">
-          <UIcon name="i-lucide-waves" class="size-4 text-accent-500" />
-          <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Поток</h2>
-          <span class="flex-1 h-px bg-default" />
-        </div>
+      <div class="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-12">
+        <AnalyticsMonteCarloCard class="xl:col-span-8" :workspace-id="wsId" :board-id="bId" />
+        <AnalyticsForecastAccuracyCard class="xl:col-span-4" :workspace-id="wsId" :board-id="bId" />
+      </div>
 
-        <AnalyticsCfdChart :report="cfd.data.value" :is-loading="cfd.isLoading.value" />
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <AnalyticsThroughputChart :report="throughput.data.value" :is-loading="throughput.isLoading.value" />
-          <AnalyticsCycleTimeScatter :report="cycleTime.data.value" :is-loading="cycleTime.isLoading.value" />
-        </div>
-      </section>
-
-      <section class="space-y-3.5">
-        <div class="flex items-center gap-2.5">
-          <UIcon name="i-lucide-git-branch" class="size-4 text-accent-500" />
-          <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Прогноз</h2>
-          <span class="flex-1 h-px bg-default" />
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <AnalyticsMonteCarloCard :workspace-id="wsId" :board-id="bId" />
-          <AnalyticsForecastAccuracyCard :workspace-id="wsId" :board-id="bId" />
-        </div>
-      </section>
-
-      <section class="space-y-3.5">
-        <div class="flex items-center gap-2.5">
-          <UIcon name="i-lucide-lightbulb" class="size-4 text-accent-500" />
-          <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Рекомендации</h2>
-          <span class="flex-1 h-px bg-default" />
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <AnalyticsWipRecommendationsCard :report="wipRecommendations.data.value" :is-loading="wipRecommendations.isLoading.value" />
-          <AnalyticsTimeReportCard :workspace-id="wsId" :board-id="bId" />
-        </div>
-      </section>
+      <div class="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-12">
+        <AnalyticsWipRecommendationsCard
+          class="xl:col-span-8"
+          :report="wipRecommendations.data.value"
+          :is-loading="wipRecommendations.isLoading.value"
+        />
+        <AnalyticsTimeReportCard class="xl:col-span-4" :workspace-id="wsId" :board-id="bId" />
+      </div>
     </div>
   </div>
 </template>

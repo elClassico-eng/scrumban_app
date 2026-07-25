@@ -53,7 +53,7 @@ const hasSprintData = computed(() => (report.value?.bySprint.length ?? 0) > 0)
 </script>
 
 <template>
-  <UCard>
+  <UCard :ui="ANALYTICS_CARD_UI">
     <template #header>
       <div class="flex items-center justify-between">
         <h2 class="font-semibold">Время</h2>
