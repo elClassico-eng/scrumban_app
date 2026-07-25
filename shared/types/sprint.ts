@@ -20,7 +20,16 @@ export interface SprintsListResponse {
   sprints: Sprint[]
 }
 
-export type WorkspaceSprintSummary = Sprint & { boardName: string }
+export type SprintOutcome = {
+  deliveredCount: number
+  startCount: number
+  goalAchieved: boolean | null
+}
+
+export type WorkspaceSprintSummary = Sprint & {
+  boardName: string
+  outcome: SprintOutcome | null
+}
 
 export type WorkspaceSprintsResponse = { sprints: WorkspaceSprintSummary[] }
 

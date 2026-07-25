@@ -184,7 +184,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
 
 <template>
   <div class="space-y-4">
-    <div v-if="facts.length > 0" class="bg-default border border-default rounded-2xl px-5 py-4 space-y-2.5">
+    <div v-if="facts.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2.5">
       <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
         Факты спринта — темы для обсуждения
       </div>
@@ -206,7 +206,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
 
     <div
       v-if="prevSprintId && prevActionItems.length > 0"
-      class="bg-default border border-default rounded-2xl px-5 py-4 space-y-2.5"
+      class="surface-soft rounded-2xl px-5 py-4 space-y-2.5"
     >
       <div class="flex items-center gap-2">
         <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
@@ -241,7 +241,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
       <div
         v-for="col in COLUMNS"
         :key="col.category"
-        class="bg-default border border-default rounded-2xl px-4 py-4 space-y-3"
+        class="surface-soft rounded-2xl px-4 py-4 space-y-3"
       >
         <div>
           <div class="text-[13px] font-semibold inline-flex items-center gap-1.5">
@@ -274,7 +274,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
           <div
             v-for="n in notesFor(col.category)"
             :key="n.id"
-            class="border border-default rounded-xl px-3 py-2.5 space-y-2"
+            class="rounded-xl bg-elevated/60 px-3 py-2.5 space-y-2"
           >
             <div v-if="editingId === n.id" class="space-y-2">
               <UTextarea v-model="editingBody" :rows="2" autoresize class="w-full" />

@@ -21,6 +21,7 @@ import { withTenant } from '../utils/db'
 import { ConflictError, NotFoundError, ValidationError } from '../utils/errors'
 import { percentileSorted } from '../utils/network-planning'
 import { requireMinRole } from '../utils/rbac'
+import type { ForecastSnapshotPayload } from '#shared/types/forecast'
 import { listSprintSnapshots } from './forecast-snapshots.service'
 import { computeBurndown } from './sprints.service'
 
@@ -367,8 +368,18 @@ export async function buildSprintReportPayload(input: {
     tasks: taskRows,
     burndown,
     forecastVsFact: {
-      start: startSnapshot?.payload ?? null,
-      close: closeSnapshot?.payload ?? null,
+      start: startSnapshot
+        ? {
+            takenAtISO: new Date(startSnapshot.takenAt).toISOString(),
+            payload: startSnapshot.payload as ForecastSnapshotPayload,
+          }
+        : null,
+      close: closeSnapshot
+        ? {
+            takenAtISO: new Date(closeSnapshot.takenAt).toISOString(),
+            payload: closeSnapshot.payload as ForecastSnapshotPayload,
+          }
+        : null,
     },
     appliedScenarios: data.scenarios
       .filter(s => s.appliedAt !== null)

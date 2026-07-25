@@ -84,67 +84,75 @@ function formatDate(iso: string | null): string {
     </div>
 
     <div v-else class="space-y-8">
-      <section v-for="g in groups" :key="g.boardId" class="space-y-3">
-        <div class="flex items-center gap-2.5">
-          <UIcon name="i-lucide-layout-dashboard" class="size-4 text-accent-500" />
-          <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">{{ g.boardName }}</h2>
-          <span class="flex-1 h-px bg-default" />
+      <section v-for="g in groups" :key="g.boardId" class="space-y-2">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="m-0 font-semibold text-default">{{ g.boardName }}</h2>
           <NuxtLink
             :to="pageRoutes.boardSprints(wsId, g.boardId)"
-            class="text-[12px] text-muted hover:text-accent-600 transition-colors shrink-0"
+            class="shrink-0 text-[12px] text-muted transition-colors hover:text-accent-600"
           >
             К доске
           </NuxtLink>
         </div>
 
-        <ul class="space-y-2 m-0 p-0 list-none">
-          <li v-for="s in [...g.active, ...g.closed]" :key="s.id">
-            <div class="flex items-center gap-3 rounded-xl border border-default bg-default px-4 py-3">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-default truncate">{{ s.name }}</span>
-                  <span
-                    class="inline-flex items-center gap-1.5 h-[20px] px-2 rounded-full text-[10.5px] font-semibold uppercase tracking-[0.04em] shrink-0"
-                    :class="SPRINT_STATE_BADGE[s.state]"
-                  >
-                    <span class="size-1.5 rounded-full" :class="SPRINT_STATE_DOT[s.state]" />
-                    {{ SPRINT_STATE_LABEL[s.state] }}
-                  </span>
-                </div>
-                <p v-if="s.goal?.trim()" class="text-[12.5px] text-muted truncate mt-0.5">{{ s.goal }}</p>
-                <div class="flex items-center gap-1.5 text-[12px] text-muted mt-1">
-                  <UIcon name="i-lucide-calendar" class="size-3.5 shrink-0" />
-                  <span class="tabular-nums">{{ formatDate(s.plannedStartAt) }} → {{ formatDate(s.plannedEndAt) }}</span>
-                  <template v-if="s.state === 'closed' && s.endedAt">
-                    <span class="text-dimmed">·</span>
-                    <span>закрыт {{ formatDate(s.endedAt) }}</span>
-                  </template>
-                </div>
-              </div>
+        <div class="surface-soft overflow-hidden rounded-2xl">
+          <div
+            class="hidden items-center gap-4 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted sm:flex"
+          >
+            <span class="min-w-0 flex-1">Спринт</span>
+            <span class="w-40 shrink-0">Период</span>
+            <span class="w-28 shrink-0 text-right">Доставлено</span>
+            <span class="w-36 shrink-0 text-right">Цель</span>
+          </div>
 
-              <div class="shrink-0 flex items-center gap-1.5">
-                <UButton
-                  size="xs"
-                  variant="soft"
-                  color="neutral"
-                  icon="i-lucide-file-bar-chart-2"
-                  :to="reportPath(s)"
-                >
-                  Отчёт
-                </UButton>
-                <UButton
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  icon="i-lucide-messages-square"
-                  :to="`${reportPath(s)}?tab=retro`"
-                >
-                  Ретро
-                </UButton>
-              </div>
-            </div>
-          </li>
-        </ul>
+          <NuxtLink
+            v-for="s in [...g.active, ...g.closed]"
+            :key="s.id"
+            :to="reportPath(s)"
+            class="flex flex-col gap-1 border-t border-default/60 px-5 py-3 transition-colors hover:bg-elevated sm:flex-row sm:items-center sm:gap-4"
+          >
+            <span class="flex min-w-0 flex-1 items-center gap-2">
+              <span class="truncate font-medium text-default">{{ s.name }}</span>
+              <span
+                class="inline-flex h-[20px] shrink-0 items-center gap-1.5 rounded-full px-2 text-[10.5px] font-semibold uppercase tracking-[0.04em]"
+                :class="SPRINT_STATE_BADGE[s.state]"
+              >
+                <span class="size-1.5 rounded-full" :class="SPRINT_STATE_DOT[s.state]" />
+                {{ SPRINT_STATE_LABEL[s.state] }}
+              </span>
+            </span>
+
+            <span class="w-40 shrink-0 text-[12px] tabular-nums text-muted">
+              {{ formatDate(s.plannedStartAt) }} → {{ formatDate(s.plannedEndAt) }}
+            </span>
+
+            <span class="w-28 shrink-0 text-[13px] tabular-nums sm:text-right">
+              <template v-if="s.outcome">
+                <b class="text-default">{{ s.outcome.deliveredCount }}</b>
+                <span class="text-muted"> из {{ s.outcome.startCount }}</span>
+              </template>
+              <span v-else class="text-dimmed">—</span>
+            </span>
+
+            <span class="w-36 shrink-0 text-[12px] sm:text-right">
+              <template v-if="s.outcome?.goalAchieved === true">
+                <span class="text-success-600">Достигнута</span>
+              </template>
+              <template v-else-if="s.outcome?.goalAchieved === false">
+                <span class="text-error-600">Не достигнута</span>
+              </template>
+              <template v-else-if="s.state === 'active'">
+                <span class="text-muted">Спринт идёт</span>
+              </template>
+              <template v-else-if="!s.outcome">
+                <span class="text-dimmed">Отчёт не сформирован</span>
+              </template>
+              <template v-else>
+                <span class="text-dimmed">Не фиксировалась</span>
+              </template>
+            </span>
+          </NuxtLink>
+        </div>
       </section>
     </div>
   </div>

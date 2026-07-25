@@ -1,4 +1,12 @@
 import type { ServiceClass } from './domain'
+import type { ForecastSnapshotPayload } from './forecast'
+
+// The snapshot timestamp is the anchor its day counts are measured from, so it
+// travels with the payload: without it P85 cannot be turned into a date.
+export type SprintReportSnapshot = {
+  takenAtISO: string
+  payload: ForecastSnapshotPayload
+}
 
 export type SprintReportScopeChange = {
   taskId: string
@@ -62,8 +70,8 @@ export type SprintReportPayload = {
   tasks: SprintReportTaskRow[]
   burndown: unknown | null
   forecastVsFact: {
-    start: unknown | null
-    close: unknown | null
+    start: SprintReportSnapshot | null
+    close: SprintReportSnapshot | null
   }
   appliedScenarios: {
     id: string

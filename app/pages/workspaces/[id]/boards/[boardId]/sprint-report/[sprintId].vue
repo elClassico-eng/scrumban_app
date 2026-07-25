@@ -78,11 +78,40 @@ const burndownPoints = computed<BurndownPoint[]>(() => {
   return b?.points ?? []
 })
 
-const forecastStart = computed(() => {
-  const s = payload.value?.forecastVsFact.start as {
-    simulation?: { probabilityWithinHorizon?: number | null; p50Days?: number; p85Days?: number }
-  } | null
-  return s?.simulation ?? null
+const DAY_MS = 86_400_000
+const DAYS_FORMS = ['день', 'дня', 'дней'] as [string, string, string]
+const dayFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+
+// The promise is the snapshot taken when the sprint started; the fact is when it
+// actually closed. Comparing against the close snapshot would be meaningless:
+// that one is a forecast made once the answer was already known.
+const promise = computed(() => {
+  const snap = payload.value?.forecastVsFact.start
+  if (!snap) return null
+  const anchor = new Date(snap.takenAtISO).getTime()
+  const sim = snap.payload.simulation
+  const at = (days: number) => dayFmt.format(new Date(anchor + days * DAY_MS))
+  return {
+    takenAt: dayFmt.format(new Date(anchor)),
+    probability: sim.probabilityWithinHorizon,
+    p50: at(sim.p50Days),
+    p85: at(sim.p85Days),
+    p85At: anchor + sim.p85Days * DAY_MS,
+    committed: snap.payload.remainingCount,
+  }
+})
+
+const verdict = computed(() => {
+  const p = promise.value
+  const endedAt = payload.value?.sprint.endedAt
+  if (!p || !endedAt) return null
+  const closed = new Date(endedAt).getTime()
+  const diffDays = Math.round((closed - p.p85At) / DAY_MS)
+  return {
+    hit: diffDays <= 0,
+    diffDays: Math.abs(diffDays),
+    closedAt: dayFmt.format(new Date(closed)),
+  }
 })
 
 const deliveredShare = computed(() => {
@@ -187,7 +216,7 @@ async function copyJson() {
 
     <div
       v-else-if="!payload"
-      class="bg-default border border-default rounded-2xl px-6 py-10 text-center space-y-3"
+      class="surface-soft rounded-2xl px-6 py-10 text-center space-y-3"
     >
       <UIcon name="i-lucide-file-question" class="size-8 text-dimmed" />
       <p class="text-[13px] text-muted m-0 max-w-md mx-auto">
@@ -226,27 +255,92 @@ async function copyJson() {
         </p>
       </div>
 
+      <section class="surface-soft rounded-2xl p-5">
+        <h2 class="m-0 font-semibold text-default">Обещали и получилось</h2>
+
+        <template v-if="promise">
+          <div class="mt-4 grid gap-5 sm:grid-cols-2">
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">
+                Обещали на старте · {{ promise.takenAt }}
+              </p>
+              <p class="mt-2 text-sm text-default">
+                <template v-if="promise.probability !== null">
+                  Уложиться в срок с вероятностью
+                  <b>{{ Math.round(promise.probability * 100) }}%</b>
+                </template>
+                <template v-else>Горизонт не задавался</template>
+              </p>
+              <p class="mt-1 text-sm text-muted">
+                Закончить P50 <b class="text-default">{{ promise.p50 }}</b>,
+                P85 <b class="text-default">{{ promise.p85 }}</b>
+              </p>
+              <p class="mt-1 text-xs text-muted">В работе было {{ promise.committed }} задач</p>
+            </div>
+
+            <div>
+              <p class="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">Получилось</p>
+              <p v-if="verdict" class="mt-2 text-sm text-default">
+                Спринт закрыт <b>{{ verdict.closedAt }}</b>
+              </p>
+              <p class="mt-1 text-sm text-muted">
+                Доставлено <b class="text-default">{{ payload.totals.deliveredCount }}</b>
+                из {{ payload.totals.startCount }}<template v-if="deliveredShare !== null"> ({{ deliveredShare }}%)</template>
+              </p>
+              <p class="mt-1 text-xs text-muted">
+                {{ payload.goal.achieved === true
+                  ? 'Цель достигнута'
+                  : payload.goal.achieved === false ? 'Цель не достигнута' : 'Итог по цели не фиксировался' }}
+              </p>
+            </div>
+          </div>
+
+          <p
+            v-if="verdict"
+            class="mt-4 rounded-xl px-4 py-3 text-sm"
+            :class="verdict.hit
+              ? 'bg-success-50 text-success-700 dark:bg-success-950/40 dark:text-success-400'
+              : 'bg-error-50 text-error-700 dark:bg-error-950/40 dark:text-error-400'"
+          >
+            <template v-if="verdict.hit">
+              Прогноз оправдался: закрылись в пределах P85<template v-if="verdict.diffDays">, на {{ verdict.diffDays }} {{ plural(verdict.diffDays, DAYS_FORMS) }} раньше</template>.
+            </template>
+            <template v-else>
+              Прогноз не оправдался: закрылись на {{ verdict.diffDays }} {{ plural(verdict.diffDays, DAYS_FORMS) }} позже P85.
+            </template>
+          </p>
+          <p v-else class="mt-4 text-sm text-muted">
+            Спринт ещё не закрыт, сверять обещание пока не с чем.
+          </p>
+        </template>
+
+        <p v-else class="mt-2 text-sm text-muted">
+          Прогноз на старте не сохранён, поэтому сверять не с чем. Снимок делается автоматически
+          при старте спринта, так что у следующих спринтов сравнение появится.
+        </p>
+      </section>
+
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <div class="bg-default border border-default rounded-xl px-4 py-3">
+        <div class="surface-soft rounded-xl px-4 py-3">
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Состав на старте</div>
           <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
             {{ payload.totals.startCount }}<span class="text-[12px] text-muted font-normal ml-1">задач · {{ payload.totals.startSp }} SP</span>
           </div>
         </div>
-        <div class="bg-default border border-default rounded-xl px-4 py-3">
+        <div class="surface-soft rounded-xl px-4 py-3">
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Доставлено</div>
           <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
             {{ payload.totals.deliveredCount }}<span class="text-[12px] text-muted font-normal ml-1">задач · {{ payload.totals.deliveredSp }} SP</span>
           </div>
           <div v-if="deliveredShare !== null" class="text-[11px] text-muted mt-0.5">{{ deliveredShare }}% состава</div>
         </div>
-        <div class="bg-default border border-default rounded-xl px-4 py-3">
+        <div class="surface-soft rounded-xl px-4 py-3">
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Перенесено</div>
           <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
             {{ payload.totals.carryOverCount }}<span class="text-[12px] text-muted font-normal ml-1">задач · {{ payload.totals.carryOverSp }} SP</span>
           </div>
         </div>
-        <div class="bg-default border border-default rounded-xl px-4 py-3">
+        <div class="surface-soft rounded-xl px-4 py-3">
           <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Изменения состава</div>
           <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
             +{{ payload.totals.addedAfterStartCount }}<span class="text-muted">/</span>−{{ payload.totals.removedAfterStartCount }}
@@ -256,33 +350,26 @@ async function copyJson() {
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        <div v-if="burndownPoints.length > 0" class="bg-default border border-default rounded-2xl px-5 py-4 space-y-2">
+        <div v-if="burndownPoints.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2">
           <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Burndown</div>
           <SprintBurndown :points="burndownPoints" :height="140" />
         </div>
 
-        <div class="bg-default border border-default rounded-2xl px-5 py-4 space-y-3">
+        <div class="surface-soft rounded-2xl px-5 py-4 space-y-3">
           <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Метрики потока</div>
           <div class="grid grid-cols-3 gap-2">
-            <div class="bg-muted rounded-lg px-3 py-2">
+            <div>
               <div class="text-[10px] font-semibold uppercase text-muted">Throughput</div>
               <div class="text-[18px] font-semibold text-default">{{ payload.flow.throughputPerWeek ?? '—' }}<span class="text-[10px] text-muted font-normal ml-0.5">задач/нед</span></div>
             </div>
-            <div class="bg-muted rounded-lg px-3 py-2">
+            <div>
               <div class="text-[10px] font-semibold uppercase text-muted">Cycle P50</div>
               <div class="text-[18px] font-semibold text-default">{{ payload.flow.cycleP50 ?? '—' }}<span class="text-[10px] text-muted font-normal ml-0.5">дн</span></div>
             </div>
-            <div class="bg-muted rounded-lg px-3 py-2">
+            <div>
               <div class="text-[10px] font-semibold uppercase text-muted">Cycle P85</div>
               <div class="text-[18px] font-semibold text-default">{{ payload.flow.cycleP85 ?? '—' }}<span class="text-[10px] text-muted font-normal ml-0.5">дн</span></div>
             </div>
-          </div>
-          <div v-if="forecastStart" class="text-[12px] text-muted leading-relaxed pt-1 border-t border-default">
-            Прогноз на старте: вероятность
-            <b class="text-default">{{ forecastStart.probabilityWithinHorizon !== null && forecastStart.probabilityWithinHorizon !== undefined ? Math.round(forecastStart.probabilityWithinHorizon * 100) + '%' : '—' }}</b>
-            · P50 {{ forecastStart.p50Days ?? '—' }} дн · P85 {{ forecastStart.p85Days ?? '—' }} дн.
-            Факт: {{ payload.goal.achieved === true ? 'цель достигнута' : payload.goal.achieved === false ? 'цель не достигнута' : '—' }},
-            доставлено {{ deliveredShare ?? '—' }}% состава.
           </div>
           <div class="flex flex-wrap gap-1.5 pt-1">
             <span
@@ -296,7 +383,7 @@ async function copyJson() {
         </div>
       </div>
 
-      <div v-if="payload.carryOver.length > 0" class="bg-default border border-default rounded-2xl px-5 py-4 space-y-2">
+      <div v-if="payload.carryOver.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2">
         <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Переносы</div>
         <div class="divide-y divide-default">
           <div
@@ -316,7 +403,7 @@ async function copyJson() {
         </div>
       </div>
 
-      <div v-if="payload.scopeChanges.length > 0" class="bg-default border border-default rounded-2xl px-5 py-4 space-y-2">
+      <div v-if="payload.scopeChanges.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2">
         <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Изменения состава после старта</div>
         <div class="divide-y divide-default">
           <div
@@ -335,7 +422,7 @@ async function copyJson() {
         </div>
       </div>
 
-      <div v-if="payload.appliedScenarios.length > 0" class="bg-default border border-default rounded-2xl px-5 py-4 space-y-2">
+      <div v-if="payload.appliedScenarios.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2">
         <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted inline-flex items-center gap-1.5">
           <UIcon name="i-lucide-flask-conical" class="size-3.5" />
           Решения через симулятор
