@@ -73,6 +73,14 @@ export async function listTasksForBoard(input: {
   )
 }
 
+// The overview screen needs to say how long a task has been stuck, which the
+// board payload has no use for. Kept out of taskWithAssigneesSelect so the
+// per-board hot path does not pay for the extra correlated subquery.
+const blockedSinceSelect = sql<string | null>`(
+  SELECT MAX(${taskEvents.createdAt}) FROM ${taskEvents}
+  WHERE ${taskEvents.taskId} = tasks.id AND ${taskEvents.eventType} = 'task_blocked'
+)`.as('blocked_since')
+
 export async function listTasksForWorkspace(input: {
   workspaceId: string
   actorRole: WorkspaceMemberRole
@@ -80,7 +88,7 @@ export async function listTasksForWorkspace(input: {
   requireMinRole(input.actorRole, 'viewer')
   return withTenant(input.workspaceId, async (tx) =>
     tx
-      .select(taskWithAssigneesSelect)
+      .select({ ...taskWithAssigneesSelect, blockedSince: blockedSinceSelect })
       .from(tasks)
       .orderBy(asc(tasks.boardId), asc(tasks.columnId), asc(tasks.position)),
   )

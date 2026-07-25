@@ -156,6 +156,7 @@ export const apiRoutes = {
   workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
 
   workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
+  workspaceActivityDaily: (wsId: string) => `/api/workspaces/${wsId}/activity-daily`,
 
   notifications: '/api/notifications',
   notificationsUnreadCount: '/api/notifications/unread-count',

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 import {
   boards,
   taskEvents,
@@ -36,6 +36,51 @@ export interface ActivityEvent {
   actorEmail: string | null
   payload: unknown
   createdAt: Date
+}
+
+export interface ActivityDayBucket {
+  day: string
+  eventType: TaskEventType
+  count: number
+}
+
+// Aggregated server-side on purpose: listActivityForWorkspace caps at LIMIT
+// rows ordered by recency, so counting a multi-week range from that list would
+// silently under-report the oldest weeks.
+export async function activityDailyCounts(input: {
+  workspaceId: string
+  actorRole: WorkspaceMemberRole
+  from: Date
+  to: Date
+  timeZone: string
+  boardId?: string
+  actorId?: string
+}): Promise<ActivityDayBucket[]> {
+  requireMinRole(input.actorRole, 'viewer')
+
+  const conds = [
+    eq(taskEvents.workspaceId, input.workspaceId),
+    gte(taskEvents.createdAt, input.from),
+    lte(taskEvents.createdAt, input.to),
+  ]
+  if (input.boardId) conds.push(eq(tasks.boardId, input.boardId))
+  if (input.actorId) conds.push(eq(taskEvents.actorId, input.actorId))
+
+  // Grouped by output position: the timezone is a bound parameter, and repeating
+  // the expression in GROUP BY binds it a second time, which Postgres then refuses
+  // to match against the SELECT expression.
+  return withTenant(input.workspaceId, async (tx) =>
+    tx
+      .select({
+        day: sql<string>`((${taskEvents.createdAt} AT TIME ZONE ${input.timeZone})::date)::text`.as('day'),
+        eventType: taskEvents.eventType,
+        count: sql<number>`COUNT(*)::int`.as('count'),
+      })
+      .from(taskEvents)
+      .leftJoin(tasks, eq(tasks.id, taskEvents.taskId))
+      .where(and(...conds))
+      .groupBy(sql`1`, taskEvents.eventType),
+  )
 }
 
 export async function listActivityForWorkspace(input: {
