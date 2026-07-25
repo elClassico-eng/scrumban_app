@@ -163,6 +163,13 @@ const manageLinks = computed(() => {
           :collapsed="collapsed"
           external
         />
+        <SidebarNavItem
+          :to="pageRoutes.landing"
+          icon="i-lucide-globe"
+          label="О продукте"
+          :collapsed="collapsed"
+          external
+        />
       </div>
     </nav>
 

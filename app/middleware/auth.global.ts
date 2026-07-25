@@ -15,6 +15,7 @@ const PUBLIC_PREFIXES: ReadonlyArray<string> = [
   '/reset-password/',
   '/invite/',
   '/docs',
+  '/lab',
 ]
 
 function isPublicRoute(path: string): boolean {
@@ -36,9 +37,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const authenticated = !!sessionQuery.data.value?.user
 
   // Home is the public landing for guests; authenticated users go straight
-  // to their workspaces.
+  // to their workspaces unless they explicitly asked for the landing (?about).
   if (to.path === pageRoutes.home) {
-    if (authenticated) return navigateTo(pageRoutes.workspaces)
+    if (authenticated && to.query.about === undefined) return navigateTo(pageRoutes.workspaces)
     return
   }
 

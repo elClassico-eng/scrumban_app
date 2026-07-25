@@ -5,7 +5,7 @@ type TocLink = { id: string, text: string, depth: number, children?: TocLink[] }
 const TAB_ORDER = ['Введение', 'Методология', 'Математика', 'Руководство', 'Проект']
 
 const route = useRoute()
-const goToApp = useAccessCta()
+const { go: goToApp } = useAccessCta()
 const colorMode = useColorMode()
 
 const { data: pages } = await useAsyncData('docs-nav', () =>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const goToApp = useAccessCta()
+const { go: goToApp, label: ctaLabel } = useAccessCta()
 const dense = ref(false)
 const open = ref(false)
 
@@ -32,7 +32,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
         <a v-for="[label, href] in links" :key="href" :href="href" @click="open = false">{{ label }}</a>
         <NuxtLink to="/docs" external>Документация</NuxtLink>
       </div>
-      <button class="btn btn--dark pnav__cta" @click="goToApp">Ранний доступ</button>
+      <button class="btn btn--dark pnav__cta" @click="goToApp">{{ ctaLabel }}</button>
       <button class="pnav__burger" aria-label="Меню" :aria-expanded="open" @click="open = !open">
         <span /><span />
       </button>
@@ -40,7 +40,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', onScroll))
     <div v-if="open" class="pnav__sheet">
       <a v-for="[label, href] in links" :key="href" :href="href" @click="open = false">{{ label }}</a>
       <NuxtLink to="/docs" external>Документация</NuxtLink>
-      <button class="btn btn--dark" @click="goToApp">Ранний доступ</button>
+      <button class="btn btn--dark" @click="goToApp">{{ ctaLabel }}</button>
     </div>
   </nav>
 </template>

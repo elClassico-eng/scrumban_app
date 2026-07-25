@@ -168,6 +168,7 @@ export const apiRoutes = {
 
 export const pageRoutes = {
   home: '/',
+  landing: '/?about=1',
   privacy: '/privacy',
   login: '/login',
   register: '/register',
