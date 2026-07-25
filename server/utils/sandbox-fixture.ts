@@ -12,14 +12,31 @@ const TASKS: { id: string; title: string; storyPoints: number | null; deps: stri
 ]
 
 const HISTORY: { storyPoints: number | null; cycleDays: number }[] = [
+  { storyPoints: 2, cycleDays: 0.6 },
+  { storyPoints: 2, cycleDays: 0.9 },
+  { storyPoints: 2, cycleDays: 1.1 },
   { storyPoints: 2, cycleDays: 1.4 },
-  { storyPoints: 2, cycleDays: 2.1 },
+  { storyPoints: 2, cycleDays: 1.9 },
+  { storyPoints: 2, cycleDays: 2.4 },
+  { storyPoints: 2, cycleDays: 3.6 },
+  { storyPoints: 3, cycleDays: 1.2 },
+  { storyPoints: 3, cycleDays: 1.7 },
+  { storyPoints: 3, cycleDays: 2.1 },
   { storyPoints: 3, cycleDays: 2.6 },
-  { storyPoints: 3, cycleDays: 3.4 },
+  { storyPoints: 3, cycleDays: 3.3 },
+  { storyPoints: 3, cycleDays: 4.2 },
+  { storyPoints: 3, cycleDays: 6.1 },
+  { storyPoints: 5, cycleDays: 2.4 },
+  { storyPoints: 5, cycleDays: 3.1 },
   { storyPoints: 5, cycleDays: 3.9 },
-  { storyPoints: 5, cycleDays: 5.2 },
-  { storyPoints: 8, cycleDays: 5.8 },
-  { storyPoints: 8, cycleDays: 7.5 },
+  { storyPoints: 5, cycleDays: 4.7 },
+  { storyPoints: 5, cycleDays: 6.2 },
+  { storyPoints: 5, cycleDays: 8.6 },
+  { storyPoints: 8, cycleDays: 4.5 },
+  { storyPoints: 8, cycleDays: 5.7 },
+  { storyPoints: 8, cycleDays: 6.9 },
+  { storyPoints: 8, cycleDays: 8.8 },
+  { storyPoints: 8, cycleDays: 12.4 },
 ]
 
 export const SANDBOX_SPRINT_ID = 'sandbox-demo-sprint'
