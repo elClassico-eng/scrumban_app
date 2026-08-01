@@ -66,6 +66,7 @@ export async function updateUserProfile(input: {
     avatarUrl?: string | null
     jobTitle?: string | null
     bio?: string | null
+    notificationPrefs?: Record<string, boolean>
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -77,6 +78,7 @@ export async function updateUserProfile(input: {
   if ('avatarUrl' in input.patch) set.avatarUrl = input.patch.avatarUrl ?? null
   if ('jobTitle' in input.patch) set.jobTitle = input.patch.jobTitle ?? null
   if ('bio' in input.patch) set.bio = input.patch.bio ?? null
+  if (input.patch.notificationPrefs) set.notificationPrefs = input.patch.notificationPrefs
 
   const [row] = await useDB()
     .update(users)

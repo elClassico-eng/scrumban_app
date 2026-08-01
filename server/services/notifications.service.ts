@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import {
   notifications,
+  users,
   type Notification,
   type NotificationType,
 } from '../db/schema'
@@ -80,6 +81,12 @@ export interface EmitInput {
 
 export async function emitNotification(input: EmitInput): Promise<void> {
   if (input.actorId && input.actorId === input.recipientId) return
+
+  const [recipient] = await input.tx
+    .select({ prefs: users.notificationPrefs })
+    .from(users)
+    .where(eq(users.id, input.recipientId))
+  if (recipient?.prefs[input.type] === false) return
 
   await setUserContext(input.tx, input.recipientId)
   const [row] = await input.tx

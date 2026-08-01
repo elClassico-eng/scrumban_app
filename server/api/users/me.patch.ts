@@ -11,6 +11,7 @@ const BodySchema = z
     avatarUrl: z.url().max(2000).nullable().optional(),
     jobTitle: z.string().trim().max(150).nullable().optional(),
     bio: z.string().max(5000).nullable().optional(),
+    notificationPrefs: z.record(z.string(), z.boolean()).optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
     message: 'Provide at least one field to update',
@@ -36,6 +37,7 @@ export default defineEventHandler(async (event) => {
         avatarUrl: user.avatarUrl,
         jobTitle: user.jobTitle,
         bio: user.bio,
+        notificationPrefs: user.notificationPrefs ?? {},
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

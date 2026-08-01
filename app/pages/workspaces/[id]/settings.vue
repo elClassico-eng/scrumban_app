@@ -9,8 +9,10 @@ const wsId = computed(() => route.params.id as string)
 const workspaceStore = useWorkspaceStore()
 workspaceStore.setCurrent(wsId.value)
 
-const { list, update } = useWorkspacesApi()
-const { list: membersList } = useMembersApi(wsId)
+const { list, update, remove: removeWorkspace } = useWorkspacesApi()
+const { list: membersList, remove: removeMember } = useMembersApi(wsId)
+const authStore = useAuthStore()
+const confirm = useConfirm()
 const toast = useToast()
 
 const workspace = computed(() =>
@@ -27,11 +29,7 @@ const createdLabel = computed(() => {
   return new Date(at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
 })
 
-watchEffect(() => {
-  if (workspace.value && !canEdit.value) {
-    router.push(pageRoutes.boards(wsId.value))
-  }
-})
+const isOwner = computed(() => workspace.value?.role === 'owner')
 
 useHead({
   title: () => workspace.value
@@ -77,24 +75,15 @@ watch(
   { immediate: true },
 )
 
-async function onSubmit() {
+async function save(fields: Partial<State>, okTitle: string) {
   if (!workspace.value) return
+  const body = Object.fromEntries(
+    Object.entries(fields).map(([k, v]) =>
+      [k, typeof v === 'string' && k !== 'name' && k !== 'cardStyle' ? v.trim() || null : v]),
+  )
   try {
-    await update.mutateAsync({
-      workspaceId: workspace.value.id,
-      name: state.name,
-      description: state.description.trim() || null,
-      purpose: state.purpose.trim() || null,
-      industry: state.industry.trim() || null,
-      logoUrl: state.logoUrl.trim() || null,
-      cardStyle: state.cardStyle,
-    })
-    toast.add({
-      title: 'Настройки сохранены',
-      color: 'success',
-      icon: 'i-lucide-check',
-      duration: 1500,
-    })
+    await update.mutateAsync({ workspaceId: workspace.value.id, ...body })
+    toast.add({ title: okTitle, color: 'success', icon: 'i-lucide-check', duration: 1500 })
   }
   catch (err) {
     toast.add({
@@ -104,13 +93,68 @@ async function onSubmit() {
     })
   }
 }
+
+const saveGeneral = () => save(
+  { name: state.name, industry: state.industry, logoUrl: state.logoUrl },
+  'Общая информация сохранена',
+)
+const saveAbout = () => save(
+  { description: state.description, purpose: state.purpose },
+  'Описание сохранено',
+)
+
+function pickCardStyle(v: State['cardStyle']) {
+  state.cardStyle = v
+  save({ cardStyle: v }, 'Вид карточки сохранён')
+}
+
+const deleteConfirmName = ref('')
+const deleteArmed = computed(() => deleteConfirmName.value.trim() === workspace.value?.name)
+
+async function onDeleteWorkspace() {
+  if (!workspace.value || !deleteArmed.value) return
+  try {
+    await removeWorkspace.mutateAsync(workspace.value.id)
+    await router.push(pageRoutes.workspaces)
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось удалить workspace'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+
+async function onLeave() {
+  const me = authStore.user?.id
+  if (!workspace.value || !me) return
+  const ok = await confirm({
+    title: `Покинуть «${workspace.value.name}»?`,
+    description: 'Вы потеряете доступ ко всем доскам этой команды. Вернуться можно только по новому приглашению.',
+    confirmLabel: 'Покинуть',
+    confirmColor: 'error',
+  })
+  if (!ok) return
+  try {
+    await removeMember.mutateAsync(me)
+    await router.push(pageRoutes.workspaces)
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось покинуть команду'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto py-8 px-4">
-    <div class="flex items-start justify-between gap-4 mb-8">
+  <div class="space-y-4 py-2">
+    <div class="flex flex-wrap items-start justify-between gap-3">
       <div class="space-y-1">
-        <h1 class="text-2xl font-bold tracking-tight text-default">Настройки команды (в разработке)</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Настройки команды</h1>
         <p class="text-sm text-muted">Профиль и описание workspace'а</p>
       </div>
       <WorkspaceMemberRoleBadge v-if="workspace" :role="workspace.role" />
@@ -121,10 +165,10 @@ async function onSubmit() {
     </div>
 
     <div
-      v-else-if="workspace && canEdit"
-      class="grid lg:grid-cols-[340px_minmax(0,1fr)] gap-6 items-start"
+      v-else-if="workspace"
+      class="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-12"
     >
-      <div class="surface-elevated rounded-2xl p-6 text-center lg:sticky lg:top-6">
+      <div class="surface-soft rounded-2xl p-5 text-center lg:col-span-4 lg:sticky lg:top-6">
         <div class="brand-gradient mx-auto size-24 rounded-2xl p-[3px]">
           <div class="size-full rounded-2xl overflow-hidden bg-default grid place-items-center text-2xl font-semibold text-default">
             <img
@@ -160,13 +204,14 @@ async function onSubmit() {
         </div>
       </div>
 
+      <div class="space-y-4 lg:col-span-8">
       <UForm
+        v-if="canEdit"
         :schema="schema"
         :state="state"
-        class="space-y-6"
-        @submit="onSubmit"
+        class="surface-soft rounded-2xl p-5"
+        @submit="saveGeneral"
       >
-        <div class="surface rounded-2xl p-6">
           <h2 class="font-semibold text-default mb-4">Общая информация</h2>
           <div class="space-y-4">
             <UFormField label="Название команды" name="name" required>
@@ -191,9 +236,12 @@ async function onSubmit() {
               <UInput v-model="state.logoUrl" class="w-full" placeholder="https://..." />
             </UFormField>
           </div>
-        </div>
+          <div class="mt-4 flex justify-end">
+            <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
+          </div>
+      </UForm>
 
-        <div class="surface rounded-2xl p-6">
+        <div v-if="canEdit" class="surface-soft rounded-2xl p-5">
           <h2 class="font-semibold text-default mb-1">Вид карточки</h2>
           <p class="text-xs text-muted mb-4">Как workspace выглядит в списке воркспейсов</p>
           <div class="grid grid-cols-2 gap-3">
@@ -205,7 +253,7 @@ async function onSubmit() {
               :class="state.cardStyle === opt.value
                 ? 'border-accent-400 bg-accent-50 dark:bg-accent-950'
                 : 'border-default hover:border-accent-300'"
-              @click="state.cardStyle = opt.value"
+              @click="pickCardStyle(opt.value)"
             >
               <div class="brand-gradient relative mb-2 h-16 w-full overflow-hidden rounded-lg">
                 <template v-if="opt.value === 'cover'">
@@ -230,7 +278,13 @@ async function onSubmit() {
           </div>
         </div>
 
-        <div class="surface rounded-2xl p-6">
+        <UForm
+          v-if="canEdit"
+          :schema="schema"
+          :state="state"
+          class="surface-soft rounded-2xl p-5"
+          @submit="saveAbout"
+        >
           <h2 class="font-semibold text-default mb-4">О команде</h2>
           <div class="space-y-4">
             <UFormField
@@ -258,14 +312,52 @@ async function onSubmit() {
               />
             </UFormField>
           </div>
-        </div>
+          <div class="mt-4 flex justify-end">
+            <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
+          </div>
+        </UForm>
 
-        <div class="flex justify-end">
-          <UButton type="submit" :loading="update.isPending.value">
-            Сохранить
+      <section class="surface-soft rounded-2xl p-5">
+        <h2 class="mb-1 font-semibold text-error-600">Опасная зона</h2>
+
+        <template v-if="isOwner">
+          <p class="mb-4 text-sm text-muted">
+            Удаление стирает все доски, задачи и историю команды. Отменить это нельзя.
+            Чтобы подтвердить, введите название: <b class="text-default">{{ workspace.name }}</b>
+          </p>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <UInput
+              v-model="deleteConfirmName"
+              class="sm:w-72"
+              :placeholder="workspace.name"
+            />
+            <UButton
+              color="error"
+              variant="solid"
+              :disabled="!deleteArmed"
+              :loading="removeWorkspace.isPending.value"
+              @click="onDeleteWorkspace"
+            >
+              Удалить workspace
+            </UButton>
+          </div>
+        </template>
+
+        <template v-else>
+          <p class="mb-4 text-sm text-muted">
+            Вы потеряете доступ ко всем доскам этой команды. Вернуться можно только по новому приглашению.
+          </p>
+          <UButton
+            color="error"
+            variant="outline"
+            :loading="removeMember.isPending.value"
+            @click="onLeave"
+          >
+            Покинуть команду
           </UButton>
-        </div>
-      </UForm>
+        </template>
+      </section>
+      </div>
     </div>
   </div>
 </template>

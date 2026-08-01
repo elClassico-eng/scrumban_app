@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { passwordSchema } from '#shared/validation/password'
 import { apiRoutes } from '~/routing'
 
 useHead({ title: 'Личный кабинет — Такт' })
 
-const { me, update } = useProfileApi()
+const { me, update, changePassword, sessions, revokeSession } = useProfileApi()
 const { list: workspacesList } = useWorkspacesApi()
 const { logout } = useAuthApi()
 const toast = useToast()
@@ -92,26 +93,91 @@ watch(
   { immediate: true },
 )
 
-async function onSubmit() {
+async function save(fields: Partial<State>, okTitle: string) {
+  const body = Object.fromEntries(
+    Object.entries(fields).map(([k, v]) => [k, typeof v === 'string' ? v.trim() || null : v]),
+  )
   try {
-    await update.mutateAsync({
-      firstName: state.firstName.trim() || null,
-      lastName: state.lastName.trim() || null,
-      middleName: state.middleName.trim() || null,
-      jobTitle: state.jobTitle.trim() || null,
-      bio: state.bio.trim() || null,
-      avatarUrl: state.avatarUrl.trim() || null,
-    })
-    toast.add({
-      title: 'Профиль обновлён',
-      color: 'success',
-      icon: 'i-lucide-check',
-      duration: 1500,
-    })
+    await update.mutateAsync(body)
+    toast.add({ title: okTitle, color: 'success', icon: 'i-lucide-check', duration: 1500 })
   }
   catch (err) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+
+const saveName = () => save(
+  { firstName: state.firstName, lastName: state.lastName, middleName: state.middleName },
+  'Имя обновлено',
+)
+const saveAbout = () => save(
+  { jobTitle: state.jobTitle, bio: state.bio, avatarUrl: state.avatarUrl },
+  'Профиль обновлён',
+)
+
+const pwState = reactive({ currentPassword: '', newPassword: '' })
+const pwSchema = z.object({
+  currentPassword: z.string().min(1, 'Введите текущий пароль'),
+  newPassword: passwordSchema,
+})
+
+async function onChangePassword() {
+  try {
+    await changePassword.mutateAsync({ ...pwState })
+    pwState.currentPassword = ''
+    pwState.newPassword = ''
+    toast.add({ title: 'Пароль изменён', color: 'success', icon: 'i-lucide-check', duration: 1500 })
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось сменить пароль'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+
+const prefs = computed(() => me.data.value?.user.notificationPrefs ?? {})
+
+function toggleNotification(type: string, enabled: boolean) {
+  update.mutate(
+    { notificationPrefs: { ...prefs.value, [type]: enabled } },
+    {
+      onError: err => toast.add({
+        title: getErrorMessage(err, 'Не удалось сохранить'),
+        color: 'error',
+        icon: 'i-lucide-alert-circle',
+      }),
+    },
+  )
+}
+
+function deviceLabel(ua: string | null): string {
+  if (!ua) return 'Неизвестное устройство'
+  const browser = /firefox/i.test(ua) ? 'Firefox'
+    : /edg/i.test(ua) ? 'Edge'
+      : /chrome/i.test(ua) ? 'Chrome'
+        : /safari/i.test(ua) ? 'Safari' : 'Браузер'
+  const os = /windows/i.test(ua) ? 'Windows'
+    : /mac os/i.test(ua) ? 'macOS'
+      : /android/i.test(ua) ? 'Android'
+        : /iphone|ipad|ios/i.test(ua) ? 'iOS'
+          : /linux/i.test(ua) ? 'Linux' : ''
+  return os ? `${browser} · ${os}` : browser
+}
+
+async function onRevokeSession(id: string) {
+  try {
+    await revokeSession.mutateAsync(id)
+    toast.add({ title: 'Сессия завершена', color: 'success', icon: 'i-lucide-check', duration: 1500 })
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось завершить сессию'),
       color: 'error',
       icon: 'i-lucide-alert-circle',
     })
@@ -131,9 +197,9 @@ const previewInitials = computed(() => initials({
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto py-8 px-4">
-    <div class="space-y-1 mb-8">
-      <h1 class="text-2xl font-bold tracking-tight text-default">Личный кабинет (в разработке)</h1>
+  <div class="space-y-4 py-2">
+    <div class="space-y-1">
+      <h1 class="text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Личный кабинет</h1>
       <p class="text-sm text-muted">
         Эта информация видна другим участникам ваших workspace'ов.
       </p>
@@ -145,9 +211,9 @@ const previewInitials = computed(() => initials({
 
     <div
       v-else-if="me.data.value"
-      class="grid lg:grid-cols-[340px_minmax(0,1fr)] gap-6 items-start"
+      class="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-12"
     >
-      <div class="space-y-4 lg:sticky lg:top-6">
+      <div class="space-y-4 lg:col-span-4 lg:sticky lg:top-6">
         <div class="surface-elevated relative flex min-h-[420px] flex-col justify-end overflow-hidden rounded-2xl">
           <img
             v-if="state.avatarUrl"
@@ -196,7 +262,7 @@ const previewInitials = computed(() => initials({
 
         <div
           v-if="!isVerified"
-          class="surface rounded-2xl p-4"
+          class="surface-soft rounded-2xl p-4"
           style="border-color: var(--island-orange-tint-border)"
         >
           <div class="flex items-start gap-2.5">
@@ -237,13 +303,8 @@ const previewInitials = computed(() => initials({
         </button>
       </div>
 
-      <UForm
-        :schema="schema"
-        :state="state"
-        class="space-y-6"
-        @submit="onSubmit"
-      >
-        <div class="surface rounded-2xl p-6">
+      <div class="space-y-4 lg:col-span-8">
+        <UForm :schema="schema" :state="state" class="surface-soft rounded-2xl p-5" @submit="saveName">
           <h2 class="font-semibold text-default mb-4">Имя</h2>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <UFormField label="Фамилия" name="lastName">
@@ -256,9 +317,12 @@ const previewInitials = computed(() => initials({
               <UInput v-model="state.middleName" class="w-full" />
             </UFormField>
           </div>
-        </div>
+          <div class="mt-4 flex justify-end">
+            <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
+          </div>
+        </UForm>
 
-        <div class="surface rounded-2xl p-6">
+        <UForm :schema="schema" :state="state" class="surface-soft rounded-2xl p-5" @submit="saveAbout">
           <h2 class="font-semibold text-default mb-4">О себе</h2>
           <div class="space-y-4">
             <UFormField label="Должность" name="jobTitle">
@@ -288,14 +352,83 @@ const previewInitials = computed(() => initials({
               />
             </UFormField>
           </div>
-        </div>
+          <div class="mt-4 flex justify-end">
+            <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
+          </div>
+        </UForm>
 
-        <div class="flex justify-end">
-          <UButton type="submit" :loading="update.isPending.value">
-            Сохранить
-          </UButton>
-        </div>
-      </UForm>
+        <UForm :schema="pwSchema" :state="pwState" class="surface-soft rounded-2xl p-5" @submit="onChangePassword">
+          <h2 class="font-semibold text-default mb-4">Смена пароля</h2>
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <UFormField label="Текущий пароль" name="currentPassword">
+              <UInput v-model="pwState.currentPassword" type="password" autocomplete="current-password" class="w-full" />
+            </UFormField>
+            <UFormField label="Новый пароль" name="newPassword" description="Минимум 10 символов, буква и цифра">
+              <UInput v-model="pwState.newPassword" type="password" autocomplete="new-password" class="w-full" />
+            </UFormField>
+          </div>
+          <div class="mt-4 flex justify-end">
+            <UButton type="submit" size="sm" :loading="changePassword.isPending.value">Сменить пароль</UButton>
+          </div>
+        </UForm>
+
+        <section class="surface-soft rounded-2xl p-5">
+          <h2 class="font-semibold text-default mb-1">Уведомления</h2>
+          <p class="mb-4 text-xs text-muted">Какие события присылать в колокольчик</p>
+          <div class="divide-y divide-default">
+            <div
+              v-for="(label, type) in NOTIFICATION_TYPE_LABEL"
+              :key="type"
+              class="flex items-center justify-between gap-4 py-2.5"
+            >
+              <span class="text-sm text-default">{{ label }}</span>
+              <USwitch
+                :model-value="prefs[type] !== false"
+                @update:model-value="toggleNotification(type, $event)"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="surface-soft rounded-2xl p-5">
+          <h2 class="font-semibold text-default mb-1">Активные сессии</h2>
+          <p class="mb-4 text-xs text-muted">Устройства, с которых выполнен вход в аккаунт</p>
+          <div v-if="sessions.data.value?.sessions.length" class="divide-y divide-default">
+            <div
+              v-for="s in sessions.data.value.sessions"
+              :key="s.id"
+              class="flex items-center justify-between gap-4 py-2.5"
+            >
+              <div class="min-w-0">
+                <p class="flex items-center gap-2 text-sm text-default">
+                  <UIcon name="i-lucide-monitor-smartphone" class="size-4 shrink-0 text-muted" />
+                  <span class="truncate">{{ deviceLabel(s.userAgent) }}</span>
+                  <span
+                    v-if="s.current"
+                    class="shrink-0 rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-medium text-success-600 dark:bg-success-950/40"
+                  >текущая</span>
+                </p>
+                <p class="mt-0.5 text-xs text-muted">
+                  {{ s.ip ?? '—' }} · активна {{ formatRelativeDate(s.lastSeenAt) }}
+                </p>
+              </div>
+              <UButton
+                v-if="!s.current"
+                size="xs"
+                variant="ghost"
+                color="error"
+                :loading="revokeSession.isPending.value"
+                @click="onRevokeSession(s.id)"
+              >
+                Завершить
+              </UButton>
+            </div>
+          </div>
+          <p v-else class="text-sm text-muted">
+            Список пуст: сессии записываются начиная со следующего входа в аккаунт.
+          </p>
+        </section>
+      </div>
     </div>
   </div>
 </template>
