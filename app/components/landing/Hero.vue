@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const goToApp = useAccessCta()
+const { go: goToApp, heroLabel } = useAccessCta()
 </script>
 
 <template>
@@ -26,7 +26,7 @@ const goToApp = useAccessCta()
         Monte Carlo и CPM/PERT, а не интуиция.
       </p>
       <div class="hero__cta reveal">
-        <button class="btn btn--dark" @click="goToApp">Получить доступ</button>
+        <button class="btn btn--dark" @click="goToApp">{{ heroLabel }}</button>
         <NuxtLink class="btn btn--light" to="/docs" external>Документация</NuxtLink>
       </div>
     </div>

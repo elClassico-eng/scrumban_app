@@ -89,10 +89,10 @@ const isDone = computed(() => props.task.closedAt != null)
 
 <template>
   <div
-    class="group relative bg-default border border-default rounded-lg pl-4 pr-3 py-2.5 cursor-pointer hover:border-zinc-400 hover:shadow-sm transition-all overflow-hidden"
+    class="group relative bg-default rounded-lg shadow-sm pl-4 pr-3 py-2.5 cursor-pointer hover:shadow-md transition-all overflow-hidden"
     :class="[
       isDone ? 'bg-muted' : '',
-      task.blockedReason || blockerCount > 0 ? 'border-red-200' : '',
+      task.blockedReason || blockerCount > 0 ? 'ring-1 ring-red-200 dark:ring-red-900' : '',
     ]"
     @click="openTask"
   >

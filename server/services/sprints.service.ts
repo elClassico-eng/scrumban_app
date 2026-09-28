@@ -12,19 +12,20 @@
 //
 // Once a sprint enters `closed`, its task membership is frozen so velocity
 // and burndown analytics for that sprint stay reproducible.
-import { and, asc, desc, eq, gte, inArray, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
 import {
   boards,
   sprintEvents,
+  sprintReports,
   sprintTasks,
   sprints,
   taskEvents,
   tasks,
   type Sprint,
   type SprintEventType,
-  type SprintState,
   type WorkspaceMemberRole,
 } from '../db/schema'
+import type { SprintOutcome } from '#shared/types/sprint'
 import { withTenant, type DbTransaction } from '../utils/db'
 import {
   ConflictError,
@@ -95,15 +96,35 @@ export async function listSprints(input: {
 export async function listWorkspaceSprints(input: {
   workspaceId: string
   actorRole: WorkspaceMemberRole
-}): Promise<Array<Sprint & { boardName: string }>> {
+}): Promise<Array<Sprint & { boardName: string; outcome: SprintOutcome | null }>> {
   requireMinRole(input.actorRole, 'viewer')
   return withTenant(input.workspaceId, async (tx) => {
+    // Outcome lives in the generated report; sprints closed before reports were
+    // auto-generated simply have none, and the list says so rather than guessing.
     const rows = await tx
-      .select({ sprint: sprints, boardName: boards.name })
+      .select({
+        sprint: sprints,
+        boardName: boards.name,
+        deliveredCount: sql<number | null>`(${sprintReports.payload}->'totals'->>'deliveredCount')::int`,
+        startCount: sql<number | null>`(${sprintReports.payload}->'totals'->>'startCount')::int`,
+        goalAchieved: sql<boolean | null>`(${sprintReports.payload}->'goal'->>'achieved')::boolean`,
+      })
       .from(sprints)
       .innerJoin(boards, eq(boards.id, sprints.boardId))
+      .leftJoin(sprintReports, eq(sprintReports.sprintId, sprints.id))
       .orderBy(asc(boards.name), desc(sprints.createdAt))
-    return rows.map(r => ({ ...r.sprint, boardName: r.boardName }))
+
+    return rows.map(r => ({
+      ...r.sprint,
+      boardName: r.boardName,
+      outcome: r.startCount === null
+        ? null
+        : {
+            deliveredCount: r.deliveredCount ?? 0,
+            startCount: r.startCount,
+            goalAchieved: r.goalAchieved,
+          },
+    }))
   })
 }
 

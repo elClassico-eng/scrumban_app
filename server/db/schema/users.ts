@@ -18,6 +18,8 @@ export const users = pgTable('users', {
   // One-time UI hints the user has dismissed (e.g. onboarding blocks),
   // keyed by string identifiers like 'simulator-intro'.
   dismissedHints: jsonb('dismissed_hints').$type<string[]>().notNull().default([]),
+  // Per-type opt-outs; a type absent from the map means enabled.
+  notificationPrefs: jsonb('notification_prefs').$type<Record<string, boolean>>().notNull().default({}),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   changelogSeenAt: timestamp('changelog_seen_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

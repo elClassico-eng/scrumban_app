@@ -17,6 +17,7 @@ export interface Task {
   reopenedCount: number
   parentTaskId: string | null
   blockedReason: string | null
+  blockedSince?: string | null
   isEpic: boolean
   storyPoints: number | null
   checklistTotal: number

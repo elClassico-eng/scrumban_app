@@ -267,6 +267,20 @@
       "when": 1783966818913,
       "tag": "0037_big_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1785577444811,
+      "tag": "0038_minor_toxin",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1785577873130,
+      "tag": "0039_petite_mentor",
+      "breakpoints": true
     }
   ]
 }

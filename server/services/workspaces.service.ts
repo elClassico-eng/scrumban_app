@@ -243,3 +243,24 @@ export async function setWorkspaceLabel(input: {
     return { label: trimmed }
   })
 }
+
+// Workspaces where this user is the only remaining owner. Deleting the
+// account would leave them without one, so the caller must refuse.
+export async function findSoleOwnedWorkspaces(
+  userId: string,
+): Promise<{ id: string; name: string }[]> {
+  return useDB()
+    .select({ id: workspaces.id, name: workspaces.name })
+    .from(workspaces)
+    .innerJoin(
+      workspaceMembers,
+      and(
+        eq(workspaceMembers.workspaceId, workspaces.id),
+        eq(workspaceMembers.userId, userId),
+        eq(workspaceMembers.role, 'owner'),
+      ),
+    )
+    .where(
+      sql`(select count(*) from ${workspaceMembers} m where m.workspace_id = ${workspaces.id} and m.role = 'owner') = 1`,
+    )
+}

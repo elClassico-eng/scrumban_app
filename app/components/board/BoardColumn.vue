@@ -195,7 +195,7 @@ const wipBarState = computed(() => {
 </script>
 
 <template>
-  <div class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full bg-default border border-default">
+  <div class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full bg-elevated/70">
     <div class="px-3 pt-3 pb-2.5">
       <div class="flex items-center gap-2 mb-1.5">
         <UIcon

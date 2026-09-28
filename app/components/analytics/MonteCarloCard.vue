@@ -48,12 +48,15 @@ const mc = monteCarlo(params)
 const isOk = computed(() => mc.data.value?.ok === true)
 const report = computed(() => mc.data.value as MonteCarloReport | undefined)
 
-const p85Date = computed(() => {
-  const r = report.value
-  if (!r?.ok) return null
-  return new Date(Date.now() + r.percentileDays.p85 * 86_400_000)
-    .toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-})
+// Percentiles are a duration measured from today, the horizon is a date. Showing
+// both as day counts invites comparing them against the wrong thing, so every
+// forecast figure is rendered as a calendar date.
+const dateFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+function dateIn(days: number): string {
+  return dateFmt.format(new Date(Date.now() + days * 86_400_000))
+}
+
+const horizonDate = computed(() => dateIn(horizonDays.value))
 
 const histogramOption = computed(() => {
   if (!report.value || !report.value.ok) return {}
@@ -90,7 +93,7 @@ const histogramOption = computed(() => {
 </script>
 
 <template>
-  <UCard>
+  <UCard :ui="ANALYTICS_CARD_UI">
     <template #header>
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5">
@@ -140,27 +143,33 @@ const histogramOption = computed(() => {
     </div>
 
     <template v-else-if="report && isOk && report.ok">
-      <p v-if="p85Date" class="text-center text-sm text-default mb-3">
-        При текущем темпе: с вероятностью 85% — к <b>{{ p85Date }}</b>
+      <p class="mb-1 text-sm text-default">
+        При текущем темпе оставшиеся задачи закончатся
+        <b>{{ dateIn(report.percentileDays.p85) }}</b> с вероятностью 85%.
       </p>
-      <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+      <div class="mb-4 grid grid-cols-3 gap-3">
         <div>
-          <p class="text-xs text-muted">P50</p>
-          <p class="font-mono font-semibold text-lg">{{ report.percentileDays.p50 }} дн</p>
+          <p class="text-xs text-muted">P50 · половина сценариев</p>
+          <p class="font-mono text-lg font-semibold">{{ dateIn(report.percentileDays.p50) }}</p>
         </div>
         <div>
-          <p class="text-xs text-muted inline-flex items-center gap-1">P85 <AnalyticsPercentileHint /></p>
-          <p class="font-mono font-semibold text-lg">{{ report.percentileDays.p85 }} дн</p>
+          <p class="inline-flex items-center gap-1 text-xs text-muted">P85 <AnalyticsPercentileHint /></p>
+          <p class="font-mono text-lg font-semibold">{{ dateIn(report.percentileDays.p85) }}</p>
         </div>
         <div>
-          <p class="text-xs text-muted">P95</p>
-          <p class="font-mono font-semibold text-lg">{{ report.percentileDays.p95 }} дн</p>
+          <p class="text-xs text-muted">P95 · почти наверняка</p>
+          <p class="font-mono text-lg font-semibold">{{ dateIn(report.percentileDays.p95) }}</p>
         </div>
       </div>
-      <div class="text-center mb-3">
-        <UBadge :color="report.probability >= 0.85 ? 'success' : report.probability >= 0.5 ? 'warning' : 'error'" size="lg">
-          Вероятность уложиться: {{ (report.probability * 100).toFixed(0) }}%
-        </UBadge>
+      <div
+        class="mb-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-xl bg-elevated/60 px-4 py-3 text-sm"
+      >
+        <span class="text-muted">Успеть к горизонту <b class="text-default">{{ horizonDate }}</b>:</span>
+        <b
+          :class="report.probability >= 0.85
+            ? 'text-success-600'
+            : report.probability >= 0.5 ? 'text-accent-600' : 'text-error-600'"
+        >{{ (report.probability * 100).toFixed(0) }}%</b>
       </div>
       <p class="text-xs text-muted text-center mb-2">
         Распределение дневной throughput ({{ report.sampleDays }} дней истории, {{ report.iterations }} итераций):

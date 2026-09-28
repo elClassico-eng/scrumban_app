@@ -3,7 +3,9 @@ declare module '#auth-utils' {
     id: string
     email: string
   }
-  interface UserSession {}
+  interface UserSession {
+    sessionId?: string
+  }
   
   interface SecureSessionData {}
 }
@@ -48,6 +50,7 @@ export interface UserProfile {
   jobTitle: string | null
   bio: string | null
   dismissedHints: string[]
+  notificationPrefs: Record<string, boolean>
   changelogSeenAt: string | null
   emailVerifiedAt: string | null
   createdAt: string
@@ -59,6 +62,8 @@ export interface UserProfileResponse {
 }
 
 export interface UpdateUserProfileInput {
+  notificationPrefs?: Record<string, boolean>
+  dismissedHints?: string[]
   firstName?: string | null
   lastName?: string | null
   middleName?: string | null

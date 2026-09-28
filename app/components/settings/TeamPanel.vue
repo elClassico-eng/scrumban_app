@@ -1,0 +1,345 @@
+<script setup lang="ts">
+import { z } from 'zod'
+import { pageRoutes } from '~/routing'
+
+const router = useRouter()
+const { current: workspace, isLoading } = useCurrentWorkspace()
+const wsId = computed(() => workspace.value?.id ?? '')
+
+const { update, remove: removeWorkspace } = useWorkspacesApi()
+const { list: membersList, remove: removeMember } = useMembersApi(wsId)
+const authStore = useAuthStore()
+const confirm = useConfirm()
+const toast = useToast()
+
+const canEdit = computed(() => hasRole(workspace.value?.role, 'admin'))
+
+const membersCount = computed(() => membersList.data.value?.members.length ?? 0)
+const membersWord = computed(() => plural(membersCount.value, ['участник', 'участника', 'участников']))
+
+const createdLabel = computed(() => {
+  const at = workspace.value?.createdAt
+  if (!at) return null
+  return new Date(at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+})
+
+const isOwner = computed(() => workspace.value?.role === 'owner')
+
+const schema = z.object({
+  name: z.string().trim().min(1, 'Введи название').max(255),
+  description: z.string().max(2000),
+  purpose: z.string().max(2000),
+  industry: z.string().trim().max(100),
+  logoUrl: z.union([z.url().max(2000), z.literal('')]),
+  cardStyle: z.enum(['cover', 'compact']),
+})
+
+type State = z.infer<typeof schema>
+const state = reactive<State>({
+  name: '',
+  description: '',
+  purpose: '',
+  industry: '',
+  logoUrl: '',
+  cardStyle: 'cover',
+})
+
+const cardStyleOptions = [
+  { value: 'cover' as const, label: 'Обложка', hint: 'Логотип на всю карточку' },
+  { value: 'compact' as const, label: 'Компактный', hint: 'Логотип в углу' },
+]
+
+watch(
+  workspace,
+  (w) => {
+    if (!w) return
+    state.name = w.name
+    state.description = w.description ?? ''
+    state.purpose = w.purpose ?? ''
+    state.industry = w.industry ?? ''
+    state.logoUrl = w.logoUrl ?? ''
+    state.cardStyle = w.cardStyle ?? 'cover'
+  },
+  { immediate: true },
+)
+
+async function save(fields: Partial<State>, okTitle: string) {
+  if (!workspace.value) return
+  const body = Object.fromEntries(
+    Object.entries(fields).map(([k, v]) =>
+      [k, typeof v === 'string' && k !== 'name' && k !== 'cardStyle' ? v.trim() || null : v]),
+  )
+  try {
+    await update.mutateAsync({ workspaceId: workspace.value.id, ...body })
+    toast.add({ title: okTitle, color: 'success', icon: 'i-lucide-check', duration: 1500 })
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось сохранить'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+
+const saveGeneral = () => save(
+  { name: state.name, industry: state.industry, logoUrl: state.logoUrl },
+  'Общая информация сохранена',
+)
+const saveAbout = () => save(
+  { description: state.description, purpose: state.purpose },
+  'Описание сохранено',
+)
+
+function pickCardStyle(v: State['cardStyle']) {
+  state.cardStyle = v
+  save({ cardStyle: v }, 'Вид карточки сохранён')
+}
+
+const deleteConfirmName = ref('')
+const deleteArmed = computed(() => deleteConfirmName.value.trim() === workspace.value?.name)
+
+async function onDeleteWorkspace() {
+  if (!workspace.value || !deleteArmed.value) return
+  try {
+    await removeWorkspace.mutateAsync(workspace.value.id)
+    await router.push(pageRoutes.workspaces)
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось удалить workspace'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+
+async function onLeave() {
+  const me = authStore.user?.id
+  if (!workspace.value || !me) return
+  const ok = await confirm({
+    title: `Покинуть «${workspace.value.name}»?`,
+    description: 'Вы потеряете доступ ко всем доскам этой команды. Вернуться можно только по новому приглашению.',
+    confirmLabel: 'Покинуть',
+    confirmColor: 'error',
+  })
+  if (!ok) return
+  try {
+    await removeMember.mutateAsync(me)
+    await router.push(pageRoutes.workspaces)
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось покинуть команду'),
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+  }
+}
+</script>
+
+<template>
+  <div class="space-y-4">
+    <div v-if="isLoading" class="py-12 text-center text-muted">
+      <UIcon name="i-lucide-loader" class="size-6 animate-spin" />
+    </div>
+
+    <div v-else-if="!workspace" class="surface-soft rounded-2xl p-8 text-center">
+      <p class="text-sm text-muted">У вас пока нет команд</p>
+      <UButton :to="pageRoutes.workspaces" variant="outline" color="neutral" size="sm" class="mt-3">
+        К списку команд
+      </UButton>
+    </div>
+
+    <template v-else>
+      <div class="surface-soft flex flex-wrap items-center gap-4 rounded-2xl p-5">
+        <div class="brand-gradient size-16 shrink-0 rounded-2xl p-[3px]">
+          <div class="grid size-full place-items-center overflow-hidden rounded-2xl bg-default text-xl font-semibold text-default">
+            <img
+              v-if="state.logoUrl"
+              :src="state.logoUrl"
+              alt=""
+              class="size-full object-cover"
+            >
+            <span v-else>{{ state.name.slice(0, 1).toUpperCase() || '∗' }}</span>
+          </div>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="truncate text-lg font-semibold text-default">{{ state.name || 'Без названия' }}</p>
+            <WorkspaceMemberRoleBadge :role="workspace.role" />
+          </div>
+          <p class="truncate font-mono text-xs text-muted">{{ workspace.slug }}</p>
+          <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+            <span v-if="state.industry" class="inline-flex items-center gap-1.5">
+              <UIcon name="i-lucide-briefcase" class="size-3.5" />
+              {{ state.industry }}
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <UIcon name="i-lucide-users" class="size-3.5" />
+              {{ membersCount }} {{ membersWord }}
+            </span>
+            <span v-if="createdLabel" class="inline-flex items-center gap-1.5">
+              <UIcon name="i-lucide-calendar" class="size-3.5" />
+              создана {{ createdLabel }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <UForm
+        v-if="canEdit"
+        :schema="schema"
+        :state="state"
+        class="surface-soft rounded-2xl p-5"
+        @submit="saveGeneral"
+      >
+        <h2 class="mb-4 font-semibold text-default">Общая информация</h2>
+        <div class="space-y-4">
+          <UFormField label="Название команды" name="name" required>
+            <UInput v-model="state.name" class="w-full" />
+          </UFormField>
+          <UFormField
+            label="Индустрия"
+            name="industry"
+            description="К какой отрасли относится команда — IT, дизайн-студия, агентство и т.д."
+          >
+            <UInput
+              v-model="state.industry"
+              class="w-full"
+              placeholder="IT / агентство / промышленность"
+            />
+          </UFormField>
+          <UFormField
+            label="Логотип (URL)"
+            name="logoUrl"
+            description="Ссылка на изображение, которое будем показывать рядом с названием команды"
+          >
+            <UInput v-model="state.logoUrl" class="w-full" placeholder="https://..." />
+          </UFormField>
+        </div>
+        <div class="mt-4 flex justify-end">
+          <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
+        </div>
+      </UForm>
+
+      <div v-if="canEdit" class="surface-soft rounded-2xl p-5">
+        <h2 class="mb-1 font-semibold text-default">Вид карточки</h2>
+        <p class="mb-4 text-xs text-muted">Как workspace выглядит в списке воркспейсов</p>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            v-for="opt in cardStyleOptions"
+            :key="opt.value"
+            type="button"
+            class="rounded-xl border p-3 text-left transition-colors"
+            :class="state.cardStyle === opt.value
+              ? 'border-accent-400 bg-accent-50 dark:bg-accent-950'
+              : 'border-default hover:border-accent-300'"
+            @click="pickCardStyle(opt.value)"
+          >
+            <div class="brand-gradient relative mb-2 h-16 w-full overflow-hidden rounded-lg">
+              <template v-if="opt.value === 'cover'">
+                <div class="absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-black/70 to-transparent" />
+                <div class="absolute inset-x-2 bottom-1.5 space-y-1">
+                  <div class="h-1.5 w-1/2 rounded-full bg-white/80" />
+                  <div class="h-1 w-1/3 rounded-full bg-white/50" />
+                </div>
+              </template>
+              <template v-else>
+                <div class="absolute inset-0 bg-default" />
+                <div class="brand-gradient absolute left-2 top-2 size-6 rounded-md" />
+                <div class="absolute right-2 top-3 left-10 space-y-1">
+                  <div class="h-1.5 w-2/3 rounded-full bg-accented" />
+                  <div class="h-1 w-1/2 rounded-full bg-accented" />
+                </div>
+              </template>
+            </div>
+            <p class="text-sm font-medium text-default">{{ opt.label }}</p>
+            <p class="text-xs text-muted">{{ opt.hint }}</p>
+          </button>
+        </div>
+      </div>
+
+      <UForm
+        v-if="canEdit"
+        :schema="schema"
+        :state="state"
+        class="surface-soft rounded-2xl p-5"
+        @submit="saveAbout"
+      >
+        <h2 class="mb-4 font-semibold text-default">О команде</h2>
+        <div class="space-y-4">
+          <UFormField
+            label="Чем занимается команда"
+            name="description"
+            description="Чем команда занимается на ежедневной основе"
+          >
+            <UTextarea
+              v-model="state.description"
+              :rows="3"
+              class="w-full"
+              placeholder="Кратко опишите специализацию команды"
+            />
+          </UFormField>
+          <UFormField
+            label="Цель использования"
+            name="purpose"
+            description="Для чего планируется использовать платформу"
+          >
+            <UTextarea
+              v-model="state.purpose"
+              :rows="3"
+              class="w-full"
+              placeholder="Например: трекинг разработческих задач + аналитика flow"
+            />
+          </UFormField>
+        </div>
+        <div class="mt-4 flex justify-end">
+          <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
+        </div>
+      </UForm>
+
+      <section class="surface-soft rounded-2xl p-5" style="border-color: var(--color-error-300)">
+        <h2 class="mb-1 font-semibold text-error-600">Опасная зона</h2>
+
+        <template v-if="isOwner">
+          <p class="mb-4 text-sm text-muted">
+            Удаление стирает все доски, задачи и историю команды. Отменить это нельзя.
+            Чтобы подтвердить, введите название: <b class="text-default">{{ workspace.name }}</b>
+          </p>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <UInput
+              v-model="deleteConfirmName"
+              class="sm:w-72"
+              :placeholder="workspace.name"
+            />
+            <UButton
+              color="error"
+              variant="solid"
+              :disabled="!deleteArmed"
+              :loading="removeWorkspace.isPending.value"
+              @click="onDeleteWorkspace"
+            >
+              Удалить workspace
+            </UButton>
+          </div>
+        </template>
+
+        <template v-else>
+          <p class="mb-4 text-sm text-muted">
+            Вы потеряете доступ ко всем доскам этой команды. Вернуться можно только по новому приглашению.
+          </p>
+          <UButton
+            color="error"
+            variant="outline"
+            :loading="removeMember.isPending.value"
+            @click="onLeave"
+          >
+            Покинуть команду
+          </UButton>
+        </template>
+      </section>
+    </template>
+  </div>
+</template>

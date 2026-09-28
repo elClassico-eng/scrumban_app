@@ -2,6 +2,7 @@
 // Same response on "user not found" and "wrong password" to avoid
 // account enumeration via timing or status differences.
 import { z } from 'zod'
+import { createSession } from '../../services/user-sessions.service'
 import { findUserByEmail } from '../../services/users.service'
 
 const LoginSchema = z.object({
@@ -23,6 +24,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  await setUserSession(event, { user: { id: user.id, email: user.email } })
+  const sessionId = await createSession(event, user.id)
+  await setUserSession(event, { user: { id: user.id, email: user.email }, sessionId })
   return { user: { id: user.id, email: user.email } }
 })

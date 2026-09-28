@@ -13,6 +13,9 @@ export const apiRoutes = {
   authResetPasswordStatus: (token: string) => `/api/auth/password/reset/${token}`,
 
   usersMe: '/api/users/me',
+  usersMePassword: '/api/users/me/password',
+  usersMeSessions: '/api/users/me/sessions',
+  usersMeSession: (sid: string) => `/api/users/me/sessions/${sid}`,
   usersDismissHint: '/api/users/me/dismiss-hint',
   usersChangelogSeen: '/api/users/me/changelog-seen',
 
@@ -156,6 +159,7 @@ export const apiRoutes = {
   workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
 
   workspaceActivity: (wsId: string) => `/api/workspaces/${wsId}/activity`,
+  workspaceActivityDaily: (wsId: string) => `/api/workspaces/${wsId}/activity-daily`,
 
   notifications: '/api/notifications',
   notificationsUnreadCount: '/api/notifications/unread-count',
@@ -166,8 +170,17 @@ export const apiRoutes = {
   adminLeads: '/api/admin/leads',
 } as const
 
+export type SettingsTab =
+  | 'profile'
+  | 'security'
+  | 'notifications'
+  | 'appearance'
+  | 'danger'
+  | 'team'
+
 export const pageRoutes = {
   home: '/',
+  landing: '/?about=1',
   privacy: '/privacy',
   login: '/login',
   register: '/register',
@@ -176,14 +189,14 @@ export const pageRoutes = {
   resetPassword: (token: string) => `/reset-password/${token}`,
   invite: (token: string) => `/invite/${token}`,
 
-  me: '/me',
+  settings: (tab?: SettingsTab) => (tab && tab !== 'profile' ? `/settings?tab=${tab}` : '/settings'),
+  me: '/settings',
 
   adminLeads: '/admin/leads',
 
   workspaces: '/workspaces',
   workspace: (id: string) => `/workspaces/${id}`,
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
-  workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
   workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
   workspaceReports: (id: string) => `/workspaces/${id}/reports`,
   workspaceSimulator: (id: string) => `/workspaces/${id}/simulator`,

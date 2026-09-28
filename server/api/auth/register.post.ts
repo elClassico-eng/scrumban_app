@@ -2,6 +2,7 @@
 // owner-membership in one DB transaction, then starts a session. Failure
 // anywhere rolls everything back so no orphan users are left behind.
 // Verification email is best-effort after commit.
+import { createSession } from '../../services/user-sessions.service'
 import { z } from 'zod'
 import { passwordSchema } from '#shared/validation/password'
 import { createUserInTx } from '../../services/users.service'
@@ -54,7 +55,8 @@ export default defineEventHandler(async (event) => {
       return { user: created, workspace: ws }
     })
 
-    await setUserSession(event, { user: { id: user.id, email: user.email } })
+    const sessionId = await createSession(event, user.id)
+    await setUserSession(event, { user: { id: user.id, email: user.email }, sessionId })
 
     try {
       const { plainToken } = await createVerification(user.id)

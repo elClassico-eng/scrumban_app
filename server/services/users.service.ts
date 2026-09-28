@@ -66,6 +66,8 @@ export async function updateUserProfile(input: {
     avatarUrl?: string | null
     jobTitle?: string | null
     bio?: string | null
+    notificationPrefs?: Record<string, boolean>
+    dismissedHints?: string[]
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -77,6 +79,8 @@ export async function updateUserProfile(input: {
   if ('avatarUrl' in input.patch) set.avatarUrl = input.patch.avatarUrl ?? null
   if ('jobTitle' in input.patch) set.jobTitle = input.patch.jobTitle ?? null
   if ('bio' in input.patch) set.bio = input.patch.bio ?? null
+  if (input.patch.notificationPrefs) set.notificationPrefs = input.patch.notificationPrefs
+  if (input.patch.dismissedHints) set.dismissedHints = input.patch.dismissedHints
 
   const [row] = await useDB()
     .update(users)
@@ -128,4 +132,8 @@ export async function markChangelogSeen(userId: string): Promise<string> {
     .returning({ changelogSeenAt: users.changelogSeenAt })
   if (!row?.changelogSeenAt) throw new NotFoundError('Пользователь не найден')
   return row.changelogSeenAt.toISOString()
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await useDB().delete(users).where(eq(users.id, userId))
 }
