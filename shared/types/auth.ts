@@ -63,6 +63,7 @@ export interface UserProfileResponse {
 
 export interface UpdateUserProfileInput {
   notificationPrefs?: Record<string, boolean>
+  dismissedHints?: string[]
   firstName?: string | null
   lastName?: string | null
   middleName?: string | null

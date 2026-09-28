@@ -170,6 +170,14 @@ export const apiRoutes = {
   adminLeads: '/api/admin/leads',
 } as const
 
+export type SettingsTab =
+  | 'profile'
+  | 'security'
+  | 'notifications'
+  | 'appearance'
+  | 'danger'
+  | 'team'
+
 export const pageRoutes = {
   home: '/',
   landing: '/?about=1',
@@ -181,14 +189,14 @@ export const pageRoutes = {
   resetPassword: (token: string) => `/reset-password/${token}`,
   invite: (token: string) => `/invite/${token}`,
 
-  me: '/me',
+  settings: (tab?: SettingsTab) => (tab && tab !== 'profile' ? `/settings?tab=${tab}` : '/settings'),
+  me: '/settings',
 
   adminLeads: '/admin/leads',
 
   workspaces: '/workspaces',
   workspace: (id: string) => `/workspaces/${id}`,
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
-  workspaceSettings: (id: string) => `/workspaces/${id}/settings`,
   workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
   workspaceReports: (id: string) => `/workspaces/${id}/reports`,
   workspaceSimulator: (id: string) => `/workspaces/${id}/simulator`,

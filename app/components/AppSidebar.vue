@@ -2,10 +2,9 @@
 import { onKeyStroke, useMediaQuery, useSwipe } from '@vueuse/core'
 import { pageRoutes } from '~/routing'
 
-const workspaceStore = useWorkspaceStore()
 const uiStore = useUiStore()
 const route = useRoute()
-const { list } = useWorkspacesApi()
+const { current } = useCurrentWorkspace()
 
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 const asideRef = ref<HTMLElement | null>(null)
@@ -20,12 +19,6 @@ useSwipe(asideRef, {
   onSwipeEnd: (_e, direction) => {
     if (direction === 'left' && uiStore.mobileNavOpen) uiStore.closeMobileNav()
   },
-})
-
-const workspaces = computed(() => list.data.value?.workspaces ?? [])
-const current = computed(() => {
-  const id = workspaceStore.currentId
-  return workspaces.value.find(w => w.id === id) ?? workspaces.value[0] ?? null
 })
 
 const collapsed = computed(() => isDesktop.value && uiStore.sidebarCollapsed)
@@ -50,7 +43,7 @@ const workspaceLinks = computed(() => {
 const manageLinks = computed(() => {
   if (!current.value || !hasRole(current.value.role, 'admin')) return []
   return [
-    { label: 'Настройки', icon: 'i-lucide-settings', to: pageRoutes.workspaceSettings(current.value.id) },
+    { label: 'Настройки', icon: 'i-lucide-settings', to: pageRoutes.settings('team') },
   ]
 })
 </script>

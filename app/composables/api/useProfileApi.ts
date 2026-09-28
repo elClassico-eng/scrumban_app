@@ -1,4 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { apiRoutes } from '~/routing'
+import type {
+  UpdateUserProfileInput,
+  UserProfile,
+  UserProfileResponse,
+} from '#shared/types/auth'
 
 export interface SessionDevice {
   id: string
@@ -8,12 +14,6 @@ export interface SessionDevice {
   lastSeenAt: string
   current: boolean
 }
-import { apiRoutes } from '~/routing'
-import type {
-  UpdateUserProfileInput,
-  UserProfile,
-  UserProfileResponse,
-} from '#shared/types/auth'
 
 export function useProfileApi() {
   const qc = useQueryClient()
@@ -54,5 +54,15 @@ export function useProfileApi() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users', 'me', 'sessions'] }),
   })
 
-  return { me, update, changePassword, sessions, revokeSession }
+  const revokeOtherSessions = useMutation({
+    mutationFn: () => $fetch<{ revoked: number }>(apiRoutes.usersMeSessions, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users', 'me', 'sessions'] }),
+  })
+
+  const deleteAccount = useMutation({
+    mutationFn: (input: { password: string }) =>
+      $fetch<null>(apiRoutes.usersMe, { method: 'DELETE', body: input }),
+  })
+
+  return { me, update, changePassword, sessions, revokeSession, revokeOtherSessions, deleteAccount }
 }

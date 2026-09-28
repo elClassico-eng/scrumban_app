@@ -59,6 +59,25 @@ describe('dismissible hints', () => {
     expect(me2.body.user.dismissedHints).toEqual(['simulator-intro', 'another-hint'])
   })
 
+  it('PATCH с пустым списком сбрасывает подсказки', async () => {
+    const jar = await registerUser('hints-reset@example.com')
+
+    await fetchWithJar(jar, '/api/users/me/dismiss-hint', {
+      method: 'POST',
+      body: { key: 'simulator-intro' },
+    })
+
+    const patched = await fetchWithJar<{ user: { dismissedHints: string[] } }>(jar, '/api/users/me', {
+      method: 'PATCH',
+      body: { dismissedHints: [] },
+    })
+    expect(patched.status).toBe(200)
+    expect(patched.body.user.dismissedHints).toEqual([])
+
+    const me = await fetchWithJar<{ user: { dismissedHints: string[] } }>(jar, '/api/users/me')
+    expect(me.body.user.dismissedHints).toEqual([])
+  })
+
   it('401 без авторизации, 400 на пустой ключ', async () => {
     const anon = await fetchWithJar(new CookieJar(), '/api/users/me/dismiss-hint', {
       method: 'POST',

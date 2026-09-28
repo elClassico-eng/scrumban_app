@@ -44,5 +44,18 @@ export function useHints() {
     dismissMutation.mutate(key)
   }
 
-  return { ready, isDismissed, dismiss }
+  const resetMutation = useMutation({
+    mutationFn: () =>
+      $fetch<UserProfileResponse>(apiRoutes.usersMe, {
+        method: 'PATCH',
+        body: { dismissedHints: [] },
+      }),
+    onSuccess: (data) => {
+      qc.setQueryData<UserProfileResponse>(['users', 'me'], (prev) =>
+        prev ? { user: { ...prev.user, dismissedHints: data.user.dismissedHints } } : prev,
+      )
+    },
+  })
+
+  return { ready, isDismissed, dismiss, resetHints: resetMutation }
 }
