@@ -35,7 +35,7 @@ type SeedTask = {
 
 const DAY = 86_400_000
 const HOUR = 3_600_000
-const NOW = new Date('2026-06-14T12:00:00.000Z')
+const NOW = new Date()
 
 function mulberry32(seed: number): () => number {
   let a = seed
@@ -328,9 +328,9 @@ async function main() {
         name: 'Спринт 7 — Аналитика и прогноз',
         goal: 'Запустить CPM/PERT-прогноз спринта и Monte Carlo на странице аналитики.',
         state: 'active',
-        plannedStartAt: new Date(NOW.getTime() - 7 * DAY),
-        plannedEndAt: new Date(NOW.getTime() + 7 * DAY),
-        startedAt: new Date(NOW.getTime() - 7 * DAY),
+        plannedStartAt: new Date(NOW.getTime() - 5 * DAY),
+        plannedEndAt: new Date(NOW.getTime() + 16 * DAY),
+        startedAt: new Date(NOW.getTime() - 5 * DAY),
         capacity: 40,
       })
       .returning({ id: sprints.id })
@@ -341,7 +341,7 @@ async function main() {
         sprintId,
         taskId: t.id,
         workspaceId,
-        addedAt: new Date(NOW.getTime() - 7 * DAY),
+        addedAt: new Date(NOW.getTime() - 5 * DAY),
       })),
     )
 
@@ -349,9 +349,7 @@ async function main() {
     const chain: [string, string][] = [
       ['Граф зависимостей задач', 'Прогноз срока спринта (CPM/PERT)'],
       ['Прогноз срока спринта (CPM/PERT)', 'Monte Carlo на странице аналитики'],
-      ['Monte Carlo на странице аналитики', 'SLE-дашборд по доске'],
       ['Граф зависимостей задач', 'Каденс пополнения бэклога'],
-      ['Каденс пополнения бэклога', 'SLE-дашборд по доске'],
     ]
     const depRows = chain
       .map(([blocker, blocked]) => ({ b: byTitle(blocker), d: byTitle(blocked) }))

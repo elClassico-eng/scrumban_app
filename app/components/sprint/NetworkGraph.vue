@@ -97,7 +97,9 @@ const option = computed(() => {
 <template>
   <div class="bg-default border border-default rounded-lg p-4">
     <template v-if="hasEdges">
-      <VChart :option="option" autoresize class="w-full h-[320px]" />
+      <div class="h-80">
+        <VChart :option="option" autoresize class="w-full" />
+      </div>
       <p class="text-[11px] text-muted m-0 mt-1.5">
         Слева направо — раннее время старта · <span class="text-accent-600 font-medium">оранжевое</span> — критический путь · размер узла — ожидаемая длительность
       </p>
