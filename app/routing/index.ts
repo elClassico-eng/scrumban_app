@@ -44,6 +44,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sle/recompute`,
   boardReplenishment: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/replenishment`,
+  boardPulse: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/pulse`,
   boardDaily: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/daily`,
   boardSprintActivity: (wsId: string, boardId: string) =>
