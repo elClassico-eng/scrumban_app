@@ -163,6 +163,12 @@ scrumban_app/
 
 После каждой значимой работы (новая секция дизайна, новый spec, диаграмма, plan) — обновить `COMPACT.md`, секции «Что сделано» и «Что дальше».
 
+## Релизный процесс (с 2026-10-10)
+
+- Фича = ветка `feat/<slug>` от main, со своими тестами. Docs и changelog в ней не пишем.
+- Релиз = ветка `release/X.Y`, в неё вливаются готовые feat-ветки. Там же: страницы `content/docs/`, одна запись changelog на релиз, версия в package.json.
+- Один PR `release/X.Y → main`, тег `vX.Y.0`. Hotfix – напрямую в main.
+
 ## Журнал изменений (changelog)
 
 При мерже фичевой ветки — добавить запись `content/changelog/YYYY-MM-DD-slug.md` (пользовательский тон, не commit-стиль; опц. `tryRoute` без workspace-префикса + `docsPath`). При крупной вехе — обновить публичную страницу `content/docs/project/changelog.md`. In-app журнал: пункт «Что нового» в сайдбаре + панель; «прочитанность» — метка `users.changelog_seen_at`.

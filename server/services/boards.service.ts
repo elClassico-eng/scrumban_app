@@ -30,10 +30,10 @@ const PG_UNIQUE_VIOLATION = '23505'
 // them; column_role values stay so flow analytics remain meaningful even if
 // the user-facing names diverge across teams.
 const DEFAULT_COLUMNS = [
-  { name: 'Backlog', columnRole: 'backlog' as const },
-  { name: 'In Progress', columnRole: 'in_progress' as const },
-  { name: 'Review', columnRole: 'review' as const },
-  { name: 'Done', columnRole: 'done' as const },
+  { name: 'Backlog', columnRole: 'backlog' as const, isQueue: true },
+  { name: 'In Progress', columnRole: 'in_progress' as const, isQueue: false },
+  { name: 'Review', columnRole: 'review' as const, isQueue: false },
+  { name: 'Done', columnRole: 'done' as const, isQueue: false },
 ]
 
 export async function listBoards(
@@ -90,6 +90,7 @@ export async function createBoard(input: {
             boardId: row!.id,
             name: c.name,
             columnRole: c.columnRole,
+            isQueue: c.isQueue,
             position,
           })),
         )

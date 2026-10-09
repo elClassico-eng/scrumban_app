@@ -151,6 +151,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/analytics/throughput`,
   analyticsWipRecommendations: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/wip-recommendations`,
+  analyticsFlowEfficiency: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/analytics/flow-efficiency`,
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
 

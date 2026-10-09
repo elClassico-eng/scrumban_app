@@ -9,6 +9,7 @@
 // without joining back to boards. The redundancy is checked at INSERT
 // time in services.
 import {
+  boolean,
   decimal,
   index,
   integer,
@@ -77,6 +78,9 @@ export const boardColumns = pgTable(
     // null = unbounded WIP. Service layer enforces the limit on task move.
     wipLimit: integer('wip_limit'),
     columnRole: columnRole('column_role').notNull(),
+    // Queue columns count as wait time in flow efficiency; the role alone
+    // can't tell "Review as active work" from "Review as a waiting line".
+    isQueue: boolean('is_queue').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
