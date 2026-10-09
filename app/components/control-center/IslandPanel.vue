@@ -28,6 +28,8 @@ const props = defineProps<{
   canCreateTask: boolean
   pulse: BoardPulse | null
   pulseLoading: boolean
+  pulseError: boolean
+  searchFocusTick: number
   overviewTiles: TileId[]
   flowTiles: TileId[]
   boardId: string | null
@@ -49,6 +51,13 @@ const emit = defineEmits<{
   'update-tiles': [tab: ControlCenterTab, tiles: TileId[]]
 }>()
 
+
+const gridStatus = computed<'ok' | 'loading' | 'noBoard' | 'error'>(() => {
+  if (!props.boardId) return 'noBoard'
+  if (props.pulseError) return 'error'
+  if (props.pulseLoading && !props.pulse) return 'loading'
+  return 'ok'
+})
 
 const boardItems = computed<DropdownMenuItem[]>(() =>
   props.boards.map(b => ({
@@ -151,6 +160,7 @@ const TABS: { key: IslandTab; label: string }[] = [
     :tiles="overviewTiles"
     :pulse="pulse"
     :loading="pulseLoading"
+    :status="gridStatus"
   />
 
   <ControlCenterIslandGrid
@@ -158,6 +168,7 @@ const TABS: { key: IslandTab; label: string }[] = [
     :tiles="flowTiles"
     :pulse="pulse"
     :loading="pulseLoading"
+    :status="gridStatus"
   />
 
   <ControlCenterSearchTab
@@ -165,6 +176,7 @@ const TABS: { key: IslandTab; label: string }[] = [
     :workspace-id="workspaceId"
     :board-id="boardId"
     :active="tab === 'search'"
+    :focus-tick="searchFocusTick"
     @done="emit('search-done')"
   />
 

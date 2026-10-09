@@ -50,7 +50,7 @@ const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.member
 
 
 const { recordReplenishment } = useBoardsApi(workspaceId)
-const canManageBoard = computed(() => hasRole(role.value, 'admin'))
+const canManageBoard = computed(() => hasRole(role.value, 'scrum_master'))
 const { boardId: contextBoardId, boardName: contextBoardName, boards: contextBoards, prefs, setBoard, setTiles } = useIslandContext(workspaceId)
 const overviewTiles = computed(() => normalizeTiles(prefs.value.overview, 'overview'))
 const flowTiles = computed(() => normalizeTiles(prefs.value.flow, 'flow'))
@@ -81,8 +81,11 @@ function onQuickTask(e: Event) {
   else if (workspaceId.value) router.push(pageRoutes.boards(workspaceId.value))
 }
 
+const searchFocusTick = ref(0)
+
 function openSearch() {
   panelTab.value = 'search'
+  searchFocusTick.value++
   if (window.matchMedia('(min-width: 1024px)').matches) {
     open.value = true
     pinned.value = true
@@ -156,7 +159,7 @@ async function markRead(e: Event, id: string) {
 
 function onViewTeam(e: Event) {
   e.stopPropagation()
-  if (workspaceId.value) router.push(pageRoutes.workspaceMembers(workspaceId.value))
+  if (workspaceId.value) navigateTo(pageRoutes.workspaceMembers(workspaceId.value))
 }
 
 const cmdKLabel = computed(() => (import.meta.client && /Mac|iPhone|iPad/i.test(navigator.userAgent)) ? '⌘K' : 'Ctrl K')
@@ -243,6 +246,8 @@ watch(rawNotifs, (next, prev) => {
           :can-create-task="canCreateTask"
           :pulse="pulseData"
           :pulse-loading="pulse.isLoading.value"
+          :pulse-error="pulse.isError.value"
+          :search-focus-tick="searchFocusTick"
           :overview-tiles="overviewTiles"
           :flow-tiles="flowTiles"
           :board-id="contextBoardId"
@@ -313,6 +318,8 @@ watch(rawNotifs, (next, prev) => {
             :can-create-task="canCreateTask"
             :pulse="pulseData"
             :pulse-loading="pulse.isLoading.value"
+            :pulse-error="pulse.isError.value"
+            :search-focus-tick="searchFocusTick"
             :overview-tiles="overviewTiles"
             :flow-tiles="flowTiles"
             :board-id="contextBoardId"

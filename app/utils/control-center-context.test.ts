@@ -16,6 +16,14 @@ describe('resolveContextBoard', () => {
     expect(resolveContextBoard({ routeBoardId: null, lastBoardId: 'zzz', boards })).toBe('a')
   })
 
+  it('an explicit override beats the route board', () => {
+    expect(resolveContextBoard({ routeBoardId: 'a', overrideBoardId: 'b', lastBoardId: null, boards })).toBe('b')
+  })
+
+  it('ignores an override that no longer exists', () => {
+    expect(resolveContextBoard({ routeBoardId: 'a', overrideBoardId: 'zzz', lastBoardId: null, boards })).toBe('a')
+  })
+
   it('returns null without boards', () => {
     expect(resolveContextBoard({ routeBoardId: null, lastBoardId: null, boards: [] })).toBeNull()
   })

@@ -5,6 +5,7 @@ const props = defineProps<{
   workspaceId: string
   boardId: string | null
   active: boolean
+  focusTick: number
 }>()
 
 const emit = defineEmits<{
@@ -18,11 +19,13 @@ const root = ref<HTMLElement | null>(null)
 
 const { groups } = useCommandGroups(wsId, bId, () => emit('done'))
 
-watch(() => props.active, (on) => {
-  if (!on) return
+function focusInput() {
   term.value = ''
   nextTick(() => root.value?.querySelector('input')?.focus())
-}, { immediate: true })
+}
+
+watch(() => props.active, (on) => { if (on) focusInput() }, { immediate: true })
+watch(() => props.focusTick, () => { if (props.active) focusInput() })
 </script>
 
 <template>
