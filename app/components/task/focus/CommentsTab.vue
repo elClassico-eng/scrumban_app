@@ -253,12 +253,18 @@ function timeLabel(iso: string): string {
         :key="c.id"
         class="grid grid-cols-[32px_1fr] gap-3 group"
       >
-        <UserAvatar :user="c.author" size="md" />
+        <span
+          v-if="c.automationRuleId"
+          class="size-8 rounded-full grid place-items-center bg-accent-500 text-white"
+        >
+          <UIcon name="i-lucide-zap" class="size-4" />
+        </span>
+        <UserAvatar v-else :user="c.author" size="md" />
 
         <div>
           <div class="flex items-baseline gap-2 mb-1 flex-wrap">
             <span class="text-[13px] font-semibold text-default">
-              {{ displayName(c.author) }}
+              {{ c.automationRuleId ? 'Такт · автоматизация' : displayName(c.author) }}
             </span>
             <span
               v-if="commentRole(c)"
@@ -270,7 +276,7 @@ function timeLabel(iso: string): string {
             <span v-if="c.editedAt" class="text-[11.5px] text-muted">(изменено)</span>
             <div class="flex-1" />
             <UDropdownMenu
-              v-if="editingId !== c.id && (canEdit(c) || canDelete(c))"
+              v-if="editingId !== c.id && !c.automationRuleId && (canEdit(c) || canDelete(c))"
               :items="[
                 ...(canEdit(c)
                   ? [{ label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => startEdit(c) }]

@@ -106,6 +106,7 @@ describe('daily digest', () => {
     await moveTask(owner, wsId, ctx.boardId, a, ctx.columns.done)
 
     const res = await fetchWithJar<DailyDigest>(owner.jar, dailyPath(wsId, ctx.boardId))
+    expect(res.body.attention).toEqual([])
     expect(res.status).toBe(200)
     expect(res.body.stats.done.value).toBe(1)
     expect(res.body.changes.closed).toBe(1)

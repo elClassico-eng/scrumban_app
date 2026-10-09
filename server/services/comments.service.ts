@@ -34,6 +34,7 @@ const commentSelect = {
   body: taskComments.body,
   editedAt: taskComments.editedAt,
   createdAt: taskComments.createdAt,
+  automationRuleId: taskComments.automationRuleId,
   author: authorSelect,
 } as const
 
@@ -45,6 +46,7 @@ export interface CommentView {
   mentionedUserIds: string[]
   editedAt: Date | null
   createdAt: Date
+  automationRuleId: string | null
   author: {
     id: string
     email: string
@@ -317,6 +319,7 @@ type CommentRow = {
   body: string
   editedAt: Date | null
   createdAt: Date
+  automationRuleId: string | null
   author: {
     id: string | null
     email: string | null
@@ -337,6 +340,7 @@ function toView(row: CommentRow, mentionedUserIds: string[] = []): CommentView {
       : extractMentionedUserIds(row.body),
     editedAt: row.editedAt,
     createdAt: row.createdAt,
+    automationRuleId: row.automationRuleId ?? null,
     author: row.author?.id
       ? {
           id: row.author.id,

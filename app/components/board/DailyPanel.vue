@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { DailyChangeKind, DailyStat } from '#shared/types/daily'
+import type { DailyAttentionItem, DailyChangeKind, DailyStat } from '#shared/types/daily'
 import { pageRoutes } from '~/routing'
+import { renderNotification } from '~/utils/notification-render'
 
 const props = defineProps<{
   workspaceId: string
@@ -16,6 +17,24 @@ const { digest } = useDailyDigestApi(
 )
 
 const d = computed(() => digest.data.value ?? null)
+
+function renderAttention(a: DailyAttentionItem) {
+  return renderNotification({
+    id: a.firingId,
+    workspaceId: props.workspaceId,
+    userId: '',
+    type: 'automation',
+    payload: { trigger: a.trigger, ...a.payload },
+    readAt: null,
+    createdAt: a.firedAt,
+  })
+}
+
+const router = useRouter()
+function openAttention(a: DailyAttentionItem) {
+  const target = renderAttention(a).target
+  if (target) router.push(target)
+}
 
 function statTone(key: 'done' | 'wip' | 'blocked' | 'aging', delta: number): string {
   if (delta === 0) return 'text-muted'
@@ -135,6 +154,28 @@ function openTask(taskId: string) {
                 </div>
               </template>
             </div>
+          </div>
+        </section>
+
+        <section v-if="d.attention.length > 0" class="space-y-2">
+          <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted inline-flex items-center gap-1.5">
+            <UIcon name="i-lucide-zap" class="size-3.5 text-accent-500" />
+            Требует внимания
+          </div>
+          <div class="border border-default rounded-xl overflow-hidden divide-y divide-default">
+            <button
+              v-for="a in d.attention"
+              :key="a.firingId"
+              type="button"
+              class="w-full text-left px-3 py-2 hover:bg-elevated/60 transition-colors cursor-pointer"
+              @click="openAttention(a)"
+            >
+              <div class="flex items-center gap-2.5">
+                <span class="flex-1 min-w-0 truncate text-[13px] font-medium text-default">{{ renderAttention(a).title }}</span>
+                <span class="shrink-0 text-[11px] text-muted">{{ formatRelativeDate(a.firedAt) }}</span>
+              </div>
+              <p class="text-[11.5px] text-muted mt-0.5 m-0">{{ renderAttention(a).why }}</p>
+            </button>
           </div>
         </section>
 

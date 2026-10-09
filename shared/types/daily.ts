@@ -55,6 +55,16 @@ export type DailyChangeItem = {
   atISO: string
 }
 
+export type DailyAttentionItem = {
+  firingId: string
+  ruleId: string
+  trigger: string
+  subjectType: string
+  subjectId: string
+  payload: Record<string, unknown>
+  firedAt: string
+}
+
 export type DailyDigest = {
   stats: {
     done: DailyStat
@@ -68,6 +78,7 @@ export type DailyDigest = {
   blockers: DailyBlocker[]
   wipViolations: DailyWipViolation[]
   sprintRisk: DailySprintRisk | null
+  attention: DailyAttentionItem[]
   changes: Record<DailyChangeKind, number>
   changeItems: DailyChangeItem[]
 }

@@ -16,17 +16,16 @@ const emit = defineEmits<{
 
 const trigger = ref<AutomationTrigger>('task_aging')
 const action = ref<AutomationAction>('notify')
-const params = reactive<Record<string, number>>({})
+const params = ref<Record<string, number>>({})
 const recipients = ref<NotifyRecipients>('assignee')
 const errorMessage = ref<string | null>(null)
 
 function resetFrom(rule: AutomationRule | null | undefined) {
   trigger.value = rule?.trigger ?? 'task_aging'
   action.value = rule?.action ?? 'notify'
-  for (const k of Object.keys(params)) delete params[k]
-  for (const f of TRIGGER_PARAM_FIELDS[trigger.value]) {
-    params[f.key] = Number(rule?.triggerParams[f.key] ?? defaultParam(trigger.value, f.key))
-  }
+  params.value = Object.fromEntries(
+    TRIGGER_PARAM_FIELDS[trigger.value].map(f => [f.key, Number(rule?.triggerParams[f.key] ?? defaultParam(trigger.value, f.key))]),
+  )
   recipients.value = (rule?.actionParams.recipients as NotifyRecipients) ?? defaultRecipients(trigger.value)
   errorMessage.value = null
 }
@@ -45,8 +44,7 @@ watch(open, (v) => {
 })
 
 watch(trigger, (t) => {
-  for (const k of Object.keys(params)) delete params[k]
-  for (const f of TRIGGER_PARAM_FIELDS[t]) params[f.key] = defaultParam(t, f.key)
+  params.value = Object.fromEntries(TRIGGER_PARAM_FIELDS[t].map(f => [f.key, defaultParam(t, f.key)]))
   if (!ACTION_ALLOWED_FOR[action.value].includes(TRIGGER_SUBJECT[t])) action.value = 'notify'
   if (recipients.value === 'assignee' && TRIGGER_SUBJECT[t] !== 'task') recipients.value = 'scrum_masters'
 })
@@ -70,7 +68,7 @@ const fields = computed(() => TRIGGER_PARAM_FIELDS[trigger.value])
 function onSubmit() {
   const candidate = {
     trigger: trigger.value,
-    triggerParams: { ...params },
+    triggerParams: { ...params.value },
     action: action.value,
     actionParams: action.value === 'notify' ? { recipients: recipients.value } : {},
   }

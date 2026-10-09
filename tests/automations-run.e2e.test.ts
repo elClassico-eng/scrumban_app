@@ -213,6 +213,28 @@ describe('automations run', () => {
     expect((await listNotifications(owner)).filter((x) => x.type !== 'assigned')).toHaveLength(0)
   })
 
+  it('daily_agenda action surfaces the firing in the daily digest', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const ctx = await createBoard(owner, wsId)
+    const taskId = await createTask(owner, wsId, ctx, 'stuck')
+    await patchTask(owner, wsId, ctx, taskId, { blockedReason: 'ждём дизайн' })
+    await backdate(taskId, 'task_blocked', 24 * 3)
+    await setRules(wsId, ctx.boardId, [
+      { trigger: 'task_blocked', triggerParams: { days: 2 }, action: 'daily_agenda', actionParams: {} },
+    ])
+    await runAutomations(owner, wsId, ctx.boardId)
+
+    const daily = await fetchWithJar<{ attention: { trigger: string; payload: Record<string, unknown> }[] }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${ctx.boardId}/daily`,
+    )
+    expect(daily.status).toBe(200)
+    expect(daily.body.attention).toHaveLength(1)
+    expect(daily.body.attention[0]).toMatchObject({ trigger: 'task_blocked' })
+    expect(daily.body.attention[0]!.payload).toMatchObject({ taskId, reason: 'ждём дизайн' })
+  })
+
   it('disabled rule resolves its open firings', async () => {
     const owner = await registerUser('owner@example.com')
     const { wsId, ctx } = await agedTaskBoard(owner)
