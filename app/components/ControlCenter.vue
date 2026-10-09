@@ -51,7 +51,7 @@ const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.member
 
 const { recordReplenishment } = useBoardsApi(workspaceId)
 const canManageBoard = computed(() => hasRole(role.value, 'admin'))
-const { boardId: contextBoardId, boardName: contextBoardName, boards: contextBoards, prefs, setBoard } = useIslandContext(workspaceId)
+const { boardId: contextBoardId, boardName: contextBoardName, boards: contextBoards, prefs, setBoard, setTiles } = useIslandContext(workspaceId)
 const overviewTiles = computed(() => normalizeTiles(prefs.value.overview, 'overview'))
 const flowTiles = computed(() => normalizeTiles(prefs.value.flow, 'flow'))
 const { pulse } = useBoardPulseApi(workspaceId, contextBoardId, computed(() => open.value || pinned.value || uiStore.controlCenterOpen))
@@ -252,6 +252,7 @@ watch(rawNotifs, (next, prev) => {
           @toggle-pin="togglePin"
           @select-board="setBoard"
           @search-done="onSearchDone"
+          @update-tiles="setTiles"
           @mark-read="markRead"
           @quick-task="onQuickTask"
           @quick-search="onQuickSearch"
@@ -321,6 +322,7 @@ watch(rawNotifs, (next, prev) => {
             @toggle-pin="togglePin"
             @select-board="setBoard"
             @search-done="onSearchDone"
+            @update-tiles="setTiles"
             @mark-read="(e, id) => { markRead(e, id); uiStore.closeControlCenter() }"
             @quick-task="(e) => { onQuickTask(e); uiStore.closeControlCenter() }"
             @quick-search="(e) => { onQuickSearch(e); uiStore.closeControlCenter() }"

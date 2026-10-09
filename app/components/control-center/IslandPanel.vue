@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { TileId } from '#shared/types/control-center'
+import type { ControlCenterTab, TileId } from '#shared/types/control-center'
 import type { BoardPulse } from '#shared/types/pulse'
 
 type Notif = {
@@ -46,7 +46,9 @@ const emit = defineEmits<{
   logout: [e: Event]
   'select-board': [id: string]
   'search-done': []
+  'update-tiles': [tab: ControlCenterTab, tiles: TileId[]]
 }>()
+
 
 const boardItems = computed<DropdownMenuItem[]>(() =>
   props.boards.map(b => ({
@@ -58,6 +60,10 @@ const boardItems = computed<DropdownMenuItem[]>(() =>
 )
 
 const tab = defineModel<IslandTab>('tab', { default: 'overview' })
+
+const editing = ref<ControlCenterTab | null>(null)
+const canEdit = computed(() => tab.value === 'overview' || tab.value === 'flow')
+watch(tab, () => { editing.value = null })
 const unread = computed(() => props.notifs.filter(n => n.unread).length)
 
 const TABS: { key: IslandTab; label: string }[] = [
@@ -118,10 +124,30 @@ const TABS: { key: IslandTab; label: string }[] = [
         class="min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--island-orange)] text-white text-[9.5px] font-bold flex items-center justify-center"
       >{{ unread > 9 ? '9+' : unread }}</span>
     </button>
+    <button
+      v-if="canEdit"
+      type="button"
+      class="w-[30px] h-[30px] rounded-lg grid place-items-center border-none cursor-pointer transition-colors shrink-0"
+      :style="editing ? 'background: var(--island-orange-soft); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
+      title="Настроить плитки"
+      aria-label="Настроить плитки"
+      @click.stop="editing = editing ? null : (tab as ControlCenterTab)"
+    >
+      <UIcon name="i-lucide-settings-2" class="w-[15px] h-[15px]" />
+    </button>
   </div>
 
+  <ControlCenterGridEditor
+    v-if="editing && (tab === 'overview' || tab === 'flow')"
+    :tab="editing"
+    :tiles="editing === 'overview' ? overviewTiles : flowTiles"
+    :reduced-motion="reducedMotion"
+    @update:tiles="(t) => emit('update-tiles', editing!, t)"
+    @done="editing = null"
+  />
+
   <ControlCenterIslandGrid
-    v-if="tab === 'overview'"
+    v-else-if="tab === 'overview'"
     :tiles="overviewTiles"
     :pulse="pulse"
     :loading="pulseLoading"

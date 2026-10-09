@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
-import type { ControlCenterPrefs } from '#shared/types/control-center'
+import { useQueryClient } from '@tanstack/vue-query'
+import type { ControlCenterPrefs, ControlCenterTab, TileId } from '#shared/types/control-center'
 import { resolveContextBoard } from '~/utils/control-center-context'
 
 export function useIslandContext(workspaceId: Ref<string>) {
@@ -22,10 +23,29 @@ export function useIslandContext(workspaceId: Ref<string>) {
 
   const boardName = computed(() => boards.value.find(b => b.id === boardId.value)?.name ?? null)
 
-  function setBoard(id: string) {
-    override.value = id
-    update.mutate({ controlCenterPrefs: { ...prefs.value, lastBoardId: id } })
+  const qc = useQueryClient()
+  const toast = useToast()
+
+  function savePrefs(patch: Partial<ControlCenterPrefs>) {
+    const next = { ...prefs.value, ...patch }
+    const prev = me.data.value
+    if (prev) qc.setQueryData(['users', 'me'], { user: { ...prev.user, controlCenterPrefs: next } })
+    update.mutate({ controlCenterPrefs: next }, {
+      onError: () => {
+        if (prev) qc.setQueryData(['users', 'me'], prev)
+        toast.add({ title: 'Не удалось сохранить раскладку', color: 'error', icon: 'i-lucide-alert-circle' })
+      },
+    })
   }
 
-  return { boardId, boardName, boards, prefs, setBoard }
+  function setBoard(id: string) {
+    override.value = id
+    savePrefs({ lastBoardId: id })
+  }
+
+  function setTiles(tab: ControlCenterTab, tiles: TileId[]) {
+    savePrefs({ [tab]: tiles })
+  }
+
+  return { boardId, boardName, boards, prefs, setBoard, setTiles }
 }
