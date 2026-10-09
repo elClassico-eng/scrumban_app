@@ -5,6 +5,7 @@ import { ACTION_INFO, RECIPIENT_LABEL, TRIGGER_INFO, TRIGGER_PARAM_FIELDS } from
 
 const props = defineProps<{
   rule?: AutomationRule | null
+  presetTrigger?: AutomationTrigger | null
   pending: boolean
 }>()
 
@@ -21,7 +22,7 @@ const recipients = ref<NotifyRecipients>('assignee')
 const errorMessage = ref<string | null>(null)
 
 function resetFrom(rule: AutomationRule | null | undefined) {
-  trigger.value = rule?.trigger ?? 'task_aging'
+  trigger.value = rule?.trigger ?? props.presetTrigger ?? 'task_aging'
   action.value = rule?.action ?? 'notify'
   params.value = Object.fromEntries(
     TRIGGER_PARAM_FIELDS[trigger.value].map(f => [f.key, Number(rule?.triggerParams[f.key] ?? defaultParam(trigger.value, f.key))]),

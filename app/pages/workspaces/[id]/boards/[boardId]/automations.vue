@@ -39,8 +39,11 @@ const burning = computed(() => items.value.reduce((n, r) => n + r.openFirings, 0
 const modalOpen = ref(false)
 const editing = ref<AutomationRule | null>(null)
 
-function openCreate() {
+const presetTrigger = ref<AutomationTrigger | null>(null)
+
+function openCreate(trigger: AutomationTrigger | null = null) {
   editing.value = null
+  presetTrigger.value = trigger
   modalOpen.value = true
 }
 
@@ -140,7 +143,7 @@ async function onRun() {
           >
             Проверить сейчас
           </UButton>
-          <UButton icon="i-lucide-plus" @click="openCreate">
+          <UButton icon="i-lucide-plus" @click="openCreate()">
             Правило
           </UButton>
         </div>
@@ -158,70 +161,44 @@ async function onRun() {
         <UIcon name="i-lucide-loader" class="animate-spin size-6" />
       </div>
 
-      <div v-else-if="items.length === 0" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div
-            v-for="(step, i) in STEPS"
-            :key="step.title"
-            class="surface rounded-2xl p-5 flex gap-4"
-          >
-            <span class="size-8 rounded-full grid place-items-center shrink-0 bg-accent-500 text-white text-[13px] font-semibold tabular-nums">
-              {{ i + 1 }}
-            </span>
-            <div class="min-w-0">
-              <p class="m-0 text-[15px] font-semibold text-default leading-snug">{{ step.title }}</p>
-              <p class="m-0 mt-1 text-[13px] text-muted leading-relaxed">{{ step.text }}</p>
+      <div v-else-if="items.length === 0" class="space-y-8">
+        <section class="surface-soft rounded-2xl overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-3">
+            <div>
+              <h2 class="m-0 text-[17px] font-semibold tracking-tight text-default">Рекомендуемый набор</h2>
+              <p class="m-0 mt-0.5 text-[13px] text-muted">Три правила, которых хватает большинству команд. Можно включить все сразу или по одному.</p>
             </div>
-          </div>
-        </div>
-
-        <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-2">Что умеет отслеживать</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <div
-              v-for="t in TRIGGERS"
-              :key="t.key"
-              class="bg-default border border-default rounded-xl p-4 space-y-2"
-            >
-              <UIcon :name="t.icon" class="size-4 text-accent-500" />
-              <p class="m-0 text-[13.5px] font-semibold text-default leading-snug">{{ t.label }}</p>
-              <p class="m-0 text-[12px] text-muted leading-relaxed">{{ t.hint }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="canManage">
-          <div class="flex items-center justify-between gap-3 mb-2">
-            <p class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Рекомендуемый набор</p>
             <UButton
-              size="xs"
-              variant="ghost"
-              color="neutral"
+              v-if="canManage"
               icon="i-lucide-check-check"
               :loading="addingPreset === 'all'"
               :disabled="addingPreset !== null"
               @click="addPresets(RECOMMENDED_RULES)"
             >
-              Добавить все три
+              Включить все три
             </UButton>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="divide-y divide-default border-t border-default">
             <div
               v-for="p in RECOMMENDED_RULES"
               :key="p.title"
-              class="bg-default border border-default rounded-xl p-4 flex flex-col gap-2"
+              class="px-5 py-4 flex items-center gap-4"
             >
-              <p class="m-0 text-[13.5px] font-semibold text-default">{{ p.title }}</p>
-              <p class="m-0 text-[12px] text-muted leading-relaxed flex-1">{{ p.why }}</p>
-              <p class="m-0 text-[12px] text-default">
-                <span class="text-muted">Если&nbsp;</span>{{ TRIGGER_INFO[p.input.trigger].sentence(p.input.triggerParams) }}<span class="text-muted">&nbsp;→&nbsp;</span>{{ ACTION_INFO[p.input.action].sentence(p.input.actionParams) }}
-              </p>
+              <span class="size-9 rounded-xl grid place-items-center shrink-0 bg-accent-500/10 text-accent-500">
+                <UIcon :name="TRIGGER_INFO[p.input.trigger].icon" class="size-4" />
+              </span>
+              <div class="flex-1 min-w-0">
+                <p class="m-0 text-[14px] leading-snug text-default">
+                  <span class="text-muted">Если&nbsp;</span><b class="font-semibold">{{ TRIGGER_INFO[p.input.trigger].sentence(p.input.triggerParams) }}</b><span class="text-muted">&nbsp;→&nbsp;</span><b class="font-semibold">{{ ACTION_INFO[p.input.action].sentence(p.input.actionParams) }}</b>
+                </p>
+                <p class="m-0 mt-0.5 text-[12.5px] text-muted">{{ p.why }}</p>
+              </div>
               <UButton
-                size="xs"
+                v-if="canManage"
+                size="sm"
                 variant="outline"
                 color="neutral"
                 icon="i-lucide-plus"
-                class="self-start mt-1"
                 :loading="addingPreset === p.title"
                 :disabled="addingPreset !== null"
                 @click="addPresets([p])"
@@ -230,19 +207,40 @@ async function onRun() {
               </UButton>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <UButton v-if="canManage" icon="i-lucide-plus" variant="outline" color="neutral" @click="openCreate">
-            Своё правило
-          </UButton>
-          <p class="m-0 text-[12.5px] text-muted">
-            {{ canManage ? 'Правила проверяются раз в час; пока условие держится, повторов нет.' : 'Добавлять правила может скрам-мастер или администратор.' }}
-          </p>
-        </div>
+        <section>
+          <p class="m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Как это работает</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
+            <div v-for="(step, i) in STEPS" :key="step.title" class="flex gap-3">
+              <span class="size-6 rounded-full grid place-items-center shrink-0 bg-default border border-default text-[11.5px] font-semibold tabular-nums text-default">{{ i + 1 }}</span>
+              <div class="min-w-0">
+                <p class="m-0 text-[14px] font-semibold text-default leading-snug">{{ step.title }}</p>
+                <p class="m-0 mt-1 text-[13px] text-muted leading-relaxed">{{ step.text }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="canManage">
+          <p class="m-0 mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Или своё правило</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="t in TRIGGERS"
+              :key="t.key"
+              type="button"
+              class="inline-flex items-center gap-2 h-9 px-3.5 rounded-full bg-default border border-default text-[13px] font-medium text-default cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500"
+              :title="t.hint"
+              @click="openCreate(t.key)"
+            >
+              <UIcon :name="t.icon" class="size-4" />
+              {{ t.label }}
+            </button>
+          </div>
+        </section>
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="surface-soft rounded-2xl overflow-hidden divide-y divide-default">
         <AutomationRuleRow
           v-for="r in items"
           :key="r.id"
@@ -259,6 +257,7 @@ async function onRun() {
     <AutomationRuleModal
       v-model:open="modalOpen"
       :rule="editing"
+      :preset-trigger="presetTrigger"
       :pending="create.isPending.value || update.isPending.value"
       @submit="onSubmit"
     />

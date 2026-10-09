@@ -27,7 +27,7 @@ const menu = computed<DropdownMenuItem[]>(() => [
 
 <template>
   <div
-    class="bg-default border border-default rounded-2xl px-5 py-4 flex items-center gap-4"
+    class="px-5 py-4 flex items-center gap-4 transition-colors hover:bg-elevated/40"
     :class="!rule.enabled ? 'opacity-60' : ''"
   >
     <span
