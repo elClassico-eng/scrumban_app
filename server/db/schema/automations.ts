@@ -1,4 +1,5 @@
-import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { boards } from './boards'
 import { users } from './users'
 import { workspaces } from './workspaces'
@@ -57,6 +58,9 @@ export const automationFirings = pgTable(
   (t) => [
     index('automation_firings_rule_resolved_idx').on(t.ruleId, t.resolvedAt),
     index('automation_firings_workspace_resolved_idx').on(t.workspaceId, t.resolvedAt),
+    uniqueIndex('automation_firings_open_subject_uniq')
+      .on(t.ruleId, t.subjectType, t.subjectId)
+      .where(sql`resolved_at IS NULL`),
   ],
 )
 

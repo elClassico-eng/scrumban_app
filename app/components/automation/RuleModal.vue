@@ -43,11 +43,13 @@ watch(open, (v) => {
   if (v) resetFrom(props.rule)
 })
 
-watch(trigger, (t) => {
+function selectTrigger(t: AutomationTrigger) {
+  if (t === trigger.value) return
+  trigger.value = t
   params.value = Object.fromEntries(TRIGGER_PARAM_FIELDS[t].map(f => [f.key, defaultParam(t, f.key)]))
   if (!ACTION_ALLOWED_FOR[action.value].includes(TRIGGER_SUBJECT[t])) action.value = 'notify'
   if (recipients.value === 'assignee' && TRIGGER_SUBJECT[t] !== 'task') recipients.value = 'scrum_masters'
-})
+}
 
 const triggerItems = AUTOMATION_TRIGGERS.map(t => ({ value: t, ...TRIGGER_INFO[t] }))
 
@@ -95,7 +97,7 @@ function onSubmit() {
               type="button"
               class="flex items-start gap-3 rounded-xl border p-3 text-left transition-colors cursor-pointer"
               :class="trigger === t.value ? 'border-accent-500 bg-accent-500/5' : 'border-default hover:bg-elevated'"
-              @click="trigger = t.value"
+              @click="selectTrigger(t.value)"
             >
               <UIcon :name="t.icon" class="size-4 mt-0.5 shrink-0" :class="trigger === t.value ? 'text-accent-500' : 'text-muted'" />
               <span class="min-w-0">

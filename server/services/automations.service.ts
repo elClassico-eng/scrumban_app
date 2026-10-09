@@ -7,6 +7,7 @@ import {
   boards,
   taskComments,
   workspaceMembers,
+  workspaces,
   type AutomationRuleRow,
   type WorkspaceMemberRole,
 } from '../db/schema'
@@ -128,10 +129,23 @@ export async function updateRule(input: {
   if (input.patch.action !== undefined) set.action = input.patch.action
   if (input.patch.actionParams !== undefined) set.actionParams = input.patch.actionParams
   if (input.patch.enabled !== undefined) set.enabled = input.patch.enabled
-  const [row] = await withTenant(input.workspaceId, (tx) =>
-    tx.update(automationRules).set(set).where(eq(automationRules.id, input.ruleId)).returning(),
-  )
-  if (!row) throw new NotFoundError('Правило не найдено')
+  const row = await withTenant(input.workspaceId, async (tx) => {
+    const [prev] = await tx.select().from(automationRules).where(eq(automationRules.id, input.ruleId))
+    if (!prev) throw new NotFoundError('Правило не найдено')
+    const [updated] = await tx
+      .update(automationRules)
+      .set(set)
+      .where(eq(automationRules.id, input.ruleId))
+      .returning()
+    const retargeted = set.trigger !== undefined && set.trigger !== prev.trigger
+    if (set.enabled === false || retargeted) {
+      await tx
+        .update(automationFirings)
+        .set({ resolvedAt: new Date() })
+        .where(and(eq(automationFirings.ruleId, input.ruleId), isNull(automationFirings.resolvedAt)))
+    }
+    return updated!
+  })
   return row
 }
 
@@ -181,12 +195,28 @@ export async function runBoard(workspaceId: string, boardId: string): Promise<{ 
   let opened = 0
   let resolved = 0
   for (const rule of rules) {
-    const current = rule.enabled
-      ? await withTenant(workspaceId, (tx) =>
-          evaluateTrigger(tx, { workspaceId, boardId, trigger: rule.trigger, params: rule.triggerParams }),
-        )
-      : []
-    const r = await withTenant(workspaceId, async (tx) => {
+    try {
+      const r = await runRule(workspaceId, boardId, rule)
+      opened += r.opened
+      resolved += r.resolved
+    } catch (err) {
+      console.error('[automations] rule failed', { ruleId: rule.id, trigger: rule.trigger, err })
+    }
+  }
+  return { opened, resolved }
+}
+
+async function runRule(
+  workspaceId: string,
+  boardId: string,
+  rule: AutomationRuleRow,
+): Promise<{ opened: number; resolved: number }> {
+  const current = rule.enabled
+    ? await withTenant(workspaceId, (tx) =>
+        evaluateTrigger(tx, { workspaceId, boardId, trigger: rule.trigger, params: rule.triggerParams }),
+      )
+    : []
+  return withTenant(workspaceId, async (tx) => {
       const open = await tx
         .select({
           id: automationFirings.id,
@@ -202,32 +232,42 @@ export async function runBoard(workspaceId: string, boardId: string): Promise<{ 
           .set({ resolvedAt: new Date() })
           .where(inArray(automationFirings.id, diff.toResolve))
       }
+      let openedNow = 0
       for (const s of diff.toOpen) {
-        await tx.insert(automationFirings).values({
-          workspaceId,
-          ruleId: rule.id,
-          subjectType: s.subjectType,
-          subjectId: s.subjectId,
-          payload: s.payload,
-        })
+        const inserted = await tx
+          .insert(automationFirings)
+          .values({
+            workspaceId,
+            ruleId: rule.id,
+            subjectType: s.subjectType,
+            subjectId: s.subjectId,
+            payload: s.payload,
+          })
+          .onConflictDoNothing()
+          .returning({ id: automationFirings.id })
+        if (inserted.length === 0) continue
         await executeAction(tx, { workspaceId, rule, subject: s })
+        openedNow += 1
       }
-      return { opened: diff.toOpen.length, resolved: diff.toResolve.length }
+      return { opened: openedNow, resolved: diff.toResolve.length }
     })
-    opened += r.opened
-    resolved += r.resolved
-  }
-  return { opened, resolved }
 }
 
 export async function runAll(): Promise<{ opened: number; resolved: number }> {
-  const all = await useDB().select({ id: boards.id, workspaceId: boards.workspaceId }).from(boards)
+  const wsList = await useDB().select({ id: workspaces.id }).from(workspaces)
   let opened = 0
   let resolved = 0
-  for (const b of all) {
-    const r = await runBoard(b.workspaceId, b.id)
-    opened += r.opened
-    resolved += r.resolved
+  for (const ws of wsList) {
+    const boardIds = await withTenant(ws.id, (tx) => tx.select({ id: boards.id }).from(boards))
+    for (const b of boardIds) {
+      try {
+        const r = await runBoard(ws.id, b.id)
+        opened += r.opened
+        resolved += r.resolved
+      } catch (err) {
+        console.error('[automations] board failed', { workspaceId: ws.id, boardId: b.id, err })
+      }
+    }
   }
   return { opened, resolved }
 }

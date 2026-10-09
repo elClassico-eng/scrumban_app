@@ -302,6 +302,13 @@
       "when": 1791584215593,
       "tag": "0042_automations_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791585454539,
+      "tag": "0043_automation_firings_unique_open",
+      "breakpoints": true
     }
   ]
 }
