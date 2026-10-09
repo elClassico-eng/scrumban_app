@@ -33,6 +33,7 @@ const props = defineProps<{
   boardId: string | null
   boardName: string | null
   boards: { id: string; name: string }[]
+  workspaceId: string
 }>()
 
 const emit = defineEmits<{
@@ -44,6 +45,7 @@ const emit = defineEmits<{
   'toggle-theme': [e: Event]
   logout: [e: Event]
   'select-board': [id: string]
+  'search-done': []
 }>()
 
 const boardItems = computed<DropdownMenuItem[]>(() =>
@@ -132,9 +134,13 @@ const TABS: { key: IslandTab; label: string }[] = [
     :loading="pulseLoading"
   />
 
-  <div v-else-if="tab === 'search'" class="flex-1 min-h-0 flex items-center justify-center text-[12.5px] text-[var(--island-ink-3)]">
-    Поиск
-  </div>
+  <ControlCenterSearchTab
+    v-else-if="tab === 'search'"
+    :workspace-id="workspaceId"
+    :board-id="boardId"
+    :active="tab === 'search'"
+    @done="emit('search-done')"
+  />
 
   <div v-else class="flex-1 min-h-0">
     <ControlCenterNotifsTile
@@ -149,7 +155,7 @@ const TABS: { key: IslandTab; label: string }[] = [
     :is-dark="isDark"
     :can-create-task="canCreateTask"
     @task="emit('quick-task', $event)"
-    @search="emit('quick-search', $event)"
+    @search="(e) => { e.stopPropagation(); tab = 'search' }"
     @toggle-focus="emit('toggle-focus', $event)"
     @toggle-theme="emit('toggle-theme', $event)"
     @logout="emit('logout', $event)"

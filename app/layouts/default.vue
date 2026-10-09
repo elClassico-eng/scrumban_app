@@ -14,6 +14,5 @@ useNotificationsSse()
       </main>
     </div>
     <IntroduceModal />
-    <CommandPalette />
   </div>
 </template>

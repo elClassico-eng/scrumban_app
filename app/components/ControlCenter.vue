@@ -81,9 +81,29 @@ function onQuickTask(e: Event) {
   else if (workspaceId.value) router.push(pageRoutes.boards(workspaceId.value))
 }
 
+function openSearch() {
+  panelTab.value = 'search'
+  if (window.matchMedia('(min-width: 1024px)').matches) {
+    open.value = true
+    pinned.value = true
+  }
+  else {
+    uiStore.openControlCenter()
+  }
+}
+
 function onQuickSearch(e: Event) {
   e.stopPropagation()
-  ccActions.requestSearch()
+  openSearch()
+}
+
+defineShortcuts({ meta_k: () => openSearch() })
+watch(ccActions.searchTick, openSearch)
+
+function onSearchDone() {
+  pinned.value = false
+  open.value = false
+  uiStore.closeControlCenter()
 }
 
 function toggleFocus(e: Event) {
@@ -143,7 +163,7 @@ const cmdKLabel = computed(() => (import.meta.client && /Mac|iPhone|iPad/i.test(
 
 function onCmdK(e: Event) {
   e.stopPropagation()
-  ccActions.requestSearch()
+  openSearch()
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -228,8 +248,10 @@ watch(rawNotifs, (next, prev) => {
           :board-id="contextBoardId"
           :board-name="contextBoardName"
           :boards="contextBoards"
+          :workspace-id="workspaceId"
           @toggle-pin="togglePin"
           @select-board="setBoard"
+          @search-done="onSearchDone"
           @mark-read="markRead"
           @quick-task="onQuickTask"
           @quick-search="onQuickSearch"
@@ -295,8 +317,10 @@ watch(rawNotifs, (next, prev) => {
             :board-id="contextBoardId"
             :board-name="contextBoardName"
             :boards="contextBoards"
+            :workspace-id="workspaceId"
             @toggle-pin="togglePin"
             @select-board="setBoard"
+            @search-done="onSearchDone"
             @mark-read="(e, id) => { markRead(e, id); uiStore.closeControlCenter() }"
             @quick-task="(e) => { onQuickTask(e); uiStore.closeControlCenter() }"
             @quick-search="(e) => { onQuickSearch(e); uiStore.closeControlCenter() }"
