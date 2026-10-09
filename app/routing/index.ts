@@ -218,6 +218,8 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/analytics`,
   boardSprints: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
+  boardAutomations: (wsId: string, boardId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/automations`,
   sprintSimulator: (wsId: string, boardId: string, sprintId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/simulator/${sprintId}`,
   sprintReportPage: (wsId: string, boardId: string, sprintId: string) =>

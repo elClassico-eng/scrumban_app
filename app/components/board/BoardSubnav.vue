@@ -124,6 +124,8 @@ const sprintsPath = computed(() => pageRoutes.boardSprints(props.workspaceId, pr
 const analyticsPath = computed(() => pageRoutes.boardAnalytics(props.workspaceId, props.boardId))
 const isSprintsActive = computed(() => route.path === sprintsPath.value)
 const isAnalyticsActive = computed(() => route.path === analyticsPath.value)
+const automationsPath = computed(() => pageRoutes.boardAutomations(props.workspaceId, props.boardId))
+const isAutomationsActive = computed(() => route.path === automationsPath.value)
 const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 </script>
 
@@ -202,6 +204,13 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
           :class="isAnalyticsActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
         >
           Аналитика
+        </NuxtLink>
+        <NuxtLink
+          :to="automationsPath"
+          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+          :class="isAutomationsActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
+        >
+          Автоматизации
         </NuxtLink>
 
         <UButton
