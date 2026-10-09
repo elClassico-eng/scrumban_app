@@ -1,5 +1,15 @@
 <script setup lang="ts">
+import type { IslandTab } from '~/components/control-center/IslandPanel.vue'
 import { pageRoutes } from '~/routing'
+import type { RouteTarget } from '~/utils/notification-render'
+import { normalizeTiles } from '~/utils/control-center-tiles'
+import {
+  islandNavigateKey,
+  islandPresenceKey,
+  islandReplenishmentKey,
+  islandTimerKey,
+  islandWorkspaceKey,
+} from '~/composables/control-center/useIslandInjection'
 
 const colorMode = useColorMode()
 const { logout } = useAuthApi()
@@ -40,34 +50,33 @@ const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.member
 
 const boardId = computed(() => (route.params.boardId as string) ?? '')
 
-const { list: boardsList, recordReplenishment } = useBoardsApi(workspaceId)
-const board = computed(() => boardsList.data.value?.boards.find(b => b.id === boardId.value) ?? null)
+const { recordReplenishment } = useBoardsApi(workspaceId)
 const canManageBoard = computed(() => hasRole(role.value, 'admin'))
-const sleLabel = computed(() => {
-  const b = board.value
-  if (!b) return null
-  if (b.sleDays == null) return null
-  return `${Math.round(Number(b.sleProbability) * 100)}% · ≤ ${b.sleDays} дн`
-})
-const replenishmentLabel = computed(() => {
-  const b = board.value
-  if (!b?.lastReplenishmentAt) return null
-  const due = new Date(b.lastReplenishmentAt).getTime() + b.replenishmentPeriodDays * 86_400_000
-  const daysLeft = Math.round((due - Date.now()) / 86_400_000)
-  return daysLeft < 0 ? `просрочено ${-daysLeft} дн` : `через ${daysLeft} дн`
-})
-const replenishmentOverdue = computed(() => {
-  const b = board.value
-  if (!b?.lastReplenishmentAt) return false
-  const due = new Date(b.lastReplenishmentAt).getTime() + b.replenishmentPeriodDays * 86_400_000
-  return (due - Date.now()) < 0
-})
-const hasBoardMetrics = computed(() => !!boardId.value && !!board.value)
+const { me } = useProfileApi()
+const prefs = computed(() => me.data.value?.user.controlCenterPrefs ?? {})
+const overviewTiles = computed(() => normalizeTiles(prefs.value.overview, 'overview'))
+const flowTiles = computed(() => normalizeTiles(prefs.value.flow, 'flow'))
 
-const { hasSprint, sprintPct, sprintCaption } = useIslandSprint(workspaceId, boardId)
+const contextBoardId = computed<string | null>(() => boardId.value || null)
+const { pulse } = useBoardPulseApi(workspaceId, contextBoardId, computed(() => open.value || pinned.value || uiStore.controlCenterOpen))
+const pulseData = computed(() => pulse.data.value ?? null)
+
+const panelTab = ref<IslandTab>('overview')
+
+function navigateTo(target: RouteTarget) {
+  router.push(target)
+  if (!pinned.value) open.value = false
+  uiStore.closeControlCenter()
+}
 
 const ccActions = useControlCenterActions()
 const { running, hasTask, timerTaskId, timerTaskTitle, elapsed, onToggle: onTimerToggle, onStop: onTimerStop } = useIslandTimer(workspaceId)
+
+provide(islandTimerKey, { taskId: timerTaskId, taskTitle: timerTaskTitle, seconds: elapsed, running, active: hasTask, onToggle: onTimerToggle, onStop: onTimerStop })
+provide(islandPresenceKey, { people: presencePeople, extra: presenceExtra, onViewAll: onViewTeam })
+provide(islandReplenishmentKey, { canMark: canManageBoard, onMark: onMarkReplenishment })
+provide(islandNavigateKey, navigateTo)
+provide(islandWorkspaceKey, workspaceId)
 
 function onQuickTask(e: Event) {
   e.stopPropagation()
@@ -104,6 +113,7 @@ async function onMarkReplenishment(e: Event) {
   if (!ok) return
   try {
     await recordReplenishment.mutateAsync(boardId.value)
+    pulse.refetch()
     toast.add({ title: 'Replenishment отмечен', icon: 'i-lucide-check-circle', color: 'success' })
   }
   catch {
@@ -206,40 +216,26 @@ watch(rawNotifs, (next, prev) => {
         :style="panelStyle"
       >
         <ControlCenterIslandPanel
+          v-model:tab="panelTab"
           :time="time"
           :weekday="weekday"
           :pinned="pinned"
           :reduced-motion="reducedMotion"
-          :timer-task-id="timerTaskId"
-          :timer-task-title="timerTaskTitle"
-          :seconds="elapsed"
-          :running="running"
-          :timer-active="hasTask"
-          :sprint-pct="sprintPct"
-          :sprint-caption="sprintCaption"
-          :sprint-active="hasSprint"
-          :people="presencePeople"
-          :presence-extra="presenceExtra"
           :notifs="notifs"
           :focus-on="focus"
           :is-dark="isDark"
           :can-create-task="canCreateTask"
-          :sle-label="sleLabel"
-          :replenishment-label="replenishmentLabel"
-          :replenishment-overdue="replenishmentOverdue"
-          :has-board-metrics="hasBoardMetrics"
-          :replenishment-clickable="canManageBoard"
+          :pulse="pulseData"
+          :pulse-loading="pulse.isLoading.value"
+          :overview-tiles="overviewTiles"
+          :flow-tiles="flowTiles"
           @toggle-pin="togglePin"
-          @mark-replenishment="onMarkReplenishment"
-          @toggle-running="onTimerToggle"
-          @stop-timer="onTimerStop"
           @mark-read="markRead"
           @quick-task="onQuickTask"
           @quick-search="onQuickSearch"
           @toggle-focus="toggleFocus"
           @toggle-theme="toggleTheme"
           @logout="doLogout"
-          @view-all="onViewTeam"
         />
       </div>
     </div>
@@ -283,40 +279,26 @@ watch(rawNotifs, (next, prev) => {
         </div>
         <div class="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-[10px]">
           <ControlCenterIslandPanel
+            v-model:tab="panelTab"
             :time="time"
             :weekday="weekday"
             :pinned="pinned"
             :reduced-motion="reducedMotion"
-            :timer-task-id="timerTaskId"
-            :timer-task-title="timerTaskTitle"
-            :seconds="elapsed"
-            :running="running"
-            :timer-active="hasTask"
-            :sprint-pct="sprintPct"
-            :sprint-caption="sprintCaption"
-            :sprint-active="hasSprint"
-            :people="presencePeople"
-            :presence-extra="presenceExtra"
             :notifs="notifs"
             :focus-on="focus"
             :is-dark="isDark"
             :can-create-task="canCreateTask"
-            :sle-label="sleLabel"
-            :replenishment-label="replenishmentLabel"
-            :replenishment-overdue="replenishmentOverdue"
-            :has-board-metrics="hasBoardMetrics"
-            :replenishment-clickable="canManageBoard"
+            :pulse="pulseData"
+            :pulse-loading="pulse.isLoading.value"
+            :overview-tiles="overviewTiles"
+            :flow-tiles="flowTiles"
             @toggle-pin="togglePin"
-            @mark-replenishment="onMarkReplenishment"
-            @toggle-running="onTimerToggle"
-            @stop-timer="onTimerStop"
             @mark-read="(e, id) => { markRead(e, id); uiStore.closeControlCenter() }"
             @quick-task="(e) => { onQuickTask(e); uiStore.closeControlCenter() }"
             @quick-search="(e) => { onQuickSearch(e); uiStore.closeControlCenter() }"
             @toggle-focus="toggleFocus"
             @toggle-theme="toggleTheme"
             @logout="doLogout"
-            @view-all="(e) => { onViewTeam(e); uiStore.closeControlCenter() }"
           />
         </div>
       </div>

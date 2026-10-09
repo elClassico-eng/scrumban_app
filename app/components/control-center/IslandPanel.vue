@@ -1,11 +1,6 @@
 <script setup lang="ts">
-type Person = {
-  id: string
-  name: string
-  color: string
-  initials: string
-  avatarUrl?: string | null
-}
+import type { TileId } from '#shared/types/control-center'
+import type { BoardPulse } from '#shared/types/pulse'
 
 type Notif = {
   id: string
@@ -19,48 +14,42 @@ type Notif = {
   unread: boolean
 }
 
+export type IslandTab = 'overview' | 'flow' | 'search' | 'notifs'
+
 const props = defineProps<{
   time: string
   weekday: string
   pinned: boolean
   reducedMotion: boolean
-  timerTaskId: string
-  timerTaskTitle: string
-  seconds: number
-  running: boolean
-  timerActive: boolean
-  sprintPct: number
-  sprintCaption: string
-  sprintActive: boolean
-  people: Person[]
-  presenceExtra: number
   notifs: Notif[]
   focusOn: boolean
   isDark: boolean
   canCreateTask: boolean
-  sleLabel?: string | null
-  replenishmentLabel?: string | null
-  replenishmentOverdue?: boolean
-  hasBoardMetrics?: boolean
-  replenishmentClickable?: boolean
+  pulse: BoardPulse | null
+  pulseLoading: boolean
+  overviewTiles: TileId[]
+  flowTiles: TileId[]
 }>()
 
 const emit = defineEmits<{
   'toggle-pin': [e: Event]
-  'toggle-running': [e: Event]
-  'stop-timer': [e: Event]
   'mark-read': [e: Event, id: string]
   'quick-task': [e: Event]
   'quick-search': [e: Event]
   'toggle-focus': [e: Event]
   'toggle-theme': [e: Event]
   logout: [e: Event]
-  'view-all': [e: Event]
-  'mark-replenishment': [e: Event]
 }>()
 
-const tab = ref<'overview' | 'notifs'>('overview')
+const tab = defineModel<IslandTab>('tab', { default: 'overview' })
 const unread = computed(() => props.notifs.filter(n => n.unread).length)
+
+const TABS: { key: IslandTab; label: string }[] = [
+  { key: 'overview', label: 'Обзор' },
+  { key: 'flow', label: 'Поток' },
+  { key: 'search', label: 'Поиск' },
+  { key: 'notifs', label: 'Уведомления' },
+]
 </script>
 
 <template>
@@ -87,75 +76,40 @@ const unread = computed(() => props.notifs.filter(n => n.unread).length)
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
   >
     <button
-      type="button"
-      class="flex-1 h-[30px] rounded-lg text-[12px] font-semibold border-none cursor-pointer transition-colors"
-      :style="tab === 'overview' ? 'background: var(--island-orange-soft); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
-      @click="tab = 'overview'"
-    >
-      Обзор
-    </button>
-    <button
+      v-for="t in TABS"
+      :key="t.key"
       type="button"
       class="flex-1 h-[30px] rounded-lg text-[12px] font-semibold border-none cursor-pointer transition-colors flex items-center justify-center gap-[5px]"
-      :style="tab === 'notifs' ? 'background: var(--island-orange-soft); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
-      @click="tab = 'notifs'"
+      :style="tab === t.key ? 'background: var(--island-orange-soft); color: var(--island-orange-2);' : 'background: transparent; color: var(--island-ink-3);'"
+      @click="tab = t.key"
     >
-      Уведомления
+      {{ t.label }}
       <span
-        v-if="unread > 0"
+        v-if="t.key === 'notifs' && unread > 0"
         class="min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--island-orange)] text-white text-[9.5px] font-bold flex items-center justify-center"
       >{{ unread > 9 ? '9+' : unread }}</span>
     </button>
   </div>
 
-  <div v-show="tab === 'overview'" class="flex-1 min-h-0 flex flex-col gap-[10px]">
-    <div class="grid gap-[10px]" style="grid-template-columns: 1.5fr 1fr;">
-      <ControlCenterTaskTimerTile
-        :task-id="timerTaskId"
-        :task-title="timerTaskTitle"
-        :seconds="seconds"
-        :running="running"
-        :active="timerActive"
-        @toggle="emit('toggle-running', $event)"
-        @stop="emit('stop-timer', $event)"
-      />
-      <ControlCenterSprintRingTile
-        :pct="sprintPct"
-        :caption="sprintCaption"
-        :active="sprintActive"
-        :reduced-motion="reducedMotion"
-      />
-    </div>
-    <div class="flex flex-wrap gap-[10px]">
-      <template v-if="hasBoardMetrics">
-        <ControlCenterMetricTile
-          icon="i-lucide-sparkles"
-          label="SLE"
-          :value="sleLabel ?? '—'"
-          accent
-          :info="{
-            answers: 'Service Level Expectation. Читается как «N% задач закрывается за ≤ M дней» — перцентиль времени выполнения по закрытым задачам доски.',
-            action: 'От этого порога краснеют зависшие карточки на доске (aging). Пересчитать из истории — в настройках доски.',
-          }"
-        />
-        <ControlCenterMetricTile
-          icon="i-lucide-calendar"
-          label="Пополнение"
-          :value="replenishmentLabel ?? '—'"
-          :accent="replenishmentOverdue"
-          :clickable="replenishmentClickable"
-          @click="(e) => emit('mark-replenishment', e)"
-        />
-      </template>
-      <ControlCenterPresenceTile
-        :people="people"
-        :extra="presenceExtra"
-        @view-all="(e) => emit('view-all', e)"
-      />
-    </div>
+  <ControlCenterIslandGrid
+    v-if="tab === 'overview'"
+    :tiles="overviewTiles"
+    :pulse="pulse"
+    :loading="pulseLoading"
+  />
+
+  <ControlCenterIslandGrid
+    v-else-if="tab === 'flow'"
+    :tiles="flowTiles"
+    :pulse="pulse"
+    :loading="pulseLoading"
+  />
+
+  <div v-else-if="tab === 'search'" class="flex-1 min-h-0 flex items-center justify-center text-[12.5px] text-[var(--island-ink-3)]">
+    Поиск
   </div>
 
-  <div v-show="tab === 'notifs'" class="flex-1 min-h-0">
+  <div v-else class="flex-1 min-h-0">
     <ControlCenterNotifsTile
       class="h-full min-h-0"
       :notifs="notifs"
