@@ -1,6 +1,6 @@
 {
-  "id": "137bb21d-b436-4e3e-88a5-a6ba5418290e",
-  "prevId": "a5a3f5fc-ea1a-400d-9754-278759d46323",
+  "id": "6b1d472c-4773-4b11-a936-a2b70bfe0e6b",
+  "prevId": "137bb21d-b436-4e3e-88a5-a6ba5418290e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -72,6 +72,13 @@
         },
         "notification_prefs": {
           "name": "notification_prefs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "control_center_prefs": {
+          "name": "control_center_prefs",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
@@ -3531,6 +3538,34 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "automation_firings_open_subject_uniq": {
+          "name": "automation_firings_open_subject_uniq",
+          "columns": [
+            {
+              "expression": "rule_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "subject_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "subject_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "resolved_at IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
