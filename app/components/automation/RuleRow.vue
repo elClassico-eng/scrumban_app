@@ -39,10 +39,7 @@ const menu = computed<DropdownMenuItem[]>(() => [
 
     <div class="flex-1 min-w-0">
       <p class="text-[14px] text-default leading-snug">
-        <span class="text-muted">Если</span>
-        <b class="font-semibold"> {{ sentence }}</b>
-        <span class="text-muted"> → </span>
-        <b class="font-semibold">{{ actionSentence }}</b>
+        <span class="text-muted">Если&nbsp;</span><b class="font-semibold">{{ sentence }}</b><span class="text-muted">&nbsp;→&nbsp;</span><b class="font-semibold">{{ actionSentence }}</b>
       </p>
       <div class="flex flex-wrap items-center gap-3 mt-1 text-[12px] text-muted">
         <span
