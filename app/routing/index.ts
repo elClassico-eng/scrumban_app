@@ -156,6 +156,15 @@ export const apiRoutes = {
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
 
+  automationRules: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/automations/rules`,
+  automationRule: (wsId: string, boardId: string, ruleId: string) =>
+    `${boardBase(wsId, boardId)}/automations/rules/${ruleId}`,
+  automationFirings: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/automations/firings`,
+  automationRun: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/automations/run`,
+
   workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
 
   workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
