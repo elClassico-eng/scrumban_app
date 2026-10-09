@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { AutomationRule, RuleInput } from '#shared/types/automation'
+import type { AutomationRule, AutomationTrigger, RuleInput } from '#shared/types/automation'
+import { TRIGGER_INFO } from '~/utils/automation-labels'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -25,6 +26,14 @@ useHead({
 })
 
 const items = computed(() => rules.data.value?.rules ?? [])
+
+const STEPS = [
+  { title: 'Условие из математики', text: 'Не «перенесли задачу», а «задача висит дольше 85% SLE» или «шанс закрыть спринт ниже 70%». Порог задаёшь сам.' },
+  { title: 'Действие', text: 'Уведомить исполнителя или скрам-мастеров, оставить комментарий в задаче, вынести в повестку daily.' },
+  { title: 'Эпизод, не спам', text: 'Такт проверяет доску раз в час. Пока условие держится, правило не повторяется; когда проблема ушла, срабатывание закрывается само.' },
+]
+
+const TRIGGERS = (Object.keys(TRIGGER_INFO) as AutomationTrigger[]).map(key => ({ key, ...TRIGGER_INFO[key] }))
 const burning = computed(() => items.value.reduce((n, r) => n + r.openFirings, 0))
 
 const modalOpen = ref(false)
@@ -133,33 +142,45 @@ async function onRun() {
         <UIcon name="i-lucide-loader" class="animate-spin size-6" />
       </div>
 
-      <div v-else-if="items.length === 0" class="bg-default border border-default rounded-2xl p-6 sm:p-8 max-w-2xl">
-        <div class="flex items-start gap-4">
-          <span class="size-10 rounded-xl grid place-items-center shrink-0 bg-accent-500/10 text-accent-500">
-            <UIcon name="i-lucide-zap" class="size-5" />
-          </span>
-          <div class="space-y-4 min-w-0">
-            <div>
-              <h2 class="m-0 text-lg font-semibold text-default">Правил пока нет</h2>
-              <p class="text-sm text-muted mt-1">
-                Правило – это «если … → то …». Условия берутся из математики доски, а не из ручных событий:
-                задача висит в колонке дольше SLE, блокер держится несколько дней, шанс закрыть спринт упал ниже порога,
-                колонка над WIP-лимитом, бэклог давно не пополняли.
-              </p>
+      <div v-else-if="items.length === 0" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            v-for="(step, i) in STEPS"
+            :key="step.title"
+            class="surface rounded-2xl p-5 flex gap-4"
+          >
+            <span class="size-8 rounded-full grid place-items-center shrink-0 bg-accent-500 text-white text-[13px] font-semibold tabular-nums">
+              {{ i + 1 }}
+            </span>
+            <div class="min-w-0">
+              <p class="m-0 text-[15px] font-semibold text-default leading-snug">{{ step.title }}</p>
+              <p class="m-0 mt-1 text-[13px] text-muted leading-relaxed">{{ step.text }}</p>
             </div>
-            <ol class="text-sm text-default space-y-2 list-decimal pl-5 marker:text-muted">
-              <li>Выбираешь условие и его порог, например «задача в колонке дольше 85% SLE».</li>
-              <li>Выбираешь, что сделать: уведомить исполнителя или скрам-мастеров, оставить комментарий в задаче, вынести в повестку daily.</li>
-              <li>Такт проверяет доску раз в час. Пока условие держится, правило не повторяется; когда проблема ушла, срабатывание закрывается само.</li>
-            </ol>
-            <p class="text-xs text-muted">Для условий по SLE нужен рассчитанный SLE доски, для прогноза спринта – активный спринт с историей закрытых задач.</p>
-            <div v-if="canManage" class="flex flex-wrap gap-2 pt-1">
-              <UButton icon="i-lucide-plus" @click="openCreate">
-                Добавить правило
-              </UButton>
-            </div>
-            <p v-else class="text-xs text-muted">Добавлять правила может скрам-мастер или администратор.</p>
           </div>
+        </div>
+
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-2">Что умеет отслеживать</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div
+              v-for="t in TRIGGERS"
+              :key="t.key"
+              class="bg-default border border-default rounded-xl p-4 space-y-2"
+            >
+              <UIcon :name="t.icon" class="size-4 text-accent-500" />
+              <p class="m-0 text-[13.5px] font-semibold text-default leading-snug">{{ t.label }}</p>
+              <p class="m-0 text-[12px] text-muted leading-relaxed">{{ t.hint }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <UButton v-if="canManage" icon="i-lucide-plus" @click="openCreate">
+            Добавить правило
+          </UButton>
+          <p class="m-0 text-[12.5px] text-muted">
+            {{ canManage ? 'Правила проверяются раз в час; пока условие держится, повторов нет.' : 'Добавлять правила может скрам-мастер или администратор.' }}
+          </p>
         </div>
       </div>
 
