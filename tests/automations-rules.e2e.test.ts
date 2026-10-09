@@ -168,6 +168,21 @@ describe('automation rules API', () => {
     expect(after.body.firings.filter((f) => f.ruleId === created.body.rule.id)).toHaveLength(0)
   })
 
+  it('rejects a board from another workspace with 404', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsA = await createWorkspace(owner)
+    const wsB = await fetchWithJar<{ workspace: { id: string } }>(owner.jar, '/api/workspaces', {
+      method: 'POST',
+      body: { name: 'B', slug: 'b-ws' },
+    })
+    const { boardId } = await createBoard(owner, wsA)
+    const res = await fetchWithJar(owner.jar, rulesPath(wsB.body.workspace.id, boardId), {
+      method: 'POST',
+      body: { trigger: 'task_blocked', triggerParams: {}, action: 'daily_agenda', actionParams: {} },
+    })
+    expect(res.status).toBe(404)
+  })
+
   it('hides from non-members', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)

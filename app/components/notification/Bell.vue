@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Notification, NotificationType } from '#shared/types/notification'
-import { pageRoutes } from '~/routing'
+import type { Notification } from '#shared/types/notification'
+import { renderNotification } from '~/utils/notification-render'
 
 const { list, unreadCount, markRead, markAllRead } = useNotificationsApi()
 const router = useRouter()
@@ -10,66 +10,8 @@ const open = ref(false)
 const items = computed(() => list.data.value?.notifications ?? [])
 const count = computed(() => unreadCount.data.value?.count ?? 0)
 
-const ICON: Record<NotificationType, string> = {
-  mention: 'i-lucide-at-sign',
-  assigned: 'i-lucide-user-check',
-  comment_on_assigned: 'i-lucide-message-square',
-  sle_breach: 'i-lucide-alert-triangle',
-  replenishment_overdue: 'i-lucide-refresh-cw',
-  sprint_forecast_drop: 'i-lucide-trending-down',
-  automation: 'i-lucide-zap',
-}
-
-const TITLE: Record<NotificationType, string> = {
-  mention: 'Упомянули в комментарии',
-  assigned: 'Назначили задачу',
-  comment_on_assigned: 'Прокомментировали вашу задачу',
-  sle_breach: 'Задача застряла дольше SLE',
-  replenishment_overdue: 'Пора провести Replenishment',
-  sprint_forecast_drop: 'Прогноз спринта упал',
-  automation: 'Сработало правило',
-}
-
-function getDescription(n: Notification): string {
-  const p = n.payload as Record<string, string>
-  switch (n.type) {
-    case 'mention':
-    case 'comment_on_assigned':
-      return p.taskTitle ?? ''
-    case 'assigned':
-      return p.taskTitle ?? ''
-    case 'sle_breach':
-      return p.taskTitle ?? ''
-    case 'replenishment_overdue':
-      return p.boardName ?? ''
-    case 'sprint_forecast_drop':
-      return p.sprintName ?? ''
-    case 'automation':
-      return p.taskTitle ?? p.sprintName ?? p.columnName ?? p.boardName ?? ''
-  }
-}
-
-function getTarget(n: Notification): ReturnType<typeof pageRoutes.task> | string | null {
-  const p = n.payload as Record<string, string>
-  switch (n.type) {
-    case 'mention':
-    case 'assigned':
-    case 'comment_on_assigned':
-    case 'sle_breach':
-      return p.taskId && p.boardId
-        ? pageRoutes.task(n.workspaceId, p.boardId, p.taskId)
-        : null
-    case 'replenishment_overdue':
-      return p.boardId ? pageRoutes.board(n.workspaceId, p.boardId) : null
-    case 'sprint_forecast_drop':
-      return p.boardId ? pageRoutes.boardSprints(n.workspaceId, p.boardId) : null
-    case 'automation':
-      return p.boardId ? pageRoutes.board(n.workspaceId, p.boardId) : null
-  }
-}
-
 async function onClick(n: Notification) {
-  const target = getTarget(n)
+  const target = renderNotification(n).target
   if (!n.readAt) markRead.mutate(n.id)
   open.value = false
   if (target) await router.push(target)
@@ -134,18 +76,21 @@ function onMarkAll() {
           @click="onClick(n)"
         >
           <UIcon
-            :name="ICON[n.type]"
+            :name="renderNotification(n).icon"
             class="size-4 mt-1 shrink-0"
             :class="!n.readAt ? 'text-primary' : 'text-muted'"
           />
           <div class="flex-1 min-w-0 space-y-0.5">
             <p class="text-sm font-medium" :class="!n.readAt ? '' : 'text-muted'">
-              {{ TITLE[n.type] }}
+              {{ renderNotification(n).title }}
             </p>
-            <p v-if="getDescription(n)" class="text-xs text-muted truncate">
-              {{ getDescription(n) }}
+            <p v-if="renderNotification(n).why" class="text-xs text-muted">
+              {{ renderNotification(n).why }}
             </p>
-            <p class="text-[11px] text-muted">{{ formatRelativeDate(n.createdAt) }}</p>
+            <p class="text-[11px] text-muted flex items-center gap-2">
+              <span>{{ formatRelativeDate(n.createdAt) }}</span>
+              <span v-if="renderNotification(n).target" class="font-medium text-primary">{{ renderNotification(n).cta }} →</span>
+            </p>
           </div>
           <span
             v-if="!n.readAt"

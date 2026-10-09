@@ -5,4 +5,5 @@ export const NOTIFICATION_TYPE_LABEL: Record<string, string> = {
   sle_breach: 'Нарушение SLE',
   replenishment_overdue: 'Просроченное пополнение',
   sprint_forecast_drop: 'Падение прогноза спринта',
+  automation: 'Автоматизации доски',
 }

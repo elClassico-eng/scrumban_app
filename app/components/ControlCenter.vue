@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Notification, NotificationType } from '#shared/types/notification'
+import type { Notification } from '#shared/types/notification'
 import { pageRoutes } from '~/routing'
+import { renderNotification } from '~/utils/notification-render'
 
 const colorMode = useColorMode()
 const { logout } = useAuthApi()
@@ -8,100 +9,44 @@ const router = useRouter()
 const route = useRoute()
 const uiStore = useUiStore()
 
-type TileIconType = 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
 type PeekIconType = 'move' | 'at' | 'build' | 'check'
 
 type TileNotif = {
   id: string
-  iconType: TileIconType
+  icon: string
   color: string
-  who: string
-  txt: string
+  title: string
+  why: string
+  cta: string
+  hasTarget: boolean
   t: string
   unread: boolean
 }
 
-const NOTIF_ICON: Record<NotificationType, TileIconType> = {
-  mention: 'at',
-  assigned: 'check',
-  comment_on_assigned: 'at',
-  sle_breach: 'alert',
-  replenishment_overdue: 'refresh',
-  sprint_forecast_drop: 'trend',
-  automation: 'alert',
-}
-
-const NOTIF_COLOR: Record<NotificationType, string> = {
-  mention: '#7a4cf0',
-  assigned: '#2e6df5',
-  comment_on_assigned: '#7a4cf0',
-  sle_breach: '#e85002',
-  replenishment_overdue: '#e85002',
-  sprint_forecast_drop: '#e85002',
-  automation: '#e85002',
-}
-
-const NOTIF_PEEK_ICON: Record<NotificationType, PeekIconType> = {
-  mention: 'at',
-  assigned: 'check',
-  comment_on_assigned: 'at',
-  sle_breach: 'check',
-  replenishment_overdue: 'check',
-  sprint_forecast_drop: 'check',
-  automation: 'check',
-}
-
-const NOTIF_TITLE: Record<NotificationType, string> = {
-  mention: 'Упомянули в комментарии',
-  assigned: 'Назначили задачу',
-  comment_on_assigned: 'Прокомментировали вашу задачу',
-  sle_breach: 'Задача застряла дольше SLE',
-  replenishment_overdue: 'Пора провести Replenishment',
-  sprint_forecast_drop: 'Прогноз спринта упал',
-  automation: 'Сработало правило',
-}
-
-function getNotifDescription(n: Notification): string {
-  const p = n.payload as Record<string, string>
-  switch (n.type) {
-    case 'mention':
-    case 'comment_on_assigned':
-    case 'assigned':
-    case 'sle_breach':
-      return p.taskTitle ?? ''
-    case 'replenishment_overdue':
-      return p.boardName ?? ''
-    case 'sprint_forecast_drop':
-      return p.sprintName ?? ''
-    case 'automation':
-      return p.taskTitle ?? p.sprintName ?? p.columnName ?? p.boardName ?? ''
-  }
-}
-
-function getNotifActor(n: Notification): string {
-  const p = n.payload as Record<string, string>
-  return p.actorName ?? p.actorEmail ?? ''
-}
-
 function mapToTileNotif(n: Notification): TileNotif {
+  const r = renderNotification(n)
   return {
     id: n.id,
-    iconType: NOTIF_ICON[n.type],
-    color: NOTIF_COLOR[n.type],
-    who: getNotifActor(n),
-    txt: getNotifDescription(n),
+    icon: r.icon,
+    color: r.color,
+    title: r.title,
+    why: r.why,
+    cta: r.cta,
+    hasTarget: r.target !== null,
     t: formatRelativeDate(n.createdAt),
     unread: n.readAt === null,
   }
 }
 
 function mapToChip(n: Notification) {
+  const r = renderNotification(n)
+  const iconType: PeekIconType = n.type === 'mention' || n.type === 'comment_on_assigned' ? 'at' : 'check'
   return {
-    iconType: NOTIF_PEEK_ICON[n.type],
-    color: NOTIF_COLOR[n.type],
-    title: NOTIF_TITLE[n.type],
-    sub: getNotifDescription(n),
-    act: '',
+    iconType,
+    color: r.color,
+    title: r.title,
+    sub: r.why,
+    act: r.target ? r.cta : '',
   }
 }
 
@@ -316,10 +261,8 @@ async function markRead(e: Event, id: string) {
   markReadMutation.mutate(id)
   const n = rawNotifs.value.find(x => x.id === id)
   if (!n) return
-  const p = n.payload as Record<string, string>
-  if (p.taskId && p.boardId) {
-    await router.push(pageRoutes.task(n.workspaceId, p.boardId, p.taskId))
-  }
+  const target = renderNotification(n).target
+  if (target) await router.push(target)
 }
 
 function onViewTeam(e: Event) {

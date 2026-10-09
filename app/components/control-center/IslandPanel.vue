@@ -9,10 +9,12 @@ type Person = {
 
 type Notif = {
   id: string
-  iconType: 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
+  icon: string
   color: string
-  who: string
-  txt: string
+  title: string
+  why: string
+  cta: string
+  hasTarget: boolean
   t: string
   unread: boolean
 }

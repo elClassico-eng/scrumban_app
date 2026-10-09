@@ -82,8 +82,10 @@ export async function createRule(input: {
   input: RuleInputParsed
 }): Promise<AutomationRuleRow> {
   requireMinRole(input.actorRole, 'scrum_master')
-  const [row] = await withTenant(input.workspaceId, (tx) =>
-    tx
+  const [row] = await withTenant(input.workspaceId, async (tx) => {
+    const [board] = await tx.select({ id: boards.id }).from(boards).where(eq(boards.id, input.boardId))
+    if (!board) throw new NotFoundError('Доска не найдена')
+    return tx
       .insert(automationRules)
       .values({
         workspaceId: input.workspaceId,
@@ -95,8 +97,8 @@ export async function createRule(input: {
         actionParams: input.input.actionParams,
         enabled: input.input.enabled ?? true,
       })
-      .returning(),
-  )
+      .returning()
+  })
   return row!
 }
 
