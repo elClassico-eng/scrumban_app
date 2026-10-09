@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { Notification } from '#shared/types/notification'
 import { pageRoutes } from '~/routing'
-import { renderNotification } from '~/utils/notification-render'
 
 const colorMode = useColorMode()
 const { logout } = useAuthApi()
@@ -9,57 +7,7 @@ const router = useRouter()
 const route = useRoute()
 const uiStore = useUiStore()
 
-type PeekIconType = 'move' | 'at' | 'build' | 'check'
-
-type TileNotif = {
-  id: string
-  icon: string
-  color: string
-  title: string
-  why: string
-  cta: string
-  hasTarget: boolean
-  t: string
-  unread: boolean
-}
-
-function mapToTileNotif(n: Notification): TileNotif {
-  const r = renderNotification(n)
-  return {
-    id: n.id,
-    icon: r.icon,
-    color: r.color,
-    title: r.title,
-    why: r.why,
-    cta: r.cta,
-    hasTarget: r.target !== null,
-    t: formatRelativeDate(n.createdAt),
-    unread: n.readAt === null,
-  }
-}
-
-function mapToChip(n: Notification) {
-  const r = renderNotification(n)
-  const iconType: PeekIconType = n.type === 'mention' || n.type === 'comment_on_assigned' ? 'at' : 'check'
-  return {
-    iconType,
-    color: r.color,
-    title: r.title,
-    sub: r.why,
-    act: r.target ? r.cta : '',
-  }
-}
-
-const { list, unreadCount: unreadQuery, markRead: markReadMutation } = useNotificationsApi()
-
-const rawNotifs = computed(() => list.data.value?.notifications ?? [])
-const notifs = computed<TileNotif[]>(() => rawNotifs.value.map(mapToTileNotif))
-const unreadCount = computed(() => unreadQuery.data.value?.count ?? 0)
-
-const peekPrimed = ref(false)
-watch(() => list.isFetched.value, (fetched) => {
-  if (fetched) peekPrimed.value = true
-}, { immediate: true })
+const { rawNotifs, notifs, unreadCount, primed: peekPrimed, peekFor, targetOf, markRead: markReadMut } = useIslandNotifications()
 
 const { time, weekday } = useClock()
 const { open, pinned, peek, hovered, reducedMotion, islStyle, notchStyle, peekStyle, panelStyle, onPointerEnter, onPointerLeave, onActivate, togglePin, firePeek } = useIsland()
@@ -116,93 +64,10 @@ const replenishmentOverdue = computed(() => {
 })
 const hasBoardMetrics = computed(() => !!boardId.value && !!board.value)
 
-const { list: sprintsList } = useSprintsApi(workspaceId, boardId)
-const activeSprint = computed(() => sprintsList.data.value?.sprints.find(s => s.state === 'active') ?? null)
-const hasSprint = computed(() => activeSprint.value !== null)
-const sprintPct = computed(() => {
-  const s = activeSprint.value
-  if (!s || !s.startedAt || !s.plannedEndAt) return 0
-  const start = new Date(s.startedAt).getTime()
-  const end = new Date(s.plannedEndAt).getTime()
-  if (end <= start) return 0
-  return Math.round(Math.min(100, Math.max(0, ((Date.now() - start) / (end - start)) * 100)))
-})
-const sprintCaption = computed(() => {
-  const s = activeSprint.value
-  if (!s) return 'Нет активного спринта'
-  if (!s.plannedEndAt) return s.name
-  const daysLeft = Math.max(0, Math.ceil((new Date(s.plannedEndAt).getTime() - Date.now()) / 86_400_000))
-  return `${s.name} · ${daysLeft} дн`
-})
+const { hasSprint, sprintPct, sprintCaption } = useIslandSprint(workspaceId, boardId)
 
 const ccActions = useControlCenterActions()
-const { list: activeTimer } = useActiveTimerApi(workspaceId)
-const active = computed(() => activeTimer.data.value?.active ?? null)
-
-type PausedTask = { boardId: string; taskId: string; shortId: string; title: string }
-const paused = ref<PausedTask | null>(null)
-
-const running = computed(() => active.value !== null)
-const hasTask = computed(() => running.value || paused.value !== null)
-const currentBoardId = computed(() => active.value?.boardId ?? paused.value?.boardId ?? '')
-const currentTaskId = computed(() => active.value?.entry.taskId ?? paused.value?.taskId ?? '')
-const timerTaskId = computed(() => active.value?.taskShortId ?? paused.value?.shortId ?? '')
-const timerTaskTitle = computed(() => active.value?.taskTitle ?? paused.value?.title ?? '')
-
-const { start: startTimerMut, stop: stopTimerMut } = useTaskTimeApi(workspaceId, currentBoardId, currentTaskId)
-
-const elapsed = ref(0)
-const sessionBase = ref(0)
-let sessionTaskId = ''
-let tick: ReturnType<typeof setInterval> | null = null
-
-function stopTick() {
-  if (tick) { clearInterval(tick); tick = null }
-}
-
-function startTick() {
-  stopTick()
-  tick = setInterval(() => { elapsed.value++ }, 1000)
-}
-
-watch(active, (a) => {
-  if (a) {
-    paused.value = null
-    if (a.entry.taskId !== sessionTaskId) {
-      sessionTaskId = a.entry.taskId
-      sessionBase.value = 0
-    }
-    elapsed.value = sessionBase.value + a.entry.elapsedSeconds
-    startTick()
-  }
-  else {
-    stopTick()
-  }
-}, { immediate: true })
-
-function onTimerToggle(e: Event) {
-  e.stopPropagation()
-  if (running.value) {
-    const a = active.value
-    if (!a) return
-    stopTick()
-    sessionBase.value = elapsed.value
-    paused.value = { boardId: a.boardId, taskId: a.entry.taskId, shortId: a.taskShortId, title: a.taskTitle }
-    stopTimerMut.mutate()
-  }
-  else if (paused.value) {
-    startTimerMut.mutate()
-  }
-}
-
-function onTimerStop(e: Event) {
-  e.stopPropagation()
-  if (running.value) stopTimerMut.mutate()
-  paused.value = null
-  sessionBase.value = 0
-  sessionTaskId = ''
-  elapsed.value = 0
-}
+const { running, hasTask, timerTaskId, timerTaskTitle, elapsed, onToggle: onTimerToggle, onStop: onTimerStop } = useIslandTimer(workspaceId)
 
 function onQuickTask(e: Event) {
   e.stopPropagation()
@@ -258,10 +123,8 @@ function doLogout(e: Event) {
 
 async function markRead(e: Event, id: string) {
   e.stopPropagation()
-  markReadMutation.mutate(id)
-  const n = rawNotifs.value.find(x => x.id === id)
-  if (!n) return
-  const target = renderNotification(n).target
+  markReadMut(id)
+  const target = targetOf(id)
   if (target) await router.push(target)
 }
 
@@ -292,12 +155,9 @@ watch(rawNotifs, (next, prev) => {
   if (!peekPrimed.value || focus.value || !prev || next.length <= prev.length) return
   const prevIds = new Set(prev.map(n => n.id))
   const newest = next.find(n => !prevIds.has(n.id))
-  if (newest) firePeek(mapToChip(newest))
+  if (newest) firePeek(peekFor(newest))
 }, { flush: 'sync' })
 
-onUnmounted(() => {
-  stopTick()
-})
 </script>
 
 <template>
