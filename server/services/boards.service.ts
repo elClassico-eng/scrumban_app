@@ -22,7 +22,6 @@ import {
   NotFoundError,
 } from '../utils/errors'
 import { requireMinRole } from '../utils/rbac'
-import { seedPresetRules } from './automations.service'
 
 const PG_UNIQUE_VIOLATION = '23505'
 
@@ -96,7 +95,6 @@ export async function createBoard(input: {
           })),
         )
       }
-      await seedPresetRules(tx, input.workspaceId, row!.id)
 
       return row!
     })

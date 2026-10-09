@@ -126,6 +126,9 @@ async function listNotifications(actor: UserCtx): Promise<Notification[]> {
 async function agedTaskBoard(owner: UserCtx) {
   const wsId = await createWorkspace(owner)
   const ctx = await createBoard(owner, wsId)
+  await setRules(wsId, ctx.boardId, [
+    { trigger: 'task_aging', triggerParams: { thresholdPct: 85 }, action: 'notify', actionParams: { recipients: 'assignee' } },
+  ])
   await setSle(ctx.boardId, 5)
   const taskId = await createTask(owner, wsId, ctx, 'old')
   await moveTask(owner, wsId, ctx, taskId, ctx.columns.in_progress)
@@ -158,6 +161,9 @@ describe('automations run', () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)
     const ctx = await createBoard(owner, wsId)
+    await setRules(wsId, ctx.boardId, [
+      { trigger: 'task_aging', triggerParams: { thresholdPct: 85 }, action: 'notify', actionParams: { recipients: 'assignee' } },
+    ])
     const taskId = await createTask(owner, wsId, ctx, 'old')
     await moveTask(owner, wsId, ctx, taskId, ctx.columns.in_progress)
     await backdate(taskId, 'task_moved', 24 * 30)
@@ -246,12 +252,12 @@ describe('automations run', () => {
     expect(second.body).toEqual({ opened: 0, resolved: 1 })
   })
 
-  it('new board gets 3 preset rules and member cannot run', async () => {
+  it('new board has no rules and a stranger cannot run', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)
     const ctx = await createBoard(owner, wsId)
     const [row] = await getTestSql()`SELECT COUNT(*)::int AS n FROM automation_rules WHERE board_id = ${ctx.boardId}`
-    expect(row!.n).toBe(3)
+    expect(row!.n).toBe(0)
 
     const stranger = await registerUser('stranger@example.com')
     const res = await runAutomations(stranger, wsId, ctx.boardId)

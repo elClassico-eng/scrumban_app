@@ -98,6 +98,9 @@ async function notificationsOf(actor: UserCtx, type = 'automation'): Promise<Not
 }
 
 async function agedTask(owner: UserCtx, wsId: string, ctx: BoardCtx): Promise<string> {
+  await setRules(wsId, ctx.boardId, [
+    { trigger: 'task_aging', triggerParams: { thresholdPct: 85 }, action: 'notify', actionParams: { recipients: 'assignee' } },
+  ])
   await getTestSql()`UPDATE boards SET sle_days = 5 WHERE id = ${ctx.boardId}`
   const id = await createTaskIn(owner, wsId, ctx, ctx.columns.backlog, 'old')
   await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/tasks/${id}/move`, {

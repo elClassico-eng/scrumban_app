@@ -67,16 +67,18 @@ async function listRules(actor: UserCtx, wsId: string, boardId: string) {
 }
 
 describe('automation rules API', () => {
-  it('new board lists 3 presets; member cannot create; viewer can read', async () => {
+  it('new board lists no rules; member cannot create; viewer can read', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)
     const { boardId } = await createBoard(owner, wsId)
 
     const list = await listRules(owner, wsId, boardId)
     expect(list.status).toBe(200)
-    expect(list.body.rules).toHaveLength(3)
-    expect(list.body.rules.map((r) => r.trigger).sort()).toEqual(['replenishment_overdue', 'sprint_forecast', 'task_aging'])
-    expect(list.body.rules[0]!.openFirings).toBe(0)
+    expect(list.body.rules).toEqual([])
+    await fetchWithJar(owner.jar, rulesPath(wsId, boardId), {
+      method: 'POST',
+      body: { trigger: 'task_aging', triggerParams: {}, action: 'notify', actionParams: { recipients: 'assignee' } },
+    })
 
     const member = await registerUser('member@example.com')
     await addMember(owner, wsId, member.email, 'member')
@@ -90,7 +92,8 @@ describe('automation rules API', () => {
     await addMember(owner, wsId, viewer.email, 'viewer')
     const asViewer = await listRules(viewer, wsId, boardId)
     expect(asViewer.status).toBe(200)
-    expect(asViewer.body.rules).toHaveLength(3)
+    expect(asViewer.body.rules).toHaveLength(1)
+    expect(asViewer.body.rules[0]!.openFirings).toBe(0)
   })
 
   it('creates, patches and deletes a rule', async () => {

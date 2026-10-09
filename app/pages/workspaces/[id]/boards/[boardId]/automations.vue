@@ -133,10 +133,34 @@ async function onRun() {
         <UIcon name="i-lucide-loader" class="animate-spin size-6" />
       </div>
 
-      <div v-else-if="items.length === 0" class="py-16 text-center space-y-2">
-        <UIcon name="i-lucide-zap" class="size-10 text-muted mx-auto" />
-        <p class="text-sm font-medium">Правил пока нет</p>
-        <p class="text-xs text-muted">Добавь первое: например, уведомлять исполнителя, когда задача стареет</p>
+      <div v-else-if="items.length === 0" class="bg-default border border-default rounded-2xl p-6 sm:p-8 max-w-2xl">
+        <div class="flex items-start gap-4">
+          <span class="size-10 rounded-xl grid place-items-center shrink-0 bg-accent-500/10 text-accent-500">
+            <UIcon name="i-lucide-zap" class="size-5" />
+          </span>
+          <div class="space-y-4 min-w-0">
+            <div>
+              <h2 class="m-0 text-lg font-semibold text-default">Правил пока нет</h2>
+              <p class="text-sm text-muted mt-1">
+                Правило – это «если … → то …». Условия берутся из математики доски, а не из ручных событий:
+                задача висит в колонке дольше SLE, блокер держится несколько дней, шанс закрыть спринт упал ниже порога,
+                колонка над WIP-лимитом, бэклог давно не пополняли.
+              </p>
+            </div>
+            <ol class="text-sm text-default space-y-2 list-decimal pl-5 marker:text-muted">
+              <li>Выбираешь условие и его порог, например «задача в колонке дольше 85% SLE».</li>
+              <li>Выбираешь, что сделать: уведомить исполнителя или скрам-мастеров, оставить комментарий в задаче, вынести в повестку daily.</li>
+              <li>Такт проверяет доску раз в час. Пока условие держится, правило не повторяется; когда проблема ушла, срабатывание закрывается само.</li>
+            </ol>
+            <p class="text-xs text-muted">Для условий по SLE нужен рассчитанный SLE доски, для прогноза спринта – активный спринт с историей закрытых задач.</p>
+            <div v-if="canManage" class="flex flex-wrap gap-2 pt-1">
+              <UButton icon="i-lucide-plus" @click="openCreate">
+                Добавить правило
+              </UButton>
+            </div>
+            <p v-else class="text-xs text-muted">Добавлять правила может скрам-мастер или администратор.</p>
+          </div>
+        </div>
       </div>
 
       <div v-else class="space-y-3">

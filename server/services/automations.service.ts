@@ -18,31 +18,6 @@ import { NotFoundError } from '../utils/errors'
 import { requireMinRole } from '../utils/rbac'
 import { emitNotification } from './notifications.service'
 
-const PRESETS: Omit<RuleInputParsed, 'enabled'>[] = [
-  {
-    trigger: 'task_aging',
-    triggerParams: { thresholdPct: 85 },
-    action: 'notify',
-    actionParams: { recipients: 'assignee' },
-  },
-  {
-    trigger: 'sprint_forecast',
-    triggerParams: { minProbability: 70 },
-    action: 'notify',
-    actionParams: { recipients: 'scrum_masters' },
-  },
-  {
-    trigger: 'replenishment_overdue',
-    triggerParams: {},
-    action: 'notify',
-    actionParams: { recipients: 'scrum_masters' },
-  },
-]
-
-export async function seedPresetRules(tx: DbTransaction, workspaceId: string, boardId: string): Promise<void> {
-  await tx.insert(automationRules).values(PRESETS.map((p) => ({ workspaceId, boardId, ...p })))
-}
-
 export async function listRules(input: {
   workspaceId: string
   boardId: string
