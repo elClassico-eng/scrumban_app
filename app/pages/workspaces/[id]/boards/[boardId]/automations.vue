@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AutomationRule, AutomationTrigger, RuleInput } from '#shared/types/automation'
-import { TRIGGER_INFO } from '~/utils/automation-labels'
+import { ACTION_INFO, RECOMMENDED_RULES, TRIGGER_INFO } from '~/utils/automation-labels'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -61,6 +61,22 @@ async function onSubmit(input: RuleInput) {
   }
   catch (err) {
     fail(err, 'Не удалось сохранить правило')
+  }
+}
+
+const addingPreset = ref<string | null>(null)
+
+async function addPresets(presets: typeof RECOMMENDED_RULES) {
+  addingPreset.value = presets.length === 1 ? presets[0]!.title : 'all'
+  try {
+    for (const p of presets) await create.mutateAsync(p.input)
+    toast.add({ title: presets.length === 1 ? 'Правило добавлено' : 'Добавлены три правила', icon: 'i-lucide-zap' })
+  }
+  catch (err) {
+    fail(err, 'Не удалось добавить правило')
+  }
+  finally {
+    addingPreset.value = null
   }
 }
 
@@ -174,9 +190,51 @@ async function onRun() {
           </div>
         </div>
 
+        <div v-if="canManage">
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <p class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Рекомендуемый набор</p>
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-check-check"
+              :loading="addingPreset === 'all'"
+              :disabled="addingPreset !== null"
+              @click="addPresets(RECOMMENDED_RULES)"
+            >
+              Добавить все три
+            </UButton>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div
+              v-for="p in RECOMMENDED_RULES"
+              :key="p.title"
+              class="bg-default border border-default rounded-xl p-4 flex flex-col gap-2"
+            >
+              <p class="m-0 text-[13.5px] font-semibold text-default">{{ p.title }}</p>
+              <p class="m-0 text-[12px] text-muted leading-relaxed flex-1">{{ p.why }}</p>
+              <p class="m-0 text-[12px] text-default">
+                <span class="text-muted">Если&nbsp;</span>{{ TRIGGER_INFO[p.input.trigger].sentence(p.input.triggerParams) }}<span class="text-muted">&nbsp;→&nbsp;</span>{{ ACTION_INFO[p.input.action].sentence(p.input.actionParams) }}
+              </p>
+              <UButton
+                size="xs"
+                variant="outline"
+                color="neutral"
+                icon="i-lucide-plus"
+                class="self-start mt-1"
+                :loading="addingPreset === p.title"
+                :disabled="addingPreset !== null"
+                @click="addPresets([p])"
+              >
+                Добавить
+              </UButton>
+            </div>
+          </div>
+        </div>
+
         <div class="flex flex-wrap items-center gap-3">
-          <UButton v-if="canManage" icon="i-lucide-plus" @click="openCreate">
-            Добавить правило
+          <UButton v-if="canManage" icon="i-lucide-plus" variant="outline" color="neutral" @click="openCreate">
+            Своё правило
           </UButton>
           <p class="m-0 text-[12.5px] text-muted">
             {{ canManage ? 'Правила проверяются раз в час; пока условие держится, повторов нет.' : 'Добавлять правила может скрам-мастер или администратор.' }}

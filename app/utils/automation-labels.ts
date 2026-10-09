@@ -1,4 +1,4 @@
-import type { AutomationAction, AutomationTrigger, NotifyRecipients } from '#shared/types/automation'
+import type { AutomationAction, AutomationTrigger, NotifyRecipients, RuleInput } from '#shared/types/automation'
 
 type Params = Record<string, unknown>
 
@@ -73,3 +73,21 @@ export const TRIGGER_PARAM_FIELDS: Record<AutomationTrigger, { key: string; labe
   wip_exceeded: [],
   replenishment_overdue: [],
 }
+
+export const RECOMMENDED_RULES: { title: string; why: string; input: RuleInput }[] = [
+  {
+    title: 'Задача застряла',
+    why: 'Исполнитель узнаёт первым, что задача висит дольше 85% SLE доски',
+    input: { trigger: 'task_aging', triggerParams: { thresholdPct: 85 }, action: 'notify', actionParams: { recipients: 'assignee' } },
+  },
+  {
+    title: 'Прогноз спринта упал',
+    why: 'Скрам-мастера видят, когда шанс закрыть спринт в срок опускается ниже 70%',
+    input: { trigger: 'sprint_forecast', triggerParams: { minProbability: 70 }, action: 'notify', actionParams: { recipients: 'scrum_masters' } },
+  },
+  {
+    title: 'Пора пополнить бэклог',
+    why: 'Напоминание скрам-мастерам, когда период пополнения доски прошёл',
+    input: { trigger: 'replenishment_overdue', triggerParams: {}, action: 'notify', actionParams: { recipients: 'scrum_masters' } },
+  },
+]
