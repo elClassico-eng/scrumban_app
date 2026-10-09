@@ -5,6 +5,7 @@ export type NotificationType =
   | 'sle_breach'
   | 'replenishment_overdue'
   | 'sprint_forecast_drop'
+  | 'automation'
 
 export interface Notification {
   id: string

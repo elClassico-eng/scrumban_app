@@ -17,6 +17,7 @@ const ICON: Record<NotificationType, string> = {
   sle_breach: 'i-lucide-alert-triangle',
   replenishment_overdue: 'i-lucide-refresh-cw',
   sprint_forecast_drop: 'i-lucide-trending-down',
+  automation: 'i-lucide-zap',
 }
 
 const TITLE: Record<NotificationType, string> = {
@@ -26,6 +27,7 @@ const TITLE: Record<NotificationType, string> = {
   sle_breach: 'Задача застряла дольше SLE',
   replenishment_overdue: 'Пора провести Replenishment',
   sprint_forecast_drop: 'Прогноз спринта упал',
+  automation: 'Сработало правило',
 }
 
 function getDescription(n: Notification): string {
@@ -42,6 +44,8 @@ function getDescription(n: Notification): string {
       return p.boardName ?? ''
     case 'sprint_forecast_drop':
       return p.sprintName ?? ''
+    case 'automation':
+      return p.taskTitle ?? p.sprintName ?? p.columnName ?? p.boardName ?? ''
   }
 }
 
@@ -59,6 +63,8 @@ function getTarget(n: Notification): ReturnType<typeof pageRoutes.task> | string
       return p.boardId ? pageRoutes.board(n.workspaceId, p.boardId) : null
     case 'sprint_forecast_drop':
       return p.boardId ? pageRoutes.boardSprints(n.workspaceId, p.boardId) : null
+    case 'automation':
+      return p.boardId ? pageRoutes.board(n.workspaceId, p.boardId) : null
   }
 }
 

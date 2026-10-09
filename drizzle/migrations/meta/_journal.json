@@ -288,6 +288,20 @@
       "when": 1791582049903,
       "tag": "0040_flow_efficiency_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791584201340,
+      "tag": "0041_automations",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791584215593,
+      "tag": "0042_automations_rls",
+      "breakpoints": true
     }
   ]
 }

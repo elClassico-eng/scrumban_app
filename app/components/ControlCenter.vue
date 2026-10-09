@@ -28,6 +28,7 @@ const NOTIF_ICON: Record<NotificationType, TileIconType> = {
   sle_breach: 'alert',
   replenishment_overdue: 'refresh',
   sprint_forecast_drop: 'trend',
+  automation: 'alert',
 }
 
 const NOTIF_COLOR: Record<NotificationType, string> = {
@@ -37,6 +38,7 @@ const NOTIF_COLOR: Record<NotificationType, string> = {
   sle_breach: '#e85002',
   replenishment_overdue: '#e85002',
   sprint_forecast_drop: '#e85002',
+  automation: '#e85002',
 }
 
 const NOTIF_PEEK_ICON: Record<NotificationType, PeekIconType> = {
@@ -46,6 +48,7 @@ const NOTIF_PEEK_ICON: Record<NotificationType, PeekIconType> = {
   sle_breach: 'check',
   replenishment_overdue: 'check',
   sprint_forecast_drop: 'check',
+  automation: 'check',
 }
 
 const NOTIF_TITLE: Record<NotificationType, string> = {
@@ -55,6 +58,7 @@ const NOTIF_TITLE: Record<NotificationType, string> = {
   sle_breach: 'Задача застряла дольше SLE',
   replenishment_overdue: 'Пора провести Replenishment',
   sprint_forecast_drop: 'Прогноз спринта упал',
+  automation: 'Сработало правило',
 }
 
 function getNotifDescription(n: Notification): string {
@@ -69,6 +73,8 @@ function getNotifDescription(n: Notification): string {
       return p.boardName ?? ''
     case 'sprint_forecast_drop':
       return p.sprintName ?? ''
+    case 'automation':
+      return p.taskTitle ?? p.sprintName ?? p.columnName ?? p.boardName ?? ''
   }
 }
 
