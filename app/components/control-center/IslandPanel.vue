@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type { TileId } from '#shared/types/control-center'
 import type { BoardPulse } from '#shared/types/pulse'
 
@@ -29,6 +30,9 @@ const props = defineProps<{
   pulseLoading: boolean
   overviewTiles: TileId[]
   flowTiles: TileId[]
+  boardId: string | null
+  boardName: string | null
+  boards: { id: string; name: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -39,7 +43,17 @@ const emit = defineEmits<{
   'toggle-focus': [e: Event]
   'toggle-theme': [e: Event]
   logout: [e: Event]
+  'select-board': [id: string]
 }>()
+
+const boardItems = computed<DropdownMenuItem[]>(() =>
+  props.boards.map(b => ({
+    label: b.name,
+    icon: 'i-lucide-kanban-square',
+    ...(b.id === props.boardId ? { color: 'primary' as const } : {}),
+    onSelect: () => emit('select-board', b.id),
+  })),
+)
 
 const tab = defineModel<IslandTab>('tab', { default: 'overview' })
 const unread = computed(() => props.notifs.filter(n => n.unread).length)
@@ -54,11 +68,24 @@ const TABS: { key: IslandTab; label: string }[] = [
 
 <template>
   <div class="flex items-center gap-3 px-1 pt-0.5">
-    <div class="flex items-baseline gap-[7px]">
+    <div class="flex items-baseline gap-[7px] shrink-0">
       <b class="text-[17px] font-semibold tracking-[-0.01em]">{{ time }}</b>
       <span class="text-[var(--island-ink-3)]">·</span>
       <span class="text-[13px] text-[var(--island-ink-3)]">{{ weekday }}</span>
     </div>
+    <UDropdownMenu v-if="boards.length > 0" :items="boardItems" :content="{ align: 'start' }">
+      <button
+        type="button"
+        class="h-[28px] max-w-[220px] pl-2.5 pr-2 rounded-lg inline-flex items-center gap-1.5 text-[12px] font-semibold border-none cursor-pointer transition-colors truncate"
+        style="background: var(--island-fill); color: var(--island-ink-2);"
+        @click.stop
+      >
+        <UIcon name="i-lucide-kanban-square" class="w-[13px] h-[13px] shrink-0" />
+        <span class="truncate">{{ boardName ?? 'Доска' }}</span>
+        <UIcon name="i-lucide-chevron-down" class="w-3 h-3 shrink-0" style="color: var(--island-ink-3);" />
+      </button>
+    </UDropdownMenu>
+    <span v-else class="text-[12px] text-[var(--island-ink-3)]">Нет досок</span>
     <div class="flex-1" />
     <button
       class="w-[30px] h-[30px] rounded-lg grid place-items-center border-none cursor-pointer transition-colors"

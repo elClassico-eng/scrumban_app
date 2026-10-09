@@ -48,16 +48,12 @@ const presencePeople = computed(() => {
 })
 const presenceExtra = computed(() => Math.max(0, (membersList.data.value?.members.length ?? 0) - 5))
 
-const boardId = computed(() => (route.params.boardId as string) ?? '')
 
 const { recordReplenishment } = useBoardsApi(workspaceId)
 const canManageBoard = computed(() => hasRole(role.value, 'admin'))
-const { me } = useProfileApi()
-const prefs = computed(() => me.data.value?.user.controlCenterPrefs ?? {})
+const { boardId: contextBoardId, boardName: contextBoardName, boards: contextBoards, prefs, setBoard } = useIslandContext(workspaceId)
 const overviewTiles = computed(() => normalizeTiles(prefs.value.overview, 'overview'))
 const flowTiles = computed(() => normalizeTiles(prefs.value.flow, 'flow'))
-
-const contextBoardId = computed<string | null>(() => boardId.value || null)
 const { pulse } = useBoardPulseApi(workspaceId, contextBoardId, computed(() => open.value || pinned.value || uiStore.controlCenterOpen))
 const pulseData = computed(() => pulse.data.value ?? null)
 
@@ -104,7 +100,7 @@ function toggleFocus(e: Event) {
 
 async function onMarkReplenishment(e: Event) {
   e.stopPropagation()
-  if (!canManageBoard.value || !boardId.value) return
+  if (!canManageBoard.value || !contextBoardId.value) return
   const ok = await confirm({
     title: 'Отметить replenishment сейчас?',
     description: 'Сбросит счётчик периода. Используй после реальной встречи планирования backlog\'а.',
@@ -112,7 +108,7 @@ async function onMarkReplenishment(e: Event) {
   })
   if (!ok) return
   try {
-    await recordReplenishment.mutateAsync(boardId.value)
+    await recordReplenishment.mutateAsync(contextBoardId.value)
     pulse.refetch()
     toast.add({ title: 'Replenishment отмечен', icon: 'i-lucide-check-circle', color: 'success' })
   }
@@ -229,7 +225,11 @@ watch(rawNotifs, (next, prev) => {
           :pulse-loading="pulse.isLoading.value"
           :overview-tiles="overviewTiles"
           :flow-tiles="flowTiles"
+          :board-id="contextBoardId"
+          :board-name="contextBoardName"
+          :boards="contextBoards"
           @toggle-pin="togglePin"
+          @select-board="setBoard"
           @mark-read="markRead"
           @quick-task="onQuickTask"
           @quick-search="onQuickSearch"
@@ -292,7 +292,11 @@ watch(rawNotifs, (next, prev) => {
             :pulse-loading="pulse.isLoading.value"
             :overview-tiles="overviewTiles"
             :flow-tiles="flowTiles"
+            :board-id="contextBoardId"
+            :board-name="contextBoardName"
+            :boards="contextBoards"
             @toggle-pin="togglePin"
+            @select-board="setBoard"
             @mark-read="(e, id) => { markRead(e, id); uiStore.closeControlCenter() }"
             @quick-task="(e) => { onQuickTask(e); uiStore.closeControlCenter() }"
             @quick-search="(e) => { onQuickSearch(e); uiStore.closeControlCenter() }"
