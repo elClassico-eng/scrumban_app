@@ -133,7 +133,7 @@ async function onRun() {
           <h1 class="m-0 text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Автоматизации</h1>
           <p class="text-sm text-muted">Если математика видит проблему, система действует сама</p>
         </div>
-        <div v-if="canManage" class="flex items-center gap-2">
+        <div v-if="canManage && items.length > 0" class="flex items-center gap-2">
           <UButton
             icon="i-lucide-play"
             color="neutral"
