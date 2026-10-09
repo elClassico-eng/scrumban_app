@@ -74,7 +74,7 @@ function fmtDate(iso: string): string {
       </p>
 
       <div class="border border-default rounded-lg overflow-hidden divide-y divide-default">
-        <div class="grid grid-cols-[minmax(0,1fr)_70px_70px_70px_90px] gap-2 px-3 py-2 bg-muted text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">
+        <div class="grid grid-cols-[minmax(0,1fr)_56px_48px_52px_72px] gap-2 px-3 py-2 bg-muted text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">
           <span>Спринт</span>
           <span class="text-right">P85</span>
           <span class="text-right">Факт</span>
@@ -84,7 +84,7 @@ function fmtDate(iso: string): string {
         <div
           v-for="r in report.rows"
           :key="r.sprintId"
-          class="grid grid-cols-[minmax(0,1fr)_70px_70px_70px_90px] gap-2 px-3 py-2 text-[12.5px] items-center"
+          class="grid grid-cols-[minmax(0,1fr)_56px_48px_52px_72px] gap-2 px-3 py-2 text-[12.5px] items-center"
         >
           <span class="truncate text-default">{{ r.sprintName }} <span class="text-dimmed text-[11px]">· {{ fmtDate(r.endedAt) }}</span></span>
           <span class="text-right tabular-nums text-muted">{{ r.p85Days }} дн</span>
