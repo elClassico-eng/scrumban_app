@@ -44,7 +44,7 @@ function onAdd() {
 <template>
   <div>
     <div
-      class="group/head flex items-center gap-2 sm:gap-[11px] px-4 sm:px-[18px] py-2.5 sm:py-[11px] cursor-pointer select-none hover:bg-muted/40 dark:hover:bg-muted/20 transition-colors sticky top-0 sm:top-[42px] bg-default z-20"
+      class="group/head flex items-center gap-2 sm:gap-[11px] px-4 sm:px-[18px] py-2.5 sm:py-[11px] cursor-pointer select-none transition-colors sticky top-0 sm:top-[42px] bg-muted z-20"
       @click="emit('toggle-collapse', group.key)"
     >
       <span
@@ -88,7 +88,7 @@ function onAdd() {
       <button
         v-if="canCreate"
         type="button"
-        class="size-[26px] rounded-[7px] border border-default bg-default text-muted grid place-items-center shrink-0 hover:border-accent-400 hover:text-accent-500 transition-colors"
+        class="size-[26px] rounded-[7px] bg-default text-muted grid place-items-center shrink-0 hover:text-accent-500 transition-colors"
         @click.stop="onAdd"
       >
         <UIcon name="i-lucide-plus" class="size-3.5" />

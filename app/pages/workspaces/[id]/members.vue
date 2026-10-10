@@ -44,8 +44,14 @@ const counts = computed(() => {
   return c
 })
 
-const adminsCount = computed(() => counts.value.admin + counts.value.owner)
-const viewersCount = computed(() => counts.value.viewer)
+const summary = computed(() => {
+  const admins = counts.value.admin + counts.value.owner
+  return [
+    `${admins} ${plural(admins, ['админ', 'админа', 'админов'])}`,
+    `${counts.value.viewer} ${plural(counts.value.viewer, ['наблюдатель', 'наблюдателя', 'наблюдателей'])}`,
+    `${invitations.value.length} ${plural(invitations.value.length, ['приглашение', 'приглашения', 'приглашений'])}`,
+  ].join(' · ')
+})
 
 const filteredMembers = computed(() => {
   const q = query.value.trim().toLowerCase()
@@ -115,22 +121,13 @@ async function onRemove(userId: string, email: string) {
 
 <template>
   <div class="space-y-6">
-    <WorkspaceMembersHeader
-      v-if="workspace"
-      :workspace-name="workspace.name"
-      :total-count="counts.all"
-      :can-invite="canManage"
-      @invite="inviteOpen = true"
-    />
-
-    <WorkspaceMembersStatsStrip
-      :total="counts.all"
-      :admins-count="adminsCount"
-      :viewers-count="viewersCount"
-      :pending-invites="invitations.length"
-      :active-filter="roleFilter"
-      @update:active-filter="(r) => (roleFilter = r)"
-    />
+    <UiPageHeader title="Участники" :count="counts.all" :subtitle="summary" class="mb-0">
+      <template v-if="canManage" #actions>
+        <UButton icon="i-lucide-mail-plus" size="md" @click="inviteOpen = true">
+          Пригласить
+        </UButton>
+      </template>
+    </UiPageHeader>
 
     <UAlert
       v-if="actionError"
@@ -152,16 +149,14 @@ async function onRemove(userId: string, email: string) {
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
     </div>
 
-    <div
+    <UiEmptyState
       v-else-if="filteredMembers.length === 0"
-      class="rounded-xl border border-dashed border-default p-10 text-center space-y-2"
-    >
-      <UIcon name="i-lucide-search-x" class="size-8 text-muted mx-auto" />
-      <p class="text-sm text-default font-medium">Никого не нашлось</p>
-      <p class="text-xs text-muted">Сбросьте фильтры или измените запрос</p>
-    </div>
+      icon="i-lucide-search-x"
+      title="Никого не нашлось"
+      text="Сбросьте фильтры или измените запрос"
+    />
 
-    <div v-else-if="effectiveView === 'list'" class="rounded-xl border border-default bg-default overflow-hidden">
+    <div v-else-if="effectiveView === 'list'" class="surface-soft rounded-2xl overflow-hidden">
       <div class="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_170px_64px_36px] items-center gap-4 px-4 py-2 border-b border-default text-[11px] uppercase tracking-wide text-muted font-semibold">
         <div>Участник</div>
         <div>Должность</div>
