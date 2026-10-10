@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import type { BoardForecastJournal, CalibrationRow, ForecastCalibrationReport, ForecastSnapshotPayload, SprintResolution } from '#shared/types/forecast'
 import { reliabilityFor, resolveOutcome } from '../utils/forecast-outcome'
 import {
@@ -135,7 +135,7 @@ export async function listBoardForecastJournal(input: {
     const list = await tx
       .select()
       .from(sprints)
-      .where(and(eq(sprints.boardId, input.boardId), inArray(sprints.state, ['active', 'closed'])))
+      .where(and(eq(sprints.boardId, input.boardId), inArray(sprints.state, ['active', 'closed']), isNotNull(sprints.startedAt)))
     const snaps = await tx
       .select()
       .from(forecastSnapshots)
@@ -182,14 +182,14 @@ export function buildCalibrationRow(sprint: Sprint, anchors: ForecastSnapshot[])
     sprintName: sprint.name,
     startedAt: sprint.startedAt.toISOString(),
     endedAt: sprint.endedAt.toISOString(),
-    p50Days: start?.simulation.p50Days ?? 0,
-    p85Days: start?.simulation.p85Days ?? 0,
-    p95Days: start?.simulation.p95Days ?? 0,
-    doneCount: res?.doneCount ?? 0,
-    totalCount: res?.totalCount ?? 0,
-    carriedCount: res?.carriedCount ?? 0,
-    doneSp: res?.doneSp ?? 0,
-    totalSp: res?.totalSp ?? 0,
+    p50Days: start?.simulation.p50Days ?? null,
+    p85Days: start?.simulation.p85Days ?? null,
+    p95Days: start?.simulation.p95Days ?? null,
+    doneCount: res?.doneCount ?? null,
+    totalCount: res?.totalCount ?? null,
+    carriedCount: res?.carriedCount ?? null,
+    doneSp: res?.doneSp ?? null,
+    totalSp: res?.totalSp ?? null,
     ...outcome,
   }
 }

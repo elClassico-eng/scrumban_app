@@ -19,7 +19,9 @@ export function resolveOutcome(input: {
   if (res.carriedCount > 0) return { outcome: 'carryover', actualDays: null, p50Hit: false, p85Hit: false }
   if (!res.lastDoneAt) return unknown
 
-  const actualDays = Math.round(((new Date(res.lastDoneAt).getTime() - input.startedAt.getTime()) / DAY_MS) * 10) / 10
+  const elapsedMs = new Date(res.lastDoneAt).getTime() - input.startedAt.getTime()
+  if (elapsedMs < 0) return unknown
+  const actualDays = Math.round((elapsedMs / DAY_MS) * 10) / 10
   const p50Hit = actualDays <= input.start.simulation.p50Days
   const p85Hit = actualDays <= input.start.simulation.p85Days
   const outcome: SprintOutcome = p85Hit ? 'hit' : 'miss'

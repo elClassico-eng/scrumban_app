@@ -79,7 +79,7 @@ function fmtDate(iso: string): string {
           class="grid grid-cols-[minmax(0,1fr)_56px_64px_72px_84px] gap-2 px-3 py-2 text-[12.5px] items-center"
         >
           <span class="truncate text-default">{{ r.sprintName }} <span class="text-dimmed text-[11px]">· {{ fmtDate(r.endedAt) }}</span></span>
-          <span class="text-right tabular-nums text-muted">{{ r.outcome === 'unknown' ? '—' : `${r.p85Days} дн` }}</span>
+          <span class="text-right tabular-nums text-muted">{{ r.p85Days === null ? '—' : `${r.p85Days} дн` }}</span>
           <span class="text-right tabular-nums text-default font-medium">{{ r.actualDays === null ? '—' : `${r.actualDays} дн` }}</span>
           <span class="text-right tabular-nums text-muted">{{ r.totalCount ? `${r.doneCount}/${r.totalCount}` : '—' }}</span>
           <span class="text-right">

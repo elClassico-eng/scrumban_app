@@ -2,7 +2,9 @@ export type CsvColumn = { key: string; header: string }
 
 function cell(value: unknown): string {
   if (value === null || value === undefined) return ''
-  const text = value instanceof Date ? value.toISOString() : String(value)
+  if (typeof value === 'number') return String(value).replace('.', ',')
+  const raw = value instanceof Date ? value.toISOString() : String(value)
+  const text = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw
   return /[;"\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 

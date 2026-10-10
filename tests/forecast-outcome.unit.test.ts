@@ -37,6 +37,10 @@ describe('resolveOutcome', () => {
     expect(resolveOutcome({ startedAt: null, start, close: closeAt('2026-10-07T00:00:00Z') }).outcome).toBe('unknown')
   })
 
+  it('tasks all closed before the sprint started are unknown, not a hit', () => {
+    expect(resolveOutcome({ startedAt, start, close: closeAt('2026-09-30T00:00:00Z') }).outcome).toBe('unknown')
+  })
+
   it('empty sprint is unknown', () => {
     const empty = { resolution: { totalCount: 0, doneCount: 0, totalSp: 0, doneSp: 0, lastDoneAt: null, carriedCount: 0 } } as never
     expect(resolveOutcome({ startedAt, start, close: empty }).outcome).toBe('unknown')

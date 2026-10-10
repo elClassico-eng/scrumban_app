@@ -334,6 +334,8 @@ describe('forecast journal endpoints', () => {
     expect(res.body.report.scored).toBe(0)
     expect(res.body.report.unknown).toBe(1)
     expect(res.body.report.rows[0]!.outcome).toBe('unknown')
+    expect(res.body.report.rows[0]!.p85Days).toBeNull()
+    expect(res.body.report.rows[0]!.totalCount).toBeNull()
   })
 })
 

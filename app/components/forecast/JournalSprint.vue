@@ -42,7 +42,7 @@ const pct = (v: number | null) => (v === null ? '—' : `${Math.round(v * 100)}%
       </span>
       <template v-else-if="entry.outcome">
         <span class="hidden sm:inline text-[12px] text-muted tabular-nums">
-          P85 {{ entry.outcome.p85Days }} дн · факт {{ entry.outcome.actualDays === null ? '—' : `${entry.outcome.actualDays} дн` }} · закрыто {{ entry.outcome.doneCount }}/{{ entry.outcome.totalCount }}
+          P85 {{ entry.outcome.p85Days === null ? '—' : `${entry.outcome.p85Days} дн` }} · факт {{ entry.outcome.actualDays === null ? '—' : `${entry.outcome.actualDays} дн` }} · закрыто {{ entry.outcome.totalCount === null ? '—' : `${entry.outcome.doneCount}/${entry.outcome.totalCount}` }}
         </span>
         <span class="text-[10.5px] font-semibold px-1.5 py-0.5 rounded" :class="OUTCOME_CLASS[entry.outcome.outcome]">
           {{ OUTCOME_LABEL[entry.outcome.outcome] }}

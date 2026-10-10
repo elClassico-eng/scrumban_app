@@ -59,14 +59,14 @@ export type CalibrationRow = SprintOutcomeResult & {
   sprintName: string
   startedAt: string
   endedAt: string
-  p50Days: number
-  p85Days: number
-  p95Days: number
-  doneCount: number
-  totalCount: number
-  carriedCount: number
-  doneSp: number
-  totalSp: number
+  p50Days: number | null
+  p85Days: number | null
+  p95Days: number | null
+  doneCount: number | null
+  totalCount: number | null
+  carriedCount: number | null
+  doneSp: number | null
+  totalSp: number | null
 }
 
 export type ForecastCalibrationReport = {

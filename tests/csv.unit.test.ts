@@ -16,7 +16,17 @@ describe('toCsv', () => {
 
   it('escapes separators, quotes and newlines', () => {
     const out = toCsv([{ name: 'a;b "x"\nc', days: 1.5, hit: true }], columns)
-    expect(out.slice(1).split('\r\n')[1]).toBe('"a;b ""x""\nc";1.5;true')
+    expect(out.slice(1).split('\r\n')[1]).toBe('"a;b ""x""\nc";1,5;true')
+  })
+
+  it('neutralises spreadsheet formulas in text cells but keeps negative numbers', () => {
+    const out = toCsv([{ name: '=HYPERLINK("x")', days: -1.5, hit: '@SUM(A1)' }], columns)
+    expect(out.slice(1).split('\r\n')[1]).toBe(`"'=HYPERLINK(""x"")";-1,5;'@SUM(A1)`)
+  })
+
+  it('writes decimals with a comma for Russian Excel', () => {
+    const out = toCsv([{ name: 'a', days: 6.5, hit: 7 }], columns)
+    expect(out.slice(1).split('\r\n')[1]).toBe('a;6,5;7')
   })
 
   it('renders null and undefined as empty, dates as ISO', () => {
