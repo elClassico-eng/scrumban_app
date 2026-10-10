@@ -85,25 +85,31 @@ const TABS: { key: IslandTab; label: string }[] = [
 
 <template>
   <div class="flex items-center gap-3 px-1 pt-0.5">
-    <div class="flex items-baseline gap-[7px] shrink-0">
-      <b class="text-[17px] font-semibold tracking-[-0.01em]">{{ time }}</b>
+    <div class="flex items-baseline gap-[7px] min-w-0">
+      <b class="text-[17px] font-semibold tracking-[-0.01em] shrink-0">{{ time }}</b>
       <span class="text-[var(--island-ink-3)]">·</span>
-      <span class="text-[13px] text-[var(--island-ink-3)]">{{ weekday }}</span>
+      <span class="text-[13px] text-[var(--island-ink-3)] shrink-0">{{ weekday }}</span>
+      <template v-if="boards.length > 0">
+        <span class="text-[var(--island-ink-3)]">·</span>
+        <UDropdownMenu :items="boardItems" :content="{ align: 'start' }">
+          <button
+            type="button"
+            class="min-w-0 max-w-[240px] inline-flex items-baseline gap-1 text-[13px] leading-none border-none bg-transparent p-0 cursor-pointer transition-colors hover:text-[var(--island-ink)]"
+            style="color: var(--island-ink-3);"
+            title="Сменить доску"
+            @click.stop
+          >
+            <span class="shrink-0">текущая доска:</span>
+            <span class="truncate text-[var(--island-ink-2)]">{{ boardName ?? '—' }}</span>
+            <UIcon name="i-lucide-chevron-down" class="w-3 h-3 shrink-0 self-center" />
+          </button>
+        </UDropdownMenu>
+      </template>
+      <template v-else>
+        <span class="text-[var(--island-ink-3)]">·</span>
+        <span class="text-[13px] text-[var(--island-ink-3)]">нет досок</span>
+      </template>
     </div>
-    <UDropdownMenu v-if="boards.length > 0" :items="boardItems" :content="{ align: 'start' }">
-      <button
-        type="button"
-        class="max-w-[220px] inline-flex items-baseline gap-1 text-[13px] border-none bg-transparent p-0 cursor-pointer transition-colors truncate hover:text-[var(--island-ink)]"
-        style="color: var(--island-ink-3);"
-        title="Сменить доску"
-        @click.stop
-      >
-        <span>·</span>
-        <span class="truncate">{{ boardName ?? 'Доска' }}</span>
-        <UIcon name="i-lucide-chevron-down" class="w-3 h-3 shrink-0 self-center" />
-      </button>
-    </UDropdownMenu>
-    <span v-else class="text-[13px] text-[var(--island-ink-3)]">· Нет досок</span>
     <div class="flex-1" />
     <button
       class="w-[30px] h-[30px] rounded-lg grid place-items-center border-none cursor-pointer transition-colors"
