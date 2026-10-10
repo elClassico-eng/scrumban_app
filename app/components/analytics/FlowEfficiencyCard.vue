@@ -13,20 +13,14 @@ function days(hours: number): string {
 </script>
 
 <template>
-  <UCard :ui="ANALYTICS_CARD_UI">
-    <template #header>
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <h2 class="font-semibold">Эффективность потока</h2>
-          <AnalyticsInfo
-            answers="Какую долю времени задача реально делалась, а не ждала. Низкое значение означает, что сроки съедают очереди и блокеры, а не сама работа."
-            formula="Эффективность = активное время / lead time. Ожидание = время в колонках-очередях + время под флагом блокера."
-            note="Колонка считается очередью, если включить «Очередь» в её настройках. Backlog помечен очередью по умолчанию."
-            action="Сокращай самую большую очередь из списка ниже, а не ускоряй работу."
-          />
-        </div>
-        <span class="text-xs text-muted">Flow efficiency = active / lead time</span>
-      </div>
+  <UiPanel title="Эффективность потока">
+    <template #meta>
+      <AnalyticsInfo
+        answers="Какую долю времени задача реально делалась, а не ждала. Низкое значение означает, что сроки съедают очереди и блокеры, а не сама работа."
+        formula="Эффективность = активное время / lead time. Ожидание = время в колонках-очередях + время под флагом блокера."
+        note="Колонка считается очередью, если включить «Очередь» в её настройках. Backlog помечен очередью по умолчанию."
+        action="Сокращай самую большую очередь из списка ниже, а не ускоряй работу."
+        />
     </template>
 
     <div v-if="isLoading" class="h-32 flex items-center justify-center text-muted">
@@ -94,5 +88,5 @@ function days(hours: number): string {
         </div>
       </div>
     </template>
-  </UCard>
+  </UiPanel>
 </template>

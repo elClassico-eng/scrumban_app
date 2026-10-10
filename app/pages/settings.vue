@@ -21,10 +21,7 @@ useHead({ title: 'Настройки — Такт' })
 
 <template>
   <div class="space-y-4 py-2">
-    <div class="space-y-1">
-      <h1 class="text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Настройки</h1>
-      <p class="text-sm text-muted">Управление аккаунтом и командой</p>
-    </div>
+    <UiPageHeader title="Настройки" subtitle="Управление аккаунтом и командой" />
 
     <div class="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-12">
       <div class="lg:col-span-3 lg:sticky lg:top-6">

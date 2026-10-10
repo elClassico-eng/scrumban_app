@@ -49,18 +49,12 @@ const hasData = computed(() => (props.report?.points.length ?? 0) > 0)
 </script>
 
 <template>
-  <UCard :ui="ANALYTICS_CARD_UI">
-    <template #header>
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <h2 class="font-semibold">Cumulative Flow</h2>
-          <AnalyticsInfo
-            answers="Сколько задач в каждой стадии в каждый день. Где полоса растёт — там копится работа; наклон верхней границы — throughput."
-            formula="Строится из событий перехода задач (task_events), а не из снимков доски."
-          />
-        </div>
-        <span class="text-xs text-muted">Накопленный поток задач по колонкам</span>
-      </div>
+  <UiPanel title="Cumulative Flow">
+    <template #meta>
+      <AnalyticsInfo
+        answers="Сколько задач в каждой стадии в каждый день. Где полоса растёт — там копится работа; наклон верхней границы — throughput."
+        formula="Строится из событий перехода задач (task_events), а не из снимков доски."
+        />
     </template>
     <div v-if="isLoading" class="h-64 flex items-center justify-center text-muted">
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
@@ -69,5 +63,5 @@ const hasData = computed(() => (props.report?.points.length ?? 0) > 0)
       Пока нет данных для CFD — нужны движения задач по колонкам
     </div>
     <VChart v-else :option="option" autoresize class="h-64" />
-  </UCard>
+  </UiPanel>
 </template>

@@ -128,12 +128,8 @@ async function onRun() {
     <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" :board="board" />
 
     <div class="flex-1 min-h-0 overflow-y-auto pt-4 pb-8 space-y-5">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 class="m-0 text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Автоматизации</h1>
-          <p class="text-sm text-muted">Если математика видит проблему, система действует сама</p>
-        </div>
-        <div v-if="canManage && items.length > 0" class="flex items-center gap-2">
+      <UiPageHeader title="Автоматизации" subtitle="Если математика видит проблему, система действует сама">
+        <template v-if="canManage && items.length > 0" #actions>
           <UButton
             icon="i-lucide-play"
             color="neutral"
@@ -146,8 +142,8 @@ async function onRun() {
           <UButton icon="i-lucide-plus" @click="openCreate()">
             Правило
           </UButton>
-        </div>
-      </div>
+        </template>
+      </UiPageHeader>
 
       <div
         v-if="burning > 0"

@@ -19,20 +19,14 @@ function fmtDate(iso: string): string {
 </script>
 
 <template>
-  <UCard :ui="ANALYTICS_CARD_UI">
-    <template #header>
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <h2 class="font-semibold">Точность прогнозов</h2>
-          <AnalyticsInfo
-            answers="Калибровка: P50/P85, снятые на старте каждого спринта, сверяются с днём закрытия последней задачи состава. Если хоть одна задача перенесена, это промах."
-            formula="Честная модель: в свой P85 укладывается ~85% спринтов, в P50 ~50%. Сильные отклонения = систематическая ошибка оценок."
-            action="Если доля попаданий в P85 заметно ниже 85%, оценки оптимистичны; выше 95%, перестраховка, можно обещать смелее."
-          />
-          <AnalyticsPercentileHint />
-        </div>
-        <span class="text-xs text-muted">Сверка обещаний с реальностью</span>
-      </div>
+  <UiPanel title="Точность прогнозов">
+    <template #meta>
+      <AnalyticsInfo
+        answers="Калибровка: P50/P85, снятые на старте каждого спринта, сверяются с днём закрытия последней задачи состава. Если хоть одна задача перенесена, это промах."
+        formula="Честная модель: в свой P85 укладывается ~85% спринтов, в P50 ~50%. Сильные отклонения = систематическая ошибка оценок."
+        action="Если доля попаданий в P85 заметно ниже 85%, оценки оптимистичны; выше 95%, перестраховка, можно обещать смелее."
+        />
+      <AnalyticsPercentileHint />
     </template>
 
     <div v-if="accuracy.isLoading.value" class="h-32 flex items-center justify-center text-muted">
@@ -90,5 +84,5 @@ function fmtDate(iso: string): string {
         </div>
       </div>
     </template>
-  </UCard>
+  </UiPanel>
 </template>
