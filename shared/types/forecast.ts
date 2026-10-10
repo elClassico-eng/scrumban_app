@@ -43,24 +43,49 @@ export type SprintForecastHistoryResponse = {
   snapshots: ForecastSnapshotView[]
 }
 
-export type ForecastAccuracyRow = {
+export type SprintOutcome = 'hit' | 'miss' | 'carryover' | 'unknown'
+
+export type SprintOutcomeResult = {
+  outcome: SprintOutcome
+  actualDays: number | null
+  p50Hit: boolean | null
+  p85Hit: boolean | null
+}
+
+export type CalibrationReliability = 'insufficient' | 'low' | 'ok'
+
+export type CalibrationRow = SprintOutcomeResult & {
   sprintId: string
   sprintName: string
+  startedAt: string
   endedAt: string
   p50Days: number
   p85Days: number
-  actualDays: number
-  p50Hit: boolean
-  p85Hit: boolean
+  p95Days: number
+  doneCount: number
+  totalCount: number
+  carriedCount: number
+  doneSp: number
+  totalSp: number
 }
 
-export type ForecastAccuracyReport = {
-  rows: ForecastAccuracyRow[]
-  p50HitCount: number
-  p85HitCount: number
-  total: number
+export type ForecastCalibrationReport = {
+  rows: CalibrationRow[]
+  scored: number
+  unknown: number
+  p50HitRate: number | null
+  p85HitRate: number | null
+  reliability: CalibrationReliability
 }
 
-export type ForecastAccuracyResponse = {
-  report: ForecastAccuracyReport
+export type ForecastCalibrationResponse = {
+  report: ForecastCalibrationReport
+}
+
+export type BoardForecastJournal = {
+  sprints: {
+    sprint: { id: string; name: string; state: string; startedAt: string | null; endedAt: string | null }
+    outcome: CalibrationRow | null
+    snapshots: ForecastSnapshotView[]
+  }[]
 }

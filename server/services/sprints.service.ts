@@ -12,7 +12,7 @@
 //
 // Once a sprint enters `closed`, its task membership is frozen so velocity
 // and burndown analytics for that sprint stay reproducible.
-import { and, asc, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, sql } from 'drizzle-orm'
 import {
   boards,
   sprintEvents,

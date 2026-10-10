@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/vue-query'
 import type { MaybeRef } from 'vue'
-import type { ForecastAccuracyResponse, SprintForecastHistoryResponse } from '#shared/types/forecast'
+import type { ForecastCalibrationResponse, SprintForecastHistoryResponse } from '#shared/types/forecast'
 import { apiRoutes } from '~/routing'
 
 export function useForecastJournalApi(
@@ -21,7 +21,7 @@ export function useForecastJournalApi(
   const accuracy = useQuery({
     queryKey: computed(() => ['forecast-accuracy', unref(workspaceId), unref(boardId)]),
     queryFn: () =>
-      $fetch<ForecastAccuracyResponse>(
+      $fetch<ForecastCalibrationResponse>(
         apiRoutes.forecastAccuracy(unref(workspaceId), unref(boardId)),
       ),
     enabled: computed(() => !!unref(workspaceId) && !!unref(boardId)),

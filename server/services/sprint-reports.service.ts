@@ -23,6 +23,7 @@ import { percentileSorted } from '../utils/network-planning'
 import { requireMinRole } from '../utils/rbac'
 import type { ForecastSnapshotPayload } from '#shared/types/forecast'
 import { listSprintSnapshots } from './forecast-snapshots.service'
+import { resolveOutcome } from '../utils/forecast-outcome'
 import { computeBurndown } from './sprints.service'
 
 const DAY_MS = 86_400_000
@@ -380,6 +381,11 @@ export async function buildSprintReportPayload(input: {
             payload: closeSnapshot.payload as ForecastSnapshotPayload,
           }
         : null,
+      outcome: resolveOutcome({
+        startedAt: sprint.startedAt ?? null,
+        start: (startSnapshot?.payload as ForecastSnapshotPayload | undefined) ?? null,
+        close: (closeSnapshot?.payload as ForecastSnapshotPayload | undefined) ?? null,
+      }),
     },
     appliedScenarios: data.scenarios
       .filter(s => s.appliedAt !== null)
