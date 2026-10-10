@@ -19,12 +19,16 @@ export type ForecastSnapshotPayload = {
   horizonDays: number | null
   closedSamples: number
   edgeCount: number
-  resolution?: {
-    totalCount: number
-    doneCount: number
-    totalSp: number
-    doneSp: number
-  }
+  resolution?: SprintResolution
+}
+
+export type SprintResolution = {
+  totalCount: number
+  doneCount: number
+  totalSp: number
+  doneSp: number
+  lastDoneAt?: string | null
+  carriedCount?: number
 }
 
 export type ForecastSnapshotView = {

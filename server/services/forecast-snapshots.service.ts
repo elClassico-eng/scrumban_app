@@ -1,5 +1,5 @@
 import { and, desc, eq } from 'drizzle-orm'
-import type { ForecastAccuracyReport, ForecastAccuracyRow, ForecastSnapshotPayload } from '#shared/types/forecast'
+import type { ForecastAccuracyReport, ForecastAccuracyRow, ForecastSnapshotPayload, SprintResolution } from '#shared/types/forecast'
 import {
   forecastSnapshots,
   sprints,
@@ -21,6 +21,7 @@ export async function takeSprintSnapshot(input: {
   sprintId: string
   trigger: ForecastTrigger
   actorRole: WorkspaceMemberRole
+  resolution?: SprintResolution
 }): Promise<ForecastSnapshot | null> {
   requireMinRole(input.actorRole, 'viewer')
 
@@ -44,7 +45,7 @@ export async function takeSprintSnapshot(input: {
 
   return withTenant(input.workspaceId, async (tx) => {
     const members = await tx
-      .select({ storyPoints: tasks.storyPoints, closedAt: tasks.closedAt })
+      .select({ storyPoints: tasks.storyPoints })
       .from(sprintTasks)
       .innerJoin(tasks, eq(tasks.id, sprintTasks.taskId))
       .where(eq(sprintTasks.sprintId, input.sprintId))
@@ -62,15 +63,7 @@ export async function takeSprintSnapshot(input: {
       edgeCount: report.edgeCount,
     }
 
-    if (input.trigger === 'sprint_close') {
-      const done = members.filter(m => m.closedAt !== null)
-      payload.resolution = {
-        totalCount: members.length,
-        doneCount: done.length,
-        totalSp: committedSp,
-        doneSp: done.reduce((acc, m) => acc + (m.storyPoints ?? 0), 0),
-      }
-    }
+    if (input.trigger === 'sprint_close' && input.resolution) payload.resolution = input.resolution
 
     const [row] = await tx
       .insert(forecastSnapshots)

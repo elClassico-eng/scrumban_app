@@ -204,10 +204,46 @@ describe('forecast snapshots anchors', () => {
 
     const rows = await snapshotRows(sprintId)
     expect(rows.map(r => r.trigger)).toEqual(['sprint_start', 'sprint_close'])
-    const payload = rows[1]!.payload as { resolution?: { totalCount: number, doneCount: number } }
-    expect(payload.resolution).toBeDefined()
-    expect(payload.resolution!.totalCount).toBe(2)
-    expect(payload.resolution!.doneCount).toBe(1)
+    const payload = rows[1]!.payload as { resolution?: Record<string, unknown> }
+    expect(payload.resolution).toMatchObject({ totalCount: 2, doneCount: 1, carriedCount: 1, lastDoneAt: null })
+  })
+
+  it('close snapshot records lastDoneAt when every task is done', async () => {
+    const owner = await registerUser('owner3b@example.com')
+    const wsId = await createWorkspace(owner, 'acme3b')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const t2 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-2')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1, t2])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+    await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
+    await closeTask(owner, wsId, ctx.boardId, t2, ctx.columns.done)
+    const res = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, { method: 'POST' })
+    expect(res.status).toBe(200)
+    const rows = await snapshotRows(sprintId)
+    const payload = rows[1]!.payload as { resolution?: { doneCount: number, carriedCount: number, lastDoneAt: string | null } }
+    expect(payload.resolution).toMatchObject({ totalCount: 2, doneCount: 2, carriedCount: 0 })
+    expect(typeof payload.resolution!.lastDoneAt).toBe('string')
+  })
+
+  it('close snapshot counts tasks moved to backlog', async () => {
+    const owner = await registerUser('owner3c@example.com')
+    const wsId = await createWorkspace(owner, 'acme3c')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const t2 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-2')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1, t2])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+    await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, {
+      method: 'POST',
+      body: { carryOver: [{ taskId: t2, decision: 'backlog' }] },
+    })
+    const rows = await snapshotRows(sprintId)
+    const payload = rows[1]!.payload as { resolution?: Record<string, unknown> }
+    expect(payload.resolution).toMatchObject({ totalCount: 2, doneCount: 1, carriedCount: 1, lastDoneAt: null })
   })
 })
 
