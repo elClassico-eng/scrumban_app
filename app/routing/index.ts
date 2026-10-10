@@ -136,6 +136,12 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro/${noteId}/convert`,
   forecastAccuracy: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/forecast-accuracy`,
+  forecastJournal: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/forecast-journal`,
+  forecastJournalExport: (wsId: string, boardId: string, format: 'csv' | 'json') =>
+    `${boardBase(wsId, boardId)}/forecast-journal/export?format=${format}`,
+  forecastCalibrationExport: (wsId: string, boardId: string, format: 'csv' | 'json') =>
+    `${boardBase(wsId, boardId)}/forecast-calibration/export?format=${format}`,
   sprintTasks: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/tasks`,
   sprintTask: (wsId: string, boardId: string, sprintId: string, taskId: string) =>
@@ -222,6 +228,8 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
   boardAutomations: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/automations`,
+  boardForecastJournal: (wsId: string, boardId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/forecast-journal`,
   sprintSimulator: (wsId: string, boardId: string, sprintId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/simulator/${sprintId}`,
   sprintReportPage: (wsId: string, boardId: string, sprintId: string) =>

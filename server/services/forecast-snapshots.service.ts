@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray } from 'drizzle-orm'
-import type { CalibrationRow, ForecastCalibrationReport, ForecastSnapshotPayload, SprintResolution } from '#shared/types/forecast'
+import type { BoardForecastJournal, CalibrationRow, ForecastCalibrationReport, ForecastSnapshotPayload, SprintResolution } from '#shared/types/forecast'
 import { reliabilityFor, resolveOutcome } from '../utils/forecast-outcome'
 import {
   forecastSnapshots,
@@ -123,6 +123,52 @@ export async function computeBoardForecastCalibration(input: {
 
   rows.sort((a, b) => a.endedAt.localeCompare(b.endedAt))
   return summarizeCalibration(rows)
+}
+
+export async function listBoardForecastJournal(input: {
+  workspaceId: string
+  boardId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<BoardForecastJournal> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) => {
+    const list = await tx
+      .select()
+      .from(sprints)
+      .where(and(eq(sprints.boardId, input.boardId), inArray(sprints.state, ['active', 'closed'])))
+    const snaps = await tx
+      .select()
+      .from(forecastSnapshots)
+      .where(eq(forecastSnapshots.boardId, input.boardId))
+      .orderBy(forecastSnapshots.takenAt)
+    const ts = (d: Date | null) => d?.getTime() ?? 0
+    list.sort((a, b) => {
+      if (a.state !== b.state) return a.state === 'active' ? -1 : 1
+      return a.state === 'active' ? ts(b.startedAt) - ts(a.startedAt) : ts(b.endedAt) - ts(a.endedAt)
+    })
+    return {
+      sprints: list.map((s) => {
+        const own = snaps.filter((x) => x.sprintId === s.id)
+        return {
+          sprint: {
+            id: s.id,
+            name: s.name,
+            state: s.state,
+            startedAt: s.startedAt?.toISOString() ?? null,
+            endedAt: s.endedAt?.toISOString() ?? null,
+          },
+          outcome: s.state === 'closed' ? buildCalibrationRow(s, own) : null,
+          snapshots: own.map((x) => ({
+            id: x.id,
+            sprintId: x.sprintId,
+            trigger: x.trigger,
+            takenAt: x.takenAt.toISOString(),
+            payload: x.payload as ForecastSnapshotPayload,
+          })),
+        }
+      }),
+    }
+  })
 }
 
 export function buildCalibrationRow(sprint: Sprint, anchors: ForecastSnapshot[]): CalibrationRow | null {
