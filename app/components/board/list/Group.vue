@@ -57,6 +57,7 @@ function onAdd() {
       <span
         class="inline-flex items-center gap-[7px] h-[24px] sm:h-[26px] px-2.5 sm:px-3 rounded-full text-[10.5px] sm:text-[11.5px] font-bold uppercase tracking-[0.04em] text-white min-w-0 shrink sm:shrink-0"
         :class="group.pillClass"
+        :style="group.pillColor ? { background: group.pillColor } : undefined"
       >
         <span class="w-1.5 h-1.5 rounded-full bg-white/90 shrink-0" />
         <span class="truncate">{{ group.title }}</span>

@@ -19,6 +19,7 @@ const schema = z.object({
   sleDays: z.number().int().positive().nullable(),
   sleProbability: z.number().min(0.5).max(0.99),
   replenishmentPeriodDays: z.number().int().positive().max(60),
+  columnTint: z.boolean(),
 })
 type State = z.infer<typeof schema>
 const state = reactive<State>({
@@ -26,6 +27,7 @@ const state = reactive<State>({
   sleDays: null,
   sleProbability: 0.85,
   replenishmentPeriodDays: 7,
+  columnTint: false,
 })
 
 watch(
@@ -36,6 +38,7 @@ watch(
     state.sleDays = b.sleDays
     state.sleProbability = Number(b.sleProbability)
     state.replenishmentPeriodDays = b.replenishmentPeriodDays
+    state.columnTint = b.columnTint
   },
   { immediate: true },
 )
@@ -79,6 +82,7 @@ async function onSave() {
       sleDays: state.sleDays,
       sleProbability: state.sleProbability,
       replenishmentPeriodDays: state.replenishmentPeriodDays,
+      columnTint: state.columnTint,
     })
     open.value = false
   }
@@ -99,6 +103,15 @@ async function onSave() {
         <div>
           <p class="text-xs uppercase tracking-wide text-muted mb-2">Цвет доски</p>
           <BoardColorPicker v-model="state.color" />
+        </div>
+
+        <div>
+          <p class="text-xs uppercase tracking-wide text-muted mb-2">Фон колонок</p>
+          <URadioGroup
+            v-model="state.columnTint"
+            orientation="horizontal"
+            :items="[{ label: 'Нейтральный', value: false }, { label: 'В цвет колонки', value: true }]"
+          />
         </div>
 
         <div class="pt-4 border-t border-default">

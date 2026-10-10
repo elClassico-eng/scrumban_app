@@ -5,6 +5,7 @@ import type { Task, CreateTaskInput } from '#shared/types/task'
 import type { BoardColumn as Column } from '#shared/types/column'
 import type { MemberView } from '#shared/types/workspace'
 import type { GroupBy, ListGroup } from '~/utils/list-groups'
+import { columnHex } from '~/utils/column-color'
 
 const props = defineProps<{
   tasks: Task[]
@@ -30,7 +31,7 @@ const memberLabel = (id: string) => {
   return m ? displayName(m) : id.slice(0, 6)
 }
 const serviceClassLabel = (c: string) => SERVICE_CLASS_INFO[c as keyof typeof SERVICE_CLASS_INFO]?.shortLabel ?? c
-const columnPill = (c: Column) => COLUMN_ROLE_INFO[c.columnRole].pillClass
+const columnPill = (c: Column) => columnHex(c)
 
 const childrenByParent = computed(() => buildChildrenByParent(props.tasks))
 const groups = computed<ListGroup[]>(() =>

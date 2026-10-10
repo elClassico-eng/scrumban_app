@@ -243,6 +243,28 @@ describe('GET /api/workspaces/:id/boards/:boardId', () => {
 })
 
 describe('PATCH /api/workspaces/:id/boards/:boardId', () => {
+  it('columnTint is stored and listed', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const created = await fetchWithJar<{ board: { id: string; columnTint: boolean } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards`,
+      { method: 'POST', body: { name: 'Tinted', slug: 'tinted' } },
+    )
+    expect(created.body.board.columnTint).toBe(false)
+
+    const res = await fetchWithJar<{ board: { columnTint: boolean } }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${created.body.board.id}`,
+      { method: 'PATCH', body: { columnTint: true } },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.board.columnTint).toBe(true)
+
+    const list = await fetchWithJar<{ boards: { id: string; columnTint: boolean }[] }>(owner.jar, `/api/workspaces/${wsId}/boards`)
+    expect(list.body.boards.find((b) => b.id === created.body.board.id)!.columnTint).toBe(true)
+  })
+
   it('admin can rename a board', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)

@@ -80,7 +80,7 @@ export async function createColumn(input: {
 export async function updateColumn(input: {
   workspaceId: string
   columnId: string
-  patch: { name?: string; wipLimit?: number | null; columnRole?: ColumnRole; isQueue?: boolean }
+  patch: { name?: string; wipLimit?: number | null; columnRole?: ColumnRole; isQueue?: boolean; color?: string | null }
   actorRole: WorkspaceMemberRole
 }): Promise<BoardColumn> {
   requireMinRole(input.actorRole, 'scrum_master')
@@ -92,6 +92,7 @@ export async function updateColumn(input: {
   if (input.patch.wipLimit !== undefined) set.wipLimit = input.patch.wipLimit
   if (input.patch.columnRole !== undefined) set.columnRole = input.patch.columnRole
   if (input.patch.isQueue !== undefined) set.isQueue = input.patch.isQueue
+  if (input.patch.color !== undefined) set.color = input.patch.color
 
   const [row] = await withTenant(input.workspaceId, async (tx) =>
     tx.update(boardColumns).set(set).where(eq(boardColumns.id, input.columnId)).returning(),

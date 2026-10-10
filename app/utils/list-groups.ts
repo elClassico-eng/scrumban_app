@@ -9,6 +9,7 @@ export type ListGroup = {
   key: string
   title: string
   pillClass: string
+  pillColor?: string
   columnId: string | null
   limit: number | null
   doneGroup: boolean
@@ -103,7 +104,8 @@ export function buildGroups(
     .map(col => ({
       key: col.id,
       title: col.name,
-      pillClass: columnPill(col),
+      pillClass: '',
+      pillColor: columnPill(col),
       columnId: col.id,
       limit: col.wipLimit,
       doneGroup: col.columnRole === 'done',

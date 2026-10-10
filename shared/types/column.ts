@@ -9,6 +9,7 @@ export interface BoardColumn {
   wipLimit: number | null
   columnRole: ColumnRole
   isQueue: boolean
+  color: string | null
   createdAt: string
 }
 
@@ -31,6 +32,7 @@ export interface UpdateColumnInput {
   columnRole?: ColumnRole
   wipLimit?: number | null
   isQueue?: boolean
+  color?: string | null
 }
 
 export interface ReorderColumnsInput {

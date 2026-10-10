@@ -3,6 +3,7 @@
 // through /columns/reorder so the unique (board_id, position) index is
 // always valid mid-transaction.
 import { z } from 'zod'
+import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
 import { updateColumn } from '../../../../../../services/columns.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../utils/auth'
@@ -21,13 +22,15 @@ const BodySchema = z
       .enum(['backlog', 'in_progress', 'review', 'done', 'archived'])
       .optional(),
     isQueue: z.boolean().optional(),
+    color: z.string().regex(BOARD_COLOR_RE).nullable().optional(),
   })
   .refine(
     (d) =>
       d.name !== undefined ||
       d.wipLimit !== undefined ||
       d.columnRole !== undefined ||
-      d.isQueue !== undefined,
+      d.isQueue !== undefined ||
+      d.color !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
