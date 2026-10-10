@@ -1,3 +1,4 @@
+import type { ControlCenterPrefs } from '#shared/types/control-center'
 // UsersService: thin business-logic layer over the users table.
 // Normalises email to lowercase for predictable lookups, and translates
 // PostgreSQL unique-violation errors into a domain ConflictError so the
@@ -68,6 +69,7 @@ export async function updateUserProfile(input: {
     bio?: string | null
     notificationPrefs?: Record<string, boolean>
     dismissedHints?: string[]
+    controlCenterPrefs?: ControlCenterPrefs
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -81,6 +83,7 @@ export async function updateUserProfile(input: {
   if ('bio' in input.patch) set.bio = input.patch.bio ?? null
   if (input.patch.notificationPrefs) set.notificationPrefs = input.patch.notificationPrefs
   if (input.patch.dismissedHints) set.dismissedHints = input.patch.dismissedHints
+  if (input.patch.controlCenterPrefs) set.controlCenterPrefs = input.patch.controlCenterPrefs
 
   const [row] = await useDB()
     .update(users)

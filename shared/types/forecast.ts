@@ -19,12 +19,16 @@ export type ForecastSnapshotPayload = {
   horizonDays: number | null
   closedSamples: number
   edgeCount: number
-  resolution?: {
-    totalCount: number
-    doneCount: number
-    totalSp: number
-    doneSp: number
-  }
+  resolution?: SprintResolution
+}
+
+export type SprintResolution = {
+  totalCount: number
+  doneCount: number
+  totalSp: number
+  doneSp: number
+  lastDoneAt?: string | null
+  carriedCount?: number
 }
 
 export type ForecastSnapshotView = {
@@ -39,24 +43,49 @@ export type SprintForecastHistoryResponse = {
   snapshots: ForecastSnapshotView[]
 }
 
-export type ForecastAccuracyRow = {
+export type SprintOutcome = 'hit' | 'miss' | 'carryover' | 'unknown'
+
+export type SprintOutcomeResult = {
+  outcome: SprintOutcome
+  actualDays: number | null
+  p50Hit: boolean | null
+  p85Hit: boolean | null
+}
+
+export type CalibrationReliability = 'insufficient' | 'low' | 'ok'
+
+export type CalibrationRow = SprintOutcomeResult & {
   sprintId: string
   sprintName: string
+  startedAt: string
   endedAt: string
-  p50Days: number
-  p85Days: number
-  actualDays: number
-  p50Hit: boolean
-  p85Hit: boolean
+  p50Days: number | null
+  p85Days: number | null
+  p95Days: number | null
+  doneCount: number | null
+  totalCount: number | null
+  carriedCount: number | null
+  doneSp: number | null
+  totalSp: number | null
 }
 
-export type ForecastAccuracyReport = {
-  rows: ForecastAccuracyRow[]
-  p50HitCount: number
-  p85HitCount: number
-  total: number
+export type ForecastCalibrationReport = {
+  rows: CalibrationRow[]
+  scored: number
+  unknown: number
+  p50HitRate: number | null
+  p85HitRate: number | null
+  reliability: CalibrationReliability
 }
 
-export type ForecastAccuracyResponse = {
-  report: ForecastAccuracyReport
+export type ForecastCalibrationResponse = {
+  report: ForecastCalibrationReport
+}
+
+export type BoardForecastJournal = {
+  sprints: {
+    sprint: { id: string; name: string; state: string; startedAt: string | null; endedAt: string | null }
+    outcome: CalibrationRow | null
+    snapshots: ForecastSnapshotView[]
+  }[]
 }

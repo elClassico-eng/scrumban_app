@@ -79,7 +79,6 @@ const burndownPoints = computed<BurndownPoint[]>(() => {
 })
 
 const DAY_MS = 86_400_000
-const DAYS_FORMS = ['день', 'дня', 'дней'] as [string, string, string]
 const dayFmt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
 
 // The promise is the snapshot taken when the sprint started; the fact is when it
@@ -104,13 +103,16 @@ const promise = computed(() => {
 const verdict = computed(() => {
   const p = promise.value
   const endedAt = payload.value?.sprint.endedAt
-  if (!p || !endedAt) return null
-  const closed = new Date(endedAt).getTime()
-  const diffDays = Math.round((closed - p.p85At) / DAY_MS)
+  const o = payload.value?.forecastVsFact.outcome
+  if (!p || !endedAt || !o) return null
+  const p85Days = payload.value!.forecastVsFact.start!.payload.simulation.p85Days
   return {
-    hit: diffDays <= 0,
-    diffDays: Math.abs(diffDays),
-    closedAt: dayFmt.format(new Date(closed)),
+    outcome: o.outcome,
+    hit: o.outcome === 'hit',
+    actualDays: o.actualDays,
+    diffDays: o.actualDays === null ? null : Math.round(Math.abs(o.actualDays - p85Days) * 10) / 10,
+    carried: payload.value!.forecastVsFact.close?.payload.resolution?.carriedCount ?? 0,
+    closedAt: dayFmt.format(new Date(endedAt)),
   }
 })
 
@@ -298,15 +300,23 @@ async function copyJson() {
           <p
             v-if="verdict"
             class="mt-4 rounded-xl px-4 py-3 text-sm"
-            :class="verdict.hit
+            :class="verdict.outcome === 'hit'
               ? 'bg-success-50 text-success-700 dark:bg-success-950/40 dark:text-success-400'
-              : 'bg-error-50 text-error-700 dark:bg-error-950/40 dark:text-error-400'"
+              : verdict.outcome === 'unknown'
+                ? 'bg-muted text-muted'
+                : 'bg-error-50 text-error-700 dark:bg-error-950/40 dark:text-error-400'"
           >
-            <template v-if="verdict.hit">
-              Прогноз оправдался: закрылись в пределах P85<template v-if="verdict.diffDays">, на {{ verdict.diffDays }} {{ plural(verdict.diffDays, DAYS_FORMS) }} раньше</template>.
+            <template v-if="verdict.outcome === 'hit'">
+              Прогноз оправдался: все задачи закрыты в пределах P85<template v-if="verdict.diffDays">, на {{ verdict.diffDays }} дн раньше</template>.
+            </template>
+            <template v-else-if="verdict.outcome === 'miss'">
+              Прогноз не оправдался: последняя задача закрыта на {{ verdict.diffDays }} дн позже P85.
+            </template>
+            <template v-else-if="verdict.outcome === 'carryover'">
+              Прогноз не оправдался: {{ verdict.carried }} {{ plural(verdict.carried, ['задача перенесена', 'задачи перенесены', 'задач перенесено']) }}, состав не закрыт целиком. Перенос засчитывается как промах.
             </template>
             <template v-else>
-              Прогноз не оправдался: закрылись на {{ verdict.diffDays }} {{ plural(verdict.diffDays, DAYS_FORMS) }} позже P85.
+              Для этого спринта исход не определён: снапшот закрытия без состава (данные до обновления).
             </template>
           </p>
           <p v-else class="mt-4 text-sm text-muted">

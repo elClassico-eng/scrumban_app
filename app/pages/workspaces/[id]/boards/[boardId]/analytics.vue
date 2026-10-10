@@ -17,7 +17,7 @@ const RANGES: { value: AnalyticsRange; label: string }[] = [
 
 const { list: workspacesList } = useWorkspacesApi()
 const { list: boardsList } = useBoardsApi(wsId)
-const { cfd, cycleTime, throughput, wipRecommendations } = useAnalyticsApi(wsId, bId, range)
+const { cfd, cycleTime, throughput, wipRecommendations, flowEfficiency } = useAnalyticsApi(wsId, bId, range)
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -82,6 +82,11 @@ useHead({
           :is-loading="cycleTime.isLoading.value"
         />
       </div>
+
+      <AnalyticsFlowEfficiencyCard
+        :report="flowEfficiency.data.value"
+        :is-loading="flowEfficiency.isLoading.value"
+      />
 
       <div class="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-12">
         <AnalyticsMonteCarloCard class="xl:col-span-8" :workspace-id="wsId" :board-id="bId" />

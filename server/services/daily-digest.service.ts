@@ -19,6 +19,7 @@ import {
 import { withTenant } from '../utils/db'
 import { requireMinRole } from '../utils/rbac'
 import { computeCycleTime } from './analytics.service'
+import { listOpenFirings } from './automations.service'
 
 const DAY_MS = 86_400_000
 const WORKING_ROLES: ColumnRole[] = ['in_progress', 'review']
@@ -234,6 +235,22 @@ export async function computeDailyDigest(input: {
 
   const blockedNow = data.openTasks.filter(t => t.blockedReason !== null).length
 
+  const attention = (await listOpenFirings({
+    workspaceId: input.workspaceId,
+    boardId: input.boardId,
+    actorRole: input.actorRole,
+  }))
+    .filter(f => f.action === 'daily_agenda')
+    .map(f => ({
+      firingId: f.id,
+      ruleId: f.ruleId,
+      trigger: f.trigger,
+      subjectType: f.subjectType,
+      subjectId: f.subjectId,
+      payload: f.payload,
+      firedAt: typeof f.firedAt === 'string' ? f.firedAt : new Date(f.firedAt).toISOString(),
+    }))
+
   return {
     stats: {
       done: { value: closedToday, delta: closedToday - closedPrev },
@@ -247,6 +264,7 @@ export async function computeDailyDigest(input: {
     blockers,
     wipViolations,
     sprintRisk,
+    attention,
     changes,
     changeItems,
   }

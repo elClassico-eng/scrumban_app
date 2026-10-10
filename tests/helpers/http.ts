@@ -37,7 +37,7 @@ export class CookieJar {
   }
 }
 
-function baseUrl(): string {
+export function baseUrl(): string {
   const ctx = useTestContext()
   if (!ctx.url) throw new Error('Test context has no URL — was setup() called?')
   return ctx.url.replace(/\/$/, '')

@@ -129,3 +129,21 @@ describe('удаление аккаунта', () => {
     expect(stillThere.body.workspaces.some(w => w.id === wsId)).toBe(true)
   })
 })
+
+describe('control center prefs', () => {
+  it('stores control center prefs and rejects unknown tiles', async () => {
+    const u = await registerUser('cc@example.com')
+    const ok = await fetchWithJar<{ user: { controlCenterPrefs: Record<string, unknown> } }>(u.jar, '/api/users/me', {
+      method: 'PATCH',
+      body: { controlCenterPrefs: { overview: ['timer', 'firings'], lastBoardId: null } },
+    })
+    expect(ok.status).toBe(200)
+    expect(ok.body.user.controlCenterPrefs).toEqual({ overview: ['timer', 'firings'], lastBoardId: null })
+    const me = await fetchWithJar<{ user: { controlCenterPrefs: Record<string, unknown> } }>(u.jar, '/api/users/me')
+    expect(me.body.user.controlCenterPrefs.overview).toEqual(['timer', 'firings'])
+    const bad = await fetchWithJar(u.jar, '/api/users/me', { method: 'PATCH', body: { controlCenterPrefs: { flow: ['nope'] } } })
+    expect(bad.status).toBe(400)
+    const dup = await fetchWithJar(u.jar, '/api/users/me', { method: 'PATCH', body: { controlCenterPrefs: { flow: ['wip', 'wip'] } } })
+    expect(dup.status).toBe(400)
+  })
+})

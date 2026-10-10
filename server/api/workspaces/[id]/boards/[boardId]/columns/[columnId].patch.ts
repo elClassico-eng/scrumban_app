@@ -20,9 +20,14 @@ const BodySchema = z
     columnRole: z
       .enum(['backlog', 'in_progress', 'review', 'done', 'archived'])
       .optional(),
+    isQueue: z.boolean().optional(),
   })
   .refine(
-    (d) => d.name !== undefined || d.wipLimit !== undefined || d.columnRole !== undefined,
+    (d) =>
+      d.name !== undefined ||
+      d.wipLimit !== undefined ||
+      d.columnRole !== undefined ||
+      d.isQueue !== undefined,
     { message: 'Provide at least one field to update' },
   )
 

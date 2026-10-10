@@ -12,7 +12,7 @@
 //
 // Once a sprint enters `closed`, its task membership is frozen so velocity
 // and burndown analytics for that sprint stay reproducible.
-import { and, asc, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, sql } from 'drizzle-orm'
 import {
   boards,
   sprintEvents,
@@ -26,6 +26,7 @@ import {
   type WorkspaceMemberRole,
 } from '../db/schema'
 import type { SprintOutcome } from '#shared/types/sprint'
+import type { SprintResolution } from '#shared/types/forecast'
 import { withTenant, type DbTransaction } from '../utils/db'
 import {
   ConflictError,
@@ -382,7 +383,7 @@ export async function closeSprint(input: {
   goalAchieved?: boolean | null
   goalComment?: string
   carryOver?: { taskId: string; decision: CarryOverDecision }[]
-}): Promise<Sprint> {
+}): Promise<{ sprint: Sprint; resolution: SprintResolution }> {
   requireMinRole(input.actorRole, 'scrum_master')
 
   return withTenant(input.workspaceId, async (tx) => {
@@ -396,11 +397,24 @@ export async function closeSprint(input: {
       throw new ValidationError('Спринт уже закрыт')
     }
 
-    const openRows = await tx
-      .select({ taskId: tasks.id, title: tasks.title })
+    const members = await tx
+      .select({ taskId: tasks.id, title: tasks.title, storyPoints: tasks.storyPoints, closedAt: tasks.closedAt })
       .from(sprintTasks)
       .innerJoin(tasks, eq(tasks.id, sprintTasks.taskId))
-      .where(and(eq(sprintTasks.sprintId, input.sprintId), isNull(tasks.closedAt)))
+      .where(eq(sprintTasks.sprintId, input.sprintId))
+    const openRows = members.filter(m => m.closedAt === null).map(m => ({ taskId: m.taskId, title: m.title }))
+    const doneRows = members.filter(m => m.closedAt !== null)
+    const sumSp = (rows: { storyPoints: number | null }[]) => rows.reduce((acc, r) => acc + (r.storyPoints ?? 0), 0)
+    const resolution: SprintResolution = {
+      totalCount: members.length,
+      doneCount: doneRows.length,
+      totalSp: sumSp(members),
+      doneSp: sumSp(doneRows),
+      lastDoneAt: openRows.length === 0 && doneRows.length > 0
+        ? new Date(Math.max(...doneRows.map(r => r.closedAt!.getTime()))).toISOString()
+        : null,
+      carriedCount: openRows.length,
+    }
 
     const decisions = new Map(
       (input.carryOver ?? []).map(c => [c.taskId, c.decision] as const),
@@ -482,7 +496,7 @@ export async function closeSprint(input: {
         backlogCount: summary.backlog,
       },
     })
-    return row!
+    return { sprint: row!, resolution }
   })
 }
 

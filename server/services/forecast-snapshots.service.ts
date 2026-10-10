@@ -1,5 +1,6 @@
-import { and, desc, eq } from 'drizzle-orm'
-import type { ForecastAccuracyReport, ForecastAccuracyRow, ForecastSnapshotPayload } from '#shared/types/forecast'
+import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
+import type { BoardForecastJournal, CalibrationRow, ForecastCalibrationReport, ForecastSnapshotPayload, SprintResolution } from '#shared/types/forecast'
+import { reliabilityFor, resolveOutcome } from '../utils/forecast-outcome'
 import {
   forecastSnapshots,
   sprints,
@@ -7,6 +8,7 @@ import {
   tasks,
   workspaces,
   type ForecastSnapshot,
+  type Sprint,
   type ForecastTrigger,
   type WorkspaceMemberRole,
 } from '../db/schema'
@@ -21,6 +23,7 @@ export async function takeSprintSnapshot(input: {
   sprintId: string
   trigger: ForecastTrigger
   actorRole: WorkspaceMemberRole
+  resolution?: SprintResolution
 }): Promise<ForecastSnapshot | null> {
   requireMinRole(input.actorRole, 'viewer')
 
@@ -44,7 +47,7 @@ export async function takeSprintSnapshot(input: {
 
   return withTenant(input.workspaceId, async (tx) => {
     const members = await tx
-      .select({ storyPoints: tasks.storyPoints, closedAt: tasks.closedAt })
+      .select({ storyPoints: tasks.storyPoints })
       .from(sprintTasks)
       .innerJoin(tasks, eq(tasks.id, sprintTasks.taskId))
       .where(eq(sprintTasks.sprintId, input.sprintId))
@@ -62,15 +65,7 @@ export async function takeSprintSnapshot(input: {
       edgeCount: report.edgeCount,
     }
 
-    if (input.trigger === 'sprint_close') {
-      const done = members.filter(m => m.closedAt !== null)
-      payload.resolution = {
-        totalCount: members.length,
-        doneCount: done.length,
-        totalSp: committedSp,
-        doneSp: done.reduce((acc, m) => acc + (m.storyPoints ?? 0), 0),
-      }
-    }
+    if (input.trigger === 'sprint_close' && input.resolution) payload.resolution = input.resolution
 
     const [row] = await tx
       .insert(forecastSnapshots)
@@ -101,57 +96,115 @@ export async function listSprintSnapshots(input: {
   )
 }
 
-const DAY_MS = 86_400_000
-
-export async function computeBoardForecastAccuracy(input: {
+export async function computeBoardForecastCalibration(input: {
   workspaceId: string
   boardId: string
   actorRole: WorkspaceMemberRole
-}): Promise<ForecastAccuracyReport> {
+}): Promise<ForecastCalibrationReport> {
   requireMinRole(input.actorRole, 'viewer')
 
-  return withTenant(input.workspaceId, async (tx) => {
+  const rows = await withTenant(input.workspaceId, async (tx) => {
     const closed = await tx
       .select()
       .from(sprints)
       .where(and(eq(sprints.boardId, input.boardId), eq(sprints.state, 'closed')))
+    if (closed.length === 0) return []
+    const anchors = await tx
+      .select()
+      .from(forecastSnapshots)
+      .where(and(
+        inArray(forecastSnapshots.sprintId, closed.map(s => s.id)),
+        inArray(forecastSnapshots.trigger, ['sprint_start', 'sprint_close']),
+      ))
+      .orderBy(forecastSnapshots.takenAt)
+    return closed.map(s => buildCalibrationRow(s, anchors.filter(a => a.sprintId === s.id)))
+      .filter((r): r is CalibrationRow => r !== null)
+  })
 
-    const rows: ForecastAccuracyRow[] = []
-    for (const s of closed) {
-      if (!s.startedAt || !s.endedAt) continue
-      const [anchor] = await tx
-        .select()
-        .from(forecastSnapshots)
-        .where(and(
-          eq(forecastSnapshots.sprintId, s.id),
-          eq(forecastSnapshots.trigger, 'sprint_start'),
-        ))
-        .orderBy(forecastSnapshots.takenAt)
-        .limit(1)
-      if (!anchor) continue
+  rows.sort((a, b) => a.endedAt.localeCompare(b.endedAt))
+  return summarizeCalibration(rows)
+}
 
-      const payload = anchor.payload as ForecastSnapshotPayload
-      const actualDays = Math.round(((s.endedAt.getTime() - s.startedAt.getTime()) / DAY_MS) * 10) / 10
-      rows.push({
-        sprintId: s.id,
-        sprintName: s.name,
-        endedAt: s.endedAt.toISOString(),
-        p50Days: payload.simulation.p50Days,
-        p85Days: payload.simulation.p85Days,
-        actualDays,
-        p50Hit: actualDays <= payload.simulation.p50Days,
-        p85Hit: actualDays <= payload.simulation.p85Days,
-      })
-    }
-
-    rows.sort((a, b) => a.endedAt.localeCompare(b.endedAt))
+export async function listBoardForecastJournal(input: {
+  workspaceId: string
+  boardId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<BoardForecastJournal> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) => {
+    const list = await tx
+      .select()
+      .from(sprints)
+      .where(and(eq(sprints.boardId, input.boardId), inArray(sprints.state, ['active', 'closed']), isNotNull(sprints.startedAt)))
+    const snaps = await tx
+      .select()
+      .from(forecastSnapshots)
+      .where(eq(forecastSnapshots.boardId, input.boardId))
+      .orderBy(forecastSnapshots.takenAt)
+    const ts = (d: Date | null) => d?.getTime() ?? 0
+    list.sort((a, b) => {
+      if (a.state !== b.state) return a.state === 'active' ? -1 : 1
+      return a.state === 'active' ? ts(b.startedAt) - ts(a.startedAt) : ts(b.endedAt) - ts(a.endedAt)
+    })
     return {
-      rows,
-      p50HitCount: rows.filter(r => r.p50Hit).length,
-      p85HitCount: rows.filter(r => r.p85Hit).length,
-      total: rows.length,
+      sprints: list.map((s) => {
+        const own = snaps.filter((x) => x.sprintId === s.id)
+        return {
+          sprint: {
+            id: s.id,
+            name: s.name,
+            state: s.state,
+            startedAt: s.startedAt?.toISOString() ?? null,
+            endedAt: s.endedAt?.toISOString() ?? null,
+          },
+          outcome: s.state === 'closed' ? buildCalibrationRow(s, own) : null,
+          snapshots: own.map((x) => ({
+            id: x.id,
+            sprintId: x.sprintId,
+            trigger: x.trigger,
+            takenAt: x.takenAt.toISOString(),
+            payload: x.payload as ForecastSnapshotPayload,
+          })),
+        }
+      }),
     }
   })
+}
+
+export function buildCalibrationRow(sprint: Sprint, anchors: ForecastSnapshot[]): CalibrationRow | null {
+  if (!sprint.startedAt || !sprint.endedAt) return null
+  const start = anchors.find(a => a.trigger === 'sprint_start')?.payload as ForecastSnapshotPayload | undefined
+  const close = anchors.find(a => a.trigger === 'sprint_close')?.payload as ForecastSnapshotPayload | undefined
+  const outcome = resolveOutcome({ startedAt: sprint.startedAt, start: start ?? null, close: close ?? null })
+  const res = close?.resolution
+  return {
+    sprintId: sprint.id,
+    sprintName: sprint.name,
+    startedAt: sprint.startedAt.toISOString(),
+    endedAt: sprint.endedAt.toISOString(),
+    p50Days: start?.simulation.p50Days ?? null,
+    p85Days: start?.simulation.p85Days ?? null,
+    p95Days: start?.simulation.p95Days ?? null,
+    doneCount: res?.doneCount ?? null,
+    totalCount: res?.totalCount ?? null,
+    carriedCount: res?.carriedCount ?? null,
+    doneSp: res?.doneSp ?? null,
+    totalSp: res?.totalSp ?? null,
+    ...outcome,
+  }
+}
+
+export function summarizeCalibration(rows: CalibrationRow[]): ForecastCalibrationReport {
+  const scoredRows = rows.filter(r => r.outcome !== 'unknown')
+  const scored = scoredRows.length
+  return {
+    rows,
+    scored,
+    unknown: rows.length - scored,
+    p50HitRate: scored === 0 ? null : scoredRows.filter(r => r.p50Hit).length / scored,
+    p85HitRate: scored === 0 ? null : scoredRows.filter(r => r.p85Hit).length / scored,
+    reliability: reliabilityFor(scored),
+  }
 }
 
 export async function runDailyForecastSnapshots(): Promise<{ sprintsChecked: number, snapshotsTaken: number }> {

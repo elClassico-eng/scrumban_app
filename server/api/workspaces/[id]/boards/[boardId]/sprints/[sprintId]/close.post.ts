@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     const { id, boardId, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
     const body = (await readValidatedBody(event, BodySchema.parse)) ?? {}
-    const sprint = await closeSprint({
+    const { sprint, resolution } = await closeSprint({
       workspaceId: id,
       sprintId,
       actorId: user.id,
@@ -53,6 +53,7 @@ export default defineEventHandler(async (event) => {
         sprintId,
         trigger: 'sprint_close',
         actorRole: workspace.role,
+        resolution,
       })
     } catch (err) {
       console.error('forecast snapshot on sprint close failed', err)

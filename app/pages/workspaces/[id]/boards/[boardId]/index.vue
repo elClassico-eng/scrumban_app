@@ -43,6 +43,13 @@ type SwimlaneMode = 'none' | 'assignee' | 'service_class' | 'epic'
 type ClassFilter = 'all' | 'expedite' | 'blocker'
 
 const dailyOpen = ref(false)
+watch(() => route.query.daily, (v) => {
+  if (v === '1') {
+    dailyOpen.value = true
+    const { daily: _drop, ...rest } = route.query
+    router.replace({ path: route.path, query: rest })
+  }
+}, { immediate: true })
 const swimlane = ref<SwimlaneMode>('none')
 const query = ref('')
 const selectedAssignees = ref<Set<string>>(new Set())

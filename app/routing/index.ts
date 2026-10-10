@@ -44,6 +44,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sle/recompute`,
   boardReplenishment: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/replenishment`,
+  boardPulse: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/pulse`,
   boardDaily: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/daily`,
   boardSprintActivity: (wsId: string, boardId: string) =>
@@ -134,6 +136,12 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/retro/${noteId}/convert`,
   forecastAccuracy: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/forecast-accuracy`,
+  forecastJournal: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/forecast-journal`,
+  forecastJournalExport: (wsId: string, boardId: string, format: 'csv' | 'json') =>
+    `${boardBase(wsId, boardId)}/forecast-journal/export?format=${format}`,
+  forecastCalibrationExport: (wsId: string, boardId: string, format: 'csv' | 'json') =>
+    `${boardBase(wsId, boardId)}/forecast-calibration/export?format=${format}`,
   sprintTasks: (wsId: string, boardId: string, sprintId: string) =>
     `${boardBase(wsId, boardId)}/sprints/${sprintId}/tasks`,
   sprintTask: (wsId: string, boardId: string, sprintId: string, taskId: string) =>
@@ -151,8 +159,19 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/analytics/throughput`,
   analyticsWipRecommendations: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/analytics/wip-recommendations`,
+  analyticsFlowEfficiency: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/analytics/flow-efficiency`,
 
   boardStream: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/stream`,
+
+  automationRules: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/automations/rules`,
+  automationRule: (wsId: string, boardId: string, ruleId: string) =>
+    `${boardBase(wsId, boardId)}/automations/rules/${ruleId}`,
+  automationFirings: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/automations/firings`,
+  automationRun: (wsId: string, boardId: string) =>
+    `${boardBase(wsId, boardId)}/automations/run`,
 
   workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
 
@@ -207,6 +226,10 @@ export const pageRoutes = {
     `/workspaces/${wsId}/boards/${boardId}/analytics`,
   boardSprints: (wsId: string, boardId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/sprints`,
+  boardAutomations: (wsId: string, boardId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/automations`,
+  boardForecastJournal: (wsId: string, boardId: string) =>
+    `/workspaces/${wsId}/boards/${boardId}/forecast-journal`,
   sprintSimulator: (wsId: string, boardId: string, sprintId: string) =>
     `/workspaces/${wsId}/boards/${boardId}/simulator/${sprintId}`,
   sprintReportPage: (wsId: string, boardId: string, sprintId: string) =>

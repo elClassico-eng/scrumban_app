@@ -1,10 +1,12 @@
 <script setup lang="ts">
 type Notif = {
   id: string
-  iconType: 'at' | 'move' | 'check' | 'alert' | 'refresh' | 'trend'
+  icon: string
   color: string
-  who: string
-  txt: string
+  title: string
+  why: string
+  cta: string
+  hasTarget: boolean
   t: string
   unread: boolean
 }
@@ -16,20 +18,6 @@ defineProps<{
 defineEmits<{
   read: [e: Event, id: string]
 }>()
-
-const ICON_MAP: Record<string, string> = {
-  move: 'i-lucide-move',
-  at: 'i-lucide-at-sign',
-  build: 'i-lucide-hammer',
-  check: 'i-lucide-check',
-  alert: 'i-lucide-alert-triangle',
-  refresh: 'i-lucide-refresh-cw',
-  trend: 'i-lucide-trending-down',
-}
-
-function resolveIcon(iconType: string): string {
-  return ICON_MAP[iconType] ?? 'i-lucide-circle'
-}
 </script>
 
 <template>
@@ -53,11 +41,15 @@ function resolveIcon(iconType: string): string {
           class="w-[30px] h-[30px] rounded-lg grid place-items-center flex-shrink-0 text-white"
           :style="{ background: n.color }"
         >
-          <UIcon :name="resolveIcon(n.iconType)" class="w-[14px] h-[14px]" />
+          <UIcon :name="n.icon" class="w-[14px] h-[14px]" />
         </span>
-        <div class="text-[12.5px] leading-[1.4] text-[var(--island-ink-2)] min-w-0">
-          <b class="text-[var(--island-ink)] font-semibold">{{ n.who }}</b> {{ n.txt }}
-          <div class="text-[11px] text-[var(--island-ink-3)] mt-[1px]">{{ n.t }}</div>
+        <div class="text-[12.5px] leading-[1.4] text-[var(--island-ink-2)] min-w-0 flex-1">
+          <b class="block text-[var(--island-ink)] font-semibold">{{ n.title }}</b>
+          <span v-if="n.why" class="block">{{ n.why }}</span>
+          <div class="flex items-center gap-2 mt-[3px] text-[11px] text-[var(--island-ink-3)]">
+            <span>{{ n.t }}</span>
+            <span v-if="n.hasTarget" class="font-semibold text-[var(--island-orange-2)]">{{ n.cta }} →</span>
+          </div>
         </div>
         <span
           v-if="n.unread"

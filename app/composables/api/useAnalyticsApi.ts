@@ -8,6 +8,7 @@ import type {
   MonteCarloReport,
   MonteCarloQuery,
   WipRecommendationsReport,
+  FlowEfficiencyReport,
 } from '#shared/types/analytics'
 import type { TimeReportResponse } from '#shared/types/time-entry'
 
@@ -90,6 +91,13 @@ export function useAnalyticsApi(
     })
   }
 
+  const flowEfficiency = useQuery({
+    queryKey: computed(() => ['analytics', 'flow-efficiency', unref(workspaceId), unref(boardId), unref(rangeDays)]),
+    queryFn: () => $fetch<FlowEfficiencyReport>(`${apiRoutes.analyticsFlowEfficiency(unref(workspaceId), unref(boardId))}?${rangeQs()}`),
+    enabled,
+    staleTime: 60_000,
+  })
+
   const timeReport = useQuery({
     queryKey: computed(() => ['analytics', 'time-report', unref(workspaceId), unref(boardId)]),
     queryFn: () => $fetch<TimeReportResponse>(apiRoutes.boardTimeReport(unref(workspaceId), unref(boardId))),
@@ -97,5 +105,5 @@ export function useAnalyticsApi(
     staleTime: 60_000,
   })
 
-  return { cfd, cycleTime, throughput, wipRecommendations, monteCarlo, timeReport }
+  return { cfd, cycleTime, throughput, wipRecommendations, monteCarlo, timeReport, flowEfficiency }
 }

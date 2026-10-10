@@ -8,6 +8,7 @@ export interface BoardColumn {
   position: number
   wipLimit: number | null
   columnRole: ColumnRole
+  isQueue: boolean
   createdAt: string
 }
 
@@ -29,6 +30,7 @@ export interface UpdateColumnInput {
   name?: string
   columnRole?: ColumnRole
   wipLimit?: number | null
+  isQueue?: boolean
 }
 
 export interface ReorderColumnsInput {

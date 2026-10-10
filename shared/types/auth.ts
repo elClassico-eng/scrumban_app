@@ -1,3 +1,5 @@
+import type { ControlCenterPrefs } from './control-center'
+
 declare module '#auth-utils' {
   interface User {
     id: string
@@ -51,6 +53,7 @@ export interface UserProfile {
   bio: string | null
   dismissedHints: string[]
   notificationPrefs: Record<string, boolean>
+  controlCenterPrefs: ControlCenterPrefs
   changelogSeenAt: string | null
   emailVerifiedAt: string | null
   createdAt: string
@@ -63,6 +66,7 @@ export interface UserProfileResponse {
 
 export interface UpdateUserProfileInput {
   notificationPrefs?: Record<string, boolean>
+  controlCenterPrefs?: ControlCenterPrefs
   dismissedHints?: string[]
   firstName?: string | null
   lastName?: string | null

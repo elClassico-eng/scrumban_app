@@ -97,3 +97,30 @@ export type WipRecommendationsReport =
       sampleSize: number
       requiredSamples: number
     }
+export type FlowEfficiencyColumn = {
+  columnId: string
+  name: string
+  columnRole: string
+  isQueue: boolean
+  waitHours: number
+  share: number
+}
+
+export type FlowEfficiencyReport = { from: string; to: string } & (
+  | {
+      ok: true
+      sampleSize: number
+      efficiency: number
+      totalHours: number
+      activeHours: number
+      queueHours: number
+      blockedHours: number
+      columns: FlowEfficiencyColumn[]
+    }
+  | {
+      ok: false
+      reason: 'insufficient_data'
+      sampleSize: number
+      requiredSamples: number
+    }
+)

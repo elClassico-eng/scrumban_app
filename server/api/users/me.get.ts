@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
         bio: user.bio,
         dismissedHints: user.dismissedHints ?? [],
         notificationPrefs: user.notificationPrefs ?? {},
+        controlCenterPrefs: user.controlCenterPrefs ?? {},
         changelogSeenAt: user.changelogSeenAt ? user.changelogSeenAt.toISOString() : null,
         emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
         createdAt: user.createdAt,

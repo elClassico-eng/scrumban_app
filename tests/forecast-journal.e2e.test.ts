@@ -3,6 +3,7 @@ import { setup } from '@nuxt/test-utils/e2e'
 import { closeTestSql, getTestSql, resetDb } from './helpers/db'
 import { CookieJar, fetchWithJar } from './helpers/http'
 import { TEST_URL } from './setup.global'
+import type { ForecastCalibrationReport } from '../shared/types/forecast'
 
 process.env.DATABASE_URL = TEST_URL
 await setup({ dev: true })
@@ -204,10 +205,46 @@ describe('forecast snapshots anchors', () => {
 
     const rows = await snapshotRows(sprintId)
     expect(rows.map(r => r.trigger)).toEqual(['sprint_start', 'sprint_close'])
-    const payload = rows[1]!.payload as { resolution?: { totalCount: number, doneCount: number } }
-    expect(payload.resolution).toBeDefined()
-    expect(payload.resolution!.totalCount).toBe(2)
-    expect(payload.resolution!.doneCount).toBe(1)
+    const payload = rows[1]!.payload as { resolution?: Record<string, unknown> }
+    expect(payload.resolution).toMatchObject({ totalCount: 2, doneCount: 1, carriedCount: 1, lastDoneAt: null })
+  })
+
+  it('close snapshot records lastDoneAt when every task is done', async () => {
+    const owner = await registerUser('owner3b@example.com')
+    const wsId = await createWorkspace(owner, 'acme3b')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const t2 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-2')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1, t2])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+    await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
+    await closeTask(owner, wsId, ctx.boardId, t2, ctx.columns.done)
+    const res = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, { method: 'POST' })
+    expect(res.status).toBe(200)
+    const rows = await snapshotRows(sprintId)
+    const payload = rows[1]!.payload as { resolution?: { doneCount: number, carriedCount: number, lastDoneAt: string | null } }
+    expect(payload.resolution).toMatchObject({ totalCount: 2, doneCount: 2, carriedCount: 0 })
+    expect(typeof payload.resolution!.lastDoneAt).toBe('string')
+  })
+
+  it('close snapshot counts tasks moved to backlog', async () => {
+    const owner = await registerUser('owner3c@example.com')
+    const wsId = await createWorkspace(owner, 'acme3c')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const t2 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-2')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1, t2])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+    await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, {
+      method: 'POST',
+      body: { carryOver: [{ taskId: t2, decision: 'backlog' }] },
+    })
+    const rows = await snapshotRows(sprintId)
+    const payload = rows[1]!.payload as { resolution?: Record<string, unknown> }
+    expect(payload.resolution).toMatchObject({ totalCount: 2, doneCount: 1, carriedCount: 1, lastDoneAt: null })
   })
 })
 
@@ -241,15 +278,41 @@ describe('forecast journal endpoints', () => {
     await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
     await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, { method: 'POST' })
 
-    const res = await fetchWithJar<{ report: { total: number, p85HitCount: number, rows: { sprintId: string, actualDays: number, p85Hit: boolean }[] } }>(
+    const res = await fetchWithJar<{ report: ForecastCalibrationReport }>(
       owner.jar,
       `/api/workspaces/${wsId}/boards/${ctx.boardId}/analytics/forecast-accuracy`,
     )
     expect(res.status).toBe(200)
-    expect(res.body.report.total).toBe(1)
-    expect(res.body.report.rows[0]!.sprintId).toBe(sprintId)
-    expect(res.body.report.rows[0]!.p85Hit).toBe(true)
-    expect(res.body.report.p85HitCount).toBe(1)
+    expect(res.body.report.scored).toBe(1)
+    expect(res.body.report.unknown).toBe(0)
+    expect(res.body.report.reliability).toBe('insufficient')
+    expect(res.body.report.p85HitRate).toBe(1)
+    expect(res.body.report.rows[0]).toMatchObject({ sprintId, outcome: 'hit', p85Hit: true, doneCount: 1, totalCount: 1, carriedCount: 0 })
+    expect(typeof res.body.report.rows[0]!.actualDays).toBe('number')
+  })
+
+  it('carried task makes the sprint a miss', async () => {
+    const owner = await registerUser('owner5b@example.com')
+    const wsId = await createWorkspace(owner, 'acme5b')
+    const ctx = await createBoardWithColumns(owner, wsId)
+    await seedHistory(owner, wsId, ctx, 5)
+    const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
+    const t2 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-2')
+    const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1, t2])
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
+    await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, {
+      method: 'POST',
+      body: { carryOver: [{ taskId: t2, decision: 'backlog' }] },
+    })
+
+    const res = await fetchWithJar<{ report: ForecastCalibrationReport }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${ctx.boardId}/analytics/forecast-accuracy`,
+    )
+    expect(res.body.report.scored).toBe(1)
+    expect(res.body.report.p85HitRate).toBe(0)
+    expect(res.body.report.rows[0]).toMatchObject({ outcome: 'carryover', actualDays: null, p50Hit: false, p85Hit: false, carriedCount: 1, totalCount: 2, doneCount: 1 })
   })
 
   it('sprint closed without start anchor is excluded from accuracy', async () => {
@@ -259,14 +322,20 @@ describe('forecast journal endpoints', () => {
     const t1 = await createTask(owner, wsId, ctx.boardId, ctx.columns.backlog, 'task-1')
     const sprintId = await createSprintWithTasks(owner, wsId, ctx.boardId, [t1])
     await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/start`, { method: 'POST' })
-    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, { method: 'POST' })
+    await closeTask(owner, wsId, ctx.boardId, t1, ctx.columns.done)
+    const closed = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${ctx.boardId}/sprints/${sprintId}/close`, { method: 'POST' })
+    expect(closed.status).toBe(200)
 
-    const res = await fetchWithJar<{ report: { total: number } }>(
+    const res = await fetchWithJar<{ report: ForecastCalibrationReport }>(
       owner.jar,
       `/api/workspaces/${wsId}/boards/${ctx.boardId}/analytics/forecast-accuracy`,
     )
     expect(res.status).toBe(200)
-    expect(res.body.report.total).toBe(0)
+    expect(res.body.report.scored).toBe(0)
+    expect(res.body.report.unknown).toBe(1)
+    expect(res.body.report.rows[0]!.outcome).toBe('unknown')
+    expect(res.body.report.rows[0]!.p85Days).toBeNull()
+    expect(res.body.report.rows[0]!.totalCount).toBeNull()
   })
 })
 

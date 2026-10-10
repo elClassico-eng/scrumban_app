@@ -15,6 +15,7 @@ export interface TaskComment {
   mentionedUserIds: string[]
   editedAt: string | null
   createdAt: string
+  automationRuleId: string | null
 }
 
 export interface TaskCommentListResponse {

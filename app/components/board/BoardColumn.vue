@@ -100,12 +100,14 @@ const settingsOpen = ref(false)
 const settingsDraft = reactive({
   wipLimit: null as number | null,
   columnRole: 'in_progress' as typeof props.column.columnRole,
+  isQueue: false,
 })
 
 function openSettings() {
   if (!props.canManage) return
   settingsDraft.wipLimit = props.column.wipLimit
   settingsDraft.columnRole = props.column.columnRole
+  settingsDraft.isQueue = props.column.isQueue
   settingsOpen.value = true
 }
 
@@ -119,6 +121,7 @@ async function onSaveSettings() {
       columnId: props.column.id,
       wipLimit,
       columnRole: settingsDraft.columnRole,
+      isQueue: settingsDraft.isQueue,
     })
     settingsOpen.value = false
   }
@@ -336,6 +339,13 @@ const wipBarState = computed(() => {
               placeholder="Без лимита"
               @update:model-value="(v: string | number) => (settingsDraft.wipLimit = v === '' || v == null ? null : Number(v))"
             />
+          </UFormField>
+          <UFormField
+            label="Очередь"
+            name="isQueue"
+            description="Задачи здесь ждут, а не делаются. Время в очереди идёт в ожидание при расчёте эффективности потока."
+          >
+            <USwitch v-model="settingsDraft.isQueue" />
           </UFormField>
           <div class="flex justify-end gap-2 pt-2">
             <UButton variant="ghost" color="neutral" @click="settingsOpen = false">

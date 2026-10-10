@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { computeBoardForecastAccuracy } from '../../../../../../services/forecast-snapshots.service'
+import { computeBoardForecastCalibration } from '../../../../../../services/forecast-snapshots.service'
 import { getWorkspaceForUserOrThrow } from '../../../../../../services/workspaces.service'
 import { requireAuth } from '../../../../../../utils/auth'
 import { toHttpError } from '../../../../../../utils/errors'
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
     const { id, boardId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
-    const report = await computeBoardForecastAccuracy({
+    const report = await computeBoardForecastCalibration({
       workspaceId: id,
       boardId,
       actorRole: workspace.role,
