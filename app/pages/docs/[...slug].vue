@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import RoadmapBoard from '~/components/content/RoadmapBoard.vue'
+
 definePageMeta({ layout: 'docs' })
+
+const contentComponents = { 'roadmap-board': RoadmapBoard, RoadmapBoard }
 
 const route = useRoute()
 
@@ -18,5 +22,5 @@ useSeoMeta({
 </script>
 
 <template>
-  <ContentRenderer v-if="page" :value="page" />
+  <ContentRenderer v-if="page" :value="page" :components="contentComponents" />
 </template>
