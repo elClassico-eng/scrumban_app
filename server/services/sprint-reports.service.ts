@@ -38,7 +38,23 @@ export async function getSprintReport(input: {
   const [row] = await withTenant(input.workspaceId, tx =>
     tx.select().from(sprintReports).where(eq(sprintReports.sprintId, input.sprintId)))
   if (!row) throw new NotFoundError('Отчёт по спринту ещё не сформирован')
-  return row
+  return { ...row, payload: withOutcome(row.payload as SprintReportPayload) }
+}
+
+function withOutcome(payload: SprintReportPayload): SprintReportPayload {
+  if (payload.forecastVsFact?.outcome) return payload
+  const fv = payload.forecastVsFact ?? { start: null, close: null }
+  return {
+    ...payload,
+    forecastVsFact: {
+      ...fv,
+      outcome: resolveOutcome({
+        startedAt: payload.sprint.startedAt ? new Date(payload.sprint.startedAt) : null,
+        start: fv.start?.payload ?? null,
+        close: fv.close?.payload ?? null,
+      }),
+    },
+  }
 }
 
 export async function generateSprintReport(input: {
