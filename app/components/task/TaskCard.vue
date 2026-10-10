@@ -117,21 +117,15 @@ const isDone = computed(() => props.task.closedAt != null)
         />
         <span class="truncate">{{ parentTask.id.slice(0, 6).toUpperCase() }}</span>
       </span>
+      <span
+        v-if="sprintChip"
+        class="inline-flex items-center gap-1 min-w-0 text-dimmed text-[10.5px] font-medium"
+        :title="`В спринте: ${sprintChip.name}`"
+      >
+        <UIcon name="i-lucide-iteration-ccw" class="size-3 shrink-0" />
+        <span class="truncate">{{ sprintChip.name }}</span>
+      </span>
       <div class="flex-1" />
-      <span
-        v-if="task.serviceClass === 'expedite'"
-        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-300 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
-      >
-        <UIcon name="i-lucide-zap" class="size-3" />
-        Срочная
-      </span>
-      <span
-        v-if="task.serviceClass === 'fixed_date'"
-        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
-      >
-        <UIcon name="i-lucide-calendar-clock" class="size-3" />
-        Дедлайн
-      </span>
       <span
         v-if="task.isEpic"
         class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-300 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
@@ -151,10 +145,15 @@ const isDone = computed(() => props.task.closedAt != null)
     </div>
 
     <p
-      class="text-[13px] font-medium leading-snug break-words line-clamp-3 mb-1.5"
+      class="text-[13.5px] font-medium leading-snug break-words line-clamp-3 mb-1.5"
       :class="isDone ? 'text-muted line-through' : 'text-default'"
     >
-      {{ task.title }}
+      <UIcon
+        v-if="task.serviceClass === 'expedite'"
+        name="i-lucide-zap"
+        class="size-3.5 text-accent-500 inline-block align-[-2px] mr-0.5"
+        title="Срочная"
+      />{{ task.title }}
     </p>
 
     <div
@@ -163,24 +162,6 @@ const isDone = computed(() => props.task.closedAt != null)
     >
       <UIcon name="i-lucide-alert-triangle" class="size-3.5 shrink-0 mt-px" />
       <span class="line-clamp-2">{{ task.blockedReason }}</span>
-    </div>
-
-    <div class="mb-1.5">
-      <span
-        v-if="sprintChip"
-        class="inline-flex items-center gap-1 max-w-full h-[18px] px-1.5 rounded bg-elevated text-muted text-[10.5px] font-medium"
-        :title="`В спринте: ${sprintChip.name}`"
-      >
-        <UIcon name="i-lucide-iteration-ccw" class="size-3 shrink-0" />
-        <span class="truncate">{{ sprintChip.name }}</span>
-      </span>
-      <span
-        v-else
-        class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded border border-dashed border-default text-dimmed text-[10.5px] font-medium"
-      >
-        <UIcon name="i-lucide-iteration-ccw" class="size-3 shrink-0" />
-        Не в спринте
-      </span>
     </div>
 
     <div class="flex items-center gap-2 min-h-[22px]">
@@ -207,9 +188,11 @@ const isDone = computed(() => props.task.closedAt != null)
       </span>
       <span
         v-else-if="dueState"
-        class="inline-flex items-center gap-1 text-[11px] text-muted tabular-nums"
+        class="inline-flex items-center gap-1 text-[11px] tabular-nums"
+        :class="task.serviceClass === 'fixed_date' ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted'"
+        :title="task.serviceClass === 'fixed_date' ? 'Фиксированный срок' : undefined"
       >
-        <UIcon name="i-lucide-calendar" class="size-3 text-dimmed" />
+        <UIcon name="i-lucide-calendar" class="size-3" :class="task.serviceClass === 'fixed_date' ? '' : 'text-dimmed'" />
         {{ dueState.label }}
       </span>
 

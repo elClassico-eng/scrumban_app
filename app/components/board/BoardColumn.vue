@@ -239,7 +239,7 @@ const wipBarState = computed(() => {
         <span
           :class="[
             'text-[12px] font-mono tabular-nums shrink-0 whitespace-nowrap',
-            wipBarState?.tone === 'over' ? 'text-red-600' : 'text-muted',
+            wipBarState?.tone === 'over' ? 'text-red-600 font-semibold' : wipBarState?.tone === 'warn' ? 'text-accent-600 font-semibold' : 'text-muted',
           ]"
           :title="wipBarState ? `WIP-лимит ${wipBarState.limit}` : 'Без WIP-лимита'"
         >
