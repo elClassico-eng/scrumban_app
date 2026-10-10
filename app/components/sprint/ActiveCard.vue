@@ -182,9 +182,7 @@ const sprintGoals = computed(() => {
           </div>
         </div>
 
-        <div class="min-w-0 space-y-5">
-          <slot name="forecast" />
-
+        <div class="min-w-0">
           <div>
             <div class="flex items-center gap-2 mb-2">
               <h3 class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Burndown</h3>
@@ -207,6 +205,10 @@ const sprintGoals = computed(() => {
             <p v-else class="m-0 text-[12px] text-muted">Появится после первого закрытия задачи</p>
           </div>
         </div>
+      </div>
+
+      <div v-if="$slots.forecast" class="border-t border-default pt-5">
+        <slot name="forecast" />
       </div>
     </div>
   </UiPanel>
