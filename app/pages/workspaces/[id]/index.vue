@@ -34,9 +34,21 @@ useHead({
 const loading = computed(() => tasksList.isLoading.value || boardsList.isLoading.value)
 const isEmpty = computed(() => !loading.value && boards.value.length === 0 && tasks.value.length === 0)
 
-const myRole = computed(() =>
-  members.value.find(m => m.userId === authStore.user?.id)?.role ?? null,
-)
+const { open: myOpen, attention: myAttention } = useMyTasks(tasks, () => authStore.user?.id ?? null)
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  const word = h < 6 ? 'Доброй ночи' : h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер'
+  const first = authStore.user?.firstName?.trim()
+  const parts = [`${word}${first ? `, ${first}` : ''}`]
+  if (authStore.user) {
+    parts.push(`${myOpen.value.length} ${plural(myOpen.value.length, ['открытая', 'открытых', 'открытых'])}`)
+    const blocked = myAttention.value.filter(i => i.kind === 'blocked').length
+    const overdue = myAttention.value.filter(i => i.kind === 'overdue').length
+    if (blocked) parts.push(`${blocked} в блоке`)
+    if (overdue) parts.push(`${overdue} ${plural(overdue, ['просрочена', 'просрочено', 'просрочено'])}`)
+  }
+  return parts.join(' · ')
+})
 
 const boardItems = computed(() => [
   { label: 'Все доски', value: ALL_BOARDS },
@@ -101,38 +113,25 @@ function actorLabel(e: ActivityEvent): string {
 
 <template>
   <div class="space-y-4 py-2">
-    <header class="flex flex-wrap items-end justify-between gap-3 pt-2">
-      <div>
-        <h1 class="text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Обзор</h1>
-        <p class="text-sm text-muted">{{ workspace?.name ?? 'Воркспейс' }}</p>
-      </div>
-      <USelect v-model="selectedBoard" :items="boardItems" class="w-full sm:w-56" />
-    </header>
+    <UiPageHeader title="Обзор" :subtitle="greeting" class="pt-2 mb-0">
+      <template #actions>
+        <USelect v-model="selectedBoard" :items="boardItems" class="w-full sm:w-56" />
+      </template>
+    </UiPageHeader>
 
     <WorkspaceSprintCard
-      class="lg:h-[var(--card-s)]"
       :ws-id="wsId"
       :board-id="selectedBoard === ALL_BOARDS ? undefined : selectedBoard"
     />
 
-    <div class="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-12">
-      <WorkspaceUserCard
-        class="lg:col-span-4 lg:h-[var(--card-m)]"
-        :user="authStore.user"
-        :role="myRole"
-        :tasks="tasks"
-      />
-      <WorkspaceTodayPanel
-        class="lg:col-span-8 lg:h-[var(--card-m)]"
-        :ws-id="wsId"
-        :user-id="authStore.user?.id ?? null"
-        :tasks="tasks"
-        :boards="boards"
-      />
-    </div>
+    <WorkspaceTodayPanel
+      :ws-id="wsId"
+      :user-id="authStore.user?.id ?? null"
+      :tasks="tasks"
+      :boards="boards"
+    />
 
     <WorkspaceActivityHeatmap
-      class="lg:h-[var(--card-m)]"
       :ws-id="wsId"
       :user-id="authStore.user?.id ?? null"
       :board-id="selectedBoard === ALL_BOARDS ? undefined : selectedBoard"
@@ -143,15 +142,16 @@ function actorLabel(e: ActivityEvent): string {
       <UIcon name="i-lucide-loader" class="size-6 animate-spin" />
     </div>
 
-    <div
+    <UiEmptyState
       v-else-if="isEmpty"
-      class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-default py-12 text-center"
+      icon="i-lucide-layout-dashboard"
+      title="Здесь пока пусто"
+      text="Создайте первую доску, чтобы видеть аналитику потока"
     >
-      <img src="/illustrations/programming.svg" alt="" class="w-48 select-none">
-      <p class="font-medium text-default">Здесь пока пусто</p>
-      <p class="text-sm text-muted">Создайте первую доску, чтобы видеть аналитику потока</p>
-      <UButton :to="pageRoutes.boards(wsId)" icon="i-lucide-plus">К доскам</UButton>
-    </div>
+      <template #actions>
+        <UButton :to="pageRoutes.boards(wsId)" icon="i-lucide-plus">К доскам</UButton>
+      </template>
+    </UiEmptyState>
 
     <template v-else>
       <div class="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-12">
@@ -163,16 +163,15 @@ function actorLabel(e: ActivityEvent): string {
           :members="members"
         />
 
-        <section class="surface-soft flex min-w-0 flex-col rounded-2xl p-5 lg:col-span-4 lg:h-[var(--card-m)]">
-          <div class="mb-3 flex items-center justify-between">
-            <h2 class="font-semibold text-default">Активность</h2>
+        <UiPanel title="Активность" class="lg:col-span-4 lg:h-[var(--card-m)]">
+          <template #actions>
             <NuxtLink
               :to="pageRoutes.workspaceActivity(wsId)"
               class="text-xs text-muted transition-colors hover:text-accent-600"
             >
               Вся →
             </NuxtLink>
-          </div>
+          </template>
           <div v-if="events.length" class="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
             <div v-for="e in events" :key="e.id" class="flex items-start gap-2.5">
               <UIcon name="i-lucide-activity" class="mt-0.5 size-4 shrink-0 text-muted" />
@@ -186,25 +185,20 @@ function actorLabel(e: ActivityEvent): string {
             </div>
           </div>
           <p v-else class="text-sm text-muted">Событий пока нет</p>
-        </section>
+        </UiPanel>
       </div>
 
       <div class="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-12">
-        <section class="surface-soft flex min-w-0 flex-col rounded-2xl p-5 lg:col-span-8 lg:h-[var(--card-m)]">
-          <div class="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 class="font-semibold text-default">Динамика потока</h2>
-              <p class="text-xs text-muted">Закрыто задач по неделям</p>
-            </div>
-            <span class="text-xs text-muted">
-              всего <span class="font-medium text-default">{{ closedTotal }}</span> за 8 нед.
-            </span>
-          </div>
+        <UiPanel
+          title="Динамика потока"
+          hint="Закрыто задач по неделям за последние 8 недель."
+          :caption="`всего ${closedTotal} за 8 нед.`"
+          class="lg:col-span-8 lg:h-[var(--card-m)]"
+        >
           <WorkspaceFlowChart :weeks="throughput" />
-        </section>
+        </UiPanel>
 
-        <section class="surface-soft flex min-w-0 flex-col rounded-2xl p-5 lg:col-span-4 lg:h-[var(--card-m)]">
-          <h2 class="mb-3 font-semibold text-default">Разбивка задач</h2>
+        <UiPanel title="Разбивка задач" class="lg:col-span-4 lg:h-[var(--card-m)]">
           <WorkspaceTaskDonut :segments="donutSegments" :total="scopedTasks.length" />
           <div class="mt-4 space-y-1.5">
             <div
@@ -219,7 +213,7 @@ function actorLabel(e: ActivityEvent): string {
               <span class="font-medium text-default">{{ s.value }}</span>
             </div>
           </div>
-        </section>
+        </UiPanel>
       </div>
     </template>
   </div>
