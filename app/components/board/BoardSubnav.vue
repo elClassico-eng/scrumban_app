@@ -128,6 +128,13 @@ const automationsPath = computed(() => pageRoutes.boardAutomations(props.workspa
 const isAutomationsActive = computed(() => route.path === automationsPath.value)
 const journalPath = computed(() => pageRoutes.boardForecastJournal(props.workspaceId, props.boardId))
 const isJournalActive = computed(() => route.path === journalPath.value)
+
+const sectionLinks = computed(() => [
+  { key: 'sprints', label: 'Спринты', icon: 'i-lucide-flag', to: sprintsPath.value, active: isSprintsActive.value },
+  { key: 'analytics', label: 'Аналитика', icon: 'i-lucide-chart-no-axes-combined', to: analyticsPath.value, active: isAnalyticsActive.value },
+  { key: 'automations', label: 'Автоматизации', icon: 'i-lucide-zap', to: automationsPath.value, active: isAutomationsActive.value },
+  { key: 'journal', label: 'Журнал прогнозов', icon: 'i-lucide-history', to: journalPath.value, active: isJournalActive.value },
+])
 const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 </script>
 
@@ -194,32 +201,14 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
           </UDropdownMenu>
         </div>
         <NuxtLink
-          :to="sprintsPath"
-          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-          :class="isSprintsActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
+          v-for="p in sectionLinks"
+          :key="p.key"
+          :to="p.to"
+          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5"
+          :class="p.active ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
         >
-          Спринты
-        </NuxtLink>
-        <NuxtLink
-          :to="analyticsPath"
-          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-          :class="isAnalyticsActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
-        >
-          Аналитика
-        </NuxtLink>
-        <NuxtLink
-          :to="automationsPath"
-          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-          :class="isAutomationsActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
-        >
-          Автоматизации
-        </NuxtLink>
-        <NuxtLink
-          :to="journalPath"
-          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-          :class="isJournalActive ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
-        >
-          Журнал прогнозов
+          <UIcon :name="p.icon" class="size-4 shrink-0" />
+          {{ p.label }}
         </NuxtLink>
 
         <UButton
