@@ -27,7 +27,7 @@ withDefaults(defineProps<{
         <slot name="actions" />
       </div>
     </div>
-    <div class="min-w-0 flex-1" :class="padded ? 'px-5 pb-5' : ''">
+    <div class="min-w-0 flex-1 flex flex-col min-h-0" :class="padded ? 'px-5 pb-5' : ''">
       <slot />
     </div>
     <div v-if="$slots.footer" class="px-5 pb-4">

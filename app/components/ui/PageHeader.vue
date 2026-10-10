@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-  <header class="mb-5 space-y-3">
+  <header class="space-y-3">
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div class="min-w-0">
         <NuxtLink

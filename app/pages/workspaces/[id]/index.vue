@@ -113,7 +113,7 @@ function actorLabel(e: ActivityEvent): string {
 
 <template>
   <div class="space-y-4 py-2">
-    <UiPageHeader title="Обзор" :subtitle="greeting" class="pt-2 mb-0">
+    <UiPageHeader title="Обзор" :subtitle="greeting" class="pt-2">
       <template #actions>
         <USelect v-model="selectedBoard" :items="boardItems" class="w-full sm:w-56" />
       </template>

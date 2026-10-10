@@ -65,7 +65,7 @@ const doneValue = computed(() => useSp.value ? doneSp.value : doneCount.value)
 const addedValue = computed(() => useSp.value ? addedSpRaw.value : addedCount.value)
 const totalValue = computed(() => useSp.value ? totalSp.value : totalCount.value)
 const capacity = computed(() => {
-  if (useSp.value) return props.sprint.capacity ?? committedSpRaw.value ?? 1
+  if (useSp.value) return props.sprint.capacity || committedSpRaw.value || 1
   return committedCount.value || 1
 })
 
@@ -82,6 +82,7 @@ const progressPct = computed(() =>
 )
 
 const burndownPoints = computed(() => props.burndown?.points ?? [])
+const hasBurndown = computed(() => burndownPoints.value.some(pt => pt.actual != null && pt.actual < pt.ideal))
 const isOnTrack = computed(() => {
   const point = burndownPoints.value[daysGone.value]
   if (!point || point.actual == null) return true
@@ -188,14 +189,14 @@ const sprintGoals = computed(() => {
               <h3 class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Burndown</h3>
               <div class="flex-1" />
               <span
-                v-if="burndownPoints.length > 0"
+                v-if="hasBurndown"
                 class="text-[10.5px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded"
                 :class="isOnTrack ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'"
               >
                 {{ isOnTrack ? 'По графику' : 'Отстаём' }}
               </span>
             </div>
-            <template v-if="burndownPoints.length > 0">
+            <template v-if="hasBurndown">
               <SprintBurndown :points="burndownPoints" />
               <div class="flex items-center gap-3 mt-2 text-[11px] text-muted">
                 <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-px bg-accent-500" />Факт</span>

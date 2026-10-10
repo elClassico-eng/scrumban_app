@@ -55,7 +55,6 @@ async function onRecompute() {
       })
     }
     else {
-      
       state.sleDays = res.sleDays
       toast.add({
         title: `SLE: ${(state.sleProbability * 100).toFixed(0)}% задач за ${res.sleDays} дней`,

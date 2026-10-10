@@ -203,6 +203,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
         >
           <NuxtLink
             :to="targetView.to"
+            :title="targetView.label"
             class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-l-md text-sm font-medium transition-colors"
             :class="isViewActive ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
           >

@@ -86,7 +86,7 @@ function onAdd() {
       </span>
 
       <button
-        v-if="canCreate"
+        v-if="canCreate && group.columnId"
         type="button"
         class="size-[26px] rounded-[7px] bg-default text-muted grid place-items-center shrink-0 hover:text-accent-500 transition-colors"
         @click.stop="onAdd"

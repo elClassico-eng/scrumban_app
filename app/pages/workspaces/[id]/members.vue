@@ -121,7 +121,7 @@ async function onRemove(userId: string, email: string) {
 
 <template>
   <div class="space-y-6">
-    <UiPageHeader title="Участники" :count="counts.all" :subtitle="summary" class="mb-0">
+    <UiPageHeader title="Участники" :count="counts.all" :subtitle="summary">
       <template v-if="canManage" #actions>
         <UButton icon="i-lucide-mail-plus" size="md" @click="inviteOpen = true">
           Пригласить

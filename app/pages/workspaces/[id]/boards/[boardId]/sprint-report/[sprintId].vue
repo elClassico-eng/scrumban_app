@@ -165,7 +165,6 @@ async function copyJson() {
       :title="payload ? `Отчёт спринта · ${payload.sprint.name}` : 'Отчёт спринта'"
       icon="i-lucide-file-bar-chart-2"
       :back="{ to: pageRoutes.boardSprints(wsId, bId), label: 'Спринты' }"
-      class="mb-0"
     >
       <template v-if="payload" #subtitle>
         {{ fmtDate(payload.sprint.startedAt) }} – {{ fmtDate(payload.sprint.endedAt) }}
