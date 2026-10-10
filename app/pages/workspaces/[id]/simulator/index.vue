@@ -23,7 +23,7 @@ useHead({ title: 'Симулятор — Такт' })
 
     <div
       v-else-if="boards.length === 0"
-      class="bg-default border border-default rounded-2xl px-6 py-10 text-center space-y-2"
+      class="surface-soft rounded-2xl px-6 py-10 text-center space-y-2"
     >
       <UIcon name="i-lucide-square-kanban" class="size-8 text-dimmed" />
       <p class="text-[13px] text-muted m-0">
