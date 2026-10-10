@@ -121,19 +121,39 @@ const dropdownItems = computed<DropdownMenuItem[]>(() =>
 )
 
 const sprintsPath = computed(() => pageRoutes.boardSprints(props.workspaceId, props.boardId))
-const analyticsPath = computed(() => pageRoutes.boardAnalytics(props.workspaceId, props.boardId))
-const isSprintsActive = computed(() => route.path === sprintsPath.value)
-const isAnalyticsActive = computed(() => route.path === analyticsPath.value)
 const automationsPath = computed(() => pageRoutes.boardAutomations(props.workspaceId, props.boardId))
-const isAutomationsActive = computed(() => route.path === automationsPath.value)
-const journalPath = computed(() => pageRoutes.boardForecastJournal(props.workspaceId, props.boardId))
-const isJournalActive = computed(() => route.path === journalPath.value)
+
+const analyticsViews = computed<ViewEntry[]>(() => {
+  const analytics = pageRoutes.boardAnalytics(props.workspaceId, props.boardId)
+  const journal = pageRoutes.boardForecastJournal(props.workspaceId, props.boardId)
+  return [
+    { key: 'analytics', label: 'Аналитика', icon: 'i-lucide-chart-no-axes-combined', to: analytics, isActive: route.path === analytics },
+    { key: 'journal', label: 'Журнал прогнозов', icon: 'i-lucide-history', to: journal, isActive: route.path === journal },
+  ]
+})
+const activeAnalytics = computed(() => analyticsViews.value.find(v => v.isActive) ?? null)
+const targetAnalytics = computed<ViewEntry>(() => activeAnalytics.value ?? analyticsViews.value[0]!)
+const analyticsItems = computed<DropdownMenuItem[]>(() =>
+  analyticsViews.value.map(v => ({
+    label: v.label,
+    icon: v.icon,
+    to: v.to,
+    ...(v.isActive ? { color: 'primary' as const } : {}),
+  })),
+)
 
 const sectionLinks = computed(() => [
-  { key: 'sprints', label: 'Спринты', icon: 'i-lucide-flag', to: sprintsPath.value, active: isSprintsActive.value },
-  { key: 'analytics', label: 'Аналитика', icon: 'i-lucide-chart-no-axes-combined', to: analyticsPath.value, active: isAnalyticsActive.value },
-  { key: 'automations', label: 'Автоматизации', icon: 'i-lucide-zap', to: automationsPath.value, active: isAutomationsActive.value },
-  { key: 'journal', label: 'Журнал прогнозов', icon: 'i-lucide-history', to: journalPath.value, active: isJournalActive.value },
+  { key: 'sprints', label: 'Спринты', icon: 'i-lucide-flag', to: sprintsPath.value, active: route.path === sprintsPath.value },
+  { key: 'automations', label: 'Автоматизации', icon: 'i-lucide-zap', to: automationsPath.value, active: route.path === automationsPath.value },
+])
+
+const moreItems = computed<DropdownMenuItem[]>(() => [
+  ...(props.canRename
+    ? [
+        { label: 'Настройки доски', icon: 'i-lucide-settings', onSelect: () => { settingsOpen.value = true } },
+        { label: 'Переименовать', icon: 'i-lucide-pencil', onSelect: () => startEdit() },
+      ]
+    : []),
 ])
 const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 </script>
@@ -187,7 +207,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
             :class="isViewActive ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
           >
             <UIcon :name="targetView.icon" class="size-4 shrink-0" />
-            {{ targetView.label }}
+            <span class="hidden xl:inline">{{ targetView.label }}</span>
           </NuxtLink>
           <UDropdownMenu :items="dropdownItems">
             <button
@@ -201,25 +221,61 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
           </UDropdownMenu>
         </div>
         <NuxtLink
-          v-for="p in sectionLinks"
+          v-for="p in sectionLinks.slice(0, 1)"
           :key="p.key"
           :to="p.to"
+          :title="p.label"
           class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5"
           :class="p.active ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
         >
           <UIcon :name="p.icon" class="size-4 shrink-0" />
-          {{ p.label }}
+          <span class="hidden xl:inline">{{ p.label }}</span>
+        </NuxtLink>
+        <div
+          class="inline-flex items-stretch rounded-md"
+          :class="activeAnalytics ? 'bg-primary/10' : ''"
+        >
+          <NuxtLink
+            :to="targetAnalytics.to"
+            :title="targetAnalytics.label"
+            class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-l-md text-sm font-medium transition-colors"
+            :class="activeAnalytics ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
+          >
+            <UIcon :name="targetAnalytics.icon" class="size-4 shrink-0" />
+            <span class="hidden xl:inline">{{ targetAnalytics.label }}</span>
+          </NuxtLink>
+          <UDropdownMenu :items="analyticsItems">
+            <button
+              type="button"
+              class="inline-flex items-center px-1.5 py-1.5 rounded-r-md transition-colors"
+              :class="activeAnalytics ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
+              title="Разделы аналитики"
+            >
+              <UIcon name="i-lucide-chevron-down" class="size-3.5 shrink-0 opacity-60" />
+            </button>
+          </UDropdownMenu>
+        </div>
+        <NuxtLink
+          v-for="p in sectionLinks.slice(1)"
+          :key="p.key"
+          :to="p.to"
+          :title="p.label"
+          class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5"
+          :class="p.active ? 'bg-primary/10 text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
+        >
+          <UIcon :name="p.icon" class="size-4 shrink-0" />
+          <span class="hidden xl:inline">{{ p.label }}</span>
         </NuxtLink>
 
-        <UButton
-          v-if="canRename"
-          icon="i-lucide-settings"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          title="Настройки доски"
-          @click="settingsOpen = true"
-        />
+        <UDropdownMenu v-if="moreItems.length > 0" :items="moreItems" :content="{ align: 'end' }">
+          <UButton
+            icon="i-lucide-ellipsis"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            title="Ещё"
+          />
+        </UDropdownMenu>
       </div>
     </div>
     <BoardSettingsModal
