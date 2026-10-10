@@ -94,7 +94,7 @@ function onAddClick(e: Event) {
 </script>
 
 <template>
-  <div class="bg-default border border-default rounded-2xl p-5 flex flex-col gap-3">
+  <div class="surface-soft rounded-2xl p-5 flex flex-col gap-3">
     <div class="flex items-start gap-3">
       <h3 class="flex-1 text-[16px] font-semibold tracking-tight text-default leading-snug">
         {{ sprint.name }}

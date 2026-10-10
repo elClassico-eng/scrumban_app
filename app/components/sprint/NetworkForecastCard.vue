@@ -52,7 +52,7 @@ function pct(p: number | null | undefined): string {
 </script>
 
 <template>
-  <div class="bg-default border border-default rounded-2xl px-6 py-6 space-y-4">
+  <div class="space-y-3">
     <div class="flex items-center gap-2">
       <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
         <UIcon name="i-lucide-git-branch" class="size-3.5" />
@@ -100,7 +100,7 @@ function pct(p: number | null | undefined): string {
       </div>
 
       <template v-else>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <div class="bg-muted rounded-lg px-3 py-2.5">
             <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Ожидаемо</div>
             <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">

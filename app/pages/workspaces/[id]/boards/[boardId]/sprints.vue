@@ -325,123 +325,72 @@ const isFilteredEmpty = computed(() =>
       :board="board"
     />
 
-    <div class="shrink-0 pt-4 pb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-      <div class="flex items-center gap-3 sm:contents">
-        <h1 class="text-[26px] font-semibold tracking-tight text-default m-0">
-          Спринты
-          <span v-if="sprints.length > 0" class="text-[18px] font-medium text-muted tabular-nums">
-            · {{ sprints.length }}
-          </span>
-        </h1>
-        <UButton
-          v-if="canManage"
-          icon="i-lucide-plus"
-          size="md"
-          class="ml-auto sm:hidden"
-          @click="createOpen = true"
-        >
-          Спринт
-        </UButton>
-      </div>
-
-      <div class="hidden sm:block sm:flex-1" />
-
-      <div class="flex items-center gap-2 sm:contents">
+    <UiPageHeader title="Спринты" :count="sprints.length > 0 ? sprints.length : undefined" class="pt-4 mb-3">
+      <template #actions>
         <UInput
           v-model="query"
           icon="i-lucide-search"
           placeholder="Найти спринт…"
           size="md"
-          class="flex-1 sm:w-56 sm:flex-none"
+          class="w-full sm:w-56"
         />
-
         <UDropdownMenu :items="filterMenu" :ui="{ content: 'w-44' }" class="sm:hidden">
-          <UButton
-            color="neutral"
-            variant="outline"
-            size="md"
-            trailing-icon="i-lucide-chevron-down"
-            class="shrink-0"
-          >
+          <UButton color="neutral" variant="outline" size="md" trailing-icon="i-lucide-chevron-down" class="shrink-0">
             {{ activeFilterLabel }}
           </UButton>
         </UDropdownMenu>
-      </div>
-
-      <div class="hidden sm:inline-flex items-center gap-1 bg-default border border-default rounded-md p-0.5">
-        <button
-          v-for="f in FILTERS"
-          :key="f.key"
-          type="button"
-          class="h-7 px-2.5 rounded text-[12.5px] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
-          :class="filter === f.key
-            ? 'bg-inverted text-inverted'
-            : 'bg-transparent text-muted hover:text-default'"
-          @click="filter = f.key"
-        >
-          <span
-            v-if="f.key === 'active' && counts.active > 0"
-            class="size-1.5 rounded-full bg-accent-500"
-          />
-          {{ f.label }}
-          <span
-            class="text-[10.5px] tabular-nums px-1.5 py-0.5 rounded-full"
-            :class="filter === f.key
-              ? 'bg-white/15 text-white/85'
-              : 'bg-elevated text-muted'"
+        <div class="hidden sm:inline-flex items-center gap-0.5 rounded-lg bg-elevated p-0.5">
+          <button
+            v-for="f in FILTERS"
+            :key="f.key"
+            type="button"
+            class="h-8 px-2.5 rounded-md text-[12.5px] font-medium inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+            :class="filter === f.key ? 'bg-default text-default shadow-sm' : 'text-muted hover:text-default'"
+            @click="filter = f.key"
           >
-            {{ counts[f.key] }}
-          </span>
-        </button>
-      </div>
-
-      <UButton
-        v-if="canManage"
-        icon="i-lucide-plus"
-        size="md"
-        class="hidden sm:flex"
-        @click="createOpen = true"
-      >
-        Создать спринт
-      </UButton>
-    </div>
+            <span v-if="f.key === 'active' && counts.active > 0" class="size-1.5 rounded-full bg-accent-500" />
+            {{ f.label }}
+            <span class="text-[10.5px] tabular-nums text-dimmed">{{ counts[f.key] }}</span>
+          </button>
+        </div>
+        <UButton v-if="canManage" icon="i-lucide-plus" size="md" @click="createOpen = true">
+          Создать спринт
+        </UButton>
+      </template>
+    </UiPageHeader>
 
     <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-4">
       <div v-if="isLoading" class="text-center py-12 text-muted">
         <UIcon name="i-lucide-loader" class="animate-spin size-6" />
       </div>
 
-      <div v-else-if="isEmpty" class="max-w-md mx-auto text-center py-16 space-y-3">
-        <UIcon name="i-lucide-calendar-check-2" class="size-12 text-muted mx-auto" />
-        <p class="font-medium">Спринтов пока нет</p>
-        <p class="text-sm text-muted">
-          {{ canManage ? 'Создай первый, чтобы запустить итерацию команды.' : 'Попроси scrum-мастера создать первый спринт.' }}
-        </p>
-        <UButton v-if="canManage" icon="i-lucide-plus" @click="createOpen = true">
-          Создать спринт
-        </UButton>
-      </div>
-
-      <div
-        v-else
-        class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-x-8 gap-y-6 items-start"
+      <UiEmptyState
+        v-else-if="isEmpty"
+        icon="i-lucide-calendar-check-2"
+        title="Спринтов пока нет"
+        :text="canManage ? 'Создай первый, чтобы запустить итерацию команды.' : 'Попроси scrum-мастера создать первый спринт.'"
       >
-        <div class="min-w-0 space-y-8">
-          <div v-if="isFilteredEmpty" class="text-center py-16 text-muted">
-            <UIcon name="i-lucide-search-x" class="size-10 mx-auto mb-2" />
-            <p class="text-sm">Ничего не нашлось — попробуй сбросить фильтр или поиск.</p>
-          </div>
+        <template v-if="canManage" #actions>
+          <UButton icon="i-lucide-plus" @click="createOpen = true">
+            Создать спринт
+          </UButton>
+        </template>
+      </UiEmptyState>
+
+      <div v-else class="min-w-0 space-y-8">
+          <UiEmptyState
+            v-if="isFilteredEmpty"
+            icon="i-lucide-search-x"
+            title="Ничего не нашлось"
+            text="Попробуй сбросить фильтр или поиск."
+          />
 
           <template v-else>
-            <section v-if="activeSprints.length > 0" class="space-y-3.5">
-              <div class="flex items-center gap-2.5">
-                <span class="relative inline-flex">
-                  <span class="size-2 rounded-full bg-accent-500" />
-                  <span class="absolute inset-0 rounded-full ring-2 ring-accent-500/40 animate-ping" />
-                </span>
-                <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Активный</h2>
-                <span class="flex-1 h-px bg-default" />
-              </div>
+            <section v-if="activeSprints.length > 0" class="space-y-3">
+              <h2 class="m-0 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                <span class="size-1.5 rounded-full bg-accent-500" />
+                Активный
+              </h2>
 
               <SprintActiveCard
                 v-for="s in activeSprints"
@@ -456,23 +405,15 @@ const isFilteredEmpty = computed(() =>
                 @add-task="addTaskPanel = { sprint: s }"
                 @close="onClose(s)"
                 @edit="onEdit(s)"
-              />
-
-              <SprintNetworkForecastCard
-                v-if="activeSprintForBurndown"
-                :workspace-id="wsId"
-                :board-id="bId"
-                :sprint-id="activeSprintForBurndown.id"
-              />
+              >
+                <template v-if="s.id === activeSprintForBurndown?.id" #forecast>
+                  <SprintNetworkForecastCard :workspace-id="wsId" :board-id="bId" :sprint-id="s.id" />
+                </template>
+              </SprintActiveCard>
             </section>
 
-            <section v-if="plannedSprints.length > 0" class="space-y-3.5">
-              <div class="flex items-center gap-2.5">
-                <UIcon name="i-lucide-calendar-plus" class="size-4 text-muted" />
-                <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Запланированы</h2>
-                <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full tabular-nums">{{ plannedSprints.length }}</span>
-                <span class="flex-1 h-px bg-default" />
-              </div>
+            <section v-if="plannedSprints.length > 0" class="space-y-3">
+              <h2 class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Запланированы · {{ plannedSprints.length }}</h2>
 
               <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <SprintCard
@@ -492,13 +433,8 @@ const isFilteredEmpty = computed(() =>
               </div>
             </section>
 
-            <section v-if="closedSprints.length > 0" class="space-y-3.5">
-              <div class="flex items-center gap-2.5">
-                <UIcon name="i-lucide-archive" class="size-4 text-muted" />
-                <h2 class="text-[13px] font-bold uppercase tracking-[0.09em] text-default m-0">Закрытые</h2>
-                <span class="text-[11px] font-medium text-muted bg-elevated px-1.5 py-0.5 rounded-full tabular-nums">{{ closedSprints.length }}</span>
-                <span class="flex-1 h-px bg-default" />
-              </div>
+            <section v-if="closedSprints.length > 0" class="space-y-3">
+              <h2 class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Закрытые · {{ closedSprints.length }}</h2>
 
               <div class="grid grid-cols-1 2xl:grid-cols-2 gap-4">
                 <SprintCard
@@ -514,13 +450,6 @@ const isFilteredEmpty = computed(() =>
               </div>
             </section>
           </template>
-        </div>
-
-        <SprintSidebar
-          :workspace-id="wsId"
-          :board-id="bId"
-          :sprints="sprints"
-        />
       </div>
     </div>
 
