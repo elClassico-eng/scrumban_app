@@ -17,6 +17,6 @@ const sle = computed(() => props.pulse?.board.sleDays ?? null)
         />
       </span>
     </template>
-    <span v-else class="text-[13px] text-[var(--island-ink-3)]">{{ loading ? '…' : 'SLE не рассчитан' }}</span>
+    <span v-else class="text-[13px] text-[var(--island-ink-2)]">{{ loading ? '…' : 'SLE не рассчитан' }}</span>
   </ControlCenterTilesTileShell>
 </template>

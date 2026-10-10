@@ -15,6 +15,6 @@ const a = computed(() => props.pulse?.aging ?? null)
       <b class="text-[26px] font-semibold tracking-[-0.02em] leading-none" :style="a.count > 0 ? 'color: var(--island-orange-2);' : 'color: var(--island-ink);'">{{ a.count }}</b>
       <span class="text-[11px] text-[var(--island-ink-2)]">старше P85 · {{ a.p85Days }} дн</span>
     </template>
-    <span v-else class="text-[13px] text-[var(--island-ink-3)]">{{ loading ? '…' : 'P85 не рассчитан' }}</span>
+    <span v-else class="text-[13px] text-[var(--island-ink-2)]">{{ loading ? '…' : 'P85 не рассчитан' }}</span>
   </ControlCenterTilesTileShell>
 </template>

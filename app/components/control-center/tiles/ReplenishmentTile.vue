@@ -19,6 +19,6 @@ const label = computed(() => daysLeft.value === null ? null : daysLeft.value < 0
       <b class="text-[15px] font-semibold leading-tight" :style="daysLeft !== null && daysLeft < 0 ? 'color: var(--island-orange-2);' : 'color: var(--island-ink);'">{{ label }}</b>
       <span class="text-[11px] text-[var(--island-ink-2)]">{{ ctx.canMark.value ? 'нажми, чтобы отметить' : `период ${r!.periodDays} дн` }}</span>
     </template>
-    <span v-else class="text-[13px] text-[var(--island-ink-3)]">{{ loading ? '…' : 'Ещё не отмечали' }}</span>
+    <span v-else class="text-[13px] text-[var(--island-ink-2)]">{{ loading ? '…' : 'Ещё не отмечали' }}</span>
   </ControlCenterTilesTileShell>
 </template>

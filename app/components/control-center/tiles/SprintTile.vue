@@ -23,6 +23,6 @@ const s = computed(() => props.pulse?.sprint ?? null)
         {{ s.probability === null ? s.name : `шанс в срок ${s.probability}%` }}
       </span>
     </template>
-    <span v-else class="text-[13px] text-[var(--island-ink-3)]">{{ loading ? '…' : 'Нет активного спринта' }}</span>
+    <span v-else class="text-[13px] text-[var(--island-ink-2)]">{{ loading ? '…' : 'Нет активного спринта' }}</span>
   </ControlCenterTilesTileShell>
 </template>

@@ -200,7 +200,7 @@ watch(rawNotifs, (next, prev) => {
       class="relative overflow-hidden cursor-pointer"
       tabindex="0"
       aria-label="Центр управления"
-      title="Нажмите, чтобы открыть центр управления"
+      :title="open ? undefined : 'Нажмите, чтобы открыть центр управления'"
       @click="onActivate"
       @keydown="onKeydown"
     >

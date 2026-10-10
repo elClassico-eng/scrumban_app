@@ -28,6 +28,6 @@ function width(c: { count: number; limit: number | null }): string {
         </div>
       </div>
     </div>
-    <span v-else class="text-[13px] text-[var(--island-ink-3)]">{{ loading ? '…' : 'Нет рабочих колонок' }}</span>
+    <span v-else class="text-[13px] text-[var(--island-ink-2)]">{{ loading ? '…' : 'Нет рабочих колонок' }}</span>
   </ControlCenterTilesTileShell>
 </template>

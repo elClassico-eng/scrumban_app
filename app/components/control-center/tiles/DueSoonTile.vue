@@ -23,6 +23,6 @@ const overdue = computed(() => !!d.value && new Date(d.value.dueDate).getTime() 
       <span class="text-[13.5px] font-medium leading-[1.3] text-[var(--island-ink)] line-clamp-2">{{ d.title }}</span>
       <span class="text-[11px] font-semibold" :style="overdue ? 'color: var(--island-orange-2);' : 'color: var(--island-ink-2);'">{{ when }}</span>
     </template>
-    <span v-else class="text-[13px] text-[var(--island-ink-3)]">{{ loading ? '…' : 'Дедлайнов нет' }}</span>
+    <span v-else class="text-[13px] text-[var(--island-ink-2)]">{{ loading ? '…' : 'Дедлайнов нет' }}</span>
   </ControlCenterTilesTileShell>
 </template>

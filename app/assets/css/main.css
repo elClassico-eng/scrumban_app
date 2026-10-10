@@ -5,11 +5,11 @@
   --island-bg: #ffffff;
   --island-bg-2: #f6f6f7;
   --island-line: rgba(0,0,0,.10);
-  --island-line-2: rgba(0,0,0,.06);
-  --island-tile: rgba(0,0,0,.03);
+  --island-line-2: rgba(0,0,0,.08);
+  --island-tile: rgba(255,255,255,.62);
   --island-ink: #18181b;
   --island-ink-2: #52525b;
-  --island-ink-3: #9b9ba3;
+  --island-ink-3: #7c7c86;
   --island-orange: #e85002;
   --island-orange-2: #d9420b;
   --island-orange-deep: #b3310c;
