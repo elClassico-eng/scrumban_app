@@ -23,8 +23,14 @@ const period = computed(() => {
 })
 
 const isActive = computed(() => props.entry.sprint.state === 'active')
-const latest = computed(() => props.entry.snapshots.at(-1) ?? null)
-const p85Series = computed(() => props.entry.snapshots.map(s => s.payload.simulation.p85Days))
+const forecastSnaps = computed(() => props.entry.snapshots.filter(s => s.trigger !== 'sprint_close'))
+const latest = computed(() =>
+  isActive.value
+    ? forecastSnaps.value.at(-1) ?? null
+    : props.entry.snapshots.find(s => s.trigger === 'sprint_start') ?? forecastSnaps.value[0] ?? null,
+)
+const p85Series = computed(() => forecastSnaps.value.map(s => s.payload.simulation.p85Days))
+const showSparkline = computed(() => p85Series.value.length >= 3)
 const p85Max = computed(() => Math.max(1, ...p85Series.value))
 const legacy = computed(() => !isActive.value && props.entry.outcome?.outcome === 'unknown')
 
@@ -71,7 +77,7 @@ const pct = (v: number | null) => (v === null ? '—' : `${Math.round(v * 100)}%
         </p>
       </div>
 
-      <div v-if="latest" class="hidden sm:flex items-end gap-[3px] h-[22px] w-[88px] shrink-0" title="P85 по снапшотам">
+      <div v-if="showSparkline" class="hidden sm:flex items-end gap-[3px] h-[22px] w-[88px] shrink-0" title="P85 по снапшотам">
         <div
           v-for="(v, i) in p85Series"
           :key="i"
