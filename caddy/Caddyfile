@@ -12,6 +12,11 @@
 		Referrer-Policy strict-origin-when-cross-origin
 	}
 
+	# HTML has no Cache-Control, so browsers cache it heuristically for hours and
+	# keep loading hashed /_nuxt chunks that the next deploy has already removed.
+	@pages not path /_nuxt/*
+	header @pages ?Cache-Control "no-cache"
+
 	reverse_proxy app:3000
 }
 
