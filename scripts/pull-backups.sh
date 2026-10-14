@@ -22,12 +22,13 @@ fail() {
 trap 'fail "line $LINENO"' ERR
 
 mkdir -p -m 700 "$DEST"
-rsync -a --no-owner --no-group --chmod=F600 --exclude '*.tmp' --exclude '*.log' \
+rsync -r --ignore-existing --chmod=F600 --exclude '*.tmp' --exclude '*.log' \
   -e "ssh -i $SSH_KEY -o BatchMode=yes -o ConnectTimeout=30" \
   "$SOURCE:" "$DEST/"
 
 FRESH=$(find "$DEST" -maxdepth 1 -name 'db-*.sql.gz.age' -mmin -$((MAX_AGE_HOURS * 60)) | sort | tail -1)
 [ -n "$FRESH" ] || fail "no db backup newer than ${MAX_AGE_HOURS}h"
+head -c 21 "$FRESH" | grep -q '^age-encryption.org/v1' || fail "$(basename "$FRESH") is not an age file"
 
 find "$DEST" -maxdepth 1 \( -name 'db-*.sql.gz.age' -o -name 'env-*.age' \) \
   -mtime +"$RETENTION_DAYS" -delete
