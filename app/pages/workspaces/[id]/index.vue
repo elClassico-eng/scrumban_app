@@ -28,7 +28,7 @@ const members = computed(() => membersList.data.value?.members ?? [])
 const events = computed<ActivityEvent[]>(() => activityList.data.value?.events.slice(0, 6) ?? [])
 
 useHead({
-  title: () => workspace.value ? `${workspace.value.name} — Обзор` : 'Обзор — Такт',
+  title: () => workspace.value ? `${workspace.value.name} – Обзор` : 'Обзор – Такт',
 })
 
 const loading = computed(() => tasksList.isLoading.value || boardsList.isLoading.value)

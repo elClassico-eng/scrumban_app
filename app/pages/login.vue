@@ -2,7 +2,7 @@
 import { pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth', colorMode: 'light' })
-useHead({ title: 'Войти — Такт' })
+useHead({ title: 'Войти – Такт' })
 </script>
 
 <template>

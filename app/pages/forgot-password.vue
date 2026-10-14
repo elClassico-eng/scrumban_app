@@ -3,10 +3,10 @@ import { z } from 'zod'
 import { apiRoutes, pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth', colorMode: 'light' })
-useHead({ title: 'Забыли пароль — Такт' })
+useHead({ title: 'Забыли пароль – Такт' })
 
 const schema = z.object({
-  email: z.string().email('Введи корректный email').max(255),
+  email: z.string().email('Введите корректный email').max(255),
 })
 
 type State = z.infer<typeof schema>
@@ -40,7 +40,7 @@ async function onSubmit() {
     <div class="space-y-2">
       <h1 class="text-3xl font-bold tracking-tight">Сброс пароля</h1>
       <p class="text-sm text-muted leading-relaxed">
-        Введите email — отправим ссылку для установки нового пароля.
+        Введите email – отправим ссылку для установки нового пароля.
       </p>
     </div>
 

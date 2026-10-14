@@ -18,7 +18,7 @@ const workspace = computed(() =>
 useHead({
   title: () => workspace.value
     ? `${workspace.value.name} — Отчёты`
-    : 'Отчёты и ретроспективы — Такт',
+    : 'Отчёты и ретроспективы – Такт',
 })
 
 type BoardGroup = {

@@ -3,8 +3,8 @@ import { z } from 'zod'
 import { pageRoutes } from '~/routing'
 
 const schema = z.object({
-  email: z.string().email('Введи корректный email'),
-  password: z.string().min(1, 'Введи пароль'),
+  email: z.string().email('Введите корректный email'),
+  password: z.string().min(1, 'Введите пароль'),
 })
 
 type LoginState = z.infer<typeof schema>

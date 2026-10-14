@@ -4,20 +4,20 @@ import { passwordSchema } from '#shared/validation/password'
 import { apiRoutes, pageRoutes } from '~/routing'
 
 definePageMeta({ layout: 'auth', colorMode: 'light', cardMaxWidth: 'lg:max-w-xl' })
-useHead({ title: 'Регистрация — Такт' })
+useHead({ title: 'Регистрация – Такт' })
 
 type Step = 1 | 2 | 3
 const step = ref<Step>(1)
 
 const personalSchema = z.object({
-  firstName: z.string().trim().min(1, 'Введи имя').max(100),
-  lastName: z.string().trim().min(1, 'Введи фамилию').max(100),
+  firstName: z.string().trim().min(1, 'Введите имя').max(100),
+  lastName: z.string().trim().min(1, 'Введите фамилию').max(100),
   middleName: z.string().trim().max(100).optional(),
 })
 
 const credentialsSchema = z
   .object({
-    email: z.email('Введи корректный email').max(255),
+    email: z.email('Введите корректный email').max(255),
     password: passwordSchema,
     confirmPassword: z.string(),
   })
@@ -27,7 +27,7 @@ const credentialsSchema = z
   })
 
 const teamSchema = z.object({
-  name: z.string().trim().min(1, 'Введи название команды').max(255),
+  name: z.string().trim().min(1, 'Введите название команды').max(255),
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
   industry: z.string().trim().max(100).optional(),
@@ -70,7 +70,7 @@ const submitError = ref<string | null>(null)
 function goToCredentials() {
   const parsed = personalSchema.safeParse(personalState)
   if (!parsed.success) {
-    submitError.value = parsed.error.issues[0]?.message ?? 'Заполни все поля'
+    submitError.value = parsed.error.issues[0]?.message ?? 'Заполните все поля'
     return
   }
   submitError.value = null
@@ -80,7 +80,7 @@ function goToCredentials() {
 function goToTeam() {
   const parsed = credentialsSchema.safeParse(credentialsState)
   if (!parsed.success) {
-    submitError.value = parsed.error.issues[0]?.message ?? 'Заполни все поля'
+    submitError.value = parsed.error.issues[0]?.message ?? 'Заполните все поля'
     return
   }
   submitError.value = null
@@ -106,7 +106,7 @@ provideAuthStepper({
 async function finishOnboarding() {
   const parsed = teamSchema.safeParse(teamState)
   if (!parsed.success) {
-    submitError.value = parsed.error.issues[0]?.message ?? 'Заполни все поля'
+    submitError.value = parsed.error.issues[0]?.message ?? 'Заполните все поля'
     return
   }
 

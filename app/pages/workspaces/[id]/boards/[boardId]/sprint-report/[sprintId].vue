@@ -43,7 +43,7 @@ const payload = computed<SprintReportPayload | null>(() =>
 )
 
 useHead({
-  title: () => payload.value ? `Отчёт — ${payload.value.sprint.name}` : 'Отчёт спринта — Такт',
+  title: () => payload.value ? `Отчёт – ${payload.value.sprint.name}` : 'Отчёт спринта – Такт',
 })
 
 const toast = useToast()

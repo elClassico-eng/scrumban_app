@@ -19,7 +19,7 @@ const board = computed(() => boardsList.data.value?.boards.find(b => b.id === bI
 const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 useHead({
-  title: () => board.value ? `${board.value.name} — Журнал прогнозов` : 'Журнал прогнозов — Такт',
+  title: () => board.value ? `${board.value.name} – Журнал прогнозов` : 'Журнал прогнозов – Такт',
 })
 
 const entries = computed(() => journal.data.value?.sprints ?? [])

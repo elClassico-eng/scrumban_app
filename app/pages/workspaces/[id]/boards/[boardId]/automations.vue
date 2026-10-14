@@ -22,7 +22,7 @@ const canManage = computed(() => hasRole(workspace.value?.role, 'scrum_master'))
 const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 useHead({
-  title: () => board.value ? `${board.value.name} — Автоматизации` : 'Автоматизации — Такт',
+  title: () => board.value ? `${board.value.name} – Автоматизации` : 'Автоматизации – Такт',
 })
 
 const items = computed(() => rules.data.value?.rules ?? [])

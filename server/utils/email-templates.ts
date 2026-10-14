@@ -8,13 +8,13 @@ export function emailVerificationTemplate(opts: {
   recipientName: string
   verifyUrl: string
 }): RenderedEmail {
-  const subject = 'Подтвердите email — Такт'
+  const subject = 'Подтвердите email – Такт'
   const text = `Привет${opts.recipientName ? `, ${opts.recipientName}` : ''}!
 
 Подтвердите ваш email, перейдя по ссылке:
 ${opts.verifyUrl}
 
-Ссылка действует 24 часа. Если вы не регистрировались — проигнорируйте это письмо.`
+Ссылка действует 24 часа. Если вы не регистрировались – проигнорируйте это письмо.`
 
   const html = baseTemplate({
     preheader: 'Подтвердите ваш email-адрес для Такт',
@@ -32,7 +32,7 @@ ${opts.verifyUrl}
         <span style="word-break:break-all;color:#6366f1;">${escapeHtml(opts.verifyUrl)}</span>
       </p>
       <p style="margin:16px 0 0;font-size:13px;color:#6b7280;">
-        Ссылка действует 24 часа. Если вы не регистрировались — проигнорируйте это письмо.
+        Ссылка действует 24 часа. Если вы не регистрировались – проигнорируйте это письмо.
       </p>
     `,
   })
@@ -43,14 +43,14 @@ export function passwordResetTemplate(opts: {
   recipientName: string
   resetUrl: string
 }): RenderedEmail {
-  const subject = 'Сброс пароля — Такт'
+  const subject = 'Сброс пароля – Такт'
   const text = `Привет${opts.recipientName ? `, ${opts.recipientName}` : ''}!
 
 Кто-то запросил сброс пароля для вашего аккаунта в Такт.
-Если это были вы — установите новый пароль по ссылке:
+Если это были вы – установите новый пароль по ссылке:
 ${opts.resetUrl}
 
-Ссылка действует 1 час. Если это были не вы — просто проигнорируйте письмо, ваш пароль не изменится.`
+Ссылка действует 1 час. Если это были не вы – просто проигнорируйте письмо, ваш пароль не изменится.`
 
   const html = baseTemplate({
     preheader: 'Установите новый пароль для Такт',
@@ -60,7 +60,7 @@ ${opts.resetUrl}
       </h1>
       <p style="margin:0 0 24px;color:#4b5563;">
         Привет${opts.recipientName ? `, ${escapeHtml(opts.recipientName)}` : ''}!
-        Кто-то запросил сброс пароля для вашего аккаунта. Если это были вы —
+        Кто-то запросил сброс пароля для вашего аккаунта. Если это были вы –
         установите новый пароль по кнопке ниже.
       </p>
       ${ctaButton('Установить новый пароль', opts.resetUrl)}
@@ -69,7 +69,7 @@ ${opts.resetUrl}
         <span style="word-break:break-all;color:#6366f1;">${escapeHtml(opts.resetUrl)}</span>
       </p>
       <p style="margin:16px 0 0;font-size:13px;color:#6b7280;">
-        Ссылка действует 1 час. Если вы не запрашивали сброс — просто проигнорируйте письмо.
+        Ссылка действует 1 час. Если вы не запрашивали сброс – просто проигнорируйте письмо.
       </p>
     `,
   })
@@ -82,7 +82,7 @@ export function workspaceInvitationTemplate(opts: {
   role: string
   acceptUrl: string
 }): RenderedEmail {
-  const subject = `Приглашение в ${opts.workspaceName} — Такт`
+  const subject = `Приглашение в ${opts.workspaceName} – Такт`
   const text = `${opts.inviterName ? opts.inviterName + ' приглашает' : 'Вас приглашают'} присоединиться к workspace «${opts.workspaceName}» в Такт в роли ${opts.role}.
 
 Перейдите по ссылке, чтобы принять приглашение:
@@ -107,7 +107,7 @@ ${opts.acceptUrl}
         <span style="word-break:break-all;color:#6366f1;">${escapeHtml(opts.acceptUrl)}</span>
       </p>
       <p style="margin:16px 0 0;font-size:13px;color:#6b7280;">
-        Ссылка действует 7 дней. Если приглашение было отправлено по ошибке — просто проигнорируйте письмо.
+        Ссылка действует 7 дней. Если приглашение было отправлено по ошибке – просто проигнорируйте письмо.
       </p>
     `,
   })

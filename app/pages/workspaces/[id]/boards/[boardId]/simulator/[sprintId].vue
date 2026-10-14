@@ -25,7 +25,7 @@ const sprint = computed(() =>
 const canApply = computed(() => hasRole(workspace.value?.role, 'scrum_master'))
 
 useHead({
-  title: () => sprint.value ? `Симулятор — ${sprint.value.name}` : 'Симулятор — Такт',
+  title: () => sprint.value ? `Симулятор – ${sprint.value.name}` : 'Симулятор – Такт',
 })
 
 const draft = ref<ScenarioChange[]>([])

@@ -16,7 +16,7 @@ function setTab(next: SettingsTab) {
   router.replace({ query: next === 'profile' ? {} : { tab: next } })
 }
 
-useHead({ title: 'Настройки — Такт' })
+useHead({ title: 'Настройки – Такт' })
 </script>
 
 <template>

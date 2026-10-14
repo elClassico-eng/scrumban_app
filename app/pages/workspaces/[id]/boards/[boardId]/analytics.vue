@@ -30,7 +30,7 @@ const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 useHead({
   title: () => board.value
     ? `${board.value.name} — Аналитика`
-    : 'Аналитика — Такт',
+    : 'Аналитика – Такт',
 })
 </script>
 

@@ -11,7 +11,7 @@ workspaceStore.setCurrent(wsId.value)
 
 const { network, simulate } = useSandboxSimulator()
 
-useHead({ title: 'Демо симулятора — Такт' })
+useHead({ title: 'Демо симулятора – Такт' })
 
 const draft = ref<ScenarioChange[]>([])
 const liveReport = ref<ScenarioSimulationReport | null>(null)

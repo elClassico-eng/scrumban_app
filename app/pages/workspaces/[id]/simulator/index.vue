@@ -10,7 +10,7 @@ workspaceStore.setCurrent(wsId.value)
 const { list: boardsList } = useBoardsApi(wsId)
 const boards = computed(() => boardsList.data.value?.boards ?? [])
 
-useHead({ title: 'Симулятор — Такт' })
+useHead({ title: 'Симулятор – Такт' })
 </script>
 
 <template>
