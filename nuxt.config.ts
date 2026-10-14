@@ -10,6 +10,10 @@ export default defineNuxtConfig({
     '/docs/**': { prerender: true, ssr: true },
   },
 
+  // SPA shells otherwise point at a prerendered _payload.json with `data: undefined`,
+  // which wipes nuxtApp.payload.data and crashes the first useAsyncData on app routes.
+  experimental: { payloadExtraction: false },
+
   app: {
     head: {
       title: 'Такт',
