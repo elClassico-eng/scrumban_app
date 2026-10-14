@@ -130,7 +130,7 @@ const previewInitials = computed(() => initials({
     </div>
 
     <template v-else-if="me.data.value">
-      <div class="surface-elevated relative flex min-h-[260px] flex-col justify-end overflow-hidden rounded-2xl">
+      <div class="surface-elevated relative flex min-h-[140px] flex-col justify-end overflow-hidden rounded-2xl">
         <img
           v-if="state.avatarUrl"
           :src="state.avatarUrl"

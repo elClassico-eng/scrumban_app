@@ -39,6 +39,7 @@ export const boards = pgTable(
       .default('0.85'),
     lastReplenishmentAt: timestamp('last_replenishment_at', { withTimezone: true }),
     replenishmentPeriodDays: integer('replenishment_period_days').notNull().default(7),
+    columnTint: boolean('column_tint').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -81,6 +82,7 @@ export const boardColumns = pgTable(
     // Queue columns count as wait time in flow efficiency; the role alone
     // can't tell "Review as active work" from "Review as a waiting line".
     isQueue: boolean('is_queue').notNull().default(false),
+    color: varchar('color', { length: 7 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

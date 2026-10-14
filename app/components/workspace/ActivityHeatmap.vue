@@ -26,7 +26,7 @@ const PERIODS = [
 
 type PeriodValue = (typeof PERIODS)[number]['value']
 
-const period = ref<PeriodValue>('year')
+const period = ref<PeriodValue>('quarter')
 const current = computed(() => PERIODS.find(p => p.value === period.value)!)
 const WEEKS = computed(() => current.value.weeks)
 const cell = computed(() => current.value.cell)

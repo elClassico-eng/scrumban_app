@@ -58,7 +58,7 @@ export async function createInvitation(input: {
   // Don't let it carry a high-privilege seat — admin+ requires an email
   // binding so acceptance also checks email match + verification.
   if (!email && roleAtLeast(input.role, 'admin')) {
-    throw new ValidationError('Открытую ссылку без email нельзя выдать для роли «Admin» и выше — укажите email получателя')
+    throw new ValidationError('Открытую ссылку без email нельзя выдать для роли «Admin» и выше – укажите email получателя')
   }
   const plainToken = randomBytes(TOKEN_BYTES).toString('hex')
   const tokenHash = hashToken(plainToken)

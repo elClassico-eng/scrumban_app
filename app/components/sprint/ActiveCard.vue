@@ -35,16 +35,6 @@ function isDoneTask(task: Task): boolean {
   return columnById.value.get(task.columnId)?.columnRole === 'done'
 }
 
-function isProgressTask(task: Task): boolean {
-  const role = columnById.value.get(task.columnId)?.columnRole
-  return role === 'in_progress' || role === 'review'
-}
-
-function isTodoTask(task: Task): boolean {
-  const role = columnById.value.get(task.columnId)?.columnRole
-  return role === 'backlog'
-}
-
 function sumSp(filter: (t: Task) => boolean): number {
   return props.tasks.filter(t => filter(t.task)).reduce((acc, t) => acc + (t.task.storyPoints ?? 0), 0)
 }
@@ -75,7 +65,7 @@ const doneValue = computed(() => useSp.value ? doneSp.value : doneCount.value)
 const addedValue = computed(() => useSp.value ? addedSpRaw.value : addedCount.value)
 const totalValue = computed(() => useSp.value ? totalSp.value : totalCount.value)
 const capacity = computed(() => {
-  if (useSp.value) return props.sprint.capacity ?? committedSpRaw.value ?? 1
+  if (useSp.value) return props.sprint.capacity || committedSpRaw.value || 1
   return committedCount.value || 1
 })
 
@@ -91,18 +81,8 @@ const progressPct = computed(() =>
   committedValue.value > 0 ? Math.round((doneValue.value / committedValue.value) * 100) : 0,
 )
 
-const distribution = computed(() => {
-  const accumulate = (filter: (task: Task) => boolean) =>
-    useSp.value ? sumSp(filter) : countTasks(filter)
-  return [
-    { key: 'done', label: 'Готово', value: accumulate(isDoneTask), color: 'bg-emerald-500', dot: 'bg-emerald-500' },
-    { key: 'progress', label: 'В работе', value: accumulate(isProgressTask), color: 'bg-accent-500', dot: 'bg-accent-500' },
-    { key: 'todo', label: 'К выполнению', value: accumulate(isTodoTask), color: 'bg-zinc-400', dot: 'bg-zinc-400' },
-  ]
-})
-const distributionTotal = computed(() => distribution.value.reduce((a, s) => a + s.value, 0))
-
 const burndownPoints = computed(() => props.burndown?.points ?? [])
+const hasBurndown = computed(() => burndownPoints.value.some(pt => pt.actual != null && pt.actual < pt.ideal))
 const isOnTrack = computed(() => {
   const point = burndownPoints.value[daysGone.value]
   if (!point || point.actual == null) return true
@@ -122,54 +102,44 @@ const sprintGoals = computed(() => {
 </script>
 
 <template>
-  <div class="bg-default border border-default rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]">
-    <div class="px-6 py-6 lg:border-r border-default flex flex-col gap-4 min-w-0">
-      <div class="flex items-start gap-3">
-        <div class="flex-1 min-w-0">
-          <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-600">
-            <span class="size-2 rounded-full bg-accent-500" />
-            Активный спринт
-            <span v-if="totalDays > 0" class="text-muted">· день {{ daysGone + 1 }} из {{ totalDays }}</span>
-          </span>
-          <h2 class="text-[22px] font-semibold tracking-tight text-default mt-1.5 break-words">
-            {{ sprint.name }}
-          </h2>
+  <UiPanel>
+    <template #title>
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <h2 class="m-0 text-[17px] font-semibold tracking-tight text-default truncate">{{ sprint.name }}</h2>
+          <SprintStateBadge :state="sprint.state" />
         </div>
-        <UDropdownMenu
-          v-if="canManage"
-          :items="[
-            { label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => $emit('edit') },
-            { label: 'Завершить спринт', icon: 'i-lucide-check-square', onSelect: () => $emit('close') },
-          ]"
-        >
-          <button
-            type="button"
-            class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
-            title="Действия"
-          >
-            <UIcon name="i-lucide-more-horizontal" class="size-4" />
-          </button>
-        </UDropdownMenu>
+        <p v-if="sprintGoals.length > 0" class="m-0 mt-0.5 text-[12.5px] text-muted truncate" :title="sprint.goal ?? ''">
+          {{ sprintGoals.join(' · ') }}
+        </p>
       </div>
+    </template>
+    <template v-if="canManage" #actions>
+      <UButton size="sm" icon="i-lucide-plus" @click="$emit('add-task')">
+        Добавить задачу
+      </UButton>
+      <UButton v-if="simulatorTo" size="sm" variant="ghost" color="neutral" icon="i-lucide-flask-conical" :to="simulatorTo">
+        Симулятор
+      </UButton>
+      <UButton size="sm" variant="outline" color="neutral" icon="i-lucide-check-square" @click="$emit('close')">
+        Завершить
+      </UButton>
+      <UDropdownMenu :items="[{ label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => $emit('edit') }]">
+        <UButton size="sm" variant="ghost" color="neutral" icon="i-lucide-ellipsis" title="Ещё" />
+      </UDropdownMenu>
+    </template>
 
-      <p v-if="sprint.goal && sprintGoals.length === 1" class="text-[13.5px] text-muted leading-relaxed -mt-1">
-        {{ sprint.goal }}
-      </p>
-
+    <div class="space-y-5">
       <div class="space-y-2">
+        <p class="m-0 text-[13px] text-muted">
+          <template v-if="totalDays > 0">День <b class="text-default">{{ daysGone + 1 }}</b> из {{ totalDays }} · </template>
+          закрыто <b class="text-default">{{ doneCount }}</b> из {{ totalCount }} задач
+          <template v-if="useSp"> · <b class="text-default">{{ doneValue }}</b> из {{ capacity }} SP</template>
+          <template v-if="addedValue > 0"> · <span class="text-accent-600 dark:text-accent-400">+{{ addedValue }} {{ unitLabel }} после старта</span></template>
+        </p>
         <div class="relative h-2 rounded-full bg-elevated overflow-hidden flex">
-          <div
-            class="h-full bg-emerald-500 transition-all"
-            :style="{ width: `${(doneValue / capacity) * 100}%` }"
-          />
-          <div
-            class="h-full bg-inverted transition-all"
-            :style="{ width: `${Math.max(0, (committedValue - doneValue) / capacity) * 100}%` }"
-          />
-          <div
-            class="h-full bg-accent-500 transition-all"
-            :style="{ width: `${(addedValue / capacity) * 100}%` }"
-          />
+          <div class="h-full bg-emerald-500 transition-all" :style="{ width: `${(doneValue / capacity) * 100}%` }" />
+          <div class="h-full bg-accent-500/70 transition-all" :style="{ width: `${(addedValue / capacity) * 100}%` }" />
           <div
             v-if="useSp && sprint.capacity != null"
             class="absolute top-0 bottom-0 w-px bg-zinc-700 z-10"
@@ -177,197 +147,70 @@ const sprintGoals = computed(() => {
             title="Коммит спринта"
           />
         </div>
-        <div class="flex items-center gap-3 flex-wrap text-[11.5px] text-muted">
-          <span class="inline-flex items-center gap-1.5">
-            <span class="size-2 rounded-full bg-emerald-500" />
-            <b class="text-default">{{ doneValue }}</b> готово
-          </span>
-          <span class="inline-flex items-center gap-1.5">
-            <span class="size-2 rounded-full bg-inverted" />
-            <b class="text-default">{{ Math.max(0, committedValue - doneValue) }}</b> в работе
-          </span>
-          <span v-if="addedValue > 0" class="inline-flex items-center gap-1.5">
-            <span class="size-2 rounded-full bg-accent-500" />
-            <b class="text-default">{{ addedValue }}</b> добавлено после старта
-          </span>
-          <span v-if="useSp" class="ml-auto">из <b class="text-default">{{ capacity }}</b> SP capacity</span>
-        </div>
       </div>
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <div class="bg-muted rounded-lg px-3 py-2.5">
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Прогресс</div>
-          <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
-            {{ progressPct }}<span class="text-[12px] text-muted font-normal ml-0.5">%</span>
-          </div>
-          <div class="text-[11px] text-muted mt-0.5">{{ doneValue }} из {{ committedValue }} {{ unitLabel }}</div>
-        </div>
-        <div class="bg-muted rounded-lg px-3 py-2.5">
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Осталось</div>
-          <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
-            {{ daysLeft }}<span class="text-[12px] text-muted font-normal ml-0.5">дн</span>
-          </div>
-          <div class="text-[11px] text-muted mt-0.5">{{ formatDate(sprint.plannedEndAt ?? sprint.endedAt) }}</div>
-        </div>
-        <div
-          class="rounded-lg px-3 py-2.5"
-          :class="addedValue > 0 ? 'bg-accent-50' : 'bg-muted'"
-        >
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Скоуп креп</div>
-          <div
-            class="text-[22px] font-semibold tracking-tight mt-0.5"
-            :class="addedValue > 0 ? 'text-accent-700' : 'text-default'"
-          >
-            +{{ addedValue }}<span class="text-[12px] text-muted font-normal ml-0.5">{{ unitLabel }}</span>
-          </div>
-          <div class="text-[11px] text-muted mt-0.5">
-            {{ addedCount }} задач после старта
-          </div>
-        </div>
-        <div class="bg-muted rounded-lg px-3 py-2.5">
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">{{ totalLabel }}</div>
-          <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
-            {{ totalValue }}<span class="text-[12px] text-muted font-normal ml-0.5">{{ unitLabel }}</span>
-          </div>
-          <div class="text-[11px] text-muted mt-0.5">{{ totalCount }} задач</div>
-        </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <UiStat label="Прогресс" :value="`${progressPct}%`" :sub="`${doneValue} из ${committedValue} ${unitLabel}`" />
+        <UiStat label="Осталось" :value="`${daysLeft} дн`" :sub="`до ${formatDate(sprint.plannedEndAt ?? sprint.endedAt)}`" />
+        <UiStat label="Скоуп креп" :value="`+${addedValue} ${unitLabel}`" :sub="`${addedCount} задач после старта`" :tone="addedValue > 0 ? 'accent' : 'default'" />
+        <UiStat :label="totalLabel" :value="`${totalValue} ${unitLabel}`" :sub="`${totalCount} задач`" />
       </div>
 
-      <div v-if="sprintGoals.length > 0" class="space-y-1.5">
-        <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-          Цели спринта
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Задачи спринта</h3>
+            <span class="text-[11px] font-medium text-default bg-elevated px-1.5 py-0.5 rounded-full tabular-nums">{{ tasks.length }}</span>
+          </div>
+          <div class="rounded-lg overflow-hidden bg-elevated/60 divide-y divide-default">
+            <SprintTaskRow
+              v-for="t in tasks"
+              :key="t.task.id"
+              :task="t.task"
+              :column="columnById.get(t.task.columnId) ?? null"
+              :members="members"
+              :added-after-start="t.addedAfterStart"
+            />
+            <button
+              v-if="canManage"
+              type="button"
+              class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-elevated transition-colors text-[12.5px] text-muted cursor-pointer"
+              @click="$emit('add-task')"
+            >
+              <UIcon name="i-lucide-plus" class="size-3.5" />
+              Добавить задачу из бэклога…
+            </button>
+          </div>
         </div>
-        <div
-          v-for="(goal, idx) in sprintGoals"
-          :key="idx"
-          class="flex items-start gap-2 text-[13px] text-default"
-        >
-          <span class="size-3.5 rounded-full border-[1.5px] border-default shrink-0 mt-0.5" />
-          <span>{{ goal }}</span>
-        </div>
-      </div>
-    </div>
 
-    <div class="px-6 py-6 flex flex-col gap-4 min-w-0 bg-muted">
-      <div class="bg-default border border-default rounded-lg p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0">
-            Burndown
-          </h4>
-          <div class="flex-1" />
-          <span
-            class="text-[10.5px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded"
-            :class="isOnTrack ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'"
-          >
-            {{ isOnTrack ? 'По графику' : 'Отстаём' }}
-          </span>
-        </div>
-        <SprintBurndown v-if="burndown && burndown.points.length > 0" :points="burndown.points" />
-        <div
-          v-else
-          class="h-[110px] flex items-center justify-center text-[11.5px] text-muted text-center px-3"
-        >
-          Burndown появится после первого закрытия задачи
-        </div>
-        <div class="flex items-center gap-3 mt-2 text-[11px] text-muted">
-          <span class="inline-flex items-center gap-1.5">
-            <span class="w-2.5 h-px bg-accent-500" />
-            Факт
-          </span>
-          <span class="inline-flex items-center gap-1.5">
-            <span class="w-2.5 h-px border-t border-dashed border-zinc-400" />
-            Идеал
-          </span>
-        </div>
-      </div>
-
-      <div>
-        <div class="flex items-center gap-2 mb-2">
-          <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0">
-            Распределение по доске
-          </h4>
-          <div class="flex-1" />
-          <span class="text-[11px] font-medium text-default bg-elevated px-1.5 py-0.5 rounded-full">
-            {{ totalValue }} {{ unitLabel }}
-          </span>
-        </div>
-        <div v-if="distributionTotal > 0" class="h-2 rounded-full overflow-hidden flex bg-elevated">
-          <div
-            v-for="seg in distribution"
-            :key="seg.key"
-            :class="seg.color"
-            class="h-full"
-            :style="{ width: `${(seg.value / distributionTotal) * 100}%` }"
-            :title="`${seg.label}: ${seg.value} ${unitLabel}`"
-          />
-        </div>
-        <div v-else class="h-2 rounded-full bg-elevated" />
-        <div class="grid grid-cols-3 gap-2 mt-2">
-          <div v-for="seg in distribution" :key="seg.key" class="text-[11px]">
-            <div class="inline-flex items-center gap-1 text-muted">
-              <span class="size-1.5 rounded-full" :class="seg.dot" />
-              {{ seg.label }}
+        <div class="min-w-0">
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <h3 class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Burndown</h3>
+              <div class="flex-1" />
+              <span
+                v-if="hasBurndown"
+                class="text-[10.5px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded"
+                :class="isOnTrack ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'"
+              >
+                {{ isOnTrack ? 'По графику' : 'Отстаём' }}
+              </span>
             </div>
-            <div class="text-default font-semibold">
-              {{ seg.value }}<span class="text-[10.5px] text-muted font-normal ml-0.5">{{ unitLabel }}</span>
-            </div>
+            <template v-if="hasBurndown">
+              <SprintBurndown :points="burndownPoints" />
+              <div class="flex items-center gap-3 mt-2 text-[11px] text-muted">
+                <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-px bg-accent-500" />Факт</span>
+                <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-px border-t border-dashed border-zinc-400" />Идеал</span>
+              </div>
+            </template>
+            <p v-else class="m-0 text-[12px] text-muted">Появится после первого закрытия задачи</p>
           </div>
         </div>
       </div>
 
-      <div v-if="canManage" class="flex flex-col gap-2 mt-auto">
-        <UButton block size="sm" icon="i-lucide-plus" @click="$emit('add-task')">
-          Добавить задачу
-        </UButton>
-        <UButton
-          v-if="simulatorTo"
-          block
-          size="sm"
-          variant="ghost"
-          color="neutral"
-          icon="i-lucide-flask-conical"
-          :to="simulatorTo"
-        >
-          Симулятор решений
-        </UButton>
-        <UButton block size="sm" variant="outline" color="neutral" icon="i-lucide-check-square" @click="$emit('close')">
-          Завершить спринт
-        </UButton>
+      <div v-if="$slots.forecast" class="border-t border-default pt-5">
+        <slot name="forecast" />
       </div>
     </div>
-
-    <div class="lg:col-span-2 px-6 pb-6">
-      <div class="flex items-center gap-2 mb-2.5">
-        <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0">
-          Задачи спринта
-        </h4>
-        <span class="text-[11px] font-medium text-default bg-elevated px-1.5 py-0.5 rounded-full">
-          {{ tasks.length }}
-        </span>
-        <div class="flex-1" />
-      </div>
-
-      <div class="border border-default rounded-lg overflow-hidden bg-default">
-        <SprintTaskRow
-          v-for="t in tasks"
-          :key="t.task.id"
-          :task="t.task"
-          :column="columnById.get(t.task.columnId) ?? null"
-          :members="members"
-          :added-after-start="t.addedAfterStart"
-        />
-        <button
-          v-if="canManage"
-          type="button"
-          class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left bg-muted/50 hover:bg-elevated/60 transition-colors text-[12.5px] text-muted cursor-pointer border-t border-default"
-          @click="$emit('add-task')"
-        >
-          <span class="size-5 rounded-full grid place-items-center bg-default border border-dashed border-default text-dimmed">
-            <UIcon name="i-lucide-plus" class="size-3" />
-          </span>
-          <span class="flex-1">Добавить задачу из бэклога…</span>
-        </button>
-      </div>
-    </div>
-  </div>
+  </UiPanel>
 </template>

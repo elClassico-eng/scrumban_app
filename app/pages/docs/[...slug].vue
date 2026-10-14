@@ -16,7 +16,7 @@ if (!page.value) {
 }
 
 useSeoMeta({
-  title: () => (page.value?.title ? `${page.value.title} — Такт` : 'Документация — Такт'),
+  title: () => (page.value?.title ? `${page.value.title} – Такт` : 'Документация – Такт'),
   description: () => page.value?.description,
 })
 </script>

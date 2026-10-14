@@ -25,7 +25,7 @@ const sprint = computed(() =>
 const canApply = computed(() => hasRole(workspace.value?.role, 'scrum_master'))
 
 useHead({
-  title: () => sprint.value ? `Симулятор — ${sprint.value.name}` : 'Симулятор — Такт',
+  title: () => sprint.value ? `Симулятор – ${sprint.value.name}` : 'Симулятор – Такт',
 })
 
 const draft = ref<ScenarioChange[]>([])
@@ -105,7 +105,7 @@ function resetDraft() {
 
     <div
       v-else-if="networkReport.data.value && !networkReport.data.value.ok"
-      class="bg-default border border-default rounded-2xl px-6 py-6 flex items-start gap-2.5"
+      class="surface-soft rounded-2xl px-6 py-6 flex items-start gap-2.5"
     >
       <UIcon name="i-lucide-database" class="size-4 text-muted shrink-0 mt-0.5" />
       <p class="text-[12.5px] text-muted m-0 leading-relaxed">
@@ -117,7 +117,7 @@ function resetDraft() {
     </div>
 
     <template v-else-if="baseline">
-      <div v-if="baseline.remainingCount === 0" class="bg-default border border-default rounded-2xl px-6 py-6 text-[12.5px] text-muted">
+      <div v-if="baseline.remainingCount === 0" class="surface-soft rounded-2xl px-6 py-6 text-[12.5px] text-muted">
         Все задачи спринта закрыты — симулировать нечего.
       </div>
 

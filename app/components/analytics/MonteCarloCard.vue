@@ -93,18 +93,12 @@ const histogramOption = computed(() => {
 </script>
 
 <template>
-  <UCard :ui="ANALYTICS_CARD_UI">
-    <template #header>
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <h2 class="font-semibold">Monte Carlo прогноз</h2>
-          <AnalyticsInfo
-            answers="Вероятность закрыть оставшиеся задачи за горизонт. P85 = срок, в который укладываемся в 85% симуляций."
-            formula="≥1000 симуляций: на каждый день берём случайный throughput из истории (bootstrap), копим до закрытия всех задач. Распределение исходов → перцентили."
-          />
-        </div>
-        <span class="text-xs text-muted">Когда успеем доделать оставшиеся задачи</span>
-      </div>
+  <UiPanel title="Monte Carlo прогноз">
+    <template #meta>
+      <AnalyticsInfo
+        answers="Вероятность закрыть оставшиеся задачи за горизонт. P85 = срок, в который укладываемся в 85% симуляций."
+        formula="≥1000 симуляций: на каждый день берём случайный throughput из истории (bootstrap), копим до закрытия всех задач. Распределение исходов → перцентили."
+        />
     </template>
 
     <button
@@ -176,5 +170,5 @@ const histogramOption = computed(() => {
       </p>
       <VChart :option="histogramOption" autoresize class="h-32" />
     </template>
-  </UCard>
+  </UiPanel>
 </template>

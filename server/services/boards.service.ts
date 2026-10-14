@@ -116,6 +116,7 @@ export async function updateBoard(input: {
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
+    columnTint?: boolean
   }
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
@@ -129,6 +130,7 @@ export async function updateBoard(input: {
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
+    columnTint?: boolean
     updatedAt: Date
   } = { updatedAt: new Date() }
   if (input.patch.name !== undefined) set.name = input.patch.name
@@ -136,6 +138,7 @@ export async function updateBoard(input: {
   if (input.patch.color !== undefined) set.color = input.patch.color
   if ('sleDays' in input.patch) set.sleDays = input.patch.sleDays ?? null
   if (input.patch.sleProbability !== undefined) set.sleProbability = input.patch.sleProbability
+  if (input.patch.columnTint !== undefined) set.columnTint = input.patch.columnTint
   if (input.patch.replenishmentPeriodDays !== undefined) {
     set.replenishmentPeriodDays = input.patch.replenishmentPeriodDays
   }

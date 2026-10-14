@@ -84,7 +84,7 @@ const activeCount = computed(() =>
 
       <button
         type="button"
-        class="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-default text-muted hover:text-default hover:border-accent-500 text-[13px] font-medium cursor-pointer transition-colors"
+        class="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-md text-muted hover:text-default hover:bg-elevated text-[13px] font-medium cursor-pointer transition-colors"
         title="Дейли: повестка дня по доске"
         @click="emit('open-daily')"
       >
@@ -227,7 +227,7 @@ const activeCount = computed(() =>
 
       <button
         type="button"
-        class="hidden lg:inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-default text-muted hover:text-default hover:border-accent-500 text-[13px] font-medium cursor-pointer transition-colors"
+        class="hidden lg:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-muted hover:text-default hover:bg-elevated text-[13px] font-medium cursor-pointer transition-colors"
         title="Дейли: повестка дня по доске"
         @click="emit('open-daily')"
       >

@@ -17,6 +17,7 @@ const BodySchema = z
     sleDays: z.number().int().positive().nullable().optional(),
     sleProbability: z.number().min(0.5).max(0.99).optional(),
     replenishmentPeriodDays: z.number().int().positive().max(60).optional(),
+    columnTint: z.boolean().optional(),
   })
   .refine(
     (d) =>
@@ -25,7 +26,8 @@ const BodySchema = z
       d.color !== undefined ||
       d.sleDays !== undefined ||
       d.sleProbability !== undefined ||
-      d.replenishmentPeriodDays !== undefined,
+      d.replenishmentPeriodDays !== undefined ||
+      d.columnTint !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -49,6 +51,7 @@ export default defineEventHandler(async (event) => {
           ? { sleProbability: body.sleProbability.toFixed(2) }
           : {}),
         replenishmentPeriodDays: body.replenishmentPeriodDays,
+        columnTint: body.columnTint,
       },
       actorRole: workspace.role,
     })

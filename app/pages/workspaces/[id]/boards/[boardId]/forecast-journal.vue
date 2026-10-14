@@ -19,7 +19,7 @@ const board = computed(() => boardsList.data.value?.boards.find(b => b.id === bI
 const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 useHead({
-  title: () => board.value ? `${board.value.name} — Журнал прогнозов` : 'Журнал прогнозов — Такт',
+  title: () => board.value ? `${board.value.name} – Журнал прогнозов` : 'Журнал прогнозов – Такт',
 })
 
 const entries = computed(() => journal.data.value?.sprints ?? [])
@@ -47,24 +47,25 @@ const exportItems = computed<DropdownMenuItem[][]>(() => [
     <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" :board="board" />
 
     <div class="flex-1 min-h-0 overflow-y-auto pt-4 pb-8 space-y-6">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 class="m-0 text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Журнал прогнозов</h1>
-          <p class="text-sm text-muted inline-flex items-center gap-1.5">
+      <UiPageHeader title="Журнал прогнозов">
+        <template #subtitle>
+          <span class="inline-flex items-center gap-1.5">
             Прогнозы фиксируются в момент, когда сделаны, и сверяются с фактом
             <AnalyticsInfo
               answers="Снапшот – слепок прогноза спринта: P50/P85/P95 по сети задач, шанс закрыть всё в срок, сколько осталось задач и SP. Три точки: старт спринта, ежедневно в 03:00 UTC, закрытие."
               note="Снапшоты неизменяемы: прогноз честен, только если записан до того, как стал известен ответ. Калибровка сравнивает снапшот старта с днём закрытия последней задачи состава; перенос хотя бы одной задачи – промах."
               action="Выгрузи журнал и калибровку через «Экспорт»: там же PERT-параметры, размер выборки и рёбра сети."
             />
-          </p>
-        </div>
-        <UDropdownMenu :items="exportItems" :content="{ align: 'end' }">
-          <UButton icon="i-lucide-download" color="neutral" variant="outline" trailing-icon="i-lucide-chevron-down">
-            Экспорт
-          </UButton>
-        </UDropdownMenu>
-      </div>
+          </span>
+        </template>
+        <template #actions>
+          <UDropdownMenu :items="exportItems" :content="{ align: 'end' }">
+            <UButton icon="i-lucide-download" color="neutral" variant="outline" trailing-icon="i-lucide-chevron-down">
+              Экспорт
+            </UButton>
+          </UDropdownMenu>
+        </template>
+      </UiPageHeader>
 
       <section v-if="report" class="surface-soft rounded-2xl px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
         <div class="min-w-0 flex-1">
@@ -97,11 +98,12 @@ const exportItems = computed<DropdownMenuItem[][]>(() => [
         <UIcon name="i-lucide-loader" class="animate-spin size-6" />
       </div>
 
-      <div v-else-if="entries.length === 0" class="py-16 text-center space-y-2">
-        <UIcon name="i-lucide-history" class="size-10 text-muted mx-auto" />
-        <p class="text-sm font-medium">Снапшотов пока нет</p>
-        <p class="text-xs text-muted">Они появятся, когда стартует первый спринт на доске с историей закрытых задач</p>
-      </div>
+      <UiEmptyState
+        v-else-if="entries.length === 0"
+        icon="i-lucide-history"
+        title="Снапшотов пока нет"
+        text="Они появятся, когда стартует первый спринт на доске с историей закрытых задач"
+      />
 
       <div v-else class="space-y-3">
         <ForecastJournalSprint

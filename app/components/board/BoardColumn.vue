@@ -3,6 +3,7 @@ import draggable from 'vuedraggable'
 import { useMediaQuery } from '@vueuse/core'
 import type { BoardColumn as Column } from '#shared/types/column'
 import type { Task } from '#shared/types/task'
+import { columnHex } from '~/utils/column-color'
 
 const props = defineProps<{
   column: Column
@@ -11,6 +12,7 @@ const props = defineProps<{
   boardId: string
   canCreate: boolean // member+: create tasks
   canManage: boolean // admin+: delete/edit column
+  tint?: boolean
 }>()
 
 const wsId = computed(() => props.workspaceId)
@@ -101,6 +103,7 @@ const settingsDraft = reactive({
   wipLimit: null as number | null,
   columnRole: 'in_progress' as typeof props.column.columnRole,
   isQueue: false,
+  color: null as string | null,
 })
 
 function openSettings() {
@@ -108,6 +111,7 @@ function openSettings() {
   settingsDraft.wipLimit = props.column.wipLimit
   settingsDraft.columnRole = props.column.columnRole
   settingsDraft.isQueue = props.column.isQueue
+  settingsDraft.color = props.column.color
   settingsOpen.value = true
 }
 
@@ -122,6 +126,7 @@ async function onSaveSettings() {
       wipLimit,
       columnRole: settingsDraft.columnRole,
       isQueue: settingsDraft.isQueue,
+      color: settingsDraft.color,
     })
     settingsOpen.value = false
   }
@@ -179,7 +184,7 @@ const menuItems = computed(() => [[
   },
 ]])
 
-const roleStyle = computed(() => COLUMN_ROLE_INFO[props.column.columnRole])
+const hex = computed(() => columnHex(props.column))
 
 const wipBarState = computed(() => {
   const limit = props.column.wipLimit
@@ -198,7 +203,11 @@ const wipBarState = computed(() => {
 </script>
 
 <template>
-  <div class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full bg-elevated/70">
+  <div
+    class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full"
+    :class="tint ? 'column-tinted' : 'bg-elevated/70'"
+    :style="{ '--column-color': hex }"
+  >
     <div class="px-3 pt-3 pb-2.5">
       <div class="flex items-center gap-2 mb-1.5">
         <UIcon
@@ -207,7 +216,7 @@ const wipBarState = computed(() => {
           class="column-drag-handle size-3.5 text-dimmed hover:text-default cursor-grab active:cursor-grabbing shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
           title="Перетащи, чтобы переставить колонку"
         />
-        <span :class="['size-2.5 rounded-full shrink-0', roleStyle.dotClass]" />
+        <span class="size-2.5 rounded-full shrink-0" :style="{ background: hex }" />
         <input
           v-if="isEditing"
           ref="nameInputRef"
@@ -230,7 +239,7 @@ const wipBarState = computed(() => {
         <span
           :class="[
             'text-[12px] font-mono tabular-nums shrink-0 whitespace-nowrap',
-            wipBarState?.tone === 'over' ? 'text-red-600' : 'text-muted',
+            wipBarState?.tone === 'over' ? 'text-red-600 font-semibold' : wipBarState?.tone === 'warn' ? 'text-accent-600 font-semibold' : 'text-muted',
           ]"
           :title="wipBarState ? `WIP-лимит ${wipBarState.limit}` : 'Без WIP-лимита'"
         >
@@ -260,11 +269,9 @@ const wipBarState = computed(() => {
       </div>
       <div v-if="wipBarState" class="h-[3px] rounded-full bg-elevated overflow-hidden">
         <div
-          :class="[
-            'h-full rounded-full transition-[width] duration-300',
-            wipBarState.tone === 'over' ? 'bg-red-500' : wipBarState.tone === 'warn' ? 'bg-accent-500' : 'bg-inverted',
-          ]"
-          :style="{ width: `${wipBarState.pct}%` }"
+          class="h-full rounded-full transition-[width] duration-300"
+          :class="wipBarState.tone === 'over' ? 'bg-red-500' : wipBarState.tone === 'warn' ? 'bg-accent-500' : ''"
+          :style="{ width: `${wipBarState.pct}%`, background: wipBarState.tone === 'normal' ? hex : undefined }"
         />
       </div>
     </div>
@@ -346,6 +353,23 @@ const wipBarState = computed(() => {
             description="Задачи здесь ждут, а не делаются. Время в очереди идёт в ожидание при расчёте эффективности потока."
           >
             <USwitch v-model="settingsDraft.isQueue" />
+          </UFormField>
+          <UFormField label="Цвет" name="color" description="Пусто: цвет по типу колонки.">
+            <div class="flex flex-wrap items-center gap-2">
+              <BoardColorPicker
+                :model-value="settingsDraft.color ?? ''"
+                @update:model-value="(v: string) => (settingsDraft.color = v)"
+              />
+              <UButton
+                v-if="settingsDraft.color"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                @click="settingsDraft.color = null"
+              >
+                По типу
+              </UButton>
+            </div>
           </UFormField>
           <div class="flex justify-end gap-2 pt-2">
             <UButton variant="ghost" color="neutral" @click="settingsOpen = false">

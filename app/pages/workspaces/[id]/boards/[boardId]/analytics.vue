@@ -30,7 +30,7 @@ const canRenameBoard = computed(() => hasRole(workspace.value?.role, 'admin'))
 useHead({
   title: () => board.value
     ? `${board.value.name} — Аналитика`
-    : 'Аналитика — Такт',
+    : 'Аналитика – Такт',
 })
 </script>
 
@@ -39,24 +39,22 @@ useHead({
     <BoardSubnav :workspace-id="wsId" :board-id="bId" :board-name="board?.name" :can-rename="canRenameBoard" :board="board" />
 
     <div class="flex-1 min-h-0 space-y-4 overflow-y-auto overflow-x-hidden pt-4 pb-8">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 class="m-0 text-2xl font-semibold tracking-tight text-default sm:text-[28px]">Аналитика</h1>
-          <p class="text-sm text-muted">Поток, прогноз и рекомендации по доске</p>
-        </div>
-        <div class="inline-flex shrink-0 items-center gap-0.5 rounded-lg bg-elevated p-0.5">
-          <button
-            v-for="r in RANGES"
-            :key="r.value"
-            type="button"
-            class="h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium tabular-nums transition-colors"
-            :class="range === r.value ? 'bg-default text-default shadow-sm' : 'text-muted hover:text-default'"
-            @click="range = r.value"
-          >
-            {{ r.label }}
-          </button>
-        </div>
-      </div>
+      <UiPageHeader title="Аналитика" subtitle="Поток, прогноз и рекомендации по доске">
+        <template #actions>
+          <div class="inline-flex shrink-0 items-center gap-0.5 rounded-lg bg-elevated p-0.5">
+            <button
+              v-for="r in RANGES"
+              :key="r.value"
+              type="button"
+              class="h-7 cursor-pointer rounded-md px-2.5 text-[12px] font-medium tabular-nums transition-colors"
+              :class="range === r.value ? 'bg-default text-default shadow-sm' : 'text-muted hover:text-default'"
+              @click="range = r.value"
+            >
+              {{ r.label }}
+            </button>
+          </div>
+        </template>
+      </UiPageHeader>
 
       <AnalyticsOverview
         :workspace-id="wsId"

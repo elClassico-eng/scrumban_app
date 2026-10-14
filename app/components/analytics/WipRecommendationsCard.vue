@@ -11,18 +11,12 @@ function deltaIcon(current: number, recommended: number): { name: string; color:
 </script>
 
 <template>
-  <UCard :ui="ANALYTICS_CARD_UI">
-    <template #header>
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <h2 class="font-semibold">WIP рекомендации</h2>
-          <AnalyticsInfo
-            answers="Сколько задач держать в работе одновременно. Если текущий WIP заметно выше рекомендованного — стадия перегружена и задачи застревают."
-            formula="Закон Литтла: WIP = throughput × cycle time. Рекомендация = средний throughput × среднее cycle time по истории."
-          />
-        </div>
-        <span class="text-xs text-muted">Little's Law: WIP ≈ throughput × cycle time</span>
-      </div>
+  <UiPanel title="WIP рекомендации">
+    <template #meta>
+      <AnalyticsInfo
+        answers="Сколько задач держать в работе одновременно. Если текущий WIP заметно выше рекомендованного — стадия перегружена и задачи застревают."
+        formula="Закон Литтла: WIP = throughput × cycle time. Рекомендация = средний throughput × среднее cycle time по истории."
+        />
     </template>
 
     <div v-if="isLoading" class="h-32 flex items-center justify-center text-muted">
@@ -66,7 +60,8 @@ function deltaIcon(current: number, recommended: number): { name: string; color:
             <span :class="['text-muted', col.currentTaskCount > col.recommendedWip ? 'text-warning' : '']">
               {{ col.currentTaskCount }}
             </span>
-            <UIcon :name="deltaIcon(col.currentTaskCount, col.recommendedWip).name"
+            <UIcon
+:name="deltaIcon(col.currentTaskCount, col.recommendedWip).name"
                    :class="deltaIcon(col.currentTaskCount, col.recommendedWip).color" />
             <span class="font-semibold">{{ col.recommendedWip }}</span>
             <span class="text-xs text-muted ml-2">
@@ -76,5 +71,5 @@ function deltaIcon(current: number, recommended: number): { name: string; color:
         </div>
       </div>
     </template>
-  </UCard>
+  </UiPanel>
 </template>

@@ -188,6 +188,30 @@ describe('POST /columns', () => {
 })
 
 describe('PATCH /columns/:columnId', () => {
+  it('color accepts a hex, rejects garbage, null resets to the role color', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const boardId = await createBoard(owner, wsId)
+    const list = await fetchWithJar<{ columns: { id: string; color: string | null }[] }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/columns`,
+    )
+    const col = list.body.columns[0]!
+    expect(col.color).toBeNull()
+    const url = `/api/workspaces/${wsId}/boards/${boardId}/columns/${col.id}`
+
+    const ok = await fetchWithJar<{ column: { color: string | null } }>(owner.jar, url, { method: 'PATCH', body: { color: '#3b82f6' } })
+    expect(ok.status).toBe(200)
+    expect(ok.body.column.color).toBe('#3b82f6')
+
+    const bad = await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { color: 'red' } })
+    expect(bad.status).toBe(400)
+
+    const reset = await fetchWithJar<{ column: { color: string | null } }>(owner.jar, url, { method: 'PATCH', body: { color: null } })
+    expect(reset.status).toBe(200)
+    expect(reset.body.column.color).toBeNull()
+  })
+
   it('admin can rename and set wipLimit', async () => {
     const owner = await registerUser('owner@example.com')
     const wsId = await createWorkspace(owner)

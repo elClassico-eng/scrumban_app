@@ -60,8 +60,12 @@ const wipData = computed(() => {
 
 const accuracy = computed(() => {
   const r = forecastAccuracy.data.value?.report
-  if (!r || r.total === 0) return null
-  return { pct: Math.round((r.p85HitCount / r.total) * 100), total: r.total }
+  if (!r || r.scored === 0) return null
+  return {
+    pct: r.p85HitRate === null ? null : Math.round(r.p85HitRate * 100),
+    total: r.scored,
+    insufficient: r.reliability === 'insufficient',
+  }
 })
 
 // A row of four dashes reads as a broken page. Until the board has produced
@@ -144,13 +148,14 @@ const hasAny = computed(() =>
       </div>
       <div
         class="text-[24px] font-semibold tracking-tight tabular-nums leading-none mt-1.5"
-        :class="accuracy && accuracy.pct >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-default'"
+        :class="accuracy && !accuracy.insufficient && (accuracy.pct ?? 0) >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-default'"
       >
-        {{ accuracy ? accuracy.pct : '—' }}<span class="text-[12px] text-muted font-normal ml-1">% в P85</span>
+        {{ accuracy && !accuracy.insufficient && accuracy.pct !== null ? accuracy.pct : '—' }}<span class="text-[12px] text-muted font-normal ml-1">% в P85</span>
       </div>
       <div class="text-[11px] text-muted mt-1">
-        <template v-if="accuracy">по {{ accuracy.total }} закрытым спринтам</template>
-        <template v-else>нет закрытых спринтов</template>
+        <template v-if="accuracy && accuracy.insufficient">засчитано {{ accuracy.total }}, нужно ≥ 5</template>
+        <template v-else-if="accuracy">по {{ accuracy.total }} засчитанным спринтам</template>
+        <template v-else>нет засчитанных спринтов</template>
       </div>
     </div>
   </div>

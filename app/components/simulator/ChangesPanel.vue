@@ -130,7 +130,7 @@ const deadlineShift = computed<number>({
 </script>
 
 <template>
-  <div class="bg-default border border-default rounded-2xl px-5 py-5 space-y-5">
+  <div class="surface-soft rounded-2xl px-5 py-5 space-y-5">
     <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
       <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
       Изменения сценария

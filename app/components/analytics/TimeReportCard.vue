@@ -53,13 +53,7 @@ const hasSprintData = computed(() => (report.value?.bySprint.length ?? 0) > 0)
 </script>
 
 <template>
-  <UCard :ui="ANALYTICS_CARD_UI">
-    <template #header>
-      <div class="flex items-center justify-between">
-        <h2 class="font-semibold">Время</h2>
-        <span class="text-xs text-muted">Затраченное время по участникам и спринтам</span>
-      </div>
-    </template>
+  <UiPanel title="Время">
 
     <div v-if="isLoading" class="h-48 flex items-center justify-center text-muted">
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
@@ -85,5 +79,5 @@ const hasSprintData = computed(() => (report.value?.bySprint.length ?? 0) > 0)
         </div>
       </div>
     </template>
-  </UCard>
+  </UiPanel>
 </template>

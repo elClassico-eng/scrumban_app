@@ -2,6 +2,7 @@
 import type { SprintReportPayload } from '#shared/types/sprint-report'
 import type { BurndownPoint } from '#shared/types/sprint'
 import { pageRoutes } from '~/routing'
+import { OUTCOME_CLASS, OUTCOME_LABEL } from '~/utils/forecast-labels'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -42,7 +43,7 @@ const payload = computed<SprintReportPayload | null>(() =>
 )
 
 useHead({
-  title: () => payload.value ? `Отчёт — ${payload.value.sprint.name}` : 'Отчёт спринта — Такт',
+  title: () => payload.value ? `Отчёт – ${payload.value.sprint.name}` : 'Отчёт спринта – Такт',
 })
 
 const toast = useToast()
@@ -116,6 +117,11 @@ const verdict = computed(() => {
   }
 })
 
+const hasFlowMetrics = computed(() => {
+  const f = payload.value?.flow
+  return !!f && (f.throughputPerWeek !== null || f.cycleP50 !== null || f.cycleP85 !== null)
+})
+
 const deliveredShare = computed(() => {
   const t = payload.value?.totals
   if (!t || t.startCount === 0) return null
@@ -155,29 +161,19 @@ async function copyJson() {
 
 <template>
   <div class="space-y-5">
-    <div class="flex items-start gap-3">
-      <div class="min-w-0">
-        <NuxtLink
-          :to="pageRoutes.boardSprints(wsId, bId)"
-          class="text-[12px] text-muted hover:text-default transition-colors"
-        >
-          ← Спринты
-        </NuxtLink>
-        <h1 class="text-[26px] font-semibold tracking-tight text-highlighted mt-0.5 mb-0 flex items-center gap-2.5 flex-wrap">
-          <UIcon name="i-lucide-file-bar-chart-2" class="size-6 text-accent-500" />
-          Отчёт спринта
-          <span v-if="payload" class="text-muted font-normal truncate">· {{ payload.sprint.name }}</span>
-        </h1>
-        <p v-if="payload" class="text-[12.5px] text-muted mt-1 mb-0">
-          {{ fmtDate(payload.sprint.startedAt) }} – {{ fmtDate(payload.sprint.endedAt) }}
-          <template v-if="payload.sprint.factDurationDays"> · {{ payload.sprint.factDurationDays }} дн</template>
-          <template v-if="payload.extensions.totalEndShiftDays > 0">
-            · <span class="text-accent-600">продлевался на {{ payload.extensions.totalEndShiftDays }} дн</span>
-          </template>
-        </p>
-      </div>
-      <div class="flex-1" />
-      <template v-if="payload && tab === 'report'">
+    <UiPageHeader
+      :title="payload ? `Отчёт спринта · ${payload.sprint.name}` : 'Отчёт спринта'"
+      icon="i-lucide-file-bar-chart-2"
+      :back="{ to: pageRoutes.boardSprints(wsId, bId), label: 'Спринты' }"
+    >
+      <template v-if="payload" #subtitle>
+        {{ fmtDate(payload.sprint.startedAt) }} – {{ fmtDate(payload.sprint.endedAt) }}
+        <template v-if="payload.sprint.factDurationDays"> · {{ payload.sprint.factDurationDays }} дн</template>
+        <template v-if="payload.extensions.totalEndShiftDays > 0">
+          · <span class="text-accent-600">продлевался на {{ payload.extensions.totalEndShiftDays }} дн</span>
+        </template>
+      </template>
+      <template v-if="payload && tab === 'report'" #actions>
         <UButton size="sm" variant="outline" color="neutral" icon="i-lucide-download" @click="downloadCsv">
           CSV
         </UButton>
@@ -185,7 +181,7 @@ async function copyJson() {
           JSON
         </UButton>
       </template>
-    </div>
+    </UiPageHeader>
 
     <div class="flex items-center gap-1 border-b border-default">
       <button
@@ -216,19 +212,18 @@ async function copyJson() {
       Загружаем отчёт…
     </div>
 
-    <div
+    <UiEmptyState
       v-else-if="!payload"
-      class="surface-soft rounded-2xl px-6 py-10 text-center space-y-3"
+      icon="i-lucide-file-question"
+      title="Отчёт ещё не сформирован"
+      text="Спринт закрыт до появления отчётов. Отчёт можно собрать задним числом из журнала событий."
     >
-      <UIcon name="i-lucide-file-question" class="size-8 text-dimmed" />
-      <p class="text-[13px] text-muted m-0 max-w-md mx-auto">
-        Отчёт по этому спринту ещё не сформирован — он был закрыт до появления отчётов.
-        Отчёт можно собрать задним числом из журнала событий.
-      </p>
-      <UButton v-if="canGenerate" :loading="generate.isPending.value" @click="onGenerate">
-        Сформировать отчёт
-      </UButton>
-    </div>
+      <template v-if="canGenerate" #actions>
+        <UButton :loading="generate.isPending.value" @click="onGenerate">
+          Сформировать отчёт
+        </UButton>
+      </template>
+    </UiEmptyState>
 
     <template v-else>
       <div
@@ -257,117 +252,84 @@ async function copyJson() {
         </p>
       </div>
 
-      <section class="surface-soft rounded-2xl p-5">
-        <h2 class="m-0 font-semibold text-default">Обещали и получилось</h2>
-
-        <template v-if="promise">
-          <div class="mt-4 grid gap-5 sm:grid-cols-2">
-            <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">
-                Обещали на старте · {{ promise.takenAt }}
-              </p>
-              <p class="mt-2 text-sm text-default">
-                <template v-if="promise.probability !== null">
-                  Уложиться в срок с вероятностью
-                  <b>{{ Math.round(promise.probability * 100) }}%</b>
-                </template>
-                <template v-else>Горизонт не задавался</template>
-              </p>
-              <p class="mt-1 text-sm text-muted">
-                Закончить P50 <b class="text-default">{{ promise.p50 }}</b>,
-                P85 <b class="text-default">{{ promise.p85 }}</b>
-              </p>
-              <p class="mt-1 text-xs text-muted">В работе было {{ promise.committed }} задач</p>
-            </div>
-
-            <div>
-              <p class="text-[11px] font-semibold uppercase tracking-[0.05em] text-muted">Получилось</p>
-              <p v-if="verdict" class="mt-2 text-sm text-default">
-                Спринт закрыт <b>{{ verdict.closedAt }}</b>
-              </p>
-              <p class="mt-1 text-sm text-muted">
-                Доставлено <b class="text-default">{{ payload.totals.deliveredCount }}</b>
-                из {{ payload.totals.startCount }}<template v-if="deliveredShare !== null"> ({{ deliveredShare }}%)</template>
-              </p>
-              <p class="mt-1 text-xs text-muted">
-                {{ payload.goal.achieved === true
-                  ? 'Цель достигнута'
-                  : payload.goal.achieved === false ? 'Цель не достигнута' : 'Итог по цели не фиксировался' }}
-              </p>
-            </div>
+      <UiPanel title="Обещали и получилось">
+        <div v-if="promise" class="grid gap-6 sm:grid-cols-3">
+          <div>
+            <p class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Обещание · {{ promise.takenAt }}</p>
+            <p class="m-0 mt-2 text-[22px] font-semibold tabular-nums leading-none text-default">
+              <template v-if="promise.probability !== null">{{ Math.round(promise.probability * 100) }}%</template>
+              <template v-else>—</template>
+            </p>
+            <p class="m-0 mt-1 text-[12px] text-muted">
+              <template v-if="promise.probability !== null">шанс уложиться в срок</template>
+              <template v-else>горизонт не задавался</template>
+            </p>
+            <p class="m-0 mt-2 text-sm text-muted">
+              P50 <b class="text-default">{{ promise.p50 }}</b> · P85 <b class="text-default">{{ promise.p85 }}</b>
+            </p>
+            <p class="m-0 mt-0.5 text-xs text-muted">в работе было {{ promise.committed }} задач</p>
           </div>
 
-          <p
-            v-if="verdict"
-            class="mt-4 rounded-xl px-4 py-3 text-sm"
-            :class="verdict.outcome === 'hit'
-              ? 'bg-success-50 text-success-700 dark:bg-success-950/40 dark:text-success-400'
-              : verdict.outcome === 'unknown'
-                ? 'bg-muted text-muted'
-                : 'bg-error-50 text-error-700 dark:bg-error-950/40 dark:text-error-400'"
-          >
-            <template v-if="verdict.outcome === 'hit'">
-              Прогноз оправдался: все задачи закрыты в пределах P85<template v-if="verdict.diffDays">, на {{ verdict.diffDays }} дн раньше</template>.
-            </template>
-            <template v-else-if="verdict.outcome === 'miss'">
-              Прогноз не оправдался: последняя задача закрыта на {{ verdict.diffDays }} дн позже P85.
-            </template>
-            <template v-else-if="verdict.outcome === 'carryover'">
-              Прогноз не оправдался: {{ verdict.carried }} {{ plural(verdict.carried, ['задача перенесена', 'задачи перенесены', 'задач перенесено']) }}, состав не закрыт целиком. Перенос засчитывается как промах.
-            </template>
-            <template v-else>
-              Для этого спринта исход не определён: снапшот закрытия без состава (данные до обновления).
-            </template>
-          </p>
-          <p v-else class="mt-4 text-sm text-muted">
-            Спринт ещё не закрыт, сверять обещание пока не с чем.
-          </p>
-        </template>
+          <div>
+            <p class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Получилось</p>
+            <p class="m-0 mt-2 text-[22px] font-semibold tabular-nums leading-none text-default">
+              {{ payload.totals.deliveredCount }}<span class="text-[13px] font-normal text-muted"> из {{ payload.totals.startCount }}</span>
+            </p>
+            <p class="m-0 mt-1 text-[12px] text-muted">
+              доставлено<template v-if="deliveredShare !== null"> · {{ deliveredShare }}%</template>
+            </p>
+            <p class="m-0 mt-2 text-sm text-muted">
+              перенесено <b class="text-default">{{ payload.totals.carryOverCount }}</b>
+              <template v-if="verdict"> · закрыт <b class="text-default">{{ verdict.closedAt }}</b></template>
+            </p>
+            <p class="m-0 mt-0.5 text-xs text-muted">
+              {{ payload.goal.achieved === true ? 'цель достигнута' : payload.goal.achieved === false ? 'цель не достигнута' : 'итог по цели не фиксировался' }}
+            </p>
+          </div>
 
-        <p v-else class="mt-2 text-sm text-muted">
+          <div>
+            <p class="m-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Исход</p>
+            <template v-if="verdict">
+              <span
+                class="mt-2 inline-flex items-center rounded-md px-2 py-1 text-[13px] font-semibold"
+                :class="OUTCOME_CLASS[verdict.outcome]"
+              >
+                {{ OUTCOME_LABEL[verdict.outcome] }}
+              </span>
+              <p class="m-0 mt-2 text-sm text-muted">
+                <template v-if="verdict.outcome === 'hit'">Все задачи закрыты в пределах P85<template v-if="verdict.diffDays">, на {{ verdict.diffDays }} дн раньше</template>.</template>
+                <template v-else-if="verdict.outcome === 'miss'">Последняя задача закрыта на {{ verdict.diffDays }} дн позже P85.</template>
+                <template v-else-if="verdict.outcome === 'carryover'">{{ verdict.carried }} {{ plural(verdict.carried, ['задача перенесена', 'задачи перенесены', 'задач перенесено']) }}; перенос засчитывается как промах.</template>
+                <template v-else>Снапшот закрытия без состава (данные до обновления).</template>
+              </p>
+            </template>
+            <p v-else class="m-0 mt-2 text-sm text-muted">Спринт ещё не закрыт, сверять обещание пока не с чем.</p>
+          </div>
+        </div>
+
+        <p v-else class="m-0 text-sm text-muted">
           Прогноз на старте не сохранён, поэтому сверять не с чем. Снимок делается автоматически
           при старте спринта, так что у следующих спринтов сравнение появится.
         </p>
-      </section>
+      </UiPanel>
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <div class="surface-soft rounded-xl px-4 py-3">
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Состав на старте</div>
-          <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
-            {{ payload.totals.startCount }}<span class="text-[12px] text-muted font-normal ml-1">задач · {{ payload.totals.startSp }} SP</span>
-          </div>
+      <UiPanel>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <UiStat label="Состав на старте" :value="payload.totals.startCount" :sub="`задач · ${payload.totals.startSp} SP`" />
+          <UiStat label="Доставлено" :value="payload.totals.deliveredCount" :sub="`задач · ${payload.totals.deliveredSp} SP${deliveredShare !== null ? ` · ${deliveredShare}% состава` : ''}`" />
+          <UiStat label="Перенесено" :value="payload.totals.carryOverCount" :sub="`задач · ${payload.totals.carryOverSp} SP`" :tone="payload.totals.carryOverCount > 0 ? 'warning' : 'default'" />
+          <UiStat label="Изменения состава" :value="`+${payload.totals.addedAfterStartCount} / −${payload.totals.removedAfterStartCount}`" sub="после старта" />
         </div>
-        <div class="surface-soft rounded-xl px-4 py-3">
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Доставлено</div>
-          <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
-            {{ payload.totals.deliveredCount }}<span class="text-[12px] text-muted font-normal ml-1">задач · {{ payload.totals.deliveredSp }} SP</span>
-          </div>
-          <div v-if="deliveredShare !== null" class="text-[11px] text-muted mt-0.5">{{ deliveredShare }}% состава</div>
-        </div>
-        <div class="surface-soft rounded-xl px-4 py-3">
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Перенесено</div>
-          <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
-            {{ payload.totals.carryOverCount }}<span class="text-[12px] text-muted font-normal ml-1">задач · {{ payload.totals.carryOverSp }} SP</span>
-          </div>
-        </div>
-        <div class="surface-soft rounded-xl px-4 py-3">
-          <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Изменения состава</div>
-          <div class="text-[24px] font-semibold tracking-tight text-default mt-0.5">
-            +{{ payload.totals.addedAfterStartCount }}<span class="text-muted">/</span>−{{ payload.totals.removedAfterStartCount }}
-          </div>
-          <div class="text-[11px] text-muted mt-0.5">после старта</div>
-        </div>
-      </div>
+      </UiPanel>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        <div v-if="burndownPoints.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2">
-          <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Burndown</div>
-          <SprintBurndown :points="burndownPoints" :height="140" />
-        </div>
+        <UiPanel title="Burndown">
+          <SprintBurndown v-if="burndownPoints.length >= 2" :points="burndownPoints" :height="140" />
+          <p v-else class="m-0 text-[12.5px] text-muted">Слишком мало точек, чтобы рисовать график: {{ burndownPoints.length }} из нужных 2.</p>
+        </UiPanel>
 
-        <div class="surface-soft rounded-2xl px-5 py-4 space-y-3">
-          <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Метрики потока</div>
-          <div class="grid grid-cols-3 gap-2">
+        <UiPanel v-if="hasFlowMetrics || payload.serviceClassDistribution.length > 0" title="Метрики потока">
+          <div v-if="hasFlowMetrics" class="grid grid-cols-3 gap-2">
             <div>
               <div class="text-[10px] font-semibold uppercase text-muted">Throughput</div>
               <div class="text-[18px] font-semibold text-default">{{ payload.flow.throughputPerWeek ?? '—' }}<span class="text-[10px] text-muted font-normal ml-0.5">задач/нед</span></div>
@@ -381,7 +343,7 @@ async function copyJson() {
               <div class="text-[18px] font-semibold text-default">{{ payload.flow.cycleP85 ?? '—' }}<span class="text-[10px] text-muted font-normal ml-0.5">дн</span></div>
             </div>
           </div>
-          <div class="flex flex-wrap gap-1.5 pt-1">
+          <div class="flex flex-wrap gap-1.5" :class="hasFlowMetrics ? 'pt-3' : ''">
             <span
               v-for="d in payload.serviceClassDistribution"
               :key="d.serviceClass"
@@ -390,7 +352,7 @@ async function copyJson() {
               {{ CLASS_LABEL[d.serviceClass] ?? d.serviceClass }}: <b class="text-default">{{ d.count }}</b>
             </span>
           </div>
-        </div>
+        </UiPanel>
       </div>
 
       <div v-if="payload.carryOver.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2">

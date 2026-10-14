@@ -7,7 +7,7 @@ const updated = '21 июня 2026'
 const contactEmail = 'daniilerkesov122@gmail.com'
 
 useHead({
-  title: 'Политика обработки персональных данных — Такт',
+  title: 'Политика обработки персональных данных – Такт',
   bodyAttrs: { class: 'landing-page' },
 })
 </script>

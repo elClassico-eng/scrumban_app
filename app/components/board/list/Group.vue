@@ -44,7 +44,7 @@ function onAdd() {
 <template>
   <div>
     <div
-      class="group/head flex items-center gap-2 sm:gap-[11px] px-4 sm:px-[18px] py-2.5 sm:py-[11px] cursor-pointer select-none hover:bg-muted/40 dark:hover:bg-muted/20 transition-colors sticky top-0 sm:top-[42px] bg-default z-20"
+      class="group/head flex items-center gap-2 sm:gap-[11px] px-4 sm:px-[18px] py-2.5 sm:py-[11px] cursor-pointer select-none transition-colors sticky top-0 sm:top-[42px] bg-muted z-20"
       @click="emit('toggle-collapse', group.key)"
     >
       <span
@@ -57,6 +57,7 @@ function onAdd() {
       <span
         class="inline-flex items-center gap-[7px] h-[24px] sm:h-[26px] px-2.5 sm:px-3 rounded-full text-[10.5px] sm:text-[11.5px] font-bold uppercase tracking-[0.04em] text-white min-w-0 shrink sm:shrink-0"
         :class="group.pillClass"
+        :style="group.pillColor ? { background: group.pillColor } : undefined"
       >
         <span class="w-1.5 h-1.5 rounded-full bg-white/90 shrink-0" />
         <span class="truncate">{{ group.title }}</span>
@@ -85,9 +86,9 @@ function onAdd() {
       </span>
 
       <button
-        v-if="canCreate"
+        v-if="canCreate && group.columnId"
         type="button"
-        class="size-[26px] rounded-[7px] border border-default bg-default text-muted grid place-items-center shrink-0 hover:border-accent-400 hover:text-accent-500 transition-colors"
+        class="size-[26px] rounded-[7px] bg-default text-muted grid place-items-center shrink-0 hover:text-accent-500 transition-colors"
         @click.stop="onAdd"
       >
         <UIcon name="i-lucide-plus" class="size-3.5" />

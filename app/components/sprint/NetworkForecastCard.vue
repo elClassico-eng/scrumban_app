@@ -52,7 +52,7 @@ function pct(p: number | null | undefined): string {
 </script>
 
 <template>
-  <div class="bg-default border border-default rounded-2xl px-6 py-6 space-y-4">
+  <div class="space-y-3">
     <div class="flex items-center gap-2">
       <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
         <UIcon name="i-lucide-git-branch" class="size-3.5" />
@@ -99,9 +99,11 @@ function pct(p: number | null | undefined): string {
         Все задачи спринта закрыты — прогнозировать нечего.
       </div>
 
-      <template v-else>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          <div class="bg-muted rounded-lg px-3 py-2.5">
+      <div v-else class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.2fr)] items-start">
+        <div class="bg-elevated/50 rounded-xl p-4 space-y-3">
+          <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Срок и шансы</div>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-default rounded-lg px-3 py-2.5">
             <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Ожидаемо</div>
             <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
               {{ okData.pert.expectedDurationDays }}<span class="text-[12px] text-muted font-normal ml-0.5">± {{ okData.pert.sigmaDays }} дн</span>
@@ -111,21 +113,21 @@ function pct(p: number | null | undefined): string {
               <template v-else>дата окончания не задана</template>
             </div>
           </div>
-          <div class="bg-muted rounded-lg px-3 py-2.5">
+          <div class="bg-default rounded-lg px-3 py-2.5">
             <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">PERT</div>
             <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
               {{ pct(okData.pert.probabilityWithinHorizon) }}<span class="text-[12px] text-muted font-normal ml-0.5">%</span>
             </div>
             <div class="text-[11px] text-muted mt-0.5">аналитически, к дате</div>
           </div>
-          <div class="bg-muted rounded-lg px-3 py-2.5">
+          <div class="bg-default rounded-lg px-3 py-2.5">
             <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Симуляция</div>
             <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
               {{ pct(okData.simulation.probabilityWithinHorizon) }}<span class="text-[12px] text-muted font-normal ml-0.5">%</span>
             </div>
             <div class="text-[11px] text-muted mt-0.5">{{ okData.simulation.iterations }} прогонов по сети</div>
           </div>
-          <div class="bg-muted rounded-lg px-3 py-2.5">
+          <div class="bg-default rounded-lg px-3 py-2.5">
             <div class="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">Наивный MC</div>
             <div class="text-[22px] font-semibold tracking-tight text-default mt-0.5">
               {{ pct(naiveProbability) }}<span class="text-[12px] text-muted font-normal ml-0.5">%</span>
@@ -141,20 +143,23 @@ function pct(p: number | null | undefined): string {
           история: {{ okData.closedSamples }} закрытых задач · {{ okData.edgeCount }} зависимостей
           <AnalyticsPercentileHint class="inline-block align-middle ml-1" />
         </div>
-
-        <div v-if="criticalChainTitles.length > 0" class="space-y-1.5">
-          <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Критический путь</div>
-          <div class="flex flex-wrap items-center gap-1.5">
-            <template v-for="(title, i) in criticalChainTitles" :key="i">
-              <span class="text-[11.5px] font-medium px-1.5 py-0.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300">{{ title }}</span>
-              <UIcon v-if="i < criticalChainTitles.length - 1" name="i-lucide-arrow-right" class="size-3 text-dimmed" />
-            </template>
-          </div>
         </div>
 
-        <div class="space-y-1.5">
+        <div class="bg-elevated/50 rounded-xl p-4 space-y-2">
+          <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Критический путь</div>
+          <p v-if="criticalChainTitles.length === 0" class="m-0 text-[12.5px] text-muted">Зависимостей нет: критический путь не выделяется.</p>
+          <ol v-else class="m-0 list-none p-0 space-y-1.5">
+            <li v-for="(title, i) in criticalChainTitles" :key="i" class="flex items-start gap-2 text-[12.5px]">
+              <span class="mt-px size-4 shrink-0 rounded-full bg-accent-500 text-white text-[10px] font-semibold grid place-items-center tabular-nums">{{ i + 1 }}</span>
+              <span class="text-default font-medium leading-snug">{{ title }}</span>
+            </li>
+          </ol>
+          <p class="m-0 pt-1 text-[11px] text-muted">Цепочка без резерва: её длина и есть срок спринта.</p>
+        </div>
+
+        <div class="bg-elevated/50 rounded-xl p-4 space-y-2">
           <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Задачи и резервы</div>
-          <div class="border border-default rounded-lg overflow-hidden bg-default divide-y divide-default">
+          <div class="rounded-lg overflow-hidden bg-default divide-y divide-default">
             <div
               v-for="t in riskTasks"
               :key="t.taskId"
@@ -171,7 +176,9 @@ function pct(p: number | null | undefined): string {
             </div>
           </div>
         </div>
+      </div>
 
+      <template v-if="okData && okData.remainingCount > 0">
         <SprintForecastConvergence
           :workspace-id="workspaceId"
           :board-id="boardId"

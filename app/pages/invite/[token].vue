@@ -2,8 +2,8 @@
 import type { Role } from '#shared/types/domain'
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-md' })
-useHead({ title: 'Приглашение в workspace — Такт' })
+definePageMeta({ layout: 'auth', colorMode: 'light', cardMaxWidth: 'lg:max-w-md' })
+useHead({ title: 'Приглашение в workspace – Такт' })
 
 type InspectResponse =
   | { valid: true, workspaceName: string, role: string, emailBound: string | null }
@@ -73,7 +73,7 @@ async function accept() {
         ? `Вы уже в ${wsName} (роль: ${ROLE_LABEL[res.currentRole as Role] ?? res.currentRole})`
         : `Вы присоединились к ${wsName}`,
       description: res.alreadyMember
-        ? 'Текущая роль сохранена — изменение ролей делается через members.'
+        ? 'Текущая роль сохранена, поменять её можно на странице участников.'
         : undefined,
       color: 'success',
       icon: 'i-lucide-check',
@@ -160,7 +160,7 @@ const registerWithNext = computed(() => ({
           Войти и принять
         </UButton>
         <UButton :to="registerWithNext" block size="xl" variant="ghost" color="neutral">
-          Нет аккаунта — зарегистрироваться
+          Нет аккаунта? Зарегистрироваться
         </UButton>
       </div>
 
@@ -200,7 +200,7 @@ const registerWithNext = computed(() => ({
         <UIcon name="i-lucide-mail-warning" class="size-12 text-muted mx-auto" />
         <h1 class="text-2xl font-bold tracking-tight">Сначала подтвердите email</h1>
         <p class="text-sm text-muted leading-relaxed">
-          Приглашения с email-привязкой можно принять только после подтверждения собственного email — это защита от перехвата приглашений.
+          Приглашения с email-привязкой можно принять только после подтверждения собственного email – это защита от перехвата приглашений.
         </p>
       </div>
       <div class="flex flex-col gap-3 pt-2">

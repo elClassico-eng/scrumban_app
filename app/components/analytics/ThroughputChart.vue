@@ -42,18 +42,12 @@ const hasData = computed(() => (props.report?.buckets.length ?? 0) > 0)
 </script>
 
 <template>
-  <UCard :ui="ANALYTICS_CARD_UI">
-    <template #header>
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <h2 class="font-semibold">Throughput</h2>
-          <AnalyticsInfo
-            answers="Сколько задач закрывается в день. Стабильность важнее величины — ровный throughput даёт точный прогноз."
-            formula="Число закрытых задач в каждом дневном бакете. Это вход для Monte Carlo прогноза."
-          />
-        </div>
-        <span class="text-xs text-muted">Закрытых задач в день</span>
-      </div>
+  <UiPanel title="Throughput">
+    <template #meta>
+      <AnalyticsInfo
+        answers="Сколько задач закрывается в день. Стабильность важнее величины — ровный throughput даёт точный прогноз."
+        formula="Число закрытых задач в каждом дневном бакете. Это вход для Monte Carlo прогноза."
+        />
     </template>
     <div v-if="isLoading" class="h-48 flex items-center justify-center text-muted">
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
@@ -62,5 +56,5 @@ const hasData = computed(() => (props.report?.buckets.length ?? 0) > 0)
       Здесь появится throughput — сколько задач закрывается в день. Закройте несколько задач, чтобы увидеть тренд.
     </div>
     <VChart v-else :option="option" autoresize class="h-48" />
-  </UCard>
+  </UiPanel>
 </template>

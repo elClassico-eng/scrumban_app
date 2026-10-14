@@ -70,23 +70,21 @@ const deadline = computed(() =>
 </script>
 
 <template>
-  <section class="surface-soft flex min-w-0 flex-col rounded-2xl p-5">
-    <div class="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-      <div class="min-w-0">
-        <h2 class="font-semibold text-default">Активный спринт</h2>
-        <p v-if="sprint" class="truncate text-xs text-muted">
-          {{ sprint.name }} · {{ sprint.boardName }}
-          <template v-if="otherActive"> · ещё {{ otherActive }} активн.</template>
-        </p>
-      </div>
+  <UiPanel title="Активный спринт">
+    <template #meta>
+      <span v-if="sprint" class="truncate text-xs text-muted">
+        · {{ sprint.name }} · {{ sprint.boardName }}
+        <template v-if="otherActive"> · ещё {{ otherActive }} активн.</template>
+      </span>
+    </template>
+    <template v-if="sprint" #actions>
       <NuxtLink
-        v-if="sprint"
         :to="pageRoutes.sprintSimulator(wsId, sprint.boardId, sprint.id)"
         class="shrink-0 text-xs text-muted transition-colors hover:text-accent-600"
       >
         Симулятор →
       </NuxtLink>
-    </div>
+    </template>
 
     <p v-if="isLoading" class="text-sm text-muted">Загружаю спринты…</p>
 
@@ -103,38 +101,28 @@ const deadline = computed(() =>
       </NuxtLink>
     </div>
 
-    <div v-else class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch">
-      <div class="flex min-w-0 flex-1 flex-col justify-center gap-3">
-        <div v-if="days">
-          <div class="flex items-baseline justify-between gap-3 text-xs">
-            <span class="text-muted">
-              День <span class="font-medium tabular-nums text-default">{{ days.current }}</span>
-              из <span class="font-medium tabular-nums text-default">{{ days.total }}</span>
-            </span>
-            <span :class="days.left < 0 ? 'text-error-600' : 'text-muted'">
-              <template v-if="days.left < 0">просрочен на {{ -days.left }} {{ plural(-days.left, DAYS) }}</template>
-              <template v-else>осталось {{ days.left }} {{ plural(days.left, DAYS) }}</template>
-            </span>
-          </div>
-          <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-elevated">
-            <div
-              class="h-full rounded-full bg-zinc-400 dark:bg-zinc-500"
-              :style="{ width: `${Math.min(100, (days.current / days.total) * 100)}%` }"
-            />
-          </div>
-        </div>
-
-        <div v-if="tasks">
-          <div class="flex items-baseline justify-between gap-3 text-xs">
-            <span class="text-muted">
-              Задачи <span class="font-medium tabular-nums text-default">{{ tasks.done }}</span>
-              из <span class="font-medium tabular-nums text-default">{{ tasks.total }}</span>
-            </span>
-            <span class="tabular-nums text-muted">{{ tasks.pct }}%</span>
-          </div>
-          <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-elevated">
-            <div class="h-full rounded-full bg-accent-500" :style="{ width: `${tasks.pct}%` }" />
-          </div>
+    <div v-else class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-center">
+      <div class="flex min-w-0 flex-1 flex-col gap-2">
+        <p class="m-0 text-[13px] text-muted">
+          <template v-if="days">
+            День <b class="text-default tabular-nums">{{ days.current }}</b> из {{ days.total }}
+            <span v-if="days.left < 0" class="text-error-600"> · просрочен на {{ -days.left }} {{ plural(-days.left, DAYS) }}</span>
+            <template v-else> · осталось {{ days.left }} {{ plural(days.left, DAYS) }}</template>
+          </template>
+          <template v-if="tasks"><template v-if="days"> · </template>закрыто <b class="text-default tabular-nums">{{ tasks.done }}</b> из {{ tasks.total }} задач</template>
+        </p>
+        <div v-if="days || tasks" class="relative h-2 overflow-hidden rounded-full bg-elevated">
+          <div
+            v-if="tasks"
+            class="h-full rounded-full bg-accent-500"
+            :style="{ width: `${tasks.pct}%` }"
+          />
+          <div
+            v-if="days"
+            class="absolute top-0 bottom-0 w-px bg-zinc-700 dark:bg-zinc-300"
+            :style="{ left: `${Math.min(100, (days.current / days.total) * 100)}%` }"
+            title="Сегодня по календарю спринта"
+          />
         </div>
       </div>
 
@@ -168,5 +156,5 @@ const deadline = computed(() =>
         <p v-else class="text-xs text-muted">Считаю прогноз…</p>
       </div>
     </div>
-  </section>
+  </UiPanel>
 </template>

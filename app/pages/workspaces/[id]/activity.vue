@@ -21,7 +21,7 @@ const workspace = computed(() =>
 useHead({
   title: () => workspace.value
     ? `${workspace.value.name} — Активность`
-    : 'Активность — Такт',
+    : 'Активность – Такт',
 })
 
 const EVENT_OPTIONS: { value: TaskEventType; label: string }[] = [

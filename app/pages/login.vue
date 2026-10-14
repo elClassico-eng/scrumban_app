@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth' })
-useHead({ title: 'Войти — Такт' })
+definePageMeta({ layout: 'auth', colorMode: 'light' })
+useHead({ title: 'Войти – Такт' })
 </script>
 
 <template>

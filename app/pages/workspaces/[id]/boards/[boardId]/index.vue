@@ -189,8 +189,8 @@ function closeTaskModal() {
 
 useHead({
   title: () => board.value
-    ? `${board.value.name} — Такт`
-    : 'Доска — Такт',
+    ? `${board.value.name} – Такт`
+    : 'Доска – Такт',
 })
 
 const createColumnOpen = ref(false)
@@ -305,6 +305,7 @@ const isLoading = computed(() =>
             :board-id="bId"
             :can-create="canCreateTasks"
             :can-manage="canCreateColumns"
+            :tint="board?.columnTint ?? false"
           />
         </template>
         <template #footer>
@@ -347,6 +348,7 @@ const isLoading = computed(() =>
             :board-id="bId"
             :can-create="canCreateTasks"
             :can-manage="false"
+            :tint="board?.columnTint ?? false"
           />
         </div>
       </div>

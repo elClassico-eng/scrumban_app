@@ -135,6 +135,13 @@ body {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 6px 16px rgba(16, 24, 40, 0.05);
 }
 
+@utility column-tinted {
+  background: color-mix(in srgb, var(--column-color) 7%, var(--ui-bg-elevated));
+}
+.dark .column-tinted {
+  background: color-mix(in srgb, var(--column-color) 12%, var(--ui-bg-elevated));
+}
+
 @utility app-canvas {
   background: #f4f4f5;
 }
@@ -232,6 +239,8 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 1px 2px rgba(0, 0, 0, 0.4);
 }
+
+.hide-sprint .col-sprint, .hide-checklist .col-clist, .hide-time .col-time { display: none; }
 
 @media (max-width: 640px) {
   [style*="--kl-cols"] { --kl-cols: 1fr !important; }

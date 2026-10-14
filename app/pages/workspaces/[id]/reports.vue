@@ -18,7 +18,7 @@ const workspace = computed(() =>
 useHead({
   title: () => workspace.value
     ? `${workspace.value.name} — Отчёты`
-    : 'Отчёты и ретроспективы — Такт',
+    : 'Отчёты и ретроспективы – Такт',
 })
 
 type BoardGroup = {
@@ -60,28 +60,21 @@ function formatDate(iso: string | null): string {
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-2xl font-semibold tracking-tight text-default m-0">Отчёты и ретроспективы</h1>
-      <p class="text-sm text-muted mt-1">
-        Отчёты и ретроспективы всех спринтов рабочего пространства. Выберите спринт, чтобы открыть его сводку.
-      </p>
-    </div>
+    <UiPageHeader
+      title="Отчёты и ретроспективы"
+      subtitle="Отчёты и ретроспективы всех спринтов рабочего пространства. Выберите спринт, чтобы открыть его сводку."
+    />
 
     <div v-if="list.isLoading.value" class="flex items-center justify-center py-16 text-muted">
       <UIcon name="i-lucide-loader" class="animate-spin size-6" />
     </div>
 
-    <div
+    <UiEmptyState
       v-else-if="totalReports === 0"
-      class="text-center py-16 space-y-3 rounded-2xl border border-dashed border-default"
-    >
-      <UIcon name="i-lucide-clipboard-list" class="size-12 text-muted mx-auto" />
-      <p class="font-medium text-default">Пока нет отчётов</p>
-      <p class="text-sm text-muted max-w-md mx-auto">
-        Отчёт и ретроспектива формируются по активным и закрытым спринтам.
-        Запустите спринт на доске, и он появится здесь.
-      </p>
-    </div>
+      icon="i-lucide-clipboard-list"
+      title="Пока нет отчётов"
+      text="Отчёт и ретроспектива формируются по активным и закрытым спринтам. Запустите спринт на доске, и он появится здесь."
+    />
 
     <div v-else class="space-y-8">
       <section v-for="g in groups" :key="g.boardId" class="space-y-2">
