@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { passwordSchema } from '#shared/validation/password'
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth' })
+definePageMeta({ layout: 'auth', colorMode: 'light' })
 useHead({ title: 'Новый пароль — Такт' })
 
 const route = useRoute()

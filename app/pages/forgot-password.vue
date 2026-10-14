@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth' })
+definePageMeta({ layout: 'auth', colorMode: 'light' })
 useHead({ title: 'Забыли пароль — Такт' })
 
 const schema = z.object({

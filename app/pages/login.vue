@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth' })
+definePageMeta({ layout: 'auth', colorMode: 'light' })
 useHead({ title: 'Войти — Такт' })
 </script>
 

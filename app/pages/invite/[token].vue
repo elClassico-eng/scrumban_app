@@ -2,7 +2,7 @@
 import type { Role } from '#shared/types/domain'
 import { apiRoutes, pageRoutes } from '~/routing'
 
-definePageMeta({ layout: 'auth', cardMaxWidth: 'lg:max-w-md' })
+definePageMeta({ layout: 'auth', colorMode: 'light', cardMaxWidth: 'lg:max-w-md' })
 useHead({ title: 'Приглашение в workspace — Такт' })
 
 type InspectResponse =
