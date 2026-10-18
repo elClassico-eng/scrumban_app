@@ -68,6 +68,7 @@ jobs:
             cd ~/scrumban_app
             git pull --ff-only
             docker compose -f docker-compose.prod.yml pull
+            docker logout ghcr.io
             docker compose -f docker-compose.prod.yml up -d
             docker image prune -f
             docker compose -f docker-compose.prod.yml ps
