@@ -5,6 +5,7 @@
 // to lowercase is the responsibility of the service layer.
 import { jsonb, pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 import type { ControlCenterPrefs } from '../../../shared/types/control-center'
+import type { SidebarPrefs } from '../../../shared/types/sidebar'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -22,6 +23,7 @@ export const users = pgTable('users', {
   // Per-type opt-outs; a type absent from the map means enabled.
   notificationPrefs: jsonb('notification_prefs').$type<Record<string, boolean>>().notNull().default({}),
   controlCenterPrefs: jsonb('control_center_prefs').$type<ControlCenterPrefs>().notNull().default({}),
+  sidebarPrefs: jsonb('sidebar_prefs').$type<SidebarPrefs>().notNull().default({}),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   changelogSeenAt: timestamp('changelog_seen_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

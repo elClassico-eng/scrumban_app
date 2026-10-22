@@ -147,3 +147,22 @@ describe('control center prefs', () => {
     expect(dup.status).toBe(400)
   })
 })
+
+describe('sidebar prefs', () => {
+  it('stores sidebar prefs and rejects unknown items and duplicate boards', async () => {
+    const u = await registerUser('sidebar@example.com')
+    const board = '11111111-1111-4111-8111-111111111111'
+    const ok = await fetchWithJar<{ user: { sidebarPrefs: Record<string, unknown> } }>(u.jar, '/api/users/me', {
+      method: 'PATCH',
+      body: { sidebarPrefs: { hidden: ['simulator'], favorites: [board], boardOrder: [board] } },
+    })
+    expect(ok.status).toBe(200)
+    expect(ok.body.user.sidebarPrefs).toEqual({ hidden: ['simulator'], favorites: [board], boardOrder: [board] })
+    const me = await fetchWithJar<{ user: { sidebarPrefs: Record<string, unknown> } }>(u.jar, '/api/users/me')
+    expect(me.body.user.sidebarPrefs.hidden).toEqual(['simulator'])
+    const bad = await fetchWithJar(u.jar, '/api/users/me', { method: 'PATCH', body: { sidebarPrefs: { hidden: ['nope'] } } })
+    expect(bad.status).toBe(400)
+    const dup = await fetchWithJar(u.jar, '/api/users/me', { method: 'PATCH', body: { sidebarPrefs: { favorites: [board, board] } } })
+    expect(dup.status).toBe(400)
+  })
+})

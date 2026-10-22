@@ -1,4 +1,5 @@
 import type { ControlCenterPrefs } from './control-center'
+import type { SidebarPrefs } from './sidebar'
 
 declare module '#auth-utils' {
   interface User {
@@ -54,6 +55,7 @@ export interface UserProfile {
   dismissedHints: string[]
   notificationPrefs: Record<string, boolean>
   controlCenterPrefs: ControlCenterPrefs
+  sidebarPrefs: SidebarPrefs
   changelogSeenAt: string | null
   emailVerifiedAt: string | null
   createdAt: string
@@ -67,6 +69,7 @@ export interface UserProfileResponse {
 export interface UpdateUserProfileInput {
   notificationPrefs?: Record<string, boolean>
   controlCenterPrefs?: ControlCenterPrefs
+  sidebarPrefs?: SidebarPrefs
   dismissedHints?: string[]
   firstName?: string | null
   lastName?: string | null

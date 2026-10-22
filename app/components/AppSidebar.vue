@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onKeyStroke, useMediaQuery, useSwipe } from '@vueuse/core'
+import { MotionConfig } from 'motion-v'
 import { pageRoutes } from '~/routing'
+import type { SidebarItemId } from '#shared/types/sidebar'
+import { SIDEBAR_ITEM_META } from '~/utils/sidebar-items'
 
 const uiStore = useUiStore()
 const route = useRoute()
@@ -27,25 +30,28 @@ const changelogOpen = ref(false)
 const { hasUnread: hasChangelogUnread } = useChangelog()
 
 const { list: boardsList } = useBoardsApi(computed(() => current.value?.id ?? ''))
-const boards = computed(() => boardsList.data.value?.boards ?? [])
 const activeBoardId = computed(() => (route.params.boardId as string) || null)
+const canManage = computed(() => hasRole(current.value?.role, 'admin'))
+
+const { isVisible, favorites, toggleFavorite, sortBoards, setBoardOrder } = useSidebarPrefs()
+const boards = computed(() => sortBoards(boardsList.data.value?.boards ?? []))
+const favoriteBoards = computed(() => boards.value.filter(b => favorites.value.has(b.id)))
 
 const workspaceLinks = computed(() => {
-  if (!current.value) return []
-  return [
-    { label: 'Участники', icon: 'i-hugeicons-users', to: pageRoutes.workspaceMembers(current.value.id) },
-    { label: 'Активность', icon: 'i-hugeicons-activity-01', to: pageRoutes.workspaceActivity(current.value.id) },
-    { label: 'Отчёты', icon: 'i-hugeicons-clipboard-list', to: pageRoutes.workspaceReports(current.value.id) },
-    { label: 'Симулятор', icon: 'i-hugeicons-flask-conical', to: pageRoutes.workspaceSimulator(current.value.id) },
+  const ws = current.value
+  if (!ws) return []
+  const links: { id: SidebarItemId, to: string, exact?: boolean }[] = [
+    { id: 'overview', to: pageRoutes.workspace(ws.id), exact: true },
+    { id: 'activity', to: pageRoutes.workspaceActivity(ws.id) },
+    { id: 'reports', to: pageRoutes.workspaceReports(ws.id) },
+    { id: 'simulator', to: pageRoutes.workspaceSimulator(ws.id) },
   ]
+  return links.filter(l => isVisible(l.id)).map(l => ({ ...l, ...SIDEBAR_ITEM_META[l.id] }))
 })
 
-const manageLinks = computed(() => {
-  if (!current.value || !hasRole(current.value.role, 'admin')) return []
-  return [
-    { label: 'Настройки', icon: 'i-hugeicons-settings-01', to: pageRoutes.settings('team') },
-  ]
-})
+const createBoardOpen = ref(false)
+const inviteOpen = ref(false)
+const customizeOpen = ref(false)
 </script>
 
 <template>
@@ -66,70 +72,68 @@ const manageLinks = computed(() => {
   >
     <SidebarBrand :collapsed="collapsed" :mobile="!isDesktop" @toggle="uiStore.toggleSidebar" @close="uiStore.closeMobileNav" />
 
-    <Transition
-      enter-active-class="transition-opacity duration-200 delay-150"
-      leave-active-class="transition-opacity duration-100"
-      enter-from-class="opacity-0"
-      leave-to-class="opacity-0"
-    >
-      <WorkspaceSwitcher v-if="!collapsed" />
-    </Transition>
-    <div v-if="collapsed" class="mx-3 my-2 border-t border-default" />
+    <WorkspaceSwitcher :collapsed="collapsed" @invite="inviteOpen = true" @customize="customizeOpen = true" />
 
+    <SidebarQuickBar
+      v-if="current"
+      :workspace-id="current.id"
+      :boards="boards"
+      :can-manage="canManage"
+      :collapsed="collapsed"
+      @create-board="createBoardOpen = true"
+      @invite="inviteOpen = true"
+    />
+
+    <MotionConfig reduced-motion="user">
     <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-2">
-      <SidebarNavItem
-        :to="pageRoutes.workspaces"
-        icon="i-hugeicons-layout-grid"
-        label="Все workspaces"
-        :collapsed="collapsed"
-        exact
-      />
-
       <template v-if="current">
-        <SidebarSectionLabel label="Рабочее пространство" :collapsed="collapsed" />
-        <div class="flex flex-col gap-1">
-          <SidebarNavItem
-            :to="pageRoutes.workspace(current.id)"
-            icon="i-hugeicons-home-01"
-            label="Обзор"
-            :collapsed="collapsed"
-            exact
-          />
-          <SidebarBoardsGroup
-            :workspace-id="current.id"
-            :boards="boards"
-            :active-board-id="activeBoardId"
-            :collapsed="collapsed"
-            :expanded="uiStore.boardsExpanded"
-            @toggle="uiStore.toggleBoards"
-          />
-          <SidebarNavItem
-            v-for="link in workspaceLinks"
-            :key="link.label"
-            :to="link.to"
-            :icon="link.icon"
-            :label="link.label"
-            :collapsed="collapsed"
-          />
-        </div>
-
-        <template v-if="manageLinks.length">
-          <SidebarSectionLabel label="Управление" :collapsed="collapsed" />
-          <div class="flex flex-col gap-1">
+        <template v-if="workspaceLinks.length">
+          <SidebarSectionLabel label="Рабочее пространство" :collapsed="collapsed" />
+          <div class="flex flex-col gap-0.5">
             <SidebarNavItem
-              v-for="link in manageLinks"
-              :key="link.label"
+              v-for="link in workspaceLinks"
+              :key="link.id"
               :to="link.to"
               :icon="link.icon"
               :label="link.label"
               :collapsed="collapsed"
+              :exact="link.exact"
             />
           </div>
         </template>
+
+        <template v-if="isVisible('favorites') && favoriteBoards.length">
+          <SidebarSectionLabel label="Избранное" :collapsed="collapsed" />
+          <div class="flex flex-col gap-0.5">
+            <SidebarBoardLink
+              v-for="b in favoriteBoards"
+              :key="b.id"
+              :workspace-id="current.id"
+              :board="b"
+              :active="activeBoardId === b.id"
+              favorite
+              indicator="sidebar-active-favorite"
+              :collapsed="collapsed"
+              @toggle-favorite="toggleFavorite(b.id)"
+            />
+          </div>
+        </template>
+
+        <SidebarBoardsSection
+          :workspace-id="current.id"
+          :boards="boards"
+          :active-board-id="activeBoardId"
+          :favorites="favorites"
+          :collapsed="collapsed"
+          :can-create="canManage"
+          @reorder="setBoardOrder"
+          @toggle-favorite="toggleFavorite"
+          @create="createBoardOpen = true"
+        />
       </template>
 
-      <div class="mt-auto flex flex-col gap-1 pt-2">
-        <UTooltip text="Что нового" :disabled="!collapsed" :popper="{ placement: 'right' }">
+      <div class="mt-auto flex flex-col gap-0.5 pt-4">
+        <UTooltip v-if="isVisible('whats_new')" text="Что нового" :disabled="!collapsed" :content="{ side: 'right' }">
           <button
             type="button"
             :class="[
@@ -140,33 +144,33 @@ const manageLinks = computed(() => {
             @click="changelogOpen = true"
           >
             <span class="relative shrink-0">
-              <UIcon name="i-hugeicons-sparkles" class="size-4" />
+              <UIcon :name="SIDEBAR_ITEM_META.whats_new.icon" class="size-4" />
               <span
                 v-if="hasChangelogUnread"
                 class="absolute -right-1 -top-1 size-2 rounded-full bg-primary ring-2 ring-default"
               />
             </span>
-            <span v-if="!collapsed" class="truncate">Что нового</span>
+            <span v-if="!collapsed" class="truncate">{{ SIDEBAR_ITEM_META.whats_new.label }}</span>
           </button>
         </UTooltip>
         <SidebarNavItem
+          v-if="isVisible('docs')"
           to="/docs"
-          icon="i-hugeicons-book-open-01"
-          label="Документация"
-          :collapsed="collapsed"
-          external
-        />
-        <SidebarNavItem
-          :to="pageRoutes.landing"
-          icon="i-hugeicons-globe"
-          label="О продукте"
+          :icon="SIDEBAR_ITEM_META.docs.icon"
+          :label="SIDEBAR_ITEM_META.docs.label"
           :collapsed="collapsed"
           external
         />
       </div>
     </nav>
+    </MotionConfig>
 
     <SidebarUserCard :collapsed="collapsed" />
     <ChangelogPanel v-model:open="changelogOpen" />
+    <SidebarCustomizeModal v-model:open="customizeOpen" />
+    <template v-if="current && canManage">
+      <BoardCreateModal v-model:open="createBoardOpen" :workspace-id="current.id" />
+      <WorkspaceInviteModal v-model:open="inviteOpen" :workspace-id="current.id" :workspace-name="current.name" />
+    </template>
   </aside>
 </template>

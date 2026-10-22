@@ -208,6 +208,11 @@ function openCreateTask(columnId?: string) {
 
 const ccActions = useControlCenterActions()
 watch(() => ccActions.createTaskTick.value, () => openCreateTask())
+watch(createTaskColumnId, (columnId) => {
+  if (!columnId || route.query.create !== '1') return
+  openCreateTask()
+  router.replace({ query: { ...route.query, create: undefined } })
+}, { immediate: true })
 
 const listCompact = ref(false)
 

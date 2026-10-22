@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ControlCenterPrefsSchema } from '#shared/validation/control-center'
+import { SidebarPrefsSchema } from '#shared/validation/sidebar'
 import { updateUserProfile } from '../../services/users.service'
 import { requireAuth } from '../../utils/auth'
 import { toHttpError } from '../../utils/errors'
@@ -15,6 +16,7 @@ const BodySchema = z
     notificationPrefs: z.record(z.string(), z.boolean()).optional(),
     dismissedHints: z.array(z.string().max(100)).max(100).optional(),
     controlCenterPrefs: ControlCenterPrefsSchema.optional(),
+    sidebarPrefs: SidebarPrefsSchema.optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
     message: 'Provide at least one field to update',
@@ -43,6 +45,7 @@ export default defineEventHandler(async (event) => {
         notificationPrefs: user.notificationPrefs ?? {},
         dismissedHints: user.dismissedHints ?? [],
         controlCenterPrefs: user.controlCenterPrefs ?? {},
+        sidebarPrefs: user.sidebarPrefs ?? {},
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

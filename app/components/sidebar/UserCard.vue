@@ -13,7 +13,7 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
     v-if="authStore.user"
     :text="`${userName} — личный кабинет`"
     :disabled="!collapsed"
-    :popper="{ placement: 'right' }"
+    :content="{ side: 'right' }"
   >
     <NuxtLink
       :to="pageRoutes.me"
