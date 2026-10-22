@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import RoadmapBoard from '~/components/content/RoadmapBoard.vue'
+import { docsContentPath } from '~/utils/docs-path'
 
 definePageMeta({ layout: 'docs' })
 
 const contentComponents = { 'roadmap-board': RoadmapBoard, RoadmapBoard }
 
 const route = useRoute()
+const contentPath = docsContentPath(route.path)
 
-const { data: page } = await useAsyncData(`docs:${route.path}`, () =>
-  queryCollection('docs').path(route.path).first(),
+const { data: page } = await useAsyncData(`docs:${contentPath}`, () =>
+  queryCollection('docs').path(contentPath).first(),
 )
 
 if (!page.value) {

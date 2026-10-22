@@ -233,6 +233,7 @@ watch(rawNotifs, (next, prev) => {
       <div
         class="absolute inset-0 p-[14px] flex flex-col gap-[10px]"
         :style="panelStyle"
+        :inert="!open"
       >
         <ControlCenterIslandPanel
           v-model:tab="panelTab"

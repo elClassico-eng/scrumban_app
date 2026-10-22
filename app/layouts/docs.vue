@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { docsContentPath } from '~/utils/docs-path'
+
 type DocItem = { title: string, path: string, navTitle?: string, tab?: string, section?: string, order: number }
 type TocLink = { id: string, text: string, depth: number, children?: TocLink[] }
 
@@ -13,8 +15,8 @@ const { data: pages } = await useAsyncData('docs-nav', () =>
 )
 
 const { data: current } = await useAsyncData(
-  () => `docs-current:${route.path}`,
-  () => queryCollection('docs').path(route.path).first(),
+  () => `docs-current:${docsContentPath(route.path)}`,
+  () => queryCollection('docs').path(docsContentPath(route.path)).first(),
   { watch: [() => route.path] },
 )
 
