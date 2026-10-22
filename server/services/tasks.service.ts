@@ -84,12 +84,20 @@ const blockedSinceSelect = sql<string | null>`(
 export async function listTasksForWorkspace(input: {
   workspaceId: string
   actorRole: WorkspaceMemberRole
+  assigneeId?: string
 }): Promise<Task[]> {
   requireMinRole(input.actorRole, 'viewer')
+  const assigned = input.assigneeId
+    ? sql`(${tasks.assigneeId} = ${input.assigneeId} OR EXISTS (
+        SELECT 1 FROM ${taskAssignees}
+        WHERE ${taskAssignees.taskId} = tasks.id AND ${taskAssignees.userId} = ${input.assigneeId}
+      ))`
+    : undefined
   return withTenant(input.workspaceId, async (tx) =>
     tx
       .select({ ...taskWithAssigneesSelect, blockedSince: blockedSinceSelect })
       .from(tasks)
+      .where(assigned)
       .orderBy(asc(tasks.boardId), asc(tasks.columnId), asc(tasks.position)),
   )
 }

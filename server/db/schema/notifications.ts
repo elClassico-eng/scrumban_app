@@ -10,6 +10,8 @@ export const notificationType = pgEnum('notification_type', [
   'replenishment_overdue',
   'sprint_forecast_drop',
   'automation',
+  'reply',
+  'comment_assigned',
 ])
 
 export const notifications = pgTable(

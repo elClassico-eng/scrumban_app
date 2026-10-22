@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 import {
   notifications,
   users,
@@ -13,25 +13,57 @@ const DEFAULT_LIMIT = 50
 
 export async function listForUser(input: {
   userId: string
+  workspaceId?: string
+  types?: NotificationType[]
   unreadOnly?: boolean
+  before?: Date
   limit?: number
-}): Promise<Notification[]> {
+}): Promise<NotificationWithActor[]> {
   const limit = Math.min(input.limit ?? DEFAULT_LIMIT, 200)
-  return withUser(input.userId, async (tx) => {
-    const base = tx.select().from(notifications)
-    const filtered = input.unreadOnly
-      ? base.where(and(eq(notifications.userId, input.userId), isNull(notifications.readAt)))
-      : base.where(eq(notifications.userId, input.userId))
-    return filtered.orderBy(desc(notifications.createdAt)).limit(limit)
-  })
+  const conds = [eq(notifications.userId, input.userId)]
+  if (input.workspaceId) conds.push(eq(notifications.workspaceId, input.workspaceId))
+  if (input.types?.length) conds.push(inArray(notifications.type, input.types))
+  if (input.unreadOnly) conds.push(isNull(notifications.readAt))
+  if (input.before) conds.push(lt(notifications.createdAt, input.before))
+  const rows = await withUser(input.userId, async (tx) =>
+    tx
+      .select({
+        notification: notifications,
+        actor: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          avatarUrl: users.avatarUrl,
+        },
+      })
+      .from(notifications)
+      .leftJoin(users, sql`${users.id} = (${notifications.payload}->>'actorId')::uuid`)
+      .where(and(...conds))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit),
+  )
+  return rows.map(r => ({ ...r.notification, actor: r.actor?.id ? r.actor : null }))
 }
 
-export async function unreadCountForUser(userId: string): Promise<number> {
+export type NotificationActor = {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  avatarUrl: string | null
+}
+
+export type NotificationWithActor = Notification & { actor: NotificationActor | null }
+
+export async function unreadCountForUser(userId: string, workspaceId?: string): Promise<number> {
+  const conds = [eq(notifications.userId, userId), isNull(notifications.readAt)]
+  if (workspaceId) conds.push(eq(notifications.workspaceId, workspaceId))
   return withUser(userId, async (tx) => {
     const [row] = await tx
       .select({ count: sql<number>`count(*)::int` })
       .from(notifications)
-      .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
+      .where(and(...conds))
     return row?.count ?? 0
   })
 }

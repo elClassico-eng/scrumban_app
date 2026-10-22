@@ -11,6 +11,7 @@ const ParamsSchema = z.object({
 })
 const BodySchema = z.object({
   body: z.string().min(1).max(5000),
+  parentId: z.uuid().optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -25,6 +26,7 @@ export default defineEventHandler(async (event) => {
       taskId,
       authorId: user.id,
       body: body.body,
+      parentId: body.parentId,
       actorRole: workspace.role,
     })
     return { comment }

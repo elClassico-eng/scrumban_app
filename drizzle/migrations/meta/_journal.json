@@ -330,6 +330,13 @@
       "when": 1792702486550,
       "tag": "0046_sidebar_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1792704110596,
+      "tag": "0047_comment_threads_and_assignments",
+      "breakpoints": true
     }
   ]
 }

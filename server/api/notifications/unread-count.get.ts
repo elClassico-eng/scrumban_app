@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { unreadCountForUser } from '../../services/notifications.service'
 import { requireAuth } from '../../utils/auth'
 import { toHttpError } from '../../utils/errors'
@@ -5,7 +6,8 @@ import { toHttpError } from '../../utils/errors'
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
-    const count = await unreadCountForUser(user.id)
+    const { workspaceId } = await getValidatedQuery(event, z.object({ workspaceId: z.uuid().optional() }).parse)
+    const count = await unreadCountForUser(user.id, workspaceId)
     return { count }
   }
   catch (err) {
