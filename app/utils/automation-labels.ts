@@ -13,31 +13,31 @@ export const TRIGGER_INFO: Record<AutomationTrigger, TriggerInfo> = {
   task_aging: {
     label: 'Задача стареет',
     hint: 'Задача в рабочей колонке дольше заданной доли SLE доски',
-    icon: 'i-lucide-alert-triangle',
+    icon: 'i-hugeicons-triangle-alert',
     sentence: p => `задача в колонке дольше ${p.thresholdPct ?? 85}% SLE`,
   },
   task_blocked: {
     label: 'Задача в блоке',
     hint: 'Флаг блокера держится дольше N дней',
-    icon: 'i-lucide-octagon',
+    icon: 'i-hugeicons-octagon',
     sentence: p => `задача в блоке дольше ${p.days ?? 2} дн`,
   },
   sprint_forecast: {
     label: 'Прогноз спринта падает',
     hint: 'Шанс закрыть активный спринт в срок (Монте-Карло) ниже порога',
-    icon: 'i-lucide-trending-down',
+    icon: 'i-hugeicons-trending-down',
     sentence: p => `шанс закрыть спринт ниже ${p.minProbability ?? 70}%`,
   },
   wip_exceeded: {
     label: 'WIP превышен',
     hint: 'В рабочей колонке больше задач, чем её WIP-лимит',
-    icon: 'i-lucide-layers',
+    icon: 'i-hugeicons-layers-01',
     sentence: () => 'колонка над WIP-лимитом',
   },
   replenishment_overdue: {
     label: 'Пополнение просрочено',
     hint: 'Бэклог не пополняли дольше периода доски',
-    icon: 'i-lucide-refresh-cw',
+    icon: 'i-hugeicons-refresh-cw',
     sentence: () => 'пополнение бэклога просрочено',
   },
 }

@@ -12,14 +12,14 @@ defineProps<{
 }>()
 
 const ICON_MAP: Record<string, string> = {
-  move: 'i-lucide-move',
-  at: 'i-lucide-at-sign',
-  build: 'i-lucide-hammer',
-  check: 'i-lucide-check',
+  move: 'i-hugeicons-move',
+  at: 'i-hugeicons-at-sign',
+  build: 'i-hugeicons-hammer',
+  check: 'i-hugeicons-check',
 }
 
 function resolveIcon(iconType: string): string {
-  return ICON_MAP[iconType] ?? 'i-lucide-circle'
+  return ICON_MAP[iconType] ?? 'i-hugeicons-circle'
 }
 </script>
 

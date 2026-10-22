@@ -4,9 +4,9 @@ const { resetHints } = useHints()
 const toast = useToast()
 
 const themes = [
-  { value: 'light', label: 'Светлая', icon: 'i-lucide-sun' },
-  { value: 'dark', label: 'Тёмная', icon: 'i-lucide-moon' },
-  { value: 'system', label: 'Системная', icon: 'i-lucide-monitor' },
+  { value: 'light', label: 'Светлая', icon: 'i-hugeicons-sun-03' },
+  { value: 'dark', label: 'Тёмная', icon: 'i-hugeicons-moon' },
+  { value: 'system', label: 'Системная', icon: 'i-hugeicons-monitor' },
 ]
 
 async function onResetHints() {
@@ -15,7 +15,7 @@ async function onResetHints() {
     toast.add({
       title: 'Подсказки снова появятся',
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 1500,
     })
   }
@@ -23,7 +23,7 @@ async function onResetHints() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сбросить подсказки'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }

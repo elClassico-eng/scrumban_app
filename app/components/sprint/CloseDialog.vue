@@ -114,7 +114,7 @@ function confirm() {
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="ghost" color="neutral" @click="open = false">Отмена</UButton>
-        <UButton :loading="closing" icon="i-lucide-check-square" @click="confirm">
+        <UButton :loading="closing" icon="i-hugeicons-square-check-big" @click="confirm">
           Закрыть спринт
         </UButton>
       </div>

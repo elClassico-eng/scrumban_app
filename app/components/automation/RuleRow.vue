@@ -20,8 +20,8 @@ const sentence = computed(() => trigger.value.sentence(props.rule.triggerParams)
 const actionSentence = computed(() => ACTION_INFO[props.rule.action].sentence(props.rule.actionParams))
 
 const menu = computed<DropdownMenuItem[]>(() => [
-  { label: 'Изменить', icon: 'i-lucide-pencil', onSelect: () => emit('edit') },
-  { label: 'Удалить', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => emit('remove') },
+  { label: 'Изменить', icon: 'i-hugeicons-pencil', onSelect: () => emit('edit') },
+  { label: 'Удалить', icon: 'i-hugeicons-delete-02', color: 'error', onSelect: () => emit('remove') },
 ])
 </script>
 
@@ -61,7 +61,7 @@ const menu = computed<DropdownMenuItem[]>(() => [
         @update:model-value="(v: boolean) => emit('toggle', v)"
       />
       <UDropdownMenu :items="menu">
-        <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
+        <UButton icon="i-hugeicons-ellipsis-vertical" color="neutral" variant="ghost" size="sm" />
       </UDropdownMenu>
     </template>
   </div>

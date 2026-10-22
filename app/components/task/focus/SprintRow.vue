@@ -27,13 +27,13 @@ async function onRemove(sprintId: string) {
     await removeFrom.mutateAsync(sprintId)
   }
   catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось убрать из спринта'), color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: getErrorMessage(err, 'Не удалось убрать из спринта'), color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 </script>
 
 <template>
-  <TaskFocusPropRow icon="i-lucide-iteration-ccw" label="Спринт" align-start>
+  <TaskFocusPropRow icon="i-hugeicons-iteration-ccw" label="Спринт" align-start>
     <div class="flex flex-col gap-1.5 w-full">
       <template v-if="memberships.length">
         <span
@@ -51,7 +51,7 @@ async function onRemove(sprintId: string) {
             title="Убрать из спринта"
             @click="onRemove(s.id)"
           >
-            <UIcon name="i-lucide-x" class="size-3" />
+            <UIcon name="i-hugeicons-x" class="size-3" />
           </button>
         </span>
       </template>
@@ -63,7 +63,7 @@ async function onRemove(sprintId: string) {
         class="inline-flex items-center gap-1.5 h-[26px] px-2.5 self-start rounded-md text-[12px] text-muted bg-transparent border border-dashed border-default cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="pickerOpen = true"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         В спринт
       </button>
     </div>

@@ -50,7 +50,7 @@ const hasData = computed(() => (props.report?.buckets.length ?? 0) > 0)
         />
     </template>
     <div v-if="isLoading" class="h-48 flex items-center justify-center text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
     <div v-else-if="!hasData" class="h-48 flex items-center justify-center text-center text-muted text-sm px-6">
       Здесь появится throughput — сколько задач закрывается в день. Закройте несколько задач, чтобы увидеть тренд.

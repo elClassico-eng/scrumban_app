@@ -33,7 +33,7 @@ const tryTo = computed(() =>
         size="xs"
         color="primary"
         variant="soft"
-        trailing-icon="i-lucide-arrow-right"
+        trailing-icon="i-hugeicons-arrow-right-02"
       >
         Попробовать
       </UButton>

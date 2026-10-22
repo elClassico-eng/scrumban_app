@@ -30,7 +30,7 @@ const boardsActive = computed(() =>
             : 'text-muted hover:bg-elevated hover:text-default',
         ]"
       >
-        <UIcon name="i-lucide-square-kanban" class="size-4 shrink-0" />
+        <UIcon name="i-hugeicons-square-kanban" class="size-4 shrink-0" />
       </NuxtLink>
     </UTooltip>
 
@@ -52,7 +52,7 @@ const boardsActive = computed(() =>
             : 'text-muted group-hover:text-default',
         ]"
       >
-        <UIcon name="i-lucide-square-kanban" class="size-4 shrink-0" />
+        <UIcon name="i-hugeicons-square-kanban" class="size-4 shrink-0" />
         <span class="truncate">Доски</span>
       </NuxtLink>
       <button
@@ -63,7 +63,7 @@ const boardsActive = computed(() =>
         @click="emit('toggle')"
       >
         <UIcon
-          name="i-lucide-chevron-down"
+          name="i-hugeicons-chevron-down"
           :class="['size-4 transition-transform duration-200', expanded ? 'rotate-180' : '']"
         />
       </button>

@@ -35,7 +35,7 @@ const SWIMLANE_OPTIONS: Array<{ key: SwimlaneMode; label: string }> = [
 const groupMenu = computed(() =>
   SWIMLANE_OPTIONS.map(opt => ({
     label: opt.label,
-    icon: props.swimlane === opt.key ? 'i-lucide-check' : undefined,
+    icon: props.swimlane === opt.key ? 'i-hugeicons-check' : undefined,
     onSelect: () => emit('update:swimlane', opt.key),
   })),
 )
@@ -68,14 +68,14 @@ const activeCount = computed(() =>
         ]"
         @click="mobileOpen = !mobileOpen"
       >
-        <UIcon name="i-lucide-sliders-horizontal" class="size-4" />
+        <UIcon name="i-hugeicons-sliders-horizontal" class="size-4" />
         <span class="font-medium">Фильтры</span>
         <span
           v-if="activeCount > 0"
           class="min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full bg-accent-500 text-white text-[10.5px] font-bold tabular-nums"
         >{{ activeCount }}</span>
         <UIcon
-          name="i-lucide-chevron-down"
+          name="i-hugeicons-chevron-down"
           :class="['size-3.5 text-muted transition-transform', mobileOpen ? 'rotate-180' : '']"
         />
       </button>
@@ -88,7 +88,7 @@ const activeCount = computed(() =>
         title="Дейли: повестка дня по доске"
         @click="emit('open-daily')"
       >
-        <UIcon name="i-lucide-sunrise" class="size-3.5" />
+        <UIcon name="i-hugeicons-sunrise" class="size-3.5" />
         Дейли
       </button>
 
@@ -98,7 +98,7 @@ const activeCount = computed(() =>
         class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md bg-inverted hover:bg-accent-500 text-inverted hover:text-white text-[13px] font-medium cursor-pointer transition-colors"
         @click="emit('create-task')"
       >
-        <UIcon name="i-lucide-plus" class="size-3.5" />
+        <UIcon name="i-hugeicons-plus" class="size-3.5" />
         Новая задача
       </button>
     </div>
@@ -117,13 +117,13 @@ const activeCount = computed(() =>
         >
           <span class="text-muted">Группировка:</span>
           <span class="font-medium">{{ swimlaneLabel }}</span>
-          <UIcon name="i-lucide-chevron-down" class="size-3.5 text-muted" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-3.5 text-muted" />
         </button>
       </UDropdownMenu>
 
       <div class="relative w-full sm:w-auto">
         <UIcon
-          name="i-lucide-search"
+          name="i-hugeicons-search-01"
           class="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted pointer-events-none"
         />
         <input
@@ -184,7 +184,7 @@ const activeCount = computed(() =>
         @click="emit('update:classFilter', classFilter === 'expedite' ? 'all' : 'expedite')"
       >
         <UIcon
-          name="i-lucide-zap"
+          name="i-hugeicons-zap"
           :class="['size-3.5', classFilter === 'expedite' ? 'text-accent-500' : 'text-muted']"
         />
         <span>Срочные</span>
@@ -209,7 +209,7 @@ const activeCount = computed(() =>
         @click="emit('update:classFilter', classFilter === 'blocker' ? 'all' : 'blocker')"
       >
         <UIcon
-          name="i-lucide-alert-triangle"
+          name="i-hugeicons-triangle-alert"
           :class="['size-3.5', classFilter === 'blocker' ? 'text-accent-500' : 'text-muted']"
         />
         <span>С блокерами</span>
@@ -231,7 +231,7 @@ const activeCount = computed(() =>
         title="Дейли: повестка дня по доске"
         @click="emit('open-daily')"
       >
-        <UIcon name="i-lucide-sunrise" class="size-3.5" />
+        <UIcon name="i-hugeicons-sunrise" class="size-3.5" />
         Дейли
       </button>
 
@@ -241,7 +241,7 @@ const activeCount = computed(() =>
         class="hidden lg:inline-flex items-center gap-1.5 h-8 px-3.5 rounded-md bg-inverted hover:bg-accent-500 text-inverted hover:text-white text-[13px] font-medium cursor-pointer transition-colors"
         @click="emit('create-task')"
       >
-        <UIcon name="i-lucide-plus" class="size-3.5" />
+        <UIcon name="i-hugeicons-plus" class="size-3.5" />
         Новая задача
       </button>
     </div>

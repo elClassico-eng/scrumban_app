@@ -109,7 +109,7 @@ async function submitComment() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось отправить комментарий'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -166,7 +166,7 @@ async function commitEdit() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось обновить комментарий'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -187,14 +187,14 @@ function onDelete(c: TaskComment) {
       toast.add({
         title: getErrorMessage(err, 'Не удалось удалить комментарий'),
         color: 'error',
-        icon: 'i-lucide-alert-circle',
+        icon: 'i-hugeicons-alert-circle',
       })
     }
   }, UNDO_DELAY_MS)
 
   toast.add({
     title: 'Комментарий удалён',
-    icon: 'i-lucide-trash-2',
+    icon: 'i-hugeicons-delete-02',
     duration: UNDO_DELAY_MS,
     actions: [
       {
@@ -257,7 +257,7 @@ function timeLabel(iso: string): string {
           v-if="c.automationRuleId"
           class="size-8 rounded-full grid place-items-center bg-accent-500 text-white"
         >
-          <UIcon name="i-lucide-zap" class="size-4" />
+          <UIcon name="i-hugeicons-zap" class="size-4" />
         </span>
         <UserAvatar v-else :user="c.author" size="md" />
 
@@ -279,10 +279,10 @@ function timeLabel(iso: string): string {
               v-if="editingId !== c.id && !c.automationRuleId && (canEdit(c) || canDelete(c))"
               :items="[
                 ...(canEdit(c)
-                  ? [{ label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => startEdit(c) }]
+                  ? [{ label: 'Редактировать', icon: 'i-hugeicons-pencil', onSelect: () => startEdit(c) }]
                   : []),
                 ...(canDelete(c)
-                  ? [{ label: 'Удалить', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => onDelete(c) }]
+                  ? [{ label: 'Удалить', icon: 'i-hugeicons-delete-02', color: 'error' as const, onSelect: () => onDelete(c) }]
                   : []),
               ]"
             >
@@ -291,7 +291,7 @@ function timeLabel(iso: string): string {
                 class="size-6 rounded-md grid place-items-center text-muted opacity-0 group-hover:opacity-100 hover:bg-elevated cursor-pointer transition-all"
                 title="Действия"
               >
-                <UIcon name="i-lucide-more-horizontal" class="size-3.5" />
+                <UIcon name="i-hugeicons-more-horizontal" class="size-3.5" />
               </button>
             </UDropdownMenu>
           </div>
@@ -313,7 +313,7 @@ function timeLabel(iso: string): string {
                 class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
                 @click="editPickerOpen = true"
               >
-                <UIcon name="i-lucide-at-sign" class="size-3.5" />
+                <UIcon name="i-hugeicons-at-sign" class="size-3.5" />
               </button>
               <div class="flex-1" />
               <UButton size="xs" variant="ghost" color="neutral" @click="cancelEdit">
@@ -369,12 +369,12 @@ function timeLabel(iso: string): string {
             class="h-7 px-2 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors inline-flex items-center gap-1 text-[12px]"
             @click="openMentionPicker"
           >
-            <UIcon name="i-lucide-at-sign" class="size-3.5" />
+            <UIcon name="i-hugeicons-at-sign" class="size-3.5" />
             Упомянуть
           </button>
           <div class="flex-1" />
           <UButton
-            icon="i-lucide-send"
+            icon="i-hugeicons-send"
             size="sm"
             :loading="create.isPending.value"
             :disabled="!composerHasContent"

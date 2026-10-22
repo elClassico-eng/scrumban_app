@@ -121,7 +121,7 @@ function owners(ids: string[]) {
       <template v-if="expanded">Свернуть</template>
       <template v-else>Показать ещё {{ hidden }}</template>
       <UIcon
-        name="i-lucide-chevron-down"
+        name="i-hugeicons-chevron-down"
         class="size-3.5 transition-transform"
         :class="expanded ? 'rotate-180' : ''"
       />

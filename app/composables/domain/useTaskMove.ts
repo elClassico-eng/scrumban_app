@@ -31,7 +31,7 @@ export function useTaskMove(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
       await move.mutateAsync({ taskId, toColumnId, toPosition })
       toast.add({
         title: `Задача перенесена в «${columnName}»`,
-        icon: 'i-lucide-arrow-right',
+        icon: 'i-hugeicons-arrow-right-02',
         duration: 1500,
       })
     }
@@ -43,7 +43,7 @@ export function useTaskMove(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
         title: isWipBlock ? 'WIP-лимит достигнут' : 'Не удалось переместить задачу',
         description: getErrorMessage(err, 'Попробуй ещё раз'),
         color: isWipBlock ? 'warning' : 'error',
-        icon: 'i-lucide-alert-circle',
+        icon: 'i-hugeicons-alert-circle',
       })
     }
   }

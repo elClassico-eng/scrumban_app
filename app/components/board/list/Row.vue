@@ -50,7 +50,7 @@ const circleClass = computed(() => column.value ? COLUMN_ROLE_INFO[column.value.
 const columnItems = computed(() =>
   props.columns.map(c => ({
     label: c.name,
-    icon: c.id === props.task.columnId ? 'i-lucide-check' : undefined,
+    icon: c.id === props.task.columnId ? 'i-hugeicons-check' : undefined,
     onSelect: () => emit('move-to-column', props.task.id, c.id),
   })),
 )
@@ -115,7 +115,7 @@ const classDotClass = computed(() => {
             : 'opacity-0 group-hover:opacity-100 border-[var(--ui-border-accented)] bg-default text-transparent'"
           @click.stop="emit('toggle-select', task.id)"
         >
-          <UIcon name="i-lucide-check" class="size-2.5" />
+          <UIcon name="i-hugeicons-check" class="size-2.5" />
         </span>
 
         <UDropdownMenu :items="columnItems" :ui="{ content: 'w-48' }">
@@ -125,7 +125,7 @@ const classDotClass = computed(() => {
             title="Сменить статус"
             @click.stop
           >
-            <UIcon v-if="isDone" name="i-lucide-check" class="size-2.5 text-white" />
+            <UIcon v-if="isDone" name="i-hugeicons-check" class="size-2.5 text-white" />
           </button>
         </UDropdownMenu>
 
@@ -136,7 +136,7 @@ const classDotClass = computed(() => {
           :class="isDone ? 'text-dimmed line-through' : depth > 0 ? 'text-toned' : 'text-default'"
         >{{ task.title }}</span>
 
-        <span v-if="hasBlocker" class="text-red-500 shrink-0"><UIcon name="i-lucide-alert-triangle" class="size-3" /></span>
+        <span v-if="hasBlocker" class="text-red-500 shrink-0"><UIcon name="i-hugeicons-triangle-alert" class="size-3" /></span>
       </div>
 
       <div class="flex items-center flex-wrap gap-1.5 pl-[26px]">
@@ -151,7 +151,7 @@ const classDotClass = computed(() => {
           class="inline-flex items-center gap-[5px] h-[22px] px-2 rounded-[6px] text-[11px] font-medium tabular-nums"
           :class="duePillClass"
         >
-          <UIcon name="i-lucide-calendar" class="size-2.5 shrink-0" />
+          <UIcon name="i-hugeicons-calendar-03" class="size-2.5 shrink-0" />
           {{ dueText }}
         </span>
 
@@ -190,7 +190,7 @@ const classDotClass = computed(() => {
           v-if="task.timeSpentSeconds > 0"
           class="inline-flex items-center gap-[5px] font-mono text-[11px] text-muted h-[22px] px-2 rounded-[6px] bg-elevated"
         >
-          <UIcon name="i-lucide-clock" class="size-2.5" />
+          <UIcon name="i-hugeicons-clock-01" class="size-2.5" />
           {{ formatDuration(task.timeSpentSeconds) }}
         </span>
       </div>
@@ -213,7 +213,7 @@ const classDotClass = computed(() => {
             : 'opacity-0 group-hover:opacity-100 border-[var(--ui-border-accented)] bg-default text-transparent'"
           @click.stop="emit('toggle-select', task.id)"
         >
-          <UIcon name="i-lucide-check" class="size-2.5" />
+          <UIcon name="i-hugeicons-check" class="size-2.5" />
         </span>
 
         <button
@@ -223,7 +223,7 @@ const classDotClass = computed(() => {
           :class="expanded ? '' : '-rotate-90'"
           @click.stop="emit('toggle-expand', task.id)"
         >
-          <UIcon name="i-lucide-chevron-down" class="size-3.5" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-3.5" />
         </button>
         <span v-else class="w-3.5 shrink-0" />
 
@@ -234,7 +234,7 @@ const classDotClass = computed(() => {
             title="Сменить статус"
             @click.stop
           >
-            <UIcon v-if="isDone" name="i-lucide-check" class="size-2.5 text-white" />
+            <UIcon v-if="isDone" name="i-hugeicons-check" class="size-2.5 text-white" />
           </button>
         </UDropdownMenu>
 
@@ -246,13 +246,13 @@ const classDotClass = computed(() => {
         >{{ task.title }}</span>
 
         <span class="inline-flex items-center gap-[7px] shrink-0 ml-0.5">
-          <span v-if="hasBlocker" class="text-red-500"><UIcon name="i-lucide-alert-triangle" class="size-3" /></span>
+          <span v-if="hasBlocker" class="text-red-500"><UIcon name="i-hugeicons-triangle-alert" class="size-3" /></span>
           <span
             v-if="task.checklistTotal > 0"
             class="inline-flex items-center gap-0.5 text-[10px] tabular-nums"
             :class="checklistFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-dimmed'"
           >
-            <UIcon name="i-lucide-check-square" class="size-2.5" />{{ task.checklistDone }}/{{ task.checklistTotal }}
+            <UIcon name="i-hugeicons-square-check-big" class="size-2.5" />{{ task.checklistDone }}/{{ task.checklistTotal }}
           </span>
           <button
             v-if="canCreate"
@@ -261,7 +261,7 @@ const classDotClass = computed(() => {
             title="Добавить подзадачу"
             @click.stop="emit('add-subtask', task.id)"
           >
-            <UIcon name="i-lucide-plus" class="size-3.5" />
+            <UIcon name="i-hugeicons-plus" class="size-3.5" />
           </button>
         </span>
       </div>

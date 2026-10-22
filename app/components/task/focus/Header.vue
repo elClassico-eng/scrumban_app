@@ -16,10 +16,10 @@ const emit = defineEmits<{
 }>()
 
 const CLASS_ICON: Record<ServiceClass, string> = {
-  standard: 'i-lucide-flag',
-  expedite: 'i-lucide-zap',
-  intangible: 'i-lucide-circle',
-  fixed_date: 'i-lucide-calendar-clock',
+  standard: 'i-hugeicons-flag-02',
+  expedite: 'i-hugeicons-zap',
+  intangible: 'i-hugeicons-circle',
+  fixed_date: 'i-hugeicons-calendar-clock',
 }
 
 const CLASS_VARIANT: Record<ServiceClass, string> = {
@@ -58,7 +58,7 @@ function onTitleBlur(e: FocusEvent) {
         >
           <span class="size-1.5 rounded-full bg-accent-500" />
           {{ currentColumn?.name ?? '—' }}
-          <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
         </button>
       </UDropdownMenu>
 
@@ -70,7 +70,7 @@ function onTitleBlur(e: FocusEvent) {
         >
           <UIcon :name="CLASS_ICON[task.serviceClass]" class="size-3.5" />
           {{ SERVICE_CLASS_INFO[task.serviceClass].shortLabel }}
-          <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
         </button>
       </UDropdownMenu>
 
@@ -78,7 +78,7 @@ function onTitleBlur(e: FocusEvent) {
         v-if="task.isEpic"
         class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-inverted text-accent-500 text-[12px] font-semibold uppercase tracking-[0.04em] border border-inverted"
       >
-        <UIcon name="i-lucide-crown" class="size-3.5" />
+        <UIcon name="i-hugeicons-crown" class="size-3.5" />
         Epic
       </span>
     </div>

@@ -146,9 +146,9 @@ function errMessage(err: unknown): string {
 
 function menuItems(s: SprintScenario) {
   const items = [
-    { label: 'Загрузить в черновик', icon: 'i-lucide-upload', onSelect: () => emit('load', s) },
-    { label: 'Пересчитать прогноз', icon: 'i-lucide-refresh-cw', onSelect: () => recompute(s), disabled: !!s.appliedAt },
-    { label: 'Удалить', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => removeScenario(s) },
+    { label: 'Загрузить в черновик', icon: 'i-hugeicons-upload-04', onSelect: () => emit('load', s) },
+    { label: 'Пересчитать прогноз', icon: 'i-hugeicons-refresh-cw', onSelect: () => recompute(s), disabled: !!s.appliedAt },
+    { label: 'Удалить', icon: 'i-hugeicons-delete-02', color: 'error' as const, onSelect: () => removeScenario(s) },
   ]
   return [items]
 }
@@ -158,7 +158,7 @@ function menuItems(s: SprintScenario) {
   <div class="surface-soft rounded-2xl px-5 py-5 space-y-3">
     <div class="flex items-center gap-2">
       <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
-        <UIcon name="i-lucide-bookmark" class="size-3.5" />
+        <UIcon name="i-hugeicons-bookmark-02" class="size-3.5" />
         Сохранённые сценарии
       </h4>
       <div class="flex-1" />
@@ -167,7 +167,7 @@ function menuItems(s: SprintScenario) {
           size="xs"
           variant="outline"
           color="neutral"
-          icon="i-lucide-save"
+          icon="i-hugeicons-save"
           :disabled="draft.length === 0"
           :loading="create.isPending.value"
         >
@@ -185,7 +185,7 @@ function menuItems(s: SprintScenario) {
         size="xs"
         variant="outline"
         color="neutral"
-        icon="i-lucide-save"
+        icon="i-hugeicons-save"
         :disabled="draft.length === 0"
         :loading="update.isPending.value"
         @click="saveDraft"
@@ -214,7 +214,7 @@ function menuItems(s: SprintScenario) {
           >применён</span>
           <div class="flex-1" />
           <UDropdownMenu :items="menuItems(s)">
-            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-ellipsis-vertical" />
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-hugeicons-ellipsis-vertical" />
           </UDropdownMenu>
         </div>
 
@@ -236,7 +236,7 @@ function menuItems(s: SprintScenario) {
         <div v-if="canApply && !s.appliedAt" class="pt-1">
           <UButton
             size="xs"
-            icon="i-lucide-check"
+            icon="i-hugeicons-check"
             :loading="apply.isPending.value"
             @click="applyScenario(s)"
           >

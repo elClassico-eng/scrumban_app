@@ -117,7 +117,7 @@ function toggleFocus(e: Event) {
     description: focus.value
       ? 'Всплывающие уведомления приглушены'
       : 'Уведомления снова показываются',
-    icon: focus.value ? 'i-lucide-focus' : 'i-lucide-bell',
+    icon: focus.value ? 'i-hugeicons-focus' : 'i-hugeicons-bell',
   })
 }
 
@@ -133,10 +133,10 @@ async function onMarkReplenishment(e: Event) {
   try {
     await recordReplenishment.mutateAsync(contextBoardId.value)
     pulse.refetch()
-    toast.add({ title: 'Replenishment отмечен', icon: 'i-lucide-check-circle', color: 'success' })
+    toast.add({ title: 'Replenishment отмечен', icon: 'i-hugeicons-circle-check-big', color: 'success' })
   }
   catch {
-    toast.add({ title: 'Не удалось отметить', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Не удалось отметить', color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
@@ -302,7 +302,7 @@ watch(rawNotifs, (next, prev) => {
             aria-label="Закрыть"
             @click="uiStore.closeControlCenter"
           >
-            <UIcon name="i-lucide-x" class="size-5" />
+            <UIcon name="i-hugeicons-x" class="size-5" />
           </button>
         </div>
         <div class="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-[10px]">

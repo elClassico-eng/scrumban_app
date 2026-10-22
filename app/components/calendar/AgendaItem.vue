@@ -108,7 +108,7 @@ function onDragEnd() {
         </span>
         <span v-if="relative" class="tabular-nums">{{ relative }}</span>
         <span v-if="task.blockedReason" class="inline-flex items-center gap-1 text-red-500">
-          <UIcon name="i-lucide-ban" class="size-3.5" />
+          <UIcon name="i-hugeicons-ban" class="size-3.5" />
           заблок.
         </span>
       </div>

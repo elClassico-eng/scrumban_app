@@ -45,7 +45,7 @@ async function commitAdd() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось добавить пункт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -67,7 +67,7 @@ async function onRemove(itemId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось удалить пункт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -105,7 +105,7 @@ async function commitEdit() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось обновить пункт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -127,7 +127,7 @@ function cancelEdit() {
       </p>
       <UButton
         v-if="!adding"
-        icon="i-lucide-plus"
+        icon="i-hugeicons-plus"
         size="xs"
         variant="ghost"
         color="neutral"
@@ -172,7 +172,7 @@ function cancelEdit() {
           {{ item.title }}
         </button>
         <UButton
-          icon="i-lucide-x"
+          icon="i-hugeicons-x"
           size="xs"
           variant="ghost"
           color="neutral"

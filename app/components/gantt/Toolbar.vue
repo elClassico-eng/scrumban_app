@@ -42,7 +42,7 @@ const ZOOMS: Array<{ value: GanttZoom, label: string }> = [
           text="P50/P85 — срок, к которому спринт завершится с вероятностью 50%/85% (симуляция Монте-Карло по истории закрытых задач). «Горизонт» — плановая длительность спринта."
           :content="{ side: 'bottom' }"
         >
-          <UIcon name="i-lucide-info" class="size-3.5 text-dimmed cursor-help" />
+          <UIcon name="i-hugeicons-info" class="size-3.5 text-dimmed cursor-help" />
         </UTooltip>
       </span>
     </div>

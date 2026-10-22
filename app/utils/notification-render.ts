@@ -42,7 +42,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `«${p.taskTitle}» в колонке ${p.columnName} уже ${p.ageDays} дн – это ${p.pct}% от SLE доски (${p.sleDays} дн)`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-alert-triangle',
+        icon: 'i-hugeicons-triangle-alert',
         color: ACCENT,
       }
     case 'task_blocked':
@@ -51,7 +51,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `«${p.taskTitle}»: ${p.reason}`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-octagon',
+        icon: 'i-hugeicons-octagon',
         color: ACCENT,
       }
     case 'sprint_forecast':
@@ -60,7 +60,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `${p.sprintName}: шанс закрыть в срок ${p.probability}%, осталось ${p.tasksRemaining} задач на ${p.daysLeft} дн`,
         cta: 'Открыть спринты',
         target: sprintsTarget(n, p),
-        icon: 'i-lucide-trending-down',
+        icon: 'i-hugeicons-trending-down',
         color: ACCENT,
       }
     case 'wip_exceeded':
@@ -69,7 +69,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `${p.columnName}: ${p.count} задач при лимите ${p.limit}`,
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-layers',
+        icon: 'i-hugeicons-layers-01',
         color: ACCENT,
       }
     case 'replenishment_overdue':
@@ -78,7 +78,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `${p.boardName}: просрочка ${p.daysOverdue} дн`,
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-refresh-cw',
+        icon: 'i-hugeicons-refresh-cw',
         color: ACCENT,
       }
     default:
@@ -87,7 +87,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: '',
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-zap',
+        icon: 'i-hugeicons-zap',
         color: ACCENT,
       }
   }
@@ -102,7 +102,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-at-sign',
+        icon: 'i-hugeicons-at-sign',
         color: PURPLE,
       }
     case 'assigned':
@@ -111,7 +111,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-user-check',
+        icon: 'i-hugeicons-user-check-01',
         color: BLUE,
       }
     case 'comment_on_assigned':
@@ -120,7 +120,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-message-square',
+        icon: 'i-hugeicons-message-square',
         color: PURPLE,
       }
     case 'sle_breach':
@@ -129,7 +129,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `«${p.taskTitle ?? ''}»: возраст ${p.agePct}% от SLE`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-alert-triangle',
+        icon: 'i-hugeicons-triangle-alert',
         color: ACCENT,
       }
     case 'replenishment_overdue':
@@ -138,7 +138,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `${p.boardName ?? ''}: просрочка ${p.daysOverdue} дн`,
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-refresh-cw',
+        icon: 'i-hugeicons-refresh-cw',
         color: ACCENT,
       }
     case 'sprint_forecast_drop':
@@ -147,7 +147,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `${p.sprintName ?? ''}: шанс ${Math.round(Number(p.probability ?? 0) * 100)}%`,
         cta: 'Открыть спринты',
         target: sprintsTarget(n, p),
-        icon: 'i-lucide-trending-down',
+        icon: 'i-hugeicons-trending-down',
         color: ACCENT,
       }
     case 'automation':

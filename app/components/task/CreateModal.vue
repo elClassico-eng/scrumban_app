@@ -129,7 +129,7 @@ watch(open, (v) => {
           v-if="parentTaskId && parentTitle"
           class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-elevated text-[12.5px]"
         >
-          <UIcon name="i-lucide-corner-down-right" class="size-3.5 text-muted shrink-0" />
+          <UIcon name="i-hugeicons-corner-down-right" class="size-3.5 text-muted shrink-0" />
           <span class="text-muted shrink-0">Родитель:</span>
           <span class="truncate text-highlighted">{{ parentTitle }}</span>
         </div>
@@ -204,7 +204,7 @@ watch(open, (v) => {
           color="error"
           variant="soft"
           :title="errorMessage"
-          icon="i-lucide-alert-circle"
+          icon="i-hugeicons-alert-circle"
         />
 
         <div class="flex items-center justify-between gap-2 pt-1">

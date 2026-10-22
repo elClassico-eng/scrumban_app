@@ -27,7 +27,7 @@ async function onDelete() {
       <UButton
         variant="outline"
         color="neutral"
-        icon="i-lucide-log-out"
+        icon="i-hugeicons-log-out"
         :loading="logout.isPending.value"
         @click="logout.mutate()"
       >

@@ -33,17 +33,17 @@ const activeBoardId = computed(() => (route.params.boardId as string) || null)
 const workspaceLinks = computed(() => {
   if (!current.value) return []
   return [
-    { label: 'Участники', icon: 'i-lucide-users', to: pageRoutes.workspaceMembers(current.value.id) },
-    { label: 'Активность', icon: 'i-lucide-activity', to: pageRoutes.workspaceActivity(current.value.id) },
-    { label: 'Отчёты', icon: 'i-lucide-clipboard-list', to: pageRoutes.workspaceReports(current.value.id) },
-    { label: 'Симулятор', icon: 'i-lucide-flask-conical', to: pageRoutes.workspaceSimulator(current.value.id) },
+    { label: 'Участники', icon: 'i-hugeicons-users', to: pageRoutes.workspaceMembers(current.value.id) },
+    { label: 'Активность', icon: 'i-hugeicons-activity-01', to: pageRoutes.workspaceActivity(current.value.id) },
+    { label: 'Отчёты', icon: 'i-hugeicons-clipboard-list', to: pageRoutes.workspaceReports(current.value.id) },
+    { label: 'Симулятор', icon: 'i-hugeicons-flask-conical', to: pageRoutes.workspaceSimulator(current.value.id) },
   ]
 })
 
 const manageLinks = computed(() => {
   if (!current.value || !hasRole(current.value.role, 'admin')) return []
   return [
-    { label: 'Настройки', icon: 'i-lucide-settings', to: pageRoutes.settings('team') },
+    { label: 'Настройки', icon: 'i-hugeicons-settings-01', to: pageRoutes.settings('team') },
   ]
 })
 </script>
@@ -79,7 +79,7 @@ const manageLinks = computed(() => {
     <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-2">
       <SidebarNavItem
         :to="pageRoutes.workspaces"
-        icon="i-lucide-layout-grid"
+        icon="i-hugeicons-layout-grid"
         label="Все workspaces"
         :collapsed="collapsed"
         exact
@@ -90,7 +90,7 @@ const manageLinks = computed(() => {
         <div class="flex flex-col gap-1">
           <SidebarNavItem
             :to="pageRoutes.workspace(current.id)"
-            icon="i-lucide-house"
+            icon="i-hugeicons-home-01"
             label="Обзор"
             :collapsed="collapsed"
             exact
@@ -140,7 +140,7 @@ const manageLinks = computed(() => {
             @click="changelogOpen = true"
           >
             <span class="relative shrink-0">
-              <UIcon name="i-lucide-sparkles" class="size-4" />
+              <UIcon name="i-hugeicons-sparkles" class="size-4" />
               <span
                 v-if="hasChangelogUnread"
                 class="absolute -right-1 -top-1 size-2 rounded-full bg-primary ring-2 ring-default"
@@ -151,14 +151,14 @@ const manageLinks = computed(() => {
         </UTooltip>
         <SidebarNavItem
           to="/docs"
-          icon="i-lucide-book-open"
+          icon="i-hugeicons-book-open-01"
           label="Документация"
           :collapsed="collapsed"
           external
         />
         <SidebarNavItem
           :to="pageRoutes.landing"
-          icon="i-lucide-globe"
+          icon="i-hugeicons-globe"
           label="О продукте"
           :collapsed="collapsed"
           external

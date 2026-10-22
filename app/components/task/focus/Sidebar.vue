@@ -40,12 +40,12 @@ const SP_OPTIONS = STORY_POINTS_OPTIONS
 const storyPointsMenu = computed(() => [
   ...SP_OPTIONS.map(n => ({
     label: String(n),
-    icon: props.task.storyPoints === n ? 'i-lucide-check' : undefined,
+    icon: props.task.storyPoints === n ? 'i-hugeicons-check' : undefined,
     onSelect: () => emit('story-points-change', n),
   })),
   {
     label: 'Снять оценку',
-    icon: 'i-lucide-x',
+    icon: 'i-hugeicons-x',
     onSelect: () => emit('story-points-change', null),
   },
 ])
@@ -65,10 +65,10 @@ function subtaskStatusTone(subtask: Task): 'done' | 'progress' | 'default' {
 }
 
 const CLASS_ICON: Record<ServiceClass, string> = {
-  standard: 'i-lucide-flag',
-  expedite: 'i-lucide-zap',
-  intangible: 'i-lucide-circle',
-  fixed_date: 'i-lucide-calendar-clock',
+  standard: 'i-hugeicons-flag-02',
+  expedite: 'i-hugeicons-zap',
+  intangible: 'i-hugeicons-circle',
+  fixed_date: 'i-hugeicons-calendar-clock',
 }
 
 const localDueDate = ref(props.dueDate)
@@ -113,7 +113,7 @@ const assigneeMenu = computed(() =>
         Состояние
       </h5>
       <div class="flex flex-col gap-0.5">
-        <TaskFocusPropRow icon="i-lucide-layers" label="Колонка">
+        <TaskFocusPropRow icon="i-hugeicons-layers-01" label="Колонка">
           <UDropdownMenu :items="columnOptions">
             <button
               type="button"
@@ -121,12 +121,12 @@ const assigneeMenu = computed(() =>
             >
               <span class="size-1.5 rounded-full bg-accent-500" />
               {{ currentColumn?.name ?? '—' }}
-              <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+              <UIcon name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
             </button>
           </UDropdownMenu>
         </TaskFocusPropRow>
 
-        <TaskFocusPropRow icon="i-lucide-flag" label="Класс">
+        <TaskFocusPropRow icon="i-hugeicons-flag-02" label="Класс">
           <UDropdownMenu :items="classOptions">
             <button
               type="button"
@@ -141,7 +141,7 @@ const assigneeMenu = computed(() =>
           </UDropdownMenu>
         </TaskFocusPropRow>
 
-        <TaskFocusPropRow icon="i-lucide-calendar" label="Дедлайн" align-start>
+        <TaskFocusPropRow icon="i-hugeicons-calendar-03" label="Дедлайн" align-start>
           <span class="flex flex-col gap-1 w-full">
             <CommonDatePicker
               :model-value="localDueDate"
@@ -160,7 +160,7 @@ const assigneeMenu = computed(() =>
           </span>
         </TaskFocusPropRow>
 
-        <TaskFocusPropRow icon="i-lucide-zap" label="Story Points">
+        <TaskFocusPropRow icon="i-hugeicons-zap" label="Story Points">
           <UDropdownMenu :items="storyPointsMenu" :ui="{ content: 'w-28' }">
             <button
               type="button"
@@ -174,15 +174,15 @@ const assigneeMenu = computed(() =>
                 <span class="text-[10.5px] text-muted">SP</span>
               </template>
               <template v-else>
-                <UIcon name="i-lucide-plus" class="size-3" />
+                <UIcon name="i-hugeicons-plus" class="size-3" />
                 <span>Оценить</span>
               </template>
-              <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+              <UIcon name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
             </button>
           </UDropdownMenu>
         </TaskFocusPropRow>
 
-        <TaskFocusPropRow icon="i-lucide-crown" label="Эпик">
+        <TaskFocusPropRow icon="i-hugeicons-crown" label="Эпик">
           <span class="flex items-center gap-2">
             <button
               type="button"
@@ -216,7 +216,7 @@ const assigneeMenu = computed(() =>
       <h5 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-2.5">
         Люди
       </h5>
-      <TaskFocusPropRow icon="i-lucide-users" label="Исполнители" align-start>
+      <TaskFocusPropRow icon="i-hugeicons-users" label="Исполнители" align-start>
         <div class="flex items-center gap-1.5 flex-wrap w-full">
           <div v-if="assignees.length > 0" class="flex items-center -space-x-1.5">
             <UserAvatar
@@ -239,7 +239,7 @@ const assigneeMenu = computed(() =>
               class="size-6 rounded-full border border-dashed border-default text-dimmed grid place-items-center cursor-pointer hover:border-accent-500 hover:text-accent-500 transition-colors"
               title="Добавить исполнителя"
             >
-              <UIcon name="i-lucide-plus" class="size-3" />
+              <UIcon name="i-hugeicons-plus" class="size-3" />
             </button>
           </UDropdownMenu>
         </div>
@@ -261,7 +261,7 @@ const assigneeMenu = computed(() =>
             title="Снять"
             @click="emit('assignee-remove', a.userId)"
           >
-            <UIcon name="i-lucide-x" class="size-3" />
+            <UIcon name="i-hugeicons-x" class="size-3" />
           </button>
         </div>
       </div>
@@ -296,12 +296,12 @@ const assigneeMenu = computed(() =>
         >
           <UIcon
             v-if="parentTask.isEpic"
-            name="i-lucide-crown"
+            name="i-hugeicons-crown"
             class="size-3.5 text-accent-600 shrink-0"
           />
           <UIcon
             v-else
-            name="i-lucide-corner-left-up"
+            name="i-hugeicons-corner-left-up"
             class="size-3.5 text-muted shrink-0"
           />
           <span class="flex-1 truncate">{{ parentTask.title }}</span>
@@ -317,7 +317,7 @@ const assigneeMenu = computed(() =>
             title="Открепить от родителя"
             @click.stop="emit('clear-parent')"
           >
-            <UIcon name="i-lucide-x" class="size-3" />
+            <UIcon name="i-hugeicons-x" class="size-3" />
           </button>
         </div>
 
@@ -327,7 +327,7 @@ const assigneeMenu = computed(() =>
           class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-md text-[12px] text-muted bg-transparent border border-dashed border-default cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           @click="emit('open-parent-picker')"
         >
-          <UIcon name="i-lucide-plus" class="size-3" />
+          <UIcon name="i-hugeicons-plus" class="size-3" />
           Указать родителя
         </button>
       </div>
@@ -380,17 +380,17 @@ const assigneeMenu = computed(() =>
 
         <UDropdownMenu
           :items="[
-            { label: 'Создать новую', icon: 'i-lucide-plus', onSelect: () => emit('open-subtask-create') },
-            { label: 'Привязать существующую', icon: 'i-lucide-link', onSelect: () => emit('open-subtask-link') },
+            { label: 'Создать новую', icon: 'i-hugeicons-plus', onSelect: () => emit('open-subtask-create') },
+            { label: 'Привязать существующую', icon: 'i-hugeicons-link', onSelect: () => emit('open-subtask-link') },
           ]"
         >
           <button
             type="button"
             class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-md text-[12px] text-muted bg-transparent border border-dashed border-default cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           >
-            <UIcon name="i-lucide-plus" class="size-3" />
+            <UIcon name="i-hugeicons-plus" class="size-3" />
             Подзадача
-            <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+            <UIcon name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
           </button>
         </UDropdownMenu>
       </div>
@@ -408,10 +408,10 @@ const assigneeMenu = computed(() =>
         Метаданные
       </h5>
       <div class="flex flex-col gap-0.5">
-        <TaskFocusPropRow icon="i-lucide-clock" label="Создана">
+        <TaskFocusPropRow icon="i-hugeicons-clock-01" label="Создана">
           <span class="text-[12px] text-muted">{{ formatRelativeDate(task.createdAt) }}</span>
         </TaskFocusPropRow>
-        <TaskFocusPropRow icon="i-lucide-rotate-ccw" label="Переоткрытий">
+        <TaskFocusPropRow icon="i-hugeicons-rotate-ccw" label="Переоткрытий">
           <span class="text-[13px] tabular-nums">{{ task.reopenedCount }}</span>
         </TaskFocusPropRow>
       </div>

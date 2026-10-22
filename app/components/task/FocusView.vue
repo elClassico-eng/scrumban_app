@@ -85,7 +85,7 @@ async function saveWithFeedback(patch: Record<string, unknown>) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -135,7 +135,7 @@ function onServiceClassChange(v: ServiceClass) {
   const label = SERVICE_CLASS_INFO[v].shortLabel
   saveDeferred(
     { serviceClass: v },
-    { title: `Класс изменён на «${label}»`, icon: 'i-lucide-zap' },
+    { title: `Класс изменён на «${label}»`, icon: 'i-hugeicons-zap' },
     'serviceClass',
   )
 }
@@ -147,7 +147,7 @@ async function onAssigneeAdd(userId: string) {
     await addAssignee.mutateAsync({ userId })
     toast.add({
       title: `Назначен ${member ? displayName(member) : 'участник'}`,
-      icon: 'i-lucide-user-check',
+      icon: 'i-hugeicons-user-check-01',
       duration: 1500,
     })
   }
@@ -155,7 +155,7 @@ async function onAssigneeAdd(userId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось назначить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -169,7 +169,7 @@ async function onAssigneeRemove(userId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось снять исполнителя'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -184,7 +184,7 @@ function onStoryPointsChange(value: number | null) {
   const title = value == null ? 'Оценка снята' : `Оценка: ${value} SP`
   saveDeferred(
     { storyPoints: value },
-    { title, icon: 'i-lucide-zap' },
+    { title, icon: 'i-hugeicons-zap' },
     'storyPoints',
   )
 }
@@ -219,10 +219,10 @@ async function onCopyLink() {
   const url = `${window.location.origin}${pageRoutes.task(wsId.value, bId.value, task.value.id).path}?task=${task.value.id}`
   try {
     await navigator.clipboard.writeText(url)
-    toast.add({ title: 'Ссылка скопирована', icon: 'i-lucide-link', duration: 1500 })
+    toast.add({ title: 'Ссылка скопирована', icon: 'i-hugeicons-link', duration: 1500 })
   }
   catch {
-    toast.add({ title: 'Не удалось скопировать', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Не удалось скопировать', color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
@@ -310,12 +310,12 @@ onMounted(() => {
 <template>
   <div class="grid grid-rows-[44px_1fr] grid-cols-[minmax(0,1fr)] h-dvh sm:h-[90vh] sm:max-h-[920px] bg-default text-default rounded-none sm:rounded-2xl overflow-hidden">
     <div v-if="isLoading" class="row-span-2 grid place-items-center p-6">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6 text-muted" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6 text-muted" />
     </div>
 
     <div v-else-if="isMissing" class="row-span-2 grid place-items-center p-6">
       <div class="text-center space-y-3">
-        <UIcon name="i-lucide-alert-circle" class="size-12 text-muted mx-auto" />
+        <UIcon name="i-hugeicons-alert-circle" class="size-12 text-muted mx-auto" />
         <p class="font-medium">Задача не найдена</p>
         <p class="text-sm text-muted">Возможно, её удалили или у тебя нет доступа.</p>
         <UButton @click="emit('close')">К доске</UButton>

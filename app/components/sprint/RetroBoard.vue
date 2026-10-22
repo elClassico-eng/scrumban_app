@@ -39,9 +39,9 @@ const toast = useToast()
 const confirm = useConfirm()
 
 const COLUMNS: { category: RetroCategory; title: string; icon: string; hint: string }[] = [
-  { category: 'went_well', title: 'Что было хорошо', icon: 'i-lucide-thumbs-up', hint: 'Практики, которые стоит сохранить' },
-  { category: 'to_improve', title: 'Что улучшить', icon: 'i-lucide-wrench', hint: 'Что мешало и тормозило' },
-  { category: 'action_item', title: 'Действия', icon: 'i-lucide-list-checks', hint: 'Конкретные решения с исполнением' },
+  { category: 'went_well', title: 'Что было хорошо', icon: 'i-hugeicons-thumbs-up', hint: 'Практики, которые стоит сохранить' },
+  { category: 'to_improve', title: 'Что улучшить', icon: 'i-hugeicons-wrench-01', hint: 'Что мешало и тормозило' },
+  { category: 'action_item', title: 'Действия', icon: 'i-hugeicons-list-checks', hint: 'Конкретные решения с исполнением' },
 ]
 
 const drafts = reactive<Record<RetroCategory, string>>({
@@ -106,7 +106,7 @@ async function convertNote(note: RetroNote) {
       title: res.addedToSprintId
         ? 'Задача создана и добавлена в следующий спринт'
         : 'Задача создана в бэклоге',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 2500,
     })
   }
@@ -140,13 +140,13 @@ const facts = computed(() => {
   if (!p) return []
   const out: { icon: string; text: string; severity: 'warn' | 'info' }[] = []
   if (p.goal.achieved === false) {
-    out.push({ icon: 'i-lucide-x-circle', text: 'Цель спринта не достигнута', severity: 'warn' })
+    out.push({ icon: 'i-hugeicons-circle-x', text: 'Цель спринта не достигнута', severity: 'warn' })
   }
   if (p.totals.startCount > 0) {
     const share = Math.round((p.totals.addedAfterStartCount / p.totals.startCount) * 100)
     if (share >= 20) {
       out.push({
-        icon: 'i-lucide-triangle-alert',
+        icon: 'i-hugeicons-triangle-alert',
         text: `${share}% состава добавлено после старта — scope change выше здоровой нормы`,
         severity: 'warn',
       })
@@ -154,21 +154,21 @@ const facts = computed(() => {
   }
   for (const c of p.carryOver.filter(x => x.streak >= 2)) {
     out.push({
-      icon: 'i-lucide-repeat',
+      icon: 'i-hugeicons-repeat',
       text: `«${c.title}» переносится ${c.streak}-й спринт подряд`,
       severity: 'warn',
     })
   }
   if (p.flow.cycleP85 !== null) {
     out.push({
-      icon: 'i-lucide-timer',
+      icon: 'i-hugeicons-timer-02',
       text: `Cycle time P85 за спринт: ${p.flow.cycleP85} дн (P50: ${p.flow.cycleP50 ?? '—'} дн)`,
       severity: 'info',
     })
   }
   if (p.totals.carryOverCount > 0) {
     out.push({
-      icon: 'i-lucide-corner-down-right',
+      icon: 'i-hugeicons-corner-down-right',
       text: `Перенесено ${p.totals.carryOverCount} задач (${p.totals.carryOverSp} SP)`,
       severity: 'info',
     })
@@ -263,7 +263,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
           />
           <UButton
             size="sm"
-            icon="i-lucide-plus"
+            icon="i-hugeicons-plus"
             :disabled="!drafts[col.category].trim()"
             :loading="create.isPending.value"
             @click="addNote(col.category)"
@@ -301,12 +301,12 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
                 <UDropdownMenu
                   v-if="canManageNote(n)"
                   :items="[
-                    { label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => startEdit(n) },
-                    { label: 'Удалить', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => deleteNote(n) },
+                    { label: 'Редактировать', icon: 'i-hugeicons-pencil', onSelect: () => startEdit(n) },
+                    { label: 'Удалить', icon: 'i-hugeicons-delete-02', color: 'error', onSelect: () => deleteNote(n) },
                   ]"
                 >
                   <button type="button" class="size-6 rounded grid place-items-center text-dimmed hover:text-default hover:bg-elevated transition-colors cursor-pointer shrink-0">
-                    <UIcon name="i-lucide-ellipsis-vertical" class="size-3.5" />
+                    <UIcon name="i-hugeicons-ellipsis-vertical" class="size-3.5" />
                   </button>
                 </UDropdownMenu>
               </div>
@@ -323,7 +323,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
                   :to="pageRoutes.task(wsId, boardId, n.taskId)"
                   class="text-[11px] px-1.5 py-0.5 rounded bg-elevated text-muted hover:text-default transition-colors inline-flex items-center gap-1"
                 >
-                  <UIcon name="i-lucide-link" class="size-3" />
+                  <UIcon name="i-hugeicons-link" class="size-3" />
                   из задачи
                 </NuxtLink>
                 <template v-if="n.category === 'action_item'">
@@ -332,7 +332,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
                     :to="pageRoutes.task(wsId, boardId, n.convertedTaskId)"
                     class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1"
                   >
-                    <UIcon name="i-lucide-check" class="size-3" />
+                    <UIcon name="i-hugeicons-check" class="size-3" />
                     задача создана
                   </NuxtLink>
                   <UButton
@@ -340,7 +340,7 @@ const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isR
                     size="xs"
                     variant="outline"
                     color="neutral"
-                    icon="i-lucide-arrow-right-circle"
+                    icon="i-hugeicons-circle-arrow-right-01"
                     :loading="convert.isPending.value"
                     @click="convertNote(n)"
                   >

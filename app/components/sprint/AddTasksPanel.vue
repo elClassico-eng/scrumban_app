@@ -141,14 +141,14 @@ function onClose() {
             title="Закрыть"
             @click="onClose"
           >
-            <UIcon name="i-lucide-x" class="size-4" />
+            <UIcon name="i-hugeicons-x" class="size-4" />
           </button>
         </header>
 
         <div class="px-5 py-3 border-b border-default">
           <UInput
             v-model="query"
-            icon="i-lucide-search"
+            icon="i-hugeicons-search-01"
             placeholder="Найти задачу по ID или заголовку…"
             size="md"
             class="w-full"
@@ -203,7 +203,7 @@ function onClose() {
                   ? 'bg-accent-500 border-accent-500 text-white'
                   : 'border-zinc-400 bg-default'"
               >
-                <UIcon v-if="selected.has(t.id)" name="i-lucide-check" class="size-3" />
+                <UIcon v-if="selected.has(t.id)" name="i-hugeicons-check" class="size-3" />
               </span>
               <div class="flex-1 min-w-0">
                 <div class="text-[13px] font-medium text-default leading-snug">
@@ -222,7 +222,7 @@ function onClose() {
                     class="inline-flex items-center gap-1"
                     :class="ageInDays(t.createdAt) >= STALE_THRESHOLD_DAYS ? 'text-accent-600' : ''"
                   >
-                    <UIcon name="i-lucide-calendar" class="size-3" />
+                    <UIcon name="i-hugeicons-calendar-03" class="size-3" />
                     {{ ageInDays(t.createdAt) }} дн в бэклоге
                   </span>
                   <span v-if="columnById.get(t.columnId)" class="text-dimmed">
@@ -252,7 +252,7 @@ function onClose() {
           <div class="flex-1 text-[12.5px] text-default">
             Выбрано: <b>{{ selected.size }}</b> задач
             <span v-if="selected.size > 0" class="ml-2 inline-flex items-center gap-1 text-accent-700">
-              <UIcon name="i-lucide-zap" class="size-3" />
+              <UIcon name="i-hugeicons-zap" class="size-3" />
               {{ selectedSum }} SP
             </span>
           </div>
@@ -261,7 +261,7 @@ function onClose() {
           </UButton>
           <UButton
             size="sm"
-            icon="i-lucide-plus"
+            icon="i-hugeicons-plus"
             :disabled="selected.size === 0"
             @click="onConfirm"
           >

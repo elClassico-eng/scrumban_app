@@ -24,11 +24,11 @@ function days(hours: number): string {
     </template>
 
     <div v-if="isLoading" class="h-32 flex items-center justify-center text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <div v-else-if="report && !report.ok" class="space-y-2 py-6 text-center">
-      <UIcon name="i-lucide-hourglass" class="size-10 text-muted mx-auto" />
+      <UIcon name="i-hugeicons-hourglass" class="size-10 text-muted mx-auto" />
       <p class="text-sm font-medium">Недостаточно данных</p>
       <p class="text-xs text-muted">
         Нужно ≥{{ report.requiredSamples }} закрытых задач за период, у нас {{ report.sampleSize }}

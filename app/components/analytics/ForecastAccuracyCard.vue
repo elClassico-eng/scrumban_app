@@ -30,11 +30,11 @@ function fmtDate(iso: string): string {
     </template>
 
     <div v-if="accuracy.isLoading.value" class="h-32 flex items-center justify-center text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <div v-else-if="!report || report.rows.length === 0" class="space-y-2 py-6 text-center">
-      <UIcon name="i-lucide-target" class="size-10 text-muted mx-auto" />
+      <UIcon name="i-hugeicons-target-02" class="size-10 text-muted mx-auto" />
       <p class="text-sm font-medium">Пока нечего сверять</p>
       <p class="text-xs text-muted">
         Данные появятся после закрытия спринтов, стартовавших с прогнозом.

@@ -33,7 +33,7 @@ async function runBulk(work: () => Promise<void>, title: string) {
   try {
     await work()
     invalidateTasks()
-    toast.add({ title, icon: 'i-lucide-check-circle' })
+    toast.add({ title, icon: 'i-hugeicons-circle-check-big' })
     emit('clear')
   }
   finally {
@@ -79,7 +79,7 @@ function closeSelected() {
     <div class="flex items-center gap-1">
       <UDropdownMenu :items="assignItems" :ui="{ content: 'w-60 max-h-72 overflow-auto' }">
         <button class="h-[30px] px-3 bg-white/10 hover:bg-white/20 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5">
-          <UIcon name="i-lucide-user" class="size-3.5" /> <span class="hidden sm:inline">Назначить</span>
+          <UIcon name="i-hugeicons-user" class="size-3.5" /> <span class="hidden sm:inline">Назначить</span>
         </button>
         <template #item-leading="{ item }">
           <UserAvatar :user="(item as any).member" size="xs" />
@@ -88,7 +88,7 @@ function closeSelected() {
 
       <UPopover v-model:open="dueOpen">
         <button class="h-[30px] px-3 bg-white/10 hover:bg-white/20 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5">
-          <UIcon name="i-lucide-calendar" class="size-3.5" /> <span class="hidden sm:inline">Срок</span>
+          <UIcon name="i-hugeicons-calendar-03" class="size-3.5" /> <span class="hidden sm:inline">Срок</span>
         </button>
         <template #content>
           <div class="p-2"><CommonDateCalendar @update:model-value="applyDue" /></div>
@@ -100,11 +100,11 @@ function closeSelected() {
         class="h-[30px] px-3 bg-white/10 hover:bg-white/20 rounded-full text-[12.5px] font-medium inline-flex items-center gap-1.5"
         @click="closeSelected"
       >
-        <UIcon name="i-lucide-check" class="size-3.5" /> <span class="hidden sm:inline">Закрыть</span>
+        <UIcon name="i-hugeicons-check" class="size-3.5" /> <span class="hidden sm:inline">Закрыть</span>
       </button>
 
       <button class="size-[30px] grid place-items-center rounded-full text-white/70 hover:bg-white/10" @click="emit('clear')">
-        <UIcon name="i-lucide-x" class="size-4" />
+        <UIcon name="i-hugeicons-x" class="size-4" />
       </button>
     </div>
   </div>

@@ -62,7 +62,7 @@ const gridStatus = computed<'ok' | 'loading' | 'noBoard' | 'error'>(() => {
 const boardItems = computed<DropdownMenuItem[]>(() =>
   props.boards.map(b => ({
     label: b.name,
-    icon: 'i-lucide-kanban-square',
+    icon: 'i-hugeicons-square-kanban',
     ...(b.id === props.boardId ? { color: 'primary' as const } : {}),
     onSelect: () => emit('select-board', b.id),
   })),
@@ -101,7 +101,7 @@ const TABS: { key: IslandTab; label: string }[] = [
           >
             <span class="shrink-0">текущая доска:</span>
             <span class="truncate text-[var(--island-ink-2)]">{{ boardName ?? '—' }}</span>
-            <UIcon name="i-lucide-chevron-down" class="w-3 h-3 shrink-0 self-center" />
+            <UIcon name="i-hugeicons-chevron-down" class="w-3 h-3 shrink-0 self-center" />
           </button>
         </UDropdownMenu>
       </template>
@@ -118,7 +118,7 @@ const TABS: { key: IslandTab; label: string }[] = [
       aria-label="Закрепить"
       @click="emit('toggle-pin', $event)"
     >
-      <UIcon name="i-lucide-pin" class="w-[15px] h-[15px]" />
+      <UIcon name="i-hugeicons-pin" class="w-[15px] h-[15px]" />
     </button>
   </div>
 
@@ -149,7 +149,7 @@ const TABS: { key: IslandTab; label: string }[] = [
       aria-label="Настроить плитки"
       @click.stop="editing = editing ? null : (tab as ControlCenterTab)"
     >
-      <UIcon name="i-lucide-settings-2" class="w-[15px] h-[15px]" />
+      <UIcon name="i-hugeicons-settings-02" class="w-[15px] h-[15px]" />
     </button>
   </div>
 

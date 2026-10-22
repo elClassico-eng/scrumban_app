@@ -46,14 +46,14 @@ const items = computed(() =>
         />
       </template>
       <span v-else class="size-[26px] rounded-full border border-dashed border-[var(--ui-border-muted)] text-dimmed grid place-items-center">
-        <UIcon name="i-lucide-user" class="size-3" />
+        <UIcon name="i-hugeicons-user" class="size-3" />
       </span>
     </button>
     <template #item-leading="{ item }">
       <UserAvatar :user="(item as any).member" size="xs" />
     </template>
     <template #item-trailing="{ item }">
-      <UIcon v-if="(item as any).checked" name="i-lucide-check" class="size-4 text-accent-500" />
+      <UIcon v-if="(item as any).checked" name="i-hugeicons-check" class="size-4 text-accent-500" />
     </template>
   </UDropdownMenu>
   <span v-else class="flex items-center">
@@ -69,7 +69,7 @@ const items = computed(() =>
       />
     </template>
     <span v-else class="size-[26px] rounded-full border border-dashed border-[var(--ui-border-muted)] text-dimmed grid place-items-center">
-      <UIcon name="i-lucide-user" class="size-3" />
+      <UIcon name="i-hugeicons-user" class="size-3" />
     </span>
   </span>
 </template>

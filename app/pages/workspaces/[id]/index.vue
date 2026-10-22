@@ -139,17 +139,17 @@ function actorLabel(e: ActivityEvent): string {
     />
 
     <div v-if="loading" class="py-16 text-center text-muted">
-      <UIcon name="i-lucide-loader" class="size-6 animate-spin" />
+      <UIcon name="i-hugeicons-loader" class="size-6 animate-spin" />
     </div>
 
     <UiEmptyState
       v-else-if="isEmpty"
-      icon="i-lucide-layout-dashboard"
+      icon="i-hugeicons-layout-dashboard"
       title="Здесь пока пусто"
       text="Создайте первую доску, чтобы видеть аналитику потока"
     >
       <template #actions>
-        <UButton :to="pageRoutes.boards(wsId)" icon="i-lucide-plus">К доскам</UButton>
+        <UButton :to="pageRoutes.boards(wsId)" icon="i-hugeicons-plus">К доскам</UButton>
       </template>
     </UiEmptyState>
 
@@ -174,7 +174,7 @@ function actorLabel(e: ActivityEvent): string {
           </template>
           <div v-if="events.length" class="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
             <div v-for="e in events" :key="e.id" class="flex items-start gap-2.5">
-              <UIcon name="i-lucide-activity" class="mt-0.5 size-4 shrink-0 text-muted" />
+              <UIcon name="i-hugeicons-activity-01" class="mt-0.5 size-4 shrink-0 text-muted" />
               <div class="min-w-0 flex-1 text-sm">
                 <p class="leading-snug break-words text-default">
                   <span v-if="e.taskTitle" class="font-medium">«{{ e.taskTitle }}»</span>

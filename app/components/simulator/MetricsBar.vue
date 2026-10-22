@@ -90,14 +90,14 @@ const metrics = computed<Metric[]>(() => {
   <div class="surface-soft rounded-2xl px-6 py-5 space-y-3">
     <div class="flex items-center gap-2">
       <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
-        <UIcon name="i-lucide-scale" class="size-3.5" />
+        <UIcon name="i-hugeicons-scale" class="size-3.5" />
         Базовый прогноз vs сценарий
       </h4>
       <span
         v-if="pending"
         class="text-[10.5px] text-muted inline-flex items-center gap-1"
       >
-        <UIcon name="i-lucide-loader-2" class="size-3 animate-spin" />
+        <UIcon name="i-hugeicons-loader-circle" class="size-3 animate-spin" />
         пересчёт…
       </span>
       <div class="flex-1" />

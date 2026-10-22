@@ -20,7 +20,7 @@ const model = defineModel<string>({ default: DEFAULT_BOARD_COLOR })
     >
       <UIcon
         v-if="model === c"
-        name="i-lucide-check"
+        name="i-hugeicons-check"
         class="size-4 text-white drop-shadow"
       />
     </button>

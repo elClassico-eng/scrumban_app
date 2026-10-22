@@ -162,7 +162,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
       title: mode === 'start'
         ? `Спринт «${res.sprint.name}» создан и запущен`
         : `Спринт «${res.sprint.name}» запланирован`,
-      icon: mode === 'start' ? 'i-lucide-play' : 'i-lucide-calendar-check',
+      icon: mode === 'start' ? 'i-hugeicons-play' : 'i-hugeicons-calendar-check',
       duration: 2000,
     })
     clearDraft()
@@ -176,7 +176,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
     toast.add({
       title: getErrorMessage(err, 'Не удалось создать спринт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
   finally {
@@ -243,7 +243,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
                       ? 'bg-white text-black ring-4 ring-white/20'
                       : 'ring-1 ring-inset ring-white/30 text-white/50'"
                 >
-                  <UIcon v-if="i < step" name="i-lucide-check" class="size-3" />
+                  <UIcon v-if="i < step" name="i-hugeicons-check" class="size-3" />
                   <template v-else>{{ i + 1 }}</template>
                 </div>
                 <span
@@ -274,7 +274,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
                 class="size-8 rounded-lg grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
                 @click="open = false"
               >
-                <UIcon name="i-lucide-x" class="size-4" />
+                <UIcon name="i-hugeicons-x" class="size-4" />
               </button>
             </div>
           </div>
@@ -307,7 +307,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
               size="md"
               variant="ghost"
               color="neutral"
-              icon="i-lucide-arrow-left"
+              icon="i-hugeicons-arrow-left-02"
               @click="back"
             >
               Назад
@@ -316,7 +316,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
             <template v-if="step < 2">
               <UButton
                 size="lg"
-                trailing-icon="i-lucide-arrow-right"
+                trailing-icon="i-hugeicons-arrow-right-02"
                 :disabled="!stepValid"
                 @click="next"
               >
@@ -329,7 +329,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
                   size="md"
                   variant="ghost"
                   color="neutral"
-                  icon="i-lucide-flask-conical"
+                  icon="i-hugeicons-flask-conical"
                   :loading="creating"
                   @click="createSprint('simulator')"
                 >
@@ -347,7 +347,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
               </UButton>
               <UButton
                 size="md"
-                icon="i-lucide-play"
+                icon="i-hugeicons-play"
                 :loading="creating"
                 @click="createSprint('start')"
               >

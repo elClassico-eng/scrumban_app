@@ -51,7 +51,7 @@ async function onRecompute() {
         title: 'Недостаточно данных',
         description: `Нужно ≥5 закрытых задач за 90 дней, есть ${res.sampleCount}`,
         color: 'warning',
-        icon: 'i-lucide-alert-circle',
+        icon: 'i-hugeicons-alert-circle',
       })
     }
     else {
@@ -60,7 +60,7 @@ async function onRecompute() {
         title: `SLE: ${(state.sleProbability * 100).toFixed(0)}% задач за ${res.sleDays} дней`,
         description: `Рассчитано по ${res.sampleCount} закрытым задачам`,
         color: 'success',
-        icon: 'i-lucide-check-circle',
+        icon: 'i-hugeicons-circle-check-big',
       })
     }
   }
@@ -68,7 +68,7 @@ async function onRecompute() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось пересчитать SLE'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -89,7 +89,7 @@ async function onSave() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -147,7 +147,7 @@ async function onSave() {
             </UFormField>
           </div>
           <UButton
-            icon="i-lucide-refresh-cw"
+            icon="i-hugeicons-refresh-cw"
             color="neutral"
             variant="soft"
             size="sm"

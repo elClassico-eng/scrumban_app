@@ -19,17 +19,17 @@ const description = computed(() => props.workspace.description || props.workspac
 
 const stats = computed(() => [
   {
-    icon: 'i-lucide-layout-dashboard',
+    icon: 'i-hugeicons-layout-dashboard',
     value: props.workspace.boardCount,
     word: plural(props.workspace.boardCount, ['доска', 'доски', 'досок']),
   },
   {
-    icon: 'i-lucide-list-todo',
+    icon: 'i-hugeicons-list-todo',
     value: props.workspace.openTaskCount,
     word: plural(props.workspace.openTaskCount, ['задача', 'задачи', 'задач']),
   },
   {
-    icon: 'i-lucide-users',
+    icon: 'i-hugeicons-users',
     value: props.workspace.memberCount,
     word: plural(props.workspace.memberCount, ['участник', 'участника', 'участников']),
   },
@@ -39,13 +39,13 @@ const menuItems = computed(() => {
   const base = [
     {
       label: 'Переименовать',
-      icon: 'i-lucide-pencil',
+      icon: 'i-hugeicons-pencil',
       disabled: !canRename.value,
       onSelect: () => emit('rename'),
     },
     {
       label: props.workspace.myLabel ? `Ярлык: ${props.workspace.myLabel}` : 'Добавить ярлык',
-      icon: 'i-lucide-tag',
+      icon: 'i-hugeicons-tag-01',
       onSelect: () => emit('label'),
     },
   ]
@@ -54,7 +54,7 @@ const menuItems = computed(() => {
         ...base,
         {
           label: 'Удалить',
-          icon: 'i-lucide-trash-2',
+          icon: 'i-hugeicons-delete-02',
           color: 'error' as const,
           onSelect: () => emit('delete'),
         },
@@ -93,7 +93,7 @@ const menuItems = computed(() => {
             class="size-7 rounded-md grid place-items-center text-white/90 hover:bg-white/20 transition-colors cursor-pointer"
             title="Действия"
           >
-            <UIcon name="i-lucide-more-horizontal" class="size-4" />
+            <UIcon name="i-hugeicons-more-horizontal" class="size-4" />
           </button>
         </UDropdownMenu>
       </div>
@@ -105,7 +105,7 @@ const menuItems = computed(() => {
             v-if="workspace.myLabel"
             class="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-white/20 backdrop-blur-md px-1.5 py-0.5 rounded"
           >
-            <UIcon name="i-lucide-tag" class="size-3" />
+            <UIcon name="i-hugeicons-tag-01" class="size-3" />
             {{ workspace.myLabel }}
           </span>
           <p v-if="description" class="text-xs text-white/80 leading-relaxed line-clamp-1">{{ description }}</p>
@@ -123,7 +123,7 @@ const menuItems = computed(() => {
           <span class="text-[11px] text-white/60">{{ workspace.slug }}</span>
           <span class="inline-flex items-center gap-1.5 text-xs font-medium text-white transition-all group-hover:translate-x-0.5">
             Открыть
-            <UIcon name="i-lucide-arrow-right" class="size-3.5" />
+            <UIcon name="i-hugeicons-arrow-right-02" class="size-3.5" />
           </span>
         </div>
       </div>
@@ -160,7 +160,7 @@ const menuItems = computed(() => {
                 class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
                 title="Действия"
               >
-                <UIcon name="i-lucide-more-horizontal" class="size-4" />
+                <UIcon name="i-hugeicons-more-horizontal" class="size-4" />
               </button>
             </UDropdownMenu>
           </div>
@@ -170,7 +170,7 @@ const menuItems = computed(() => {
           v-if="workspace.myLabel"
           class="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-accent-700 dark:text-accent-300 bg-accent-50 dark:bg-accent-950 px-1.5 py-0.5 rounded"
         >
-          <UIcon name="i-lucide-tag" class="size-3" />
+          <UIcon name="i-hugeicons-tag-01" class="size-3" />
           {{ workspace.myLabel }}
         </span>
       </div>
@@ -195,7 +195,7 @@ const menuItems = computed(() => {
       <span class="text-[11px] text-muted">{{ workspace.slug }}</span>
       <span class="inline-flex items-center gap-1.5 text-xs font-medium text-default group-hover:text-accent-600 transition-all group-hover:translate-x-0.5">
         Открыть
-        <UIcon name="i-lucide-arrow-right" class="size-3.5" />
+        <UIcon name="i-hugeicons-arrow-right-02" class="size-3.5" />
       </span>
     </div>
   </NuxtLink>

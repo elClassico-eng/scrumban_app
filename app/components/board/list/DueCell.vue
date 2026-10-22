@@ -42,7 +42,7 @@ function clearDue() {
       class="inline-flex items-center gap-[6px] h-[24px] px-[9px] rounded-[7px] text-[12px] font-medium tabular-nums transition-opacity hover:opacity-80"
       :class="pill.cls"
     >
-      <UIcon v-if="!pill.noIcon" name="i-lucide-calendar" class="size-[13px] shrink-0" />
+      <UIcon v-if="!pill.noIcon" name="i-hugeicons-calendar-03" class="size-[13px] shrink-0" />
       {{ pill.text }}
     </button>
     <template #content>
@@ -57,7 +57,7 @@ function clearDue() {
     class="inline-flex items-center gap-[6px] h-[24px] px-[9px] rounded-[7px] text-[12px] font-medium tabular-nums"
     :class="pill.cls"
   >
-    <UIcon v-if="!pill.noIcon" name="i-lucide-calendar" class="size-[13px] shrink-0" />
+    <UIcon v-if="!pill.noIcon" name="i-hugeicons-calendar-03" class="size-[13px] shrink-0" />
     {{ pill.text }}
   </span>
 </template>

@@ -33,7 +33,7 @@ function selectRole(r: Role | 'all') {
   <div class="flex items-center gap-2 flex-wrap">
     <div class="relative w-full sm:flex-1 sm:min-w-[240px] sm:max-w-md">
       <UIcon
-        name="i-lucide-search"
+        name="i-hugeicons-search-01"
         class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted pointer-events-none"
       />
       <input
@@ -91,7 +91,7 @@ function selectRole(r: Role | 'all') {
         :class="view === 'grid' ? 'bg-elevated text-default' : 'text-muted hover:text-default'"
         @click="emit('update:view', 'grid')"
       >
-        <UIcon name="i-lucide-layout-grid" class="size-3.5" />
+        <UIcon name="i-hugeicons-layout-grid" class="size-3.5" />
       </button>
       <button
         type="button"
@@ -100,7 +100,7 @@ function selectRole(r: Role | 'all') {
         :class="view === 'list' ? 'bg-elevated text-default' : 'text-muted hover:text-default'"
         @click="emit('update:view', 'list')"
       >
-        <UIcon name="i-lucide-list" class="size-3.5" />
+        <UIcon name="i-hugeicons-list" class="size-3.5" />
       </button>
     </div>
   </div>

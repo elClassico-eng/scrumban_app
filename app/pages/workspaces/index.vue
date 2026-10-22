@@ -74,7 +74,7 @@ async function onRename(name: string) {
     renameTarget.value = null
   }
   catch {
-    toast.add({ title: 'Не удалось переименовать', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Не удалось переименовать', color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
@@ -85,7 +85,7 @@ async function onSetLabel(label: string | null) {
     labelTarget.value = null
   }
   catch {
-    toast.add({ title: 'Не удалось обновить ярлык', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Не удалось обновить ярлык', color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
@@ -93,11 +93,11 @@ async function onDelete() {
   if (!deleteTarget.value) return
   try {
     await remove.mutateAsync(deleteTarget.value.id)
-    toast.add({ title: 'Workspace удалён', color: 'accent', icon: 'i-lucide-check' })
+    toast.add({ title: 'Workspace удалён', color: 'accent', icon: 'i-hugeicons-check' })
     deleteTarget.value = null
   }
   catch {
-    toast.add({ title: 'Не удалось удалить', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Не удалось удалить', color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 </script>
@@ -109,7 +109,7 @@ async function onDelete() {
         <h1 class="text-3xl font-bold tracking-tight">Воркспейсы</h1>
         <p class="text-sm text-muted mt-1">Выберите команду или создайте новую</p>
       </div>
-      <UButton icon="i-lucide-plus" size="lg" class="py-2.5 w-full sm:w-auto justify-center" @click="createOpen = true">
+      <UButton icon="i-hugeicons-plus" size="lg" class="py-2.5 w-full sm:w-auto justify-center" @click="createOpen = true">
         Создать workspace
       </UButton>
     </div>
@@ -117,17 +117,17 @@ async function onDelete() {
     <WorkspaceMyInvitationsSection />
 
     <div v-if="list.isLoading.value" class="text-center py-12 text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <div
       v-else-if="isEmpty"
       class="text-center py-16 space-y-3 rounded-3xl border border-dashed border-default"
     >
-      <UIcon name="i-lucide-folder-plus" class="size-12 text-muted mx-auto" />
+      <UIcon name="i-hugeicons-folder-plus" class="size-12 text-muted mx-auto" />
       <p class="font-medium">У вас пока нет воркспейсов</p>
       <p class="text-sm text-muted">Создайте первый, чтобы начать</p>
-      <UButton icon="i-lucide-plus" size="lg" @click="createOpen = true">
+      <UButton icon="i-hugeicons-plus" size="lg" @click="createOpen = true">
         Создать workspace
       </UButton>
     </div>
@@ -165,7 +165,7 @@ async function onDelete() {
           @click="toggleGroup(g.key)"
         >
           <UIcon
-            name="i-lucide-chevron-down"
+            name="i-hugeicons-chevron-down"
             class="size-4 text-muted transition-transform"
             :class="isCollapsed(g.key) ? '-rotate-90' : ''"
           />

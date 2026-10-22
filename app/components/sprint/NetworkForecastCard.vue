@@ -55,7 +55,7 @@ function pct(p: number | null | undefined): string {
   <div class="space-y-3">
     <div class="flex items-center gap-2">
       <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
-        <UIcon name="i-lucide-git-branch" class="size-3.5" />
+        <UIcon name="i-hugeicons-git-branch" class="size-3.5" />
         Сетевой прогноз · CPM + PERT
       </h4>
       <AnalyticsInfo
@@ -75,7 +75,7 @@ function pct(p: number | null | undefined): string {
         size="xs"
         variant="outline"
         color="neutral"
-        :icon="showGraph ? 'i-lucide-chevron-up' : 'i-lucide-network'"
+        :icon="showGraph ? 'i-hugeicons-chevron-up' : 'i-hugeicons-network'"
         @click="showGraph = !showGraph"
       >
         {{ showGraph ? 'Скрыть сеть' : 'Показать сеть' }}
@@ -87,7 +87,7 @@ function pct(p: number | null | undefined): string {
     </div>
 
     <div v-else-if="data && !data.ok" class="flex items-start gap-2.5 py-1">
-      <UIcon name="i-lucide-database" class="size-4 text-muted shrink-0 mt-0.5" />
+      <UIcon name="i-hugeicons-database" class="size-4 text-muted shrink-0 mt-0.5" />
       <p class="text-[12.5px] text-muted m-0 leading-relaxed">
         Недостаточно истории для оценок: закрыто <b class="text-default">{{ data.closedSamples }}</b> задач из
         {{ data.requiredSamples }} необходимых. Закрывайте задачи — прогноз появится сам.

@@ -38,7 +38,7 @@ function cancelEdit() {
 function onComingSoon(feature: string) {
   toast.add({
     title: `${feature} скоро будет`,
-    icon: 'i-lucide-sparkles',
+    icon: 'i-hugeicons-sparkles',
     duration: 1500,
   })
 }
@@ -56,7 +56,7 @@ function onComingSoon(feature: string) {
         class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="onComingSoon('Улучшить с AI')"
       >
-        <UIcon name="i-lucide-sparkles" class="size-3" />
+        <UIcon name="i-hugeicons-sparkles" class="size-3" />
         Улучшить с AI
       </button>
       <button
@@ -64,7 +64,7 @@ function onComingSoon(feature: string) {
         class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="onComingSoon('Вложение')"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         Вложение
       </button>
     </div>
@@ -111,7 +111,7 @@ function onComingSoon(feature: string) {
         class="inline-flex items-center gap-1.5 text-[12px] text-muted bg-transparent border-0 p-0 mt-3 cursor-pointer hover:text-accent-500 transition-colors"
         @click="startEdit"
       >
-        <UIcon name="i-lucide-pencil" class="size-3" />
+        <UIcon name="i-hugeicons-pencil" class="size-3" />
         Редактировать описание
       </button>
     </template>

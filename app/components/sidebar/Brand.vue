@@ -28,7 +28,7 @@ const emit = defineEmits<{ toggle: [], close: [] }>()
       :aria-label="mobile ? 'Закрыть меню' : (collapsed ? 'Развернуть меню' : 'Свернуть меню')"
       @click="mobile ? emit('close') : emit('toggle')"
     >
-      <UIcon :name="mobile ? 'i-lucide-x' : (collapsed ? 'i-lucide-chevron-right' : 'i-lucide-chevron-left')" class="size-4" />
+      <UIcon :name="mobile ? 'i-hugeicons-x' : (collapsed ? 'i-hugeicons-chevron-right' : 'i-hugeicons-chevron-left')" class="size-4" />
     </button>
   </div>
 </template>

@@ -85,7 +85,7 @@ async function onRoleChange(userId: string, currentRole: Role, newRole: Role) {
     toast.add({
       title: `Роль обновлена: ${ROLE_LABEL[newRole]}`,
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 4000,
     })
   }
@@ -109,7 +109,7 @@ async function onRemove(userId: string, email: string) {
     toast.add({
       title: `${email} удалён из workspace`,
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 4000,
     })
   }
@@ -123,7 +123,7 @@ async function onRemove(userId: string, email: string) {
   <div class="space-y-6">
     <UiPageHeader title="Участники" :count="counts.all" :subtitle="summary">
       <template v-if="canManage" #actions>
-        <UButton icon="i-lucide-mail-plus" size="md" @click="inviteOpen = true">
+        <UButton icon="i-hugeicons-mail-plus" size="md" @click="inviteOpen = true">
           Пригласить
         </UButton>
       </template>
@@ -134,7 +134,7 @@ async function onRemove(userId: string, email: string) {
       color="error"
       variant="soft"
       :title="actionError"
-      icon="i-lucide-alert-circle"
+      icon="i-hugeicons-alert-circle"
       :close="{ onClick: () => { actionError = null } }"
     />
 
@@ -146,12 +146,12 @@ async function onRemove(userId: string, email: string) {
     />
 
     <div v-if="membersList.isLoading.value" class="text-center py-12 text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <UiEmptyState
       v-else-if="filteredMembers.length === 0"
-      icon="i-lucide-search-x"
+      icon="i-hugeicons-search-x"
       title="Никого не нашлось"
       text="Сбросьте фильтры или измените запрос"
     />

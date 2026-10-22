@@ -42,7 +42,7 @@ async function onAddBlocker(blockerTaskId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось добавить блокера'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -55,7 +55,7 @@ async function onRemoveBlocker(blockerTaskId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось удалить блокера'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -82,7 +82,7 @@ async function commitEditReason() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -124,7 +124,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
           class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           @click="blockerPickerOpen = true"
         >
-          <UIcon name="i-lucide-plus" class="size-3" />
+          <UIcon name="i-hugeicons-plus" class="size-3" />
           Сообщить о блокере
         </button>
       </div>
@@ -135,7 +135,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
         class="flex gap-3 p-3.5 rounded-lg border border-red-100 dark:border-red-900/40 mb-2 bg-red-50 dark:bg-red-950/40"
       >
         <div class="size-7 rounded-md bg-red-500 text-white grid place-items-center shrink-0">
-          <UIcon name="i-lucide-alert-triangle" class="size-3.5" />
+          <UIcon name="i-hugeicons-triangle-alert" class="size-3.5" />
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex items-baseline gap-2 flex-wrap mb-1">
@@ -172,7 +172,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
         class="rounded-lg border border-red-100 dark:border-red-900/40 p-3.5 bg-red-50 dark:bg-red-950/40"
       >
         <div class="flex items-center gap-2 mb-1.5">
-          <UIcon name="i-lucide-alert-triangle" class="size-3.5 text-red-500" />
+          <UIcon name="i-hugeicons-triangle-alert" class="size-3.5 text-red-500" />
           <span class="text-[12px] font-semibold uppercase tracking-[0.04em] text-red-600">
             Причина блокировки
           </span>
@@ -203,7 +203,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
         class="inline-flex items-center gap-1.5 text-[12px] text-muted bg-transparent border-0 p-0 mt-2 cursor-pointer hover:text-accent-500 transition-colors"
         @click="startEditReason"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         Добавить причину блокировки
       </button>
     </section>
@@ -219,7 +219,7 @@ function statusOf(taskId: string): { label: string; tone: 'done' | 'progress' | 
           class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
           @click="dependencyPickerOpen = true"
         >
-          <UIcon name="i-lucide-plus" class="size-3" />
+          <UIcon name="i-hugeicons-plus" class="size-3" />
           Добавить зависимость
         </button>
       </div>

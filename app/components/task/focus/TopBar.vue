@@ -38,7 +38,7 @@ const emit = defineEmits<{
           :title="parentTask.title"
           @click="emit('open-parent-picker')"
         >
-          <UIcon name="i-lucide-crown" class="size-3.5 shrink-0" />
+          <UIcon name="i-hugeicons-crown" class="size-3.5 shrink-0" />
           <span class="truncate">{{ parentTask.title }}</span>
         </button>
       </template>
@@ -52,7 +52,7 @@ const emit = defineEmits<{
         title="Следить"
         @click="emit('toggle-watch')"
       >
-        <UIcon name="i-lucide-eye" class="size-4" />
+        <UIcon name="i-hugeicons-eye" class="size-4" />
       </button>
       <button
         type="button"
@@ -60,12 +60,12 @@ const emit = defineEmits<{
         title="Копировать ссылку"
         @click="emit('copy-link')"
       >
-        <UIcon name="i-lucide-link-2" class="size-4" />
+        <UIcon name="i-hugeicons-link-02" class="size-4" />
       </button>
       <UDropdownMenu
         v-if="canDelete"
         :items="[
-          { label: 'Удалить задачу', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => emit('delete') },
+          { label: 'Удалить задачу', icon: 'i-hugeicons-delete-02', color: 'error', onSelect: () => emit('delete') },
         ]"
       >
         <button
@@ -73,7 +73,7 @@ const emit = defineEmits<{
           class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
           title="Ещё"
         >
-          <UIcon name="i-lucide-more-horizontal" class="size-4" />
+          <UIcon name="i-hugeicons-more-horizontal" class="size-4" />
         </button>
       </UDropdownMenu>
       <span class="w-1.5" />
@@ -83,7 +83,7 @@ const emit = defineEmits<{
         title="Закрыть (Esc)"
         @click="emit('close')"
       >
-        <UIcon name="i-lucide-x" class="size-4" />
+        <UIcon name="i-hugeicons-x" class="size-4" />
       </button>
     </div>
   </header>

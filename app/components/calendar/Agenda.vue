@@ -73,7 +73,7 @@ function primaryMember(t: Task): MemberView | null {
         :model-value="filters"
         @update:model-value="emit('update:filters', $event)"
       />
-      <UButton size="sm" icon="i-lucide-plus" @click="emit('create')">
+      <UButton size="sm" icon="i-hugeicons-plus" @click="emit('create')">
         Добавить
       </UButton>
     </div>
@@ -84,9 +84,9 @@ function primaryMember(t: Task): MemberView | null {
         class="inline-flex items-center gap-1.5 h-7 pl-2.5 pr-2 rounded-full bg-elevated text-xs text-default hover:bg-accented transition-colors"
         @click="emit('clear-day')"
       >
-        <UIcon name="i-lucide-calendar" class="size-3.5 text-muted" />
+        <UIcon name="i-hugeicons-calendar-03" class="size-3.5 text-muted" />
         <span class="capitalize">{{ selectedLabel }}</span>
-        <UIcon name="i-lucide-x" class="size-3.5 text-muted" />
+        <UIcon name="i-hugeicons-x" class="size-3.5 text-muted" />
       </button>
     </div>
 
@@ -94,9 +94,9 @@ function primaryMember(t: Task): MemberView | null {
       v-if="groups.length === 0"
       class="flex-1 flex flex-col items-center justify-center gap-3 text-center py-12"
     >
-      <UIcon name="i-lucide-calendar-check-2" class="size-10 text-dimmed" />
+      <UIcon name="i-hugeicons-calendar-check-in-01" class="size-10 text-dimmed" />
       <p class="text-sm text-muted">Нет задач с дедлайном</p>
-      <UButton color="neutral" variant="soft" size="sm" icon="i-lucide-plus" @click="emit('create')">
+      <UButton color="neutral" variant="soft" size="sm" icon="i-hugeicons-plus" @click="emit('create')">
         Добавить задачу
       </UButton>
     </div>

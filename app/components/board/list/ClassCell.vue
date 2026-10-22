@@ -30,7 +30,7 @@ const dotClass = computed(() => {
 const items = computed(() =>
   SERVICE_CLASS_OPTIONS.map(o => ({
     label: SERVICE_CLASS_INFO[o.value].shortLabel,
-    icon: props.task.serviceClass === o.value ? 'i-lucide-check' : undefined,
+    icon: props.task.serviceClass === o.value ? 'i-hugeicons-check' : undefined,
     onSelect: () => { if (props.task.serviceClass !== o.value) update.mutate({ taskId: props.task.id, serviceClass: o.value }) },
   })),
 )

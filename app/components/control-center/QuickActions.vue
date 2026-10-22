@@ -13,7 +13,7 @@ const emit = defineEmits<{
   logout: [e: Event]
 }>()
 
-const themeIcon = computed(() => props.isDark ? 'i-lucide-sun' : 'i-lucide-moon')
+const themeIcon = computed(() => props.isDark ? 'i-hugeicons-sun-03' : 'i-hugeicons-moon')
 
 type ActionStyle = 'primary' | 'toggle-active' | 'normal'
 
@@ -35,7 +35,7 @@ function btnStyle(style: ActionStyle): string {
       aria-label="Задача"
       @click="emit('task', $event)"
     >
-      <UIcon name="i-lucide-plus" class="w-4 h-4" />
+      <UIcon name="i-hugeicons-plus" class="w-4 h-4" />
       Задача
     </button>
     <button
@@ -45,7 +45,7 @@ function btnStyle(style: ActionStyle): string {
       aria-label="Поиск"
       @click="emit('search', $event)"
     >
-      <UIcon name="i-lucide-search" class="w-4 h-4" />
+      <UIcon name="i-hugeicons-search-01" class="w-4 h-4" />
       Поиск
     </button>
     <button
@@ -55,7 +55,7 @@ function btnStyle(style: ActionStyle): string {
       aria-label="Фокус"
       @click="emit('toggle-focus', $event)"
     >
-      <UIcon name="i-lucide-focus" class="w-4 h-4" />
+      <UIcon name="i-hugeicons-focus" class="w-4 h-4" />
       Фокус
     </button>
     <button
@@ -75,7 +75,7 @@ function btnStyle(style: ActionStyle): string {
       aria-label="Выход"
       @click="emit('logout', $event)"
     >
-      <UIcon name="i-lucide-log-out" class="w-4 h-4" />
+      <UIcon name="i-hugeicons-log-out" class="w-4 h-4" />
       Выход
     </button>
   </div>

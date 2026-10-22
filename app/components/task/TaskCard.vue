@@ -107,12 +107,12 @@ const isDone = computed(() => props.task.closedAt != null)
       >
         <UIcon
           v-if="parentTask.isEpic"
-          name="i-lucide-crown"
+          name="i-hugeicons-crown"
           class="size-3 text-accent-500 shrink-0"
         />
         <UIcon
           v-else
-          name="i-lucide-corner-left-up"
+          name="i-hugeicons-corner-left-up"
           class="size-3 shrink-0"
         />
         <span class="truncate">{{ parentTask.id.slice(0, 6).toUpperCase() }}</span>
@@ -122,7 +122,7 @@ const isDone = computed(() => props.task.closedAt != null)
         class="inline-flex items-center gap-1 min-w-0 text-dimmed text-[10.5px] font-medium"
         :title="`В спринте: ${sprintChip.name}`"
       >
-        <UIcon name="i-lucide-iteration-ccw" class="size-3 shrink-0" />
+        <UIcon name="i-hugeicons-iteration-ccw" class="size-3 shrink-0" />
         <span class="truncate">{{ sprintChip.name }}</span>
       </span>
       <div class="flex-1" />
@@ -131,7 +131,7 @@ const isDone = computed(() => props.task.closedAt != null)
         class="inline-flex items-center gap-1 h-[18px] px-1.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-600 dark:text-accent-300 text-[10px] font-bold uppercase tracking-[0.04em] shrink-0"
         title="Эпик"
       >
-        <UIcon name="i-lucide-crown" class="size-3" />
+        <UIcon name="i-hugeicons-crown" class="size-3" />
         Эпик
       </span>
       <span
@@ -150,7 +150,7 @@ const isDone = computed(() => props.task.closedAt != null)
     >
       <UIcon
         v-if="task.serviceClass === 'expedite'"
-        name="i-lucide-zap"
+        name="i-hugeicons-zap"
         class="size-3.5 text-accent-500 inline-block align-[-2px] mr-0.5"
         title="Срочная"
       />{{ task.title }}
@@ -160,7 +160,7 @@ const isDone = computed(() => props.task.closedAt != null)
       v-if="task.blockedReason"
       class="flex items-start gap-1.5 px-2 py-1 mb-1.5 rounded bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-300 text-[11.5px] font-medium leading-snug"
     >
-      <UIcon name="i-lucide-alert-triangle" class="size-3.5 shrink-0 mt-px" />
+      <UIcon name="i-hugeicons-triangle-alert" class="size-3.5 shrink-0 mt-px" />
       <span class="line-clamp-2">{{ task.blockedReason }}</span>
     </div>
 
@@ -169,21 +169,21 @@ const isDone = computed(() => props.task.closedAt != null)
         v-if="dueState && dueState.tone === 'overdue'"
         class="inline-flex items-center gap-1 h-[20px] px-2 rounded-full bg-red-500 text-white text-[10.5px] font-semibold tabular-nums"
       >
-        <UIcon name="i-lucide-calendar" class="size-3" />
+        <UIcon name="i-hugeicons-calendar-03" class="size-3" />
         {{ dueState.label }}
       </span>
       <span
         v-else-if="dueState && dueState.tone === 'today'"
         class="inline-flex items-center gap-1 h-[20px] px-2 rounded-full bg-accent-500 text-white text-[10.5px] font-semibold tabular-nums"
       >
-        <UIcon name="i-lucide-calendar" class="size-3" />
+        <UIcon name="i-hugeicons-calendar-03" class="size-3" />
         {{ dueState.label }}
       </span>
       <span
         v-else-if="dueState && dueState.tone === 'soon'"
         class="inline-flex items-center gap-1 text-[11px] font-semibold text-accent-600 tabular-nums"
       >
-        <UIcon name="i-lucide-calendar" class="size-3 text-accent-500" />
+        <UIcon name="i-hugeicons-calendar-03" class="size-3 text-accent-500" />
         {{ dueState.label }}
       </span>
       <span
@@ -192,7 +192,7 @@ const isDone = computed(() => props.task.closedAt != null)
         :class="task.serviceClass === 'fixed_date' ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-muted'"
         :title="task.serviceClass === 'fixed_date' ? 'Фиксированный срок' : undefined"
       >
-        <UIcon name="i-lucide-calendar" class="size-3" :class="task.serviceClass === 'fixed_date' ? '' : 'text-dimmed'" />
+        <UIcon name="i-hugeicons-calendar-03" class="size-3" :class="task.serviceClass === 'fixed_date' ? '' : 'text-dimmed'" />
         {{ dueState.label }}
       </span>
 
@@ -201,7 +201,7 @@ const isDone = computed(() => props.task.closedAt != null)
         class="inline-flex items-center gap-1 text-[11px] text-red-600 font-medium"
         :title="`Заблокирована ${blockerCount} задачами`"
       >
-        <UIcon name="i-lucide-lock" class="size-3" />
+        <UIcon name="i-hugeicons-lock" class="size-3" />
         {{ blockerCount }}
       </span>
 
@@ -213,7 +213,7 @@ const isDone = computed(() => props.task.closedAt != null)
         ]"
         :title="agingTooltip"
       >
-        <UIcon name="i-lucide-clock" class="size-3" />
+        <UIcon name="i-hugeicons-clock-01" class="size-3" />
         {{ Math.round(ageDaysFromIso(task.createdAt)) }}д
       </span>
 

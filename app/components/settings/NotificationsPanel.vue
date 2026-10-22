@@ -11,7 +11,7 @@ function toggleNotification(type: string, enabled: boolean) {
       onError: err => toast.add({
         title: getErrorMessage(err, 'Не удалось сохранить'),
         color: 'error',
-        icon: 'i-lucide-alert-circle',
+        icon: 'i-hugeicons-alert-circle',
       }),
     },
   )

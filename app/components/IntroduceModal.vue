@@ -37,7 +37,7 @@ async function onSubmit() {
     toast.add({
       title: 'Профиль сохранён',
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 1500,
     })
   }
@@ -45,7 +45,7 @@ async function onSubmit() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }

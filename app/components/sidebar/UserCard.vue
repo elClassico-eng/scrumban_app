@@ -49,7 +49,7 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
       </div>
       <UIcon
         v-if="!collapsed"
-        name="i-lucide-more-horizontal"
+        name="i-hugeicons-more-horizontal"
         class="ml-auto size-4 shrink-0 text-dimmed"
       />
     </NuxtLink>

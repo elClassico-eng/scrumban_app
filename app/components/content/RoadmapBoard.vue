@@ -88,14 +88,14 @@ const STATUS_DOT: Record<RoadmapStatus, string> = {
             </span>
             <span v-if="open !== i.id" class="block text-[13px] text-muted truncate mt-0.5">{{ i.text }}</span>
           </span>
-          <UIcon name="i-lucide-chevron-down" class="size-4 text-muted shrink-0 mt-1 transition-transform" :class="open === i.id ? 'rotate-180' : ''" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-4 text-muted shrink-0 mt-1 transition-transform" :class="open === i.id ? 'rotate-180' : ''" />
         </button>
         <div v-if="open === i.id" class="px-5 pb-4 pl-[38px] space-y-2">
           <p class="m-0 text-[13.5px] text-default leading-relaxed">{{ i.text }}</p>
           <p v-if="i.why" class="m-0 text-[12.5px] text-muted leading-relaxed"><span class="font-semibold text-default">Почему здесь:</span> {{ i.why }}</p>
           <NuxtLink v-if="i.docs" :to="i.docs" class="inline-flex items-center gap-1 text-[12.5px] font-medium text-accent-500 hover:underline">
             Подробнее в документации
-            <UIcon name="i-lucide-arrow-right" class="size-3.5" />
+            <UIcon name="i-hugeicons-arrow-right-02" class="size-3.5" />
           </NuxtLink>
         </div>
       </div>

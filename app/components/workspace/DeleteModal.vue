@@ -16,7 +16,7 @@ const matches = computed(() => typed.value.trim() === props.workspaceName.trim()
     <template #body>
       <div class="space-y-4">
         <div class="flex items-start gap-2.5">
-          <UIcon name="i-lucide-alert-triangle" class="size-5 text-red-500 shrink-0 mt-0.5" />
+          <UIcon name="i-hugeicons-triangle-alert" class="size-5 text-red-500 shrink-0 mt-0.5" />
           <p class="m-0 text-[13px] text-default leading-relaxed">
             Это безвозвратно удалит workspace <b>«{{ workspaceName }}»</b> со всеми досками,
             задачами и спринтами. Действие необратимо.

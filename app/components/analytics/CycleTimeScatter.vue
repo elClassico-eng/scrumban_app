@@ -80,7 +80,7 @@ const hasData = computed(() => (props.report?.samples.length ?? 0) > 0)
         />
     </template>
     <div v-if="isLoading" class="h-64 flex items-center justify-center text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
     <div v-else-if="!hasData" class="h-64 flex items-center justify-center text-muted text-sm">
       Пока нет закрытых задач — scatter появится после первого закрытия

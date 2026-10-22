@@ -13,12 +13,12 @@ const { update } = useTasksApi(toRef(props, 'workspaceId'), toRef(props, 'boardI
 const items = computed(() => [
   ...STORY_POINTS_OPTIONS.map(p => ({
     label: String(p),
-    icon: props.task.storyPoints === p ? 'i-lucide-check' : undefined,
+    icon: props.task.storyPoints === p ? 'i-hugeicons-check' : undefined,
     onSelect: () => { if (props.task.storyPoints !== p) update.mutate({ taskId: props.task.id, storyPoints: p }) },
   })),
   {
     label: 'Без оценки',
-    icon: props.task.storyPoints == null ? 'i-lucide-check' : undefined,
+    icon: props.task.storyPoints == null ? 'i-hugeicons-check' : undefined,
     onSelect: () => { if (props.task.storyPoints != null) update.mutate({ taskId: props.task.id, storyPoints: null }) },
   },
 ])

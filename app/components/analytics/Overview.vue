@@ -88,7 +88,7 @@ const hasAny = computed(() =>
     <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">Пропускная</span>
-        <UIcon name="i-lucide-gauge" class="size-3.5 text-dimmed" />
+        <UIcon name="i-hugeicons-gauge" class="size-3.5 text-dimmed" />
       </div>
       <div class="flex items-end justify-between gap-2 mt-1.5">
         <div>
@@ -114,7 +114,7 @@ const hasAny = computed(() =>
     <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">Cycle time</span>
-        <UIcon name="i-lucide-timer" class="size-3.5 text-dimmed" />
+        <UIcon name="i-hugeicons-timer-02" class="size-3.5 text-dimmed" />
       </div>
       <div class="text-[24px] font-semibold tracking-tight text-default tabular-nums leading-none mt-1.5">
         {{ cycleP50 ?? '—' }}<span class="text-[12px] text-muted font-normal ml-1">дн P50</span>
@@ -127,7 +127,7 @@ const hasAny = computed(() =>
     <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">WIP</span>
-        <UIcon name="i-lucide-layers" class="size-3.5 text-dimmed" />
+        <UIcon name="i-hugeicons-layers-01" class="size-3.5 text-dimmed" />
       </div>
       <div
         class="text-[24px] font-semibold tracking-tight tabular-nums leading-none mt-1.5"
@@ -144,7 +144,7 @@ const hasAny = computed(() =>
     <div class="surface-soft rounded-2xl px-4 py-3.5">
       <div class="flex items-center justify-between">
         <span class="text-[11px] font-medium uppercase tracking-[0.05em] text-muted">Точность</span>
-        <UIcon name="i-lucide-target" class="size-3.5 text-dimmed" />
+        <UIcon name="i-hugeicons-target-02" class="size-3.5 text-dimmed" />
       </div>
       <div
         class="text-[24px] font-semibold tracking-tight tabular-nums leading-none mt-1.5"

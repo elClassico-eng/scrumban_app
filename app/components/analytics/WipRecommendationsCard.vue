@@ -4,9 +4,9 @@ import type { WipRecommendationsReport } from '#shared/types/analytics'
 defineProps<{ report: WipRecommendationsReport | undefined; isLoading: boolean }>()
 
 function deltaIcon(current: number, recommended: number): { name: string; color: string } {
-  if (current > recommended) return { name: 'i-lucide-arrow-down', color: 'text-warning' }
-  if (current < recommended) return { name: 'i-lucide-arrow-up', color: 'text-info' }
-  return { name: 'i-lucide-check', color: 'text-success' }
+  if (current > recommended) return { name: 'i-hugeicons-arrow-down-02', color: 'text-warning' }
+  if (current < recommended) return { name: 'i-hugeicons-arrow-up-02', color: 'text-info' }
+  return { name: 'i-hugeicons-check', color: 'text-success' }
 }
 </script>
 
@@ -20,11 +20,11 @@ function deltaIcon(current: number, recommended: number): { name: string; color:
     </template>
 
     <div v-if="isLoading" class="h-32 flex items-center justify-center text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <div v-else-if="report && !report.ok" class="space-y-2 py-6 text-center">
-      <UIcon name="i-lucide-chart-no-axes-combined" class="size-10 text-muted mx-auto" />
+      <UIcon name="i-hugeicons-chart-no-axes-combined" class="size-10 text-muted mx-auto" />
       <p class="text-sm font-medium">Недостаточно данных</p>
       <p class="text-xs text-muted">
         Нужно ≥{{ report.requiredSamples }} закрытых задач, у нас {{ report.sampleSize }}

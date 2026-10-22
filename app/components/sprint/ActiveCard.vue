@@ -115,17 +115,17 @@ const sprintGoals = computed(() => {
       </div>
     </template>
     <template v-if="canManage" #actions>
-      <UButton size="sm" icon="i-lucide-plus" @click="$emit('add-task')">
+      <UButton size="sm" icon="i-hugeicons-plus" @click="$emit('add-task')">
         Добавить задачу
       </UButton>
-      <UButton v-if="simulatorTo" size="sm" variant="ghost" color="neutral" icon="i-lucide-flask-conical" :to="simulatorTo">
+      <UButton v-if="simulatorTo" size="sm" variant="ghost" color="neutral" icon="i-hugeicons-flask-conical" :to="simulatorTo">
         Симулятор
       </UButton>
-      <UButton size="sm" variant="outline" color="neutral" icon="i-lucide-check-square" @click="$emit('close')">
+      <UButton size="sm" variant="outline" color="neutral" icon="i-hugeicons-square-check-big" @click="$emit('close')">
         Завершить
       </UButton>
-      <UDropdownMenu :items="[{ label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => $emit('edit') }]">
-        <UButton size="sm" variant="ghost" color="neutral" icon="i-lucide-ellipsis" title="Ещё" />
+      <UDropdownMenu :items="[{ label: 'Редактировать', icon: 'i-hugeicons-pencil', onSelect: () => $emit('edit') }]">
+        <UButton size="sm" variant="ghost" color="neutral" icon="i-hugeicons-ellipsis" title="Ещё" />
       </UDropdownMenu>
     </template>
 
@@ -177,7 +177,7 @@ const sprintGoals = computed(() => {
               class="w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-elevated transition-colors text-[12.5px] text-muted cursor-pointer"
               @click="$emit('add-task')"
             >
-              <UIcon name="i-lucide-plus" class="size-3.5" />
+              <UIcon name="i-hugeicons-plus" class="size-3.5" />
               Добавить задачу из бэклога…
             </button>
           </div>

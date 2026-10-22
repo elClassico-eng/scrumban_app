@@ -75,14 +75,14 @@ async function submit() {
       capacity: state.capacity,
       ...(needsReason.value ? { datesChangeReason: state.datesChangeReason.trim() } : {}),
     })
-    toast.add({ title: 'Спринт обновлён', icon: 'i-lucide-check', duration: 1500 })
+    toast.add({ title: 'Спринт обновлён', icon: 'i-hugeicons-check', duration: 1500 })
     open.value = false
   }
   catch (err) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось обновить спринт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -100,7 +100,7 @@ async function submit() {
           <template v-if="isActive" #hint>
             <UTooltip text="По Scrum цель спринта фиксируется на весь спринт. Изменить её можно только у запланированного.">
               <span class="inline-flex items-center gap-1 text-[11px] text-muted cursor-help">
-                <UIcon name="i-lucide-lock" class="size-3" />
+                <UIcon name="i-hugeicons-lock" class="size-3" />
                 зафиксирована
               </span>
             </UTooltip>

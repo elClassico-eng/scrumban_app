@@ -51,7 +51,7 @@ function onAdd() {
         class="text-dimmed grid place-items-center transition-transform shrink-0"
         :class="collapsed ? '-rotate-90' : ''"
       >
-        <UIcon name="i-lucide-chevron-down" class="size-[15px]" />
+        <UIcon name="i-hugeicons-chevron-down" class="size-[15px]" />
       </span>
 
       <span
@@ -91,7 +91,7 @@ function onAdd() {
         class="size-[26px] rounded-[7px] bg-default text-muted grid place-items-center shrink-0 hover:text-accent-500 transition-colors"
         @click.stop="onAdd"
       >
-        <UIcon name="i-lucide-plus" class="size-3.5" />
+        <UIcon name="i-hugeicons-plus" class="size-3.5" />
       </button>
     </div>
 
@@ -107,7 +107,7 @@ function onAdd() {
           class="sm:ml-auto inline-flex items-center gap-[5px] text-muted font-medium hover:text-accent-500 transition-colors"
           @click="onAdd"
         >
-          <UIcon name="i-lucide-plus" class="size-3" />
+          <UIcon name="i-hugeicons-plus" class="size-3" />
           добавить
         </button>
       </div>
@@ -142,7 +142,7 @@ function onAdd() {
         class="flex items-center gap-2 min-h-[42px] pl-4 sm:pl-[40px] pr-4 sm:pr-[18px] text-[12.5px] text-dimmed hover:text-accent-600 dark:hover:text-accent-400 w-full text-left transition-colors border-t border-[var(--ui-border-muted)]"
         @click="onAdd"
       >
-        <UIcon name="i-lucide-plus" class="size-3.5" />
+        <UIcon name="i-hugeicons-plus" class="size-3.5" />
         Добавить задачу
       </button>
     </template>

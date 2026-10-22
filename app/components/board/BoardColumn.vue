@@ -53,7 +53,7 @@ async function commitEdit() {
     toast.add({
       title: 'Не удалось переименовать колонку',
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -134,7 +134,7 @@ async function onSaveSettings() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить настройки'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -154,7 +154,7 @@ async function onDeleteColumn() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось удалить колонку'),
       color: getErrorStatus(err) === 422 ? 'warning' : 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -163,23 +163,23 @@ const menuItems = computed(() => [[
   ...(props.canCreate
     ? [{
         label: 'Создать задачу',
-        icon: 'i-lucide-plus',
+        icon: 'i-hugeicons-plus',
         onSelect: () => { createOpen.value = true },
       }]
     : []),
   {
     label: 'Переименовать',
-    icon: 'i-lucide-pencil',
+    icon: 'i-hugeicons-pencil',
     onSelect: startEdit,
   },
   {
     label: 'Настройки колонки',
-    icon: 'i-lucide-settings',
+    icon: 'i-hugeicons-settings-01',
     onSelect: openSettings,
   },
   {
     label: 'Удалить колонку',
-    icon: 'i-lucide-trash-2',
+    icon: 'i-hugeicons-delete-02',
     onSelect: onDeleteColumn,
   },
 ]])
@@ -212,7 +212,7 @@ const wipBarState = computed(() => {
       <div class="flex items-center gap-2 mb-1.5">
         <UIcon
           v-if="canManage"
-          name="i-lucide-grip-vertical"
+          name="i-hugeicons-grip-vertical"
           class="column-drag-handle size-3.5 text-dimmed hover:text-default cursor-grab active:cursor-grabbing shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
           title="Перетащи, чтобы переставить колонку"
         />
@@ -263,7 +263,7 @@ const wipBarState = computed(() => {
             class="size-6 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
             title="Действия"
           >
-            <UIcon name="i-lucide-more-horizontal" class="size-3.5" />
+            <UIcon name="i-hugeicons-more-horizontal" class="size-3.5" />
           </button>
         </UDropdownMenu>
       </div>
@@ -301,7 +301,7 @@ const wipBarState = computed(() => {
       class="mx-2 mb-2 mt-0 px-3 py-2 rounded-md text-[13px] text-muted hover:text-accent-600 hover:bg-accent-50 border border-dashed border-transparent hover:border-accent-500 flex items-center gap-2 transition-colors cursor-pointer"
       @click="createOpen = true"
     >
-      <UIcon name="i-lucide-plus" class="size-3.5" />
+      <UIcon name="i-hugeicons-plus" class="size-3.5" />
       Добавить задачу
     </button>
 

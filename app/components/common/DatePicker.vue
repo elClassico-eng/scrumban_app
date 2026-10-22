@@ -34,11 +34,11 @@ function onPicked(v: string) {
       class="w-full inline-flex items-center gap-2 rounded-md border border-default bg-default text-left transition-colors hover:border-accent-300"
       :class="[triggerClass, model ? 'text-highlighted' : 'text-dimmed']"
     >
-      <UIcon name="i-lucide-calendar" class="size-4 shrink-0 text-muted" />
+      <UIcon name="i-hugeicons-calendar-03" class="size-4 shrink-0 text-muted" />
       <span class="truncate">{{ label }}</span>
       <UIcon
         v-if="model"
-        name="i-lucide-x"
+        name="i-hugeicons-x"
         class="size-3.5 shrink-0 ml-auto text-dimmed hover:text-red-500 transition-colors"
         @click.stop="model = ''"
       />

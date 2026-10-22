@@ -56,11 +56,11 @@ const hasSprintData = computed(() => (report.value?.bySprint.length ?? 0) > 0)
   <UiPanel title="Время">
 
     <div v-if="isLoading" class="h-48 flex items-center justify-center text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <div v-else-if="!hasUserData && !hasSprintData" class="h-48 flex flex-col items-center justify-center gap-2 text-muted">
-      <UIcon name="i-lucide-timer-off" class="size-10" />
+      <UIcon name="i-hugeicons-timer-off" class="size-10" />
       <p class="text-sm">Нет записей о времени</p>
     </div>
 

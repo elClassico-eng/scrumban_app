@@ -35,13 +35,13 @@ const dateRange = computed(() => {
 
     <div class="flex items-center gap-2">
       <span class="text-[11px] text-muted tabular-nums inline-flex items-center gap-1">
-        <UIcon name="i-lucide-calendar" class="size-3" />
+        <UIcon name="i-hugeicons-calendar-03" class="size-3" />
         {{ dateRange }}
       </span>
       <div class="flex-1" />
       <span class="text-[11.5px] font-medium text-muted group-hover:text-accent-600 transition-colors inline-flex items-center gap-1">
         Открыть в симуляторе
-        <UIcon name="i-lucide-arrow-right" class="size-3" />
+        <UIcon name="i-hugeicons-arrow-right-02" class="size-3" />
       </span>
     </div>
   </NuxtLink>

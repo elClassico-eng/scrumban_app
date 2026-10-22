@@ -37,12 +37,12 @@ function menuItems(board: Board) {
   return [
     {
       label: 'Изменить',
-      icon: 'i-lucide-pencil',
+      icon: 'i-hugeicons-pencil',
       onSelect: () => { editTarget.value = board },
     },
     {
       label: 'Удалить',
-      icon: 'i-lucide-trash-2',
+      icon: 'i-hugeicons-delete-02',
       color: 'error' as const,
       onSelect: () => onRemove(board),
     },
@@ -72,7 +72,7 @@ async function onRemove(board: Board) {
       </div>
       <UButton
         v-if="canCreate"
-        icon="i-lucide-plus"
+        icon="i-hugeicons-plus"
         size="lg"
         class="py-2.5 w-full sm:w-auto justify-center shrink-0"
         @click="createOpen = true"
@@ -82,19 +82,19 @@ async function onRemove(board: Board) {
     </div>
 
     <div v-if="boardsList.isLoading.value" class="text-center py-12 text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <div
       v-else-if="boards.length === 0"
       class="text-center py-16 space-y-3 rounded-3xl border border-dashed border-default"
     >
-      <UIcon name="i-lucide-kanban-square" class="size-12 text-muted mx-auto" />
+      <UIcon name="i-hugeicons-square-kanban" class="size-12 text-muted mx-auto" />
       <p class="font-medium">В этом workspace пока нет досок</p>
       <p class="text-sm text-muted">
         {{ canCreate ? 'Создайте первую, чтобы начать работу.' : 'Попросите админа создать доску.' }}
       </p>
-      <UButton v-if="canCreate" icon="i-lucide-plus" size="lg" @click="createOpen = true">
+      <UButton v-if="canCreate" icon="i-hugeicons-plus" size="lg" @click="createOpen = true">
         Создать доску
       </UButton>
     </div>
@@ -118,7 +118,7 @@ async function onRemove(board: Board) {
                   class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default transition-colors cursor-pointer"
                   title="Действия"
                 >
-                  <UIcon name="i-lucide-more-horizontal" class="size-4" />
+                  <UIcon name="i-hugeicons-more-horizontal" class="size-4" />
                 </button>
               </UDropdownMenu>
             </div>
@@ -128,7 +128,7 @@ async function onRemove(board: Board) {
 
         <div class="inline-flex items-center gap-1.5 text-xs font-medium text-default group-hover:text-accent-600 border-b border-current pb-0.5 w-fit transition-all group-hover:translate-x-1">
           Открыть
-          <UIcon name="i-lucide-arrow-right" class="size-3.5" />
+          <UIcon name="i-hugeicons-arrow-right-02" class="size-3.5" />
         </div>
       </NuxtLink>
     </div>

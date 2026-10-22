@@ -42,7 +42,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
           items: colTasks.map<CommandPaletteItem>(t => ({
             label: t.title,
             suffix: t.id.slice(0, 6).toUpperCase(),
-            icon: 'i-lucide-square-check-big',
+            icon: 'i-hugeicons-square-check-big',
             onSelect: () => go(pageRoutes.task(wsId.value, bId.value, t.id)),
           })),
         })
@@ -58,7 +58,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
           items: boardTasks.map<CommandPaletteItem>(t => ({
             label: t.title,
             suffix: t.id.slice(0, 6).toUpperCase(),
-            icon: 'i-lucide-square-check-big',
+            icon: 'i-hugeicons-square-check-big',
             onSelect: () => go(pageRoutes.task(wsId.value, t.boardId, t.id)),
           })),
         })
@@ -69,7 +69,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
     if (canCreateTask.value) {
       actionItems.push({
         label: 'Создать задачу',
-        icon: 'i-lucide-plus',
+        icon: 'i-hugeicons-plus',
         onSelect: () => {
           onDone()
           if (bId.value) requestCreateTask()
@@ -80,12 +80,12 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
     actionItems.push(
       {
         label: focus.value ? 'Выключить фокус' : 'Включить фокус',
-        icon: 'i-lucide-focus',
+        icon: 'i-hugeicons-focus',
         onSelect: () => { toggleFocus(); onDone() },
       },
       {
         label: 'Переключить тему',
-        icon: 'i-lucide-sun-moon',
+        icon: 'i-hugeicons-sun-moon',
         onSelect: () => {
           colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark'
           onDone()
@@ -93,7 +93,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
       },
       {
         label: 'Выйти',
-        icon: 'i-lucide-log-out',
+        icon: 'i-hugeicons-log-out',
         onSelect: () => { logout.mutate(); onDone() },
       },
     )
@@ -101,17 +101,17 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
 
     if (wsId.value) {
       const navItems: CommandPaletteItem[] = [
-        { label: 'Доски', icon: 'i-lucide-columns-3', onSelect: () => go(pageRoutes.boards(wsId.value)) },
-        { label: 'Участники', icon: 'i-lucide-users', onSelect: () => go(pageRoutes.workspaceMembers(wsId.value)) },
-        { label: 'Активность', icon: 'i-lucide-activity', onSelect: () => go(pageRoutes.workspaceActivity(wsId.value)) },
+        { label: 'Доски', icon: 'i-hugeicons-layout-3-column', onSelect: () => go(pageRoutes.boards(wsId.value)) },
+        { label: 'Участники', icon: 'i-hugeicons-users', onSelect: () => go(pageRoutes.workspaceMembers(wsId.value)) },
+        { label: 'Активность', icon: 'i-hugeicons-activity-01', onSelect: () => go(pageRoutes.workspaceActivity(wsId.value)) },
       ]
       if (onBoard.value) {
         navItems.push(
-          { label: 'Аналитика', icon: 'i-lucide-bar-chart-2', onSelect: () => go(pageRoutes.boardAnalytics(wsId.value, bId.value)) },
-          { label: 'Спринты', icon: 'i-lucide-zap', onSelect: () => go(pageRoutes.boardSprints(wsId.value, bId.value)) },
-          { label: 'Автоматизации', icon: 'i-lucide-workflow', onSelect: () => go(pageRoutes.boardAutomations(wsId.value, bId.value)) },
-          { label: 'Календарь', icon: 'i-lucide-calendar', onSelect: () => go(pageRoutes.boardCalendar(wsId.value, bId.value)) },
-          { label: 'Таймлайн', icon: 'i-lucide-gantt-chart', onSelect: () => go(pageRoutes.boardTimeline(wsId.value, bId.value)) },
+          { label: 'Аналитика', icon: 'i-hugeicons-chart-no-axes-column', onSelect: () => go(pageRoutes.boardAnalytics(wsId.value, bId.value)) },
+          { label: 'Спринты', icon: 'i-hugeicons-zap', onSelect: () => go(pageRoutes.boardSprints(wsId.value, bId.value)) },
+          { label: 'Автоматизации', icon: 'i-hugeicons-workflow', onSelect: () => go(pageRoutes.boardAutomations(wsId.value, bId.value)) },
+          { label: 'Календарь', icon: 'i-hugeicons-calendar-03', onSelect: () => go(pageRoutes.boardCalendar(wsId.value, bId.value)) },
+          { label: 'Таймлайн', icon: 'i-hugeicons-chart-no-axes-gantt', onSelect: () => go(pageRoutes.boardTimeline(wsId.value, bId.value)) },
         )
       }
       result.push({ id: 'nav', label: 'Навигация', items: navItems })

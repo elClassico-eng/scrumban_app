@@ -85,11 +85,11 @@ function toggleTheme() {
             :aria-label="colorMode.value === 'dark' ? 'Светлая тема' : 'Тёмная тема'"
             @click="toggleTheme"
           >
-            <UIcon :name="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'" class="size-[18px]" />
+            <UIcon :name="colorMode.value === 'dark' ? 'i-hugeicons-sun-03' : 'i-hugeicons-moon'" class="size-[18px]" />
           </button>
         </ClientOnly>
         <button type="button" class="docs__app-btn" @click="goToApp">
-          <UIcon name="i-lucide-layout-dashboard" class="docs__app-icon size-[18px]" />
+          <UIcon name="i-hugeicons-layout-dashboard" class="docs__app-icon size-[18px]" />
           <span class="docs__app-label">Открыть приложение</span>
         </button>
       </div>
@@ -149,13 +149,13 @@ function toggleTheme() {
           <div class="docs__toc-links">
             <button type="button" class="docs__toc-cta" @click="goToApp">
               Открыть приложение
-              <UIcon name="i-lucide-arrow-up-right" class="size-4" />
+              <UIcon name="i-hugeicons-arrow-up-right-01" class="size-4" />
             </button>
             <NuxtLink to="/" class="docs__toc-extlink" external>
-              <UIcon name="i-lucide-home" class="size-[15px]" /> На сайт
+              <UIcon name="i-hugeicons-home-01" class="size-[15px]" /> На сайт
             </NuxtLink>
             <a class="docs__toc-extlink" href="https://github.com/elClassico-eng/scrumban_app" target="_blank" rel="noopener">
-              <UIcon name="i-lucide-github" class="size-[15px]" /> Исходный код
+              <UIcon name="i-hugeicons-github" class="size-[15px]" /> Исходный код
             </a>
           </div>
         </div>

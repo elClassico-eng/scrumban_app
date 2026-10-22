@@ -71,13 +71,13 @@ async function save(fields: Partial<State>, okTitle: string) {
   )
   try {
     await update.mutateAsync({ workspaceId: workspace.value.id, ...body })
-    toast.add({ title: okTitle, color: 'success', icon: 'i-lucide-check', duration: 1500 })
+    toast.add({ title: okTitle, color: 'success', icon: 'i-hugeicons-check', duration: 1500 })
   }
   catch (err) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -109,7 +109,7 @@ async function onDeleteWorkspace() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось удалить workspace'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -132,7 +132,7 @@ async function onLeave() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось покинуть команду'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -141,7 +141,7 @@ async function onLeave() {
 <template>
   <div class="space-y-4">
     <div v-if="isLoading" class="py-12 text-center text-muted">
-      <UIcon name="i-lucide-loader" class="size-6 animate-spin" />
+      <UIcon name="i-hugeicons-loader" class="size-6 animate-spin" />
     </div>
 
     <div v-else-if="!workspace" class="surface-soft rounded-2xl p-8 text-center">
@@ -173,15 +173,15 @@ async function onLeave() {
           <p class="truncate font-mono text-xs text-muted">{{ workspace.slug }}</p>
           <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
             <span v-if="state.industry" class="inline-flex items-center gap-1.5">
-              <UIcon name="i-lucide-briefcase" class="size-3.5" />
+              <UIcon name="i-hugeicons-briefcase-01" class="size-3.5" />
               {{ state.industry }}
             </span>
             <span class="inline-flex items-center gap-1.5">
-              <UIcon name="i-lucide-users" class="size-3.5" />
+              <UIcon name="i-hugeicons-users" class="size-3.5" />
               {{ membersCount }} {{ membersWord }}
             </span>
             <span v-if="createdLabel" class="inline-flex items-center gap-1.5">
-              <UIcon name="i-lucide-calendar" class="size-3.5" />
+              <UIcon name="i-hugeicons-calendar-03" class="size-3.5" />
               создана {{ createdLabel }}
             </span>
           </div>

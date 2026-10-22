@@ -60,7 +60,7 @@ function resetDraft() {
           ← Симулятор
         </NuxtLink>
         <h1 class="text-[26px] font-semibold tracking-tight text-highlighted mt-0.5 mb-0 flex items-center gap-2.5">
-          <UIcon name="i-lucide-flask-conical" class="size-6 text-accent-500" />
+          <UIcon name="i-hugeicons-flask-conical" class="size-6 text-accent-500" />
           Демо-пример
           <span class="text-muted font-normal truncate">· Спринт «Интеграция с 1С»</span>
         </h1>
@@ -71,7 +71,7 @@ function resetDraft() {
         size="sm"
         variant="ghost"
         color="neutral"
-        icon="i-lucide-rotate-ccw"
+        icon="i-hugeicons-rotate-ccw"
         @click="resetDraft"
       >
         Сбросить
@@ -79,7 +79,7 @@ function resetDraft() {
     </div>
 
     <div class="bg-accent-50 dark:bg-accent-950 border border-accent-200 dark:border-accent-900 rounded-xl px-4 py-3 flex items-start gap-2.5">
-      <UIcon name="i-lucide-info" class="size-4 text-accent-600 dark:text-accent-400 shrink-0 mt-0.5" />
+      <UIcon name="i-hugeicons-info" class="size-4 text-accent-600 dark:text-accent-400 shrink-0 mt-0.5" />
       <p class="text-[12.5px] text-accent-800 dark:text-accent-200 m-0 leading-relaxed">
         <b>Демо-режим.</b> Данные учебные, изменения никуда не сохраняются — экспериментируйте свободно.
         В реальном спринте вы сможете сохранять сценарии и применять их одним действием.

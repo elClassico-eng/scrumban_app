@@ -101,7 +101,7 @@ async function submitComment() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось отправить комментарий'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -173,7 +173,7 @@ async function commitEdit() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось обновить комментарий'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -197,14 +197,14 @@ function onDelete(c: TaskComment) {
       toast.add({
         title: getErrorMessage(err, 'Не удалось удалить комментарий'),
         color: 'error',
-        icon: 'i-lucide-alert-circle',
+        icon: 'i-hugeicons-alert-circle',
       })
     }
   }, UNDO_DELAY_MS)
 
   toast.add({
     title: 'Комментарий удалён',
-    icon: 'i-lucide-trash-2',
+    icon: 'i-hugeicons-delete-02',
     duration: UNDO_DELAY_MS,
     actions: [
       {
@@ -225,7 +225,7 @@ function onDelete(c: TaskComment) {
 <template>
   <div class="space-y-3">
     <p class="text-xs text-muted uppercase tracking-wide flex items-center gap-2">
-      <UIcon name="i-lucide-message-square" class="size-3.5" />
+      <UIcon name="i-hugeicons-message-square" class="size-3.5" />
       <span>Комментарии</span>
       <span v-if="comments.length > 0" class="text-[11px] normal-case tracking-normal">
         {{ comments.length }}
@@ -258,7 +258,7 @@ function onDelete(c: TaskComment) {
             />
             <div class="flex items-center justify-between gap-2">
               <UButton
-                icon="i-lucide-at-sign"
+                icon="i-hugeicons-at-sign"
                 size="xs"
                 variant="ghost"
                 color="neutral"
@@ -297,15 +297,15 @@ function onDelete(c: TaskComment) {
           v-if="editingId !== c.id && (canEdit(c) || canDelete(c))"
           :items="[
             ...(canEdit(c)
-              ? [{ label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => startEdit(c) }]
+              ? [{ label: 'Редактировать', icon: 'i-hugeicons-pencil', onSelect: () => startEdit(c) }]
               : []),
             ...(canDelete(c)
-              ? [{ label: 'Удалить', icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => onDelete(c) }]
+              ? [{ label: 'Удалить', icon: 'i-hugeicons-delete-02', color: 'error' as const, onSelect: () => onDelete(c) }]
               : []),
           ]"
         >
           <UButton
-            icon="i-lucide-more-horizontal"
+            icon="i-hugeicons-more-horizontal"
             size="xs"
             variant="ghost"
             color="neutral"
@@ -330,7 +330,7 @@ function onDelete(c: TaskComment) {
       />
       <div class="flex items-center justify-between gap-2">
         <UButton
-          icon="i-lucide-at-sign"
+          icon="i-hugeicons-at-sign"
           size="xs"
           variant="ghost"
           color="neutral"
@@ -339,7 +339,7 @@ function onDelete(c: TaskComment) {
           Упомянуть
         </UButton>
         <UButton
-          icon="i-lucide-send"
+          icon="i-hugeicons-send"
           size="sm"
           :loading="create.isPending.value"
           :disabled="!composerBody.trim()"

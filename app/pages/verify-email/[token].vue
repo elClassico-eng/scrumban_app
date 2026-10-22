@@ -42,14 +42,14 @@ const ctaLabel = computed(() => (authenticated.value ? 'В рабочее про
   <div class="space-y-6">
     <template v-if="state.kind === 'loading'">
       <div class="flex flex-col items-center gap-4 py-6">
-        <UIcon name="i-lucide-loader" class="size-8 animate-spin text-primary" />
+        <UIcon name="i-hugeicons-loader" class="size-8 animate-spin text-primary" />
         <p class="text-sm text-muted">Подтверждаем email...</p>
       </div>
     </template>
 
     <template v-else-if="state.kind === 'success'">
       <div class="space-y-3 text-center">
-        <UIcon name="i-lucide-check-circle-2" class="size-12 text-success-500 mx-auto" />
+        <UIcon name="i-hugeicons-circle-check" class="size-12 text-success-500 mx-auto" />
         <h1 class="text-2xl font-bold tracking-tight">Email подтверждён</h1>
         <p class="text-sm text-muted">Готово. Можно работать.</p>
       </div>
@@ -60,7 +60,7 @@ const ctaLabel = computed(() => (authenticated.value ? 'В рабочее про
 
     <template v-else-if="state.kind === 'already_used'">
       <div class="space-y-3 text-center">
-        <UIcon name="i-lucide-info" class="size-12 text-muted mx-auto" />
+        <UIcon name="i-hugeicons-info" class="size-12 text-muted mx-auto" />
         <h1 class="text-2xl font-bold tracking-tight">Уже подтверждено</h1>
         <p class="text-sm text-muted">Этот email уже подтверждён ранее.</p>
       </div>
@@ -71,7 +71,7 @@ const ctaLabel = computed(() => (authenticated.value ? 'В рабочее про
 
     <template v-else-if="state.kind === 'expired'">
       <div class="space-y-3 text-center">
-        <UIcon name="i-lucide-clock" class="size-12 text-warning-500 mx-auto" />
+        <UIcon name="i-hugeicons-clock-01" class="size-12 text-warning-500 mx-auto" />
         <h1 class="text-2xl font-bold tracking-tight">Ссылка устарела</h1>
         <p class="text-sm text-muted">
           Срок действия ссылки истёк. Войдите и запросите новое письмо.
@@ -84,7 +84,7 @@ const ctaLabel = computed(() => (authenticated.value ? 'В рабочее про
 
     <template v-else-if="state.kind === 'invalid'">
       <div class="space-y-3 text-center">
-        <UIcon name="i-lucide-x-circle" class="size-12 text-error-500 mx-auto" />
+        <UIcon name="i-hugeicons-circle-x" class="size-12 text-error-500 mx-auto" />
         <h1 class="text-2xl font-bold tracking-tight">Ссылка недействительна</h1>
         <p class="text-sm text-muted">Проверьте, что вы открыли последнюю ссылку из письма.</p>
       </div>
@@ -98,7 +98,7 @@ const ctaLabel = computed(() => (authenticated.value ? 'В рабочее про
         color="error"
         variant="soft"
         :title="state.message"
-        icon="i-lucide-alert-circle"
+        icon="i-hugeicons-alert-circle"
       />
       <UButton :to="pageRoutes.login" block size="xl" variant="ghost" color="neutral">
         Назад ко входу

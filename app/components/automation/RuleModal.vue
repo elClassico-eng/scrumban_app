@@ -140,7 +140,7 @@ function onSubmit() {
           color="error"
           variant="soft"
           :title="errorMessage"
-          icon="i-lucide-alert-circle"
+          icon="i-hugeicons-alert-circle"
         />
 
         <div class="flex justify-end gap-2 pt-1">

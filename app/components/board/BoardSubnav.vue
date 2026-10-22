@@ -48,7 +48,7 @@ async function commitEdit() {
     toast.add({
       title: 'Не удалось переименовать доску',
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -69,28 +69,28 @@ const displayViews = computed<ViewEntry[]>(() => {
     {
       key: 'board',
       label: 'Доска',
-      icon: 'i-lucide-kanban-square',
+      icon: 'i-hugeicons-square-kanban',
       to: boardPath,
       isActive: route.path === boardPath && !isListView.value,
     },
     {
       key: 'list',
       label: 'Список',
-      icon: 'i-lucide-list',
+      icon: 'i-hugeicons-list',
       to: { path: boardPath, query: { view: 'list' } },
       isActive: route.path === boardPath && isListView.value,
     },
     {
       key: 'calendar',
       label: 'Календарь',
-      icon: 'i-lucide-calendar-days',
+      icon: 'i-hugeicons-calendar-days',
       to: pageRoutes.boardCalendar(props.workspaceId, props.boardId),
       isActive: route.path === pageRoutes.boardCalendar(props.workspaceId, props.boardId),
     },
     {
       key: 'timeline',
       label: 'Timeline',
-      icon: 'i-lucide-bar-chart-horizontal',
+      icon: 'i-hugeicons-bar-chart-horizontal',
       to: pageRoutes.boardTimeline(props.workspaceId, props.boardId),
       isActive: route.path === pageRoutes.boardTimeline(props.workspaceId, props.boardId),
     },
@@ -127,8 +127,8 @@ const analyticsViews = computed<ViewEntry[]>(() => {
   const analytics = pageRoutes.boardAnalytics(props.workspaceId, props.boardId)
   const journal = pageRoutes.boardForecastJournal(props.workspaceId, props.boardId)
   return [
-    { key: 'analytics', label: 'Аналитика', icon: 'i-lucide-chart-no-axes-combined', to: analytics, isActive: route.path === analytics },
-    { key: 'journal', label: 'Журнал прогнозов', icon: 'i-lucide-history', to: journal, isActive: route.path === journal },
+    { key: 'analytics', label: 'Аналитика', icon: 'i-hugeicons-chart-no-axes-combined', to: analytics, isActive: route.path === analytics },
+    { key: 'journal', label: 'Журнал прогнозов', icon: 'i-hugeicons-history', to: journal, isActive: route.path === journal },
   ]
 })
 const activeAnalytics = computed(() => analyticsViews.value.find(v => v.isActive) ?? null)
@@ -143,15 +143,15 @@ const analyticsItems = computed<DropdownMenuItem[]>(() =>
 )
 
 const sectionLinks = computed(() => [
-  { key: 'sprints', label: 'Спринты', icon: 'i-lucide-flag', to: sprintsPath.value, active: route.path === sprintsPath.value },
-  { key: 'automations', label: 'Автоматизации', icon: 'i-lucide-zap', to: automationsPath.value, active: route.path === automationsPath.value },
+  { key: 'sprints', label: 'Спринты', icon: 'i-hugeicons-flag-02', to: sprintsPath.value, active: route.path === sprintsPath.value },
+  { key: 'automations', label: 'Автоматизации', icon: 'i-hugeicons-zap', to: automationsPath.value, active: route.path === automationsPath.value },
 ])
 
 const moreItems = computed<DropdownMenuItem[]>(() => [
   ...(props.canRename
     ? [
-        { label: 'Настройки доски', icon: 'i-lucide-settings', onSelect: () => { settingsOpen.value = true } },
-        { label: 'Переименовать', icon: 'i-lucide-pencil', onSelect: () => startEdit() },
+        { label: 'Настройки доски', icon: 'i-hugeicons-settings-01', onSelect: () => { settingsOpen.value = true } },
+        { label: 'Переименовать', icon: 'i-hugeicons-pencil', onSelect: () => startEdit() },
       ]
     : []),
 ])
@@ -217,7 +217,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
               :class="isViewActive ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
               title="Выбрать вид"
             >
-              <UIcon name="i-lucide-chevron-down" class="size-3.5 shrink-0 opacity-60" />
+              <UIcon name="i-hugeicons-chevron-down" class="size-3.5 shrink-0 opacity-60" />
             </button>
           </UDropdownMenu>
         </div>
@@ -252,7 +252,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
               :class="activeAnalytics ? 'text-primary hover:bg-primary/15' : 'text-muted hover:bg-elevated hover:text-default'"
               title="Разделы аналитики"
             >
-              <UIcon name="i-lucide-chevron-down" class="size-3.5 shrink-0 opacity-60" />
+              <UIcon name="i-hugeicons-chevron-down" class="size-3.5 shrink-0 opacity-60" />
             </button>
           </UDropdownMenu>
         </div>
@@ -270,7 +270,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 
         <UDropdownMenu v-if="moreItems.length > 0" :items="moreItems" :content="{ align: 'end' }">
           <UButton
-            icon="i-lucide-ellipsis"
+            icon="i-hugeicons-ellipsis"
             color="neutral"
             variant="ghost"
             size="sm"

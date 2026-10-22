@@ -28,7 +28,7 @@ const BOARD_FREE = new Set<TileId>(['timer', 'presence'])
       class="col-span-3 rounded-2xl p-[13px] flex items-center gap-3 text-[12.5px]"
       style="background: var(--island-tile); border: 1px dashed var(--island-line); color: var(--island-ink-2);"
     >
-      <UIcon :name="status === 'noBoard' ? 'i-lucide-kanban-square' : 'i-lucide-wifi-off'" class="w-4 h-4 shrink-0" style="color: var(--island-ink-3);" />
+      <UIcon :name="status === 'noBoard' ? 'i-hugeicons-square-kanban' : 'i-hugeicons-wifi-disconnected-01'" class="w-4 h-4 shrink-0" style="color: var(--island-ink-3);" />
       <span>{{ status === 'noBoard' ? 'Нет досок: создай доску, и плитки оживут' : 'Не удалось загрузить пульс доски' }}</span>
     </div>
   </div>

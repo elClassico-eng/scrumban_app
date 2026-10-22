@@ -40,7 +40,7 @@ async function commitAdd() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось добавить пункт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -62,7 +62,7 @@ async function onRemove(itemId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось удалить пункт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -98,7 +98,7 @@ async function commitEdit() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось обновить пункт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -122,7 +122,7 @@ function cancelEdit() {
         class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="startAdd"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         Добавить пункт
       </button>
     </div>
@@ -158,7 +158,7 @@ function cancelEdit() {
             : 'border-[1.5px] border-zinc-400 bg-default hover:border-accent-500'"
           @click="onToggle(item.id, !item.isDone)"
         >
-          <UIcon v-if="item.isDone" name="i-lucide-check" class="size-2.5" />
+          <UIcon v-if="item.isDone" name="i-hugeicons-check" class="size-2.5" />
         </button>
 
         <input
@@ -186,7 +186,7 @@ function cancelEdit() {
           title="Удалить пункт"
           @click="onRemove(item.id)"
         >
-          <UIcon name="i-lucide-x" class="size-3" />
+          <UIcon name="i-hugeicons-x" class="size-3" />
         </button>
       </div>
 

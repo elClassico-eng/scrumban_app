@@ -96,7 +96,7 @@ async function confirmAdd() {
     toast.add({
       title: `Добавлена в спринт «${s.name}»`,
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 3000,
     })
     open.value = false
@@ -105,7 +105,7 @@ async function confirmAdd() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось добавить в спринт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -118,7 +118,7 @@ async function onRemove(sprintId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось убрать из спринта'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -129,7 +129,7 @@ async function onRemove(sprintId: string) {
     <template #content>
       <div class="flex items-start gap-3 p-4 sm:p-5 border-b border-default">
         <span class="inline-flex size-9 items-center justify-center rounded-lg bg-primary shrink-0">
-          <UIcon name="i-lucide-iteration-ccw" class="size-4 text-accent-500" />
+          <UIcon name="i-hugeicons-iteration-ccw" class="size-4 text-accent-500" />
         </span>
         <div class="min-w-0 flex-1">
           <h3 class="text-base font-semibold text-default tracking-tight">
@@ -140,7 +140,7 @@ async function onRemove(sprintId: string) {
           </p>
         </div>
         <UButton
-          icon="i-lucide-x"
+          icon="i-hugeicons-x"
           size="sm"
           color="neutral"
           variant="soft"
@@ -172,7 +172,7 @@ async function onRemove(sprintId: string) {
                 :disabled="removeFrom.isPending.value"
                 @click="onRemove(s.id)"
               >
-                <UIcon name="i-lucide-x" class="size-3" />
+                <UIcon name="i-hugeicons-x" class="size-3" />
               </button>
             </span>
           </div>
@@ -182,7 +182,7 @@ async function onRemove(sprintId: string) {
           v-if="openSprints.length === 0"
           class="flex items-start gap-3 p-3 rounded-lg border border-dashed border-default bg-elevated/40"
         >
-          <UIcon name="i-lucide-iteration-ccw" class="size-4 text-muted shrink-0 mt-0.5" />
+          <UIcon name="i-hugeicons-iteration-ccw" class="size-4 text-muted shrink-0 mt-0.5" />
           <p class="text-xs text-muted leading-relaxed m-0">
             На доске нет незакрытых спринтов. Создайте спринт во вкладке «Спринты» — и сможете добавить задачу сюда.
           </p>
@@ -210,7 +210,7 @@ async function onRemove(sprintId: string) {
                 v-if="memberIds.has(s.id)"
                 class="inline-flex size-4 items-center justify-center rounded-full bg-emerald-500 mt-0.5 shrink-0"
               >
-                <UIcon name="i-lucide-check" class="size-3 text-white" />
+                <UIcon name="i-hugeicons-check" class="size-3 text-white" />
               </span>
               <span
                 v-else
@@ -274,7 +274,7 @@ async function onRemove(sprintId: string) {
             Отмена
           </UButton>
           <UButton
-            icon="i-lucide-plus"
+            icon="i-hugeicons-plus"
             :disabled="!selectedId"
             :loading="addTo.isPending.value"
             @click="confirmAdd"

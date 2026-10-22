@@ -24,7 +24,7 @@ withDefaults(defineProps<{
     >
       <UIcon :name="icon" class="size-4 shrink-0" />
       <span v-if="!collapsed" class="truncate">{{ label }}</span>
-      <UIcon v-if="!collapsed" name="i-lucide-arrow-up-right" class="ml-auto size-3.5 opacity-60" />
+      <UIcon v-if="!collapsed" name="i-hugeicons-arrow-up-right-01" class="ml-auto size-3.5 opacity-60" />
     </a>
     <NuxtLink v-else v-slot="{ href, navigate, isActive, isExactActive }" :to="to" custom>
       <a

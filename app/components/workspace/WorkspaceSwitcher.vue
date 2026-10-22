@@ -22,12 +22,12 @@ function selectWorkspace(id: string) {
 const items = computed(() => [
   workspaces.value.map(w => ({
     label: w.name,
-    icon: w.id === current.value?.id ? 'i-lucide-check' : 'i-lucide-folder',
+    icon: w.id === current.value?.id ? 'i-hugeicons-check' : 'i-hugeicons-folder-01',
     onSelect: () => selectWorkspace(w.id),
   })),
   [{
     label: 'Создать workspace',
-    icon: 'i-lucide-plus',
+    icon: 'i-hugeicons-plus',
     onSelect: () => { createOpen.value = true },
   }],
 ])
@@ -41,7 +41,7 @@ const items = computed(() => [
         class="group flex w-full items-center gap-2.5 rounded-xl border border-default bg-elevated px-2.5 py-2 text-left transition-colors hover:border-[var(--ui-border-accented)]"
       >
         <span class="grid size-7 shrink-0 place-items-center rounded-lg bg-default text-accent-600 dark:text-accent-400">
-          <UIcon name="i-lucide-folder" class="size-4" />
+          <UIcon name="i-hugeicons-folder-01" class="size-4" />
         </span>
         <span class="min-w-0 flex-1">
           <span class="block truncate text-sm font-semibold text-highlighted">
@@ -49,7 +49,7 @@ const items = computed(() => [
           </span>
           <span class="block text-xs text-dimmed">Воркспейс</span>
         </span>
-        <UIcon name="i-lucide-chevrons-up-down" class="size-4 shrink-0 text-dimmed" />
+        <UIcon name="i-hugeicons-unfold-more" class="size-4 shrink-0 text-dimmed" />
       </button>
     </UDropdownMenu>
     <WorkspaceCreateModal v-model:open="createOpen" />

@@ -47,7 +47,7 @@ function onSelect(day: Date) {
         <span class="text-muted font-normal">{{ anchor.getFullYear() }}</span>
       </h2>
       <UButton
-        icon="i-lucide-chevron-left"
+        icon="i-hugeicons-chevron-left"
         size="sm"
         variant="ghost"
         color="neutral"
@@ -62,7 +62,7 @@ function onSelect(day: Date) {
         Сегодня
       </UButton>
       <UButton
-        icon="i-lucide-chevron-right"
+        icon="i-hugeicons-chevron-right"
         size="sm"
         variant="ghost"
         color="neutral"

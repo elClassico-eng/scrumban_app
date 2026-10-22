@@ -14,6 +14,6 @@ defineProps<{
   >
     <span class="size-1.5 rounded-full" :class="ROLE_DOT_CLASS[role]" />
     {{ ROLE_LABEL[role] }}
-    <UIcon v-if="editable" name="i-lucide-chevron-down" class="size-3 opacity-60" />
+    <UIcon v-if="editable" name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
   </span>
 </template>

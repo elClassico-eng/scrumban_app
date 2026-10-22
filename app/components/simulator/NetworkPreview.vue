@@ -34,7 +34,7 @@ const criticalChainTitles = computed(() =>
   <div class="surface-soft rounded-2xl px-5 py-5 space-y-4">
     <div class="flex items-center gap-2">
       <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
-        <UIcon name="i-lucide-network" class="size-3.5" />
+        <UIcon name="i-hugeicons-network" class="size-3.5" />
         Сеть {{ okReport ? 'сценария' : 'спринта' }}
       </h4>
       <span
@@ -68,7 +68,7 @@ const criticalChainTitles = computed(() =>
       <div class="flex flex-wrap items-center gap-1.5">
         <template v-for="(title, i) in criticalChainTitles" :key="i">
           <span class="text-[11.5px] font-medium px-1.5 py-0.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300">{{ title }}</span>
-          <UIcon v-if="i < criticalChainTitles.length - 1" name="i-lucide-arrow-right" class="size-3 text-dimmed" />
+          <UIcon v-if="i < criticalChainTitles.length - 1" name="i-hugeicons-arrow-right-02" class="size-3 text-dimmed" />
         </template>
       </div>
     </div>

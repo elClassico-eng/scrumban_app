@@ -66,12 +66,12 @@ function formatDate(iso: string | null): string {
     />
 
     <div v-if="list.isLoading.value" class="flex items-center justify-center py-16 text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <UiEmptyState
       v-else-if="totalReports === 0"
-      icon="i-lucide-clipboard-list"
+      icon="i-hugeicons-clipboard-list"
       title="Пока нет отчётов"
       text="Отчёт и ретроспектива формируются по активным и закрытым спринтам. Запустите спринт на доске, и он появится здесь."
     />

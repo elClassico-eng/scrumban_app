@@ -22,7 +22,7 @@ watch(open, (isOpen) => {
           :workspace-id="workspaceId"
         />
         <div v-if="entries.length === 0" class="px-4 py-12 text-center space-y-2">
-          <UIcon name="i-lucide-sparkles" class="size-10 mx-auto text-muted" />
+          <UIcon name="i-hugeicons-sparkles" class="size-10 mx-auto text-muted" />
           <p class="text-sm text-muted">Пока нет записей</p>
         </div>
       </div>
