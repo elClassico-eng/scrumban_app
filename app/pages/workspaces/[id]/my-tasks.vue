@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { useQuery } from '@tanstack/vue-query'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { MotionConfig } from 'motion-v'
-import type { ColumnRole, ColumnsListResponse } from '#shared/types/column'
+import type { ColumnRole } from '#shared/types/column'
 import type { Task } from '#shared/types/task'
-import { apiRoutes } from '~/routing'
 import { COLUMN_ROLE_INFO } from '~/utils/column-role'
 import { dueInfo } from '~/utils/due'
 
@@ -18,11 +16,7 @@ useHead({ title: () => (workspace.value ? `${workspace.value.name} – Мои з
 
 const { list } = useWorkspaceTasksApi(wsId, { mine: true })
 const { list: boardsList } = useBoardsApi(wsId)
-const columnsQuery = useQuery({
-  queryKey: computed(() => ['workspace-columns', wsId.value]),
-  queryFn: () => $fetch<ColumnsListResponse>(apiRoutes.workspaceColumns(wsId.value)),
-  staleTime: 60_000,
-})
+const columnsQuery = useWorkspaceColumnsApi(wsId)
 
 const boards = computed(() => new Map((boardsList.data.value?.boards ?? []).map(b => [b.id, b])))
 const columns = computed(() => new Map((columnsQuery.data.value?.columns ?? []).map(c => [c.id, c])))

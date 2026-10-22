@@ -52,6 +52,8 @@ const emit = defineEmits<{
 }>()
 
 
+const nextSteps = useNextActions(() => props.workspaceId || null, () => props.pulse)
+
 const gridStatus = computed<'ok' | 'loading' | 'noBoard' | 'error'>(() => {
   if (!props.boardId) return 'noBoard'
   if (props.pulseError) return 'error'
@@ -152,6 +154,8 @@ const TABS: { key: IslandTab; label: string }[] = [
       <UIcon name="i-hugeicons-settings-02" class="w-[15px] h-[15px]" />
     </button>
   </div>
+
+  <ControlCenterNextSteps v-if="!editing && tab === 'overview'" :actions="nextSteps" />
 
   <ControlCenterGridEditor
     v-if="editing && (tab === 'overview' || tab === 'flow')"

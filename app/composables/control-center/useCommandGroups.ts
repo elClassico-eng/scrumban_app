@@ -8,6 +8,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
   const { focus, toggle: toggleFocus } = useFocusMode()
   const colorMode = useColorMode()
   const { logout } = useAuthApi()
+  const shortcutsOpen = useState('shortcuts-help-open', () => false)
 
   const onBoard = computed(() => !!wsId.value && !!bId.value)
 
@@ -24,6 +25,9 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
   const role = computed(() => workspacesList.data.value?.workspaces.find(w => w.id === wsId.value)?.role)
   const canCreateTask = computed(() => hasRole(role.value, 'member'))
 
+  const { pulse } = useBoardPulseApi(wsId, computed(() => (onBoard.value ? bId.value : null)), onBoard)
+  const nextSteps = useNextActions(() => wsId.value || null, () => (onBoard.value ? pulse.data.value ?? null : null))
+
   function go(to: string | { path: string; query: Record<string, string> }) {
     onDone()
     router.push(to)
@@ -31,6 +35,19 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
 
   const groups = computed<CommandPaletteGroup[]>(() => {
     const result: CommandPaletteGroup[] = []
+
+    if (nextSteps.value.length) {
+      result.push({
+        id: 'next',
+        label: 'Следующий шаг',
+        items: nextSteps.value.map(a => ({
+          label: a.title,
+          suffix: a.reason,
+          icon: a.icon,
+          onSelect: () => go(a.to),
+        })),
+      })
+    }
 
     if (onBoard.value) {
       for (const col of columns.value) {
@@ -77,7 +94,26 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
         },
       })
     }
+    if (wsId.value && onBoard.value && hasRole(role.value, 'scrum_master')) {
+      actionItems.push({
+        label: 'Спринты доски: начать или закрыть',
+        icon: 'i-hugeicons-flag-02',
+        onSelect: () => go(pageRoutes.boardSprints(wsId.value, bId.value)),
+      })
+    }
+    if (wsId.value && hasRole(role.value, 'admin')) {
+      actionItems.push(
+        { label: 'Пригласить участника', icon: 'i-hugeicons-user-add-01', onSelect: () => go(pageRoutes.workspaceMembers(wsId.value)) },
+        { label: 'Создать доску', icon: 'i-hugeicons-square-kanban', onSelect: () => go(pageRoutes.boards(wsId.value)) },
+      )
+    }
     actionItems.push(
+      {
+        label: 'Горячие клавиши',
+        icon: 'i-hugeicons-keyboard',
+        kbds: ['?'],
+        onSelect: () => { onDone(); shortcutsOpen.value = true },
+      },
       {
         label: focus.value ? 'Выключить фокус' : 'Включить фокус',
         icon: 'i-hugeicons-focus',
@@ -101,6 +137,8 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
 
     if (wsId.value) {
       const navItems: CommandPaletteItem[] = [
+        { label: 'Входящие', icon: 'i-hugeicons-inbox', onSelect: () => go(pageRoutes.workspaceInbox(wsId.value)) },
+        { label: 'Мои задачи', icon: 'i-hugeicons-task-done-01', onSelect: () => go(pageRoutes.workspaceMyTasks(wsId.value)) },
         { label: 'Доски', icon: 'i-hugeicons-layout-3-column', onSelect: () => go(pageRoutes.boards(wsId.value)) },
         { label: 'Участники', icon: 'i-hugeicons-users', onSelect: () => go(pageRoutes.workspaceMembers(wsId.value)) },
         { label: 'Активность', icon: 'i-hugeicons-activity-01', onSelect: () => go(pageRoutes.workspaceActivity(wsId.value)) },

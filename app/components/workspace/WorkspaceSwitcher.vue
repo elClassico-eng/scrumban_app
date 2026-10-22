@@ -11,6 +11,7 @@ const { current, workspaces } = useCurrentWorkspace()
 const router = useRouter()
 
 const createOpen = ref(false)
+const shortcutsOpen = useState('shortcuts-help-open', () => false)
 const canManage = computed(() => hasRole(current.value?.role, 'admin'))
 
 function selectWorkspace(id: string) {
@@ -49,6 +50,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
   const personal: DropdownMenuItem[] = [
     { type: 'label', label: 'Вид' },
     { label: 'Настроить сайдбар', icon: 'i-hugeicons-sliders-horizontal', onSelect: () => emit('customize') },
+    { label: 'Горячие клавиши', icon: 'i-hugeicons-keyboard', kbds: ['?'], onSelect: () => { shortcutsOpen.value = true } },
   ]
   return [switcher, manage, personal].filter(group => group.length)
 })

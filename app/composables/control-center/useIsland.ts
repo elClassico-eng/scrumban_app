@@ -1,4 +1,4 @@
-import { useMediaQuery } from '@vueuse/core'
+import { useMediaQuery, useWindowSize } from '@vueuse/core'
 
 type PeekEvent = {
   iconType: 'move' | 'at' | 'build' | 'check'
@@ -25,7 +25,8 @@ export function useIsland() {
     if (hovered.value) return 480
     return 210
   })
-  const islH = computed(() => open.value ? 540 : 52)
+  const { height: viewportH } = useWindowSize()
+  const islH = computed(() => open.value ? Math.min(640, viewportH.value - 32) : 52)
   const islR = computed(() => open.value ? 30 : 26)
 
   const islStyle = computed(() => {
