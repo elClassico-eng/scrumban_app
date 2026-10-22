@@ -183,7 +183,7 @@ function onKeydown(e: KeyboardEvent) {
 watch(rawNotifs, (next, prev) => {
   if (!peekPrimed.value || focus.value || !prev || next.length <= prev.length) return
   const prevIds = new Set(prev.map(n => n.id))
-  const newest = next.find(n => !prevIds.has(n.id))
+  const newest = next.find(n => !prevIds.has(n.id) && !n.readAt)
   if (newest) firePeek(peekFor(newest))
 }, { flush: 'sync' })
 

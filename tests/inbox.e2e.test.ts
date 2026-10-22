@@ -101,6 +101,14 @@ describe('comment replies', () => {
     expect((await notifs(owner)).filter(n => n.type === 'reply').length).toBe(0)
   })
 
+  it('a former member who wrote in the thread gets nothing after removal', async () => {
+    const { owner, ann, igor, wsId, url } = await team()
+    const root = await comment(ann, url, 'root')
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/members/${ann.id}`, { method: 'DELETE' })
+    await comment(igor, url, 'reply', root.body.comment.id)
+    expect((await notifs(ann)).filter(n => n.type === 'reply').length).toBe(0)
+  })
+
   it('a reply to a reply joins the root thread', async () => {
     const { ann, igor, url } = await team()
     const root = await comment(ann, url, 'root')
@@ -245,5 +253,65 @@ describe('my tasks', () => {
 
     const res = await fetchWithJar<{ tasks: { id: string }[] }>(ann.jar, `/api/workspaces/${wsId}/tasks?assignee=me`)
     expect(res.body.tasks.map(t => t.id)).toEqual([mine])
+  })
+})
+
+describe('inbox views', () => {
+  async function seed() {
+    const ctx = await team()
+    await comment(ctx.igor, ctx.url, `@[Ann](${ctx.ann.id}) one`)
+    await comment(ctx.igor, ctx.url, `@[Ann](${ctx.ann.id}) two`)
+    const ids = (await notifs(ctx.ann, `?workspaceId=${ctx.wsId}&view=primary`)).map(n => n.id)
+    return { ...ctx, ids }
+  }
+
+  async function patch(actor: UserCtx, body: Record<string, unknown>) {
+    return fetchWithJar(actor.jar, '/api/notifications', { method: 'PATCH', body })
+  }
+
+  async function counts(actor: UserCtx, wsId: string) {
+    const res = await fetchWithJar<{ primary: number, flow: number, later: number }>(actor.jar, `/api/notifications/counts?workspaceId=${wsId}`)
+    return res.body
+  }
+
+  it('clearing moves items from primary to cleared and drops them from the unread count', async () => {
+    const { ann, wsId, ids } = await seed()
+    expect(ids.length).toBe(2)
+    expect((await counts(ann, wsId)).primary).toBe(2)
+
+    expect((await patch(ann, { ids: [ids[0]], cleared: true })).status).toBe(200)
+    expect((await notifs(ann, `?workspaceId=${wsId}&view=primary`)).length).toBe(1)
+    expect((await notifs(ann, `?workspaceId=${wsId}&view=cleared`)).map(n => n.id)).toEqual([ids[0]])
+    expect((await counts(ann, wsId)).primary).toBe(1)
+  })
+
+  it('snoozed items live in later until the time comes, then return unread', async () => {
+    const { ann, wsId, ids } = await seed()
+    await patch(ann, { ids: [ids[0]], read: true })
+    await patch(ann, { ids: [ids[0]], snoozedUntil: new Date(Date.now() + 3_600_000).toISOString() })
+    expect((await notifs(ann, `?workspaceId=${wsId}&view=later`)).map(n => n.id)).toEqual([ids[0]])
+    expect((await counts(ann, wsId)).later).toBe(1)
+
+    await patch(ann, { ids: [ids[0]], snoozedUntil: new Date(Date.now() - 1000).toISOString() })
+    const back = (await notifs(ann, `?workspaceId=${wsId}&view=primary`)).find(n => n.id === ids[0]) as unknown as { readAt: string | null }
+    expect(back).toBeDefined()
+    expect(back.readAt).toBeNull()
+  })
+
+  it('cannot touch someone else\'s notifications', async () => {
+    const { igor, ann, wsId, ids } = await seed()
+    await patch(igor, { ids, cleared: true })
+    expect((await notifs(ann, `?workspaceId=${wsId}&view=primary`)).length).toBe(2)
+  })
+
+  it('clear-all empties one view only', async () => {
+    const { ann, wsId } = await seed()
+    const res = await fetchWithJar<{ count: number }>(ann.jar, '/api/notifications/clear-all', {
+      method: 'POST',
+      body: { workspaceId: wsId, view: 'primary' },
+    })
+    expect(res.body.count).toBe(2)
+    expect((await notifs(ann, `?workspaceId=${wsId}&view=primary`)).length).toBe(0)
+    expect((await counts(ann, wsId)).primary).toBe(0)
   })
 })

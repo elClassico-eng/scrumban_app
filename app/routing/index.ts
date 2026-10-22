@@ -187,6 +187,8 @@ export const apiRoutes = {
   notificationsUnreadCount: '/api/notifications/unread-count',
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
   notificationsReadAll: '/api/notifications/read-all',
+  notificationsClearAll: '/api/notifications/clear-all',
+  notificationsCounts: '/api/notifications/counts',
   notificationsStream: '/api/notifications/stream',
 
   adminLeads: '/api/admin/leads',

@@ -174,3 +174,34 @@ export function renderNotification(n: Notification): RenderedNotification {
       }
   }
 }
+
+export type InboxRow = {
+  subject: string
+  label: string
+  detail: string
+}
+
+const PERSONAL_LABEL: Partial<Record<Notification['type'], string>> = {
+  mention: 'упоминание',
+  reply: 'ответ в ветке',
+  comment_assigned: 'поручение',
+  assigned: 'назначил(а) вам задачу',
+  comment_on_assigned: 'комментарий к вашей задаче',
+}
+
+export function inboxRow(n: Notification): InboxRow {
+  const p = n.payload as P
+  const personal = PERSONAL_LABEL[n.type]
+  if (personal) {
+    return { subject: String(p.taskTitle ?? 'Задача'), label: personal, detail: String(p.snippet ?? '') }
+  }
+  const r = renderNotification(n)
+  const subject = p.taskTitle ?? p.sprintName ?? p.boardName ?? p.columnName ?? r.title
+  return { subject: String(subject), label: r.title, detail: r.why.replace(/^«[^»]*»:\s*/, '') }
+}
+
+export function inboxGroupKey(n: Notification): string {
+  const p = n.payload as P
+  if (p.taskId) return `task:${p.taskId}`
+  return `${n.type}:${p.sprintId ?? p.boardId ?? n.id}`
+}

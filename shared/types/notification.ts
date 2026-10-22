@@ -16,6 +16,8 @@ export interface Notification {
   type: NotificationType
   payload: Record<string, unknown>
   readAt: string | null
+  clearedAt?: string | null
+  snoozedUntil?: string | null
   createdAt: string
   actor?: NotificationActor | null
 }

@@ -38,7 +38,7 @@ const uiStore = useUiStore()
         class="text-[11px] font-semibold text-[var(--island-orange-2)] hover:underline"
         @click="uiStore.closeControlCenter"
       >
-        Открыть Inbox →
+        Открыть входящие →
       </NuxtLink>
     </div>
     <div

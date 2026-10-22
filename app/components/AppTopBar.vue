@@ -40,7 +40,7 @@ const unread = useInboxBadge(computed(() => workspaceStore.currentId ?? null))
       v-if="workspaceStore.currentId"
       :to="pageRoutes.workspaceInbox(workspaceStore.currentId)"
       class="relative size-10 grid place-items-center rounded-xl text-toned hover:bg-elevated transition-colors"
-      aria-label="Inbox"
+      aria-label="Входящие"
     >
       <UIcon name="i-hugeicons-inbox" class="size-5" />
       <span
