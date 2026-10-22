@@ -36,7 +36,10 @@ export async function listColumns(input: {
     tx
       .select()
       .from(boardColumns)
-      .where(input.boardId ? eq(boardColumns.boardId, input.boardId) : undefined)
+      .where(and(
+        eq(boardColumns.workspaceId, input.workspaceId),
+        input.boardId ? eq(boardColumns.boardId, input.boardId) : undefined,
+      ))
       .orderBy(boardColumns.boardId, boardColumns.position),
   )
 }
