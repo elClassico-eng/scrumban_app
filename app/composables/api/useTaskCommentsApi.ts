@@ -58,5 +58,17 @@ export function useTaskCommentsApi(
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
   })
 
-  return { list, create, update, remove }
+  const assign = useMutation({
+    mutationFn: ({ commentId, ...body }: { commentId: string, assigneeId?: string | null, resolved?: boolean }) =>
+      $fetch<TaskCommentResponse>(
+        apiRoutes.taskCommentAssignment(unref(workspaceId), unref(boardId), unref(taskId), commentId),
+        { method: 'PATCH', body },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKey.value })
+      qc.invalidateQueries({ queryKey: ['assigned-comments'] })
+    },
+  })
+
+  return { list, create, update, remove, assign }
 }

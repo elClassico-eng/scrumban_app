@@ -14,6 +14,7 @@ export function useNotificationsSse() {
   watch(data, (next) => {
     if (next == null) return
     qc.invalidateQueries({ queryKey: ['notifications'] })
+    qc.invalidateQueries({ queryKey: ['assigned-comments'] })
   })
 
   return { sseStatus: status, closeSse: close }

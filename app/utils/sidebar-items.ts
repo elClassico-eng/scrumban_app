@@ -1,6 +1,8 @@
 import type { SidebarItemId } from '#shared/types/sidebar'
 
 export const SIDEBAR_ITEM_META: Record<SidebarItemId, { label: string, icon: string }> = {
+  inbox: { label: 'Inbox', icon: 'i-hugeicons-inbox' },
+  my_tasks: { label: 'Мои задачи', icon: 'i-hugeicons-task-done-01' },
   overview: { label: 'Обзор', icon: 'i-hugeicons-home-01' },
   activity: { label: 'Активность', icon: 'i-hugeicons-activity-01' },
   reports: { label: 'Отчёты', icon: 'i-hugeicons-clipboard-list' },

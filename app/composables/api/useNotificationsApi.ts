@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import type { MaybeRefOrGetter } from 'vue'
 import { apiRoutes } from '~/routing'
 import type {
   NotificationListResponse,
@@ -6,12 +7,14 @@ import type {
   NotificationUnreadCountResponse,
 } from '#shared/types/notification'
 
-export function useNotificationsApi() {
+export function useNotificationsApi(workspaceId: MaybeRefOrGetter<string | null> = null) {
   const qc = useQueryClient()
 
   const list = useQuery({
-    queryKey: ['notifications'],
-    queryFn: () => $fetch<NotificationListResponse>(apiRoutes.notifications),
+    queryKey: computed(() => ['notifications', 'list', toValue(workspaceId)]),
+    queryFn: () => $fetch<NotificationListResponse>(apiRoutes.notifications, {
+      query: { workspaceId: toValue(workspaceId) ?? undefined },
+    }),
     staleTime: 15_000,
   })
 

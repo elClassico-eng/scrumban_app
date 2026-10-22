@@ -102,6 +102,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/tasks/${taskId}/comments`,
   taskComment: (wsId: string, boardId: string, taskId: string, commentId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/comments/${commentId}`,
+  taskCommentAssignment: (wsId: string, boardId: string, taskId: string, commentId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/comments/${commentId}/assignment`,
 
   sprints: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/sprints`,
   sprint: (wsId: string, boardId: string, sprintId: string) =>
@@ -174,6 +176,7 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/automations/run`,
 
   workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
+  workspaceAssignedComments: (wsId: string) => `/api/workspaces/${wsId}/assigned-comments`,
 
   workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
 
@@ -217,6 +220,8 @@ export const pageRoutes = {
   workspace: (id: string) => `/workspaces/${id}`,
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
   workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
+  workspaceInbox: (id: string) => `/workspaces/${id}/inbox`,
+  workspaceMyTasks: (id: string) => `/workspaces/${id}/my-tasks`,
   workspaceReports: (id: string) => `/workspaces/${id}/reports`,
   workspaceSimulator: (id: string) => `/workspaces/${id}/simulator`,
 

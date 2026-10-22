@@ -10,7 +10,7 @@ const props = defineProps<{
   taskId: MaybeRef<string>
 }>()
 
-const { list, create, update, remove } = useTaskCommentsApi(props.workspaceId, props.boardId, props.taskId)
+const { list, create, update, remove, assign } = useTaskCommentsApi(props.workspaceId, props.boardId, props.taskId)
 const { list: membersList } = useMembersApi(props.workspaceId)
 const { list: workspacesList } = useWorkspacesApi()
 const auth = useAuthStore()
@@ -24,6 +24,83 @@ const myRole = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === unref(props.workspaceId))?.role,
 )
 const isAdmin = computed(() => hasRole(myRole.value, 'admin'))
+const isLead = computed(() => hasRole(myRole.value, 'scrum_master'))
+const canWrite = computed(() => hasRole(myRole.value, 'member'))
+
+const threaded = computed(() => {
+  const replies = new Map<string, TaskComment[]>()
+  for (const c of comments.value) {
+    if (!c.parentId) continue
+    replies.set(c.parentId, [...(replies.get(c.parentId) ?? []), c])
+  }
+  return comments.value
+    .filter(c => !c.parentId)
+    .flatMap(root => [
+      { c: root, reply: false },
+      ...(replies.get(root.id) ?? []).map(r => ({ c: r, reply: true })),
+    ])
+})
+
+const assignableMembers = computed(() => members.value.filter(m => hasRole(m.role, 'member')))
+
+function memberName(userId: string): string {
+  const m = members.value.find(mm => mm.userId === userId)
+  return m ? displayName(m) : 'участник'
+}
+
+function canAssign(c: TaskComment): boolean {
+  if (c.automationRuleId || !canWrite.value) return false
+  return isLead.value || (!!myUserId.value && c.author?.id === myUserId.value)
+}
+
+function canResolve(c: TaskComment): boolean {
+  if (!c.assigneeId || !canWrite.value) return false
+  return isLead.value || c.assigneeId === myUserId.value || c.author?.id === myUserId.value
+}
+
+async function setAssignment(c: TaskComment, payload: { assigneeId?: string | null, resolved?: boolean }) {
+  try {
+    await assign.mutateAsync({ commentId: c.id, ...payload })
+  }
+  catch (err) {
+    toast.add({
+      title: getErrorMessage(err, 'Не удалось обновить поручение'),
+      color: 'error',
+      icon: 'i-hugeicons-alert-circle',
+    })
+  }
+}
+
+function commentMenu(c: TaskComment) {
+  return [
+    ...(canAssign(c)
+      ? [{
+          label: c.assigneeId ? 'Передать поручение' : 'Поручить',
+          icon: 'i-hugeicons-message-user-01',
+          children: assignableMembers.value.map(m => ({
+            label: displayName(m),
+            onSelect: () => setAssignment(c, { assigneeId: m.userId }),
+          })),
+        }]
+      : []),
+    ...(canAssign(c) && c.assigneeId
+      ? [{ label: 'Снять поручение', icon: 'i-hugeicons-cancel-circle', onSelect: () => setAssignment(c, { assigneeId: null }) }]
+      : []),
+    ...(canEdit(c)
+      ? [{ label: 'Редактировать', icon: 'i-hugeicons-pencil', onSelect: () => startEdit(c) }]
+      : []),
+    ...(canDelete(c)
+      ? [{ label: 'Удалить', icon: 'i-hugeicons-delete-02', color: 'error' as const, onSelect: () => onDelete(c) }]
+      : []),
+  ]
+}
+
+const replyTo = ref<TaskComment | null>(null)
+
+function startReply(c: TaskComment) {
+  replyTo.value = c.parentId ? comments.value.find(x => x.id === c.parentId) ?? c : c
+  nextTick(() => composerRef.value?.focus())
+}
 const commentsQueryKey = computed(() => [
   'task-comments',
   unref(props.workspaceId),
@@ -101,9 +178,10 @@ async function submitComment() {
   if (!visible) return
   const body = serializeMentions(visible, composerMentions.value)
   try {
-    await create.mutateAsync({ body })
+    await create.mutateAsync({ body, parentId: replyTo.value?.id })
     composerBody.value = ''
     composerMentions.value = {}
+    replyTo.value = null
   }
   catch (err) {
     toast.add({
@@ -249,9 +327,9 @@ function timeLabel(iso: string): string {
 
     <div v-else class="flex flex-col gap-4 mb-6">
       <div
-        v-for="c in comments"
+        v-for="{ c, reply } in threaded"
         :key="c.id"
-        class="grid grid-cols-[32px_1fr] gap-3 group"
+        :class="['grid grid-cols-[32px_1fr] gap-3 group', reply ? 'ml-11 -mt-1.5' : '']"
       >
         <span
           v-if="c.automationRuleId"
@@ -276,15 +354,8 @@ function timeLabel(iso: string): string {
             <span v-if="c.editedAt" class="text-[11.5px] text-muted">(изменено)</span>
             <div class="flex-1" />
             <UDropdownMenu
-              v-if="editingId !== c.id && !c.automationRuleId && (canEdit(c) || canDelete(c))"
-              :items="[
-                ...(canEdit(c)
-                  ? [{ label: 'Редактировать', icon: 'i-hugeicons-pencil', onSelect: () => startEdit(c) }]
-                  : []),
-                ...(canDelete(c)
-                  ? [{ label: 'Удалить', icon: 'i-hugeicons-delete-02', color: 'error' as const, onSelect: () => onDelete(c) }]
-                  : []),
-              ]"
+              v-if="editingId !== c.id && !c.automationRuleId && commentMenu(c).length"
+              :items="commentMenu(c)"
             >
               <button
                 type="button"
@@ -347,14 +418,56 @@ function timeLabel(iso: string): string {
               </template>
             </p>
           </div>
+
+          <div v-if="editingId !== c.id" class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+            <span
+              v-if="c.assigneeId"
+              :class="[
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium',
+                c.resolvedAt ? 'bg-elevated text-muted line-through' : 'bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-300',
+              ]"
+            >
+              <UIcon name="i-hugeicons-message-user-01" class="size-3.5" />
+              {{ memberName(c.assigneeId) }}
+            </span>
+            <button
+              v-if="canResolve(c)"
+              type="button"
+              class="inline-flex cursor-pointer items-center gap-1 text-muted transition-colors hover:text-default"
+              @click="setAssignment(c, { resolved: !c.resolvedAt })"
+            >
+              <UIcon :name="c.resolvedAt ? 'i-hugeicons-arrow-turn-backward' : 'i-hugeicons-checkmark-circle-02'" class="size-3.5" />
+              {{ c.resolvedAt ? 'Вернуть в работу' : 'Выполнено' }}
+            </button>
+            <button
+              v-if="canWrite && !c.automationRuleId"
+              type="button"
+              class="cursor-pointer text-muted transition-colors hover:text-default"
+              @click="startReply(c)"
+            >
+              Ответить
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-if="hasRole(myRole, 'member')" class="sticky bottom-0 -mx-4 px-4 sm:-mx-7 sm:px-7 pt-3 pb-1 bg-gradient-to-t from-[var(--ui-bg)] via-[var(--ui-bg)]/95 to-transparent">
+    <div v-if="canWrite" class="sticky bottom-0 -mx-4 px-4 sm:-mx-7 sm:px-7 pt-3 pb-1 bg-gradient-to-t from-[var(--ui-bg)] via-[var(--ui-bg)]/95 to-transparent">
       <div
         class="rounded-lg border border-default bg-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
       >
+        <div v-if="replyTo" class="flex items-center gap-2 border-b border-default px-3.5 py-1.5 text-[12px] text-muted">
+          <UIcon name="i-hugeicons-message-square-reply" class="size-3.5 shrink-0" />
+          <span class="min-w-0 flex-1 truncate">Ответ в ветке: {{ displayName(replyTo.author) }}</span>
+          <button
+            type="button"
+            class="grid size-5 cursor-pointer place-items-center rounded hover:bg-elevated hover:text-default"
+            aria-label="Отменить ответ"
+            @click="replyTo = null"
+          >
+            <UIcon name="i-hugeicons-x" class="size-3" />
+          </button>
+        </div>
         <textarea
           ref="composerRef"
           v-model="composerBody"

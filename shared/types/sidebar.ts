@@ -1,4 +1,4 @@
-export const SIDEBAR_ITEM_IDS = ['overview', 'activity', 'reports', 'simulator', 'favorites', 'whats_new', 'docs'] as const
+export const SIDEBAR_ITEM_IDS = ['inbox', 'my_tasks', 'overview', 'activity', 'reports', 'simulator', 'favorites', 'whats_new', 'docs'] as const
 
 export type SidebarItemId = (typeof SIDEBAR_ITEM_IDS)[number]
 

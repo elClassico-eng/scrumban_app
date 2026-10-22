@@ -9,7 +9,9 @@ withDefaults(defineProps<{
   collapsed: boolean
   exact?: boolean
   external?: boolean
-}>(), { exact: false, external: false })
+  badge?: number
+  badgeTone?: 'accent' | 'muted'
+}>(), { exact: false, external: false, badge: 0, badgeTone: 'muted' })
 </script>
 
 <template>
@@ -48,8 +50,21 @@ withDefaults(defineProps<{
           class="absolute inset-0 rounded-xl bg-accented"
           :transition="SIDEBAR_SPRING"
         />
-        <UIcon :name="icon" class="relative size-4 shrink-0" />
-        <span v-if="!collapsed" class="relative truncate">{{ label }}</span>
+        <span class="relative shrink-0">
+          <UIcon :name="icon" class="block size-4" />
+          <span
+            v-if="collapsed && badge"
+            :class="['absolute -right-1 -top-1 size-2 rounded-full ring-2 ring-default', badgeTone === 'accent' ? 'bg-accent-500' : 'bg-[var(--ui-text-dimmed)]']"
+          />
+        </span>
+        <span v-if="!collapsed" class="relative min-w-0 flex-1 truncate">{{ label }}</span>
+        <span
+          v-if="!collapsed && badge"
+          :class="[
+            'relative ml-auto min-w-5 rounded-full px-1.5 text-center text-[11px] font-semibold tabular-nums',
+            badgeTone === 'accent' ? 'bg-accent-500 text-white' : 'text-dimmed',
+          ]"
+        >{{ badge > 99 ? '99+' : badge }}</span>
       </a>
     </NuxtLink>
   </UTooltip>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { pageRoutes } from '~/routing'
+
 type Notif = {
   id: string
   icon: string
@@ -18,6 +20,9 @@ defineProps<{
 defineEmits<{
   read: [e: Event, id: string]
 }>()
+
+const workspaceStore = useWorkspaceStore()
+const uiStore = useUiStore()
 </script>
 
 <template>
@@ -25,7 +30,17 @@ defineEmits<{
     class="rounded-2xl p-[13px] min-h-0 overflow-auto h-full"
     style="background: var(--island-tile); border: 1px solid var(--island-line-2);"
   >
-    <div class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)] mb-[9px]">Уведомления</div>
+    <div class="mb-[9px] flex items-center justify-between gap-2">
+      <span class="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)]">Уведомления</span>
+      <NuxtLink
+        v-if="workspaceStore.currentId"
+        :to="pageRoutes.workspaceInbox(workspaceStore.currentId)"
+        class="text-[11px] font-semibold text-[var(--island-orange-2)] hover:underline"
+        @click="uiStore.closeControlCenter"
+      >
+        Открыть Inbox →
+      </NuxtLink>
+    </div>
     <div
       v-if="notifs.length === 0"
       class="text-[11.5px] text-[var(--island-ink-3)]"

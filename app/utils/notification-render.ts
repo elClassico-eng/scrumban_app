@@ -1,5 +1,6 @@
 import type { Notification } from '#shared/types/notification'
 import { pageRoutes } from '~/routing'
+import { displayName } from '~/utils/display-name'
 
 export type RouteTarget = string | { path: string; query: Record<string, string> }
 
@@ -18,7 +19,8 @@ const BLUE = '#2e6df5'
 
 type P = Record<string, string | number | undefined>
 
-function actorOf(p: P): string {
+function actorOf(n: Notification, p: P): string {
+  if (n.actor) return displayName(n.actor)
   return String(p.actorName ?? p.actorEmail ?? 'Кто-то')
 }
 
@@ -99,7 +101,7 @@ export function renderNotification(n: Notification): RenderedNotification {
     case 'mention':
       return {
         title: 'Упомянули в комментарии',
-        why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
         icon: 'i-hugeicons-at-sign',
@@ -108,7 +110,7 @@ export function renderNotification(n: Notification): RenderedNotification {
     case 'assigned':
       return {
         title: 'Назначили задачу',
-        why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
         icon: 'i-hugeicons-user-check-01',
@@ -117,7 +119,7 @@ export function renderNotification(n: Notification): RenderedNotification {
     case 'comment_on_assigned':
       return {
         title: 'Прокомментировали вашу задачу',
-        why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
         icon: 'i-hugeicons-message-square',
@@ -152,5 +154,23 @@ export function renderNotification(n: Notification): RenderedNotification {
       }
     case 'automation':
       return renderAutomation(n, p)
+    case 'reply':
+      return {
+        title: 'Ответили в ветке',
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
+        cta: 'Открыть ветку',
+        target: taskTarget(n, p),
+        icon: 'i-hugeicons-message-square-reply',
+        color: PURPLE,
+      }
+    case 'comment_assigned':
+      return {
+        title: 'Вам поручение',
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
+        cta: 'Открыть задачу',
+        target: taskTarget(n, p),
+        icon: 'i-hugeicons-message-user-01',
+        color: BLUE,
+      }
   }
 }
