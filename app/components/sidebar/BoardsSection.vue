@@ -59,14 +59,16 @@ function onEnd() {
       @end="onEnd"
     >
       <template #item="{ element }">
-        <SidebarBoardLink
-          :workspace-id="workspaceId"
-          :board="element"
-          :active="activeBoardId === element.id"
-          :favorite="favorites.has(element.id)"
-          :collapsed="collapsed"
-          @toggle-favorite="emit('toggleFavorite', element.id)"
-        />
+        <div>
+          <SidebarBoardLink
+            :workspace-id="workspaceId"
+            :board="element"
+            :active="activeBoardId === element.id"
+            :favorite="favorites.has(element.id)"
+            :collapsed="collapsed"
+            @toggle-favorite="emit('toggleFavorite', element.id)"
+          />
+        </div>
       </template>
     </draggable>
   </div>
