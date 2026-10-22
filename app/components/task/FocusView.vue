@@ -281,9 +281,8 @@ function openSubtask(taskId: string) {
 
 const deadlineMeta = computed(() => {
   if (!task.value?.dueDate) return null
-  const due = new Date(task.value.dueDate)
-  const now = new Date()
-  const days = Math.ceil((due.getTime() - now.getTime()) / 86_400_000)
+  const due = dueLocalDay(task.value.dueDate)
+  const days = dueDayInfo(task.value.dueDate).diff
   const overdue = days < 0
   const formatted = due.toLocaleDateString('ru', { day: '2-digit', month: 'short' })
   const weekday = due.toLocaleDateString('ru', { weekday: 'short' })
