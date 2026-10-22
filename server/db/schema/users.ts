@@ -6,6 +6,7 @@
 import { jsonb, pgTable, uuid, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 import type { ControlCenterPrefs } from '../../../shared/types/control-center'
 import type { SidebarPrefs } from '../../../shared/types/sidebar'
+import type { ShortcutPrefs } from '../../../shared/types/shortcuts'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -24,6 +25,7 @@ export const users = pgTable('users', {
   notificationPrefs: jsonb('notification_prefs').$type<Record<string, boolean>>().notNull().default({}),
   controlCenterPrefs: jsonb('control_center_prefs').$type<ControlCenterPrefs>().notNull().default({}),
   sidebarPrefs: jsonb('sidebar_prefs').$type<SidebarPrefs>().notNull().default({}),
+  shortcutPrefs: jsonb('shortcut_prefs').$type<ShortcutPrefs>().notNull().default({}),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   changelogSeenAt: timestamp('changelog_seen_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

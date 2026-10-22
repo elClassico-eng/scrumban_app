@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "shortcut_prefs" jsonb DEFAULT '{}'::jsonb NOT NULL;

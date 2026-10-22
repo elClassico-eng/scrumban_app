@@ -1,6 +1,6 @@
 <script setup lang="ts">
 useNotificationsSse()
-const { helpOpen, hints } = useGlobalShortcuts()
+const { hint } = useGlobalShortcuts()
 </script>
 
 <template>
@@ -15,6 +15,7 @@ const { helpOpen, hints } = useGlobalShortcuts()
       </main>
     </div>
     <IntroduceModal />
-    <ShortcutsHelp v-model:open="helpOpen" :hints="hints" />
+    <HelpPanel />
+    <ShortcutLeaderHint :hint="hint" />
   </div>
 </template>

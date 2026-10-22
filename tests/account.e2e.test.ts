@@ -166,3 +166,19 @@ describe('sidebar prefs', () => {
     expect(dup.status).toBe(400)
   })
 })
+
+describe('shortcut prefs', () => {
+  it('stores custom shortcuts and rejects unknown actions and malformed combos', async () => {
+    const u = await registerUser('keys@example.com')
+    const ok = await fetchWithJar<{ user: { shortcutPrefs: Record<string, string> } }>(u.jar, '/api/users/me', {
+      method: 'PATCH',
+      body: { shortcutPrefs: { go_inbox: 'g-n', new_task: 'shift_n' } },
+    })
+    expect(ok.status).toBe(200)
+    expect(ok.body.user.shortcutPrefs).toEqual({ go_inbox: 'g-n', new_task: 'shift_n' })
+    const unknown = await fetchWithJar(u.jar, '/api/users/me', { method: 'PATCH', body: { shortcutPrefs: { launch_rockets: 'r' } } })
+    expect(unknown.status).toBe(400)
+    const malformed = await fetchWithJar(u.jar, '/api/users/me', { method: 'PATCH', body: { shortcutPrefs: { go_inbox: 'g-i-x' } } })
+    expect(malformed.status).toBe(400)
+  })
+})

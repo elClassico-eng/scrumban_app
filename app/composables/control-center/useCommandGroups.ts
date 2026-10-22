@@ -8,7 +8,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
   const { focus, toggle: toggleFocus } = useFocusMode()
   const colorMode = useColorMode()
   const { logout } = useAuthApi()
-  const shortcutsOpen = useState('shortcuts-help-open', () => false)
+  const help = useHelpPanel()
 
   const onBoard = computed(() => !!wsId.value && !!bId.value)
 
@@ -109,10 +109,15 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
     }
     actionItems.push(
       {
+        label: 'Справка по этой странице',
+        icon: 'i-hugeicons-information-circle',
+        kbds: ['?'],
+        onSelect: () => { onDone(); help.show('page') },
+      },
+      {
         label: 'Горячие клавиши',
         icon: 'i-hugeicons-keyboard',
-        kbds: ['?'],
-        onSelect: () => { onDone(); shortcutsOpen.value = true },
+        onSelect: () => { onDone(); help.show('keys') },
       },
       {
         label: focus.value ? 'Выключить фокус' : 'Включить фокус',

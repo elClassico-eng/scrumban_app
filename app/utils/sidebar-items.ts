@@ -9,6 +9,7 @@ export const SIDEBAR_ITEM_META: Record<SidebarItemId, { label: string, icon: str
   simulator: { label: 'Симулятор', icon: 'i-hugeicons-flask-conical' },
   favorites: { label: 'Избранное', icon: 'i-hugeicons-star' },
   whats_new: { label: 'Что нового', icon: 'i-hugeicons-sparkles' },
+  help: { label: 'Справка', icon: 'i-hugeicons-help-circle' },
   docs: { label: 'Документация', icon: 'i-hugeicons-book-open-01' },
 }
 

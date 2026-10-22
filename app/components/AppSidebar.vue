@@ -34,6 +34,8 @@ const activeBoardId = computed(() => (route.params.boardId as string) || null)
 const canManage = computed(() => hasRole(current.value?.role, 'admin'))
 
 const { isVisible, favorites, toggleFavorite, sortBoards, setBoardOrder } = useSidebarPrefs()
+const { combos } = useShortcutPrefs()
+const help = useHelpPanel()
 const boards = computed(() => sortBoards(boardsList.data.value?.boards ?? []))
 const favoriteBoards = computed(() => boards.value.filter(b => favorites.value.has(b.id)))
 
@@ -45,8 +47,8 @@ const personalLinks = computed(() => {
   if (!ws) return []
   const openTasks = (myTasksList.data.value?.tasks ?? []).filter(t => !t.closedAt).length
   const links = [
-    { id: 'inbox' as const, to: pageRoutes.workspaceInbox(ws.id), badge: inboxBadge.value, badgeTone: 'accent' as const },
-    { id: 'my_tasks' as const, to: pageRoutes.workspaceMyTasks(ws.id), badge: openTasks, badgeTone: 'muted' as const },
+    { id: 'inbox' as const, to: pageRoutes.workspaceInbox(ws.id), badge: inboxBadge.value, badgeTone: 'accent' as const, combo: combos.value.go_inbox },
+    { id: 'my_tasks' as const, to: pageRoutes.workspaceMyTasks(ws.id), badge: openTasks, badgeTone: 'muted' as const, combo: combos.value.go_my_tasks },
   ]
   return links.filter(l => isVisible(l.id)).map(l => ({ ...l, ...SIDEBAR_ITEM_META[l.id] }))
 })
@@ -54,8 +56,8 @@ const personalLinks = computed(() => {
 const workspaceLinks = computed(() => {
   const ws = current.value
   if (!ws) return []
-  const links: { id: SidebarItemId, to: string, exact?: boolean }[] = [
-    { id: 'overview', to: pageRoutes.workspace(ws.id), exact: true },
+  const links: { id: SidebarItemId, to: string, exact?: boolean, combo?: string }[] = [
+    { id: 'overview', to: pageRoutes.workspace(ws.id), exact: true, combo: combos.value.go_overview },
     { id: 'activity', to: pageRoutes.workspaceActivity(ws.id) },
     { id: 'reports', to: pageRoutes.workspaceReports(ws.id) },
     { id: 'simulator', to: pageRoutes.workspaceSimulator(ws.id) },
@@ -111,6 +113,7 @@ const customizeOpen = ref(false)
             :collapsed="collapsed"
             :badge="link.badge"
             :badge-tone="link.badgeTone"
+            :combo="link.combo"
           />
         </div>
 
@@ -125,6 +128,7 @@ const customizeOpen = ref(false)
               :label="link.label"
               :collapsed="collapsed"
               :exact="link.exact"
+              :combo="link.combo"
             />
           </div>
         </template>
@@ -178,6 +182,21 @@ const customizeOpen = ref(false)
               />
             </span>
             <span v-if="!collapsed" class="truncate">{{ SIDEBAR_ITEM_META.whats_new.label }}</span>
+          </button>
+        </UTooltip>
+        <UTooltip v-if="isVisible('help')" :disabled="!collapsed" :content="{ side: 'right' }" text="Справка">
+          <button
+            type="button"
+            :class="[
+              'flex w-full items-center rounded-xl text-sm font-medium transition-colors duration-200',
+              collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+              'text-muted hover:bg-elevated hover:text-default',
+            ]"
+            @click="help.show('page')"
+          >
+            <UIcon :name="SIDEBAR_ITEM_META.help.icon" class="size-4 shrink-0" />
+            <span v-if="!collapsed" class="flex-1 truncate text-left">{{ SIDEBAR_ITEM_META.help.label }}</span>
+            <UKbd v-if="!collapsed" value="?" size="sm" />
           </button>
         </UTooltip>
         <SidebarNavItem

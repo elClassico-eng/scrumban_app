@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { pageRoutes } from '~/routing'
+import { describeCombo } from '~/utils/shortcuts'
 import type { Board } from '#shared/types/board'
 
 const props = defineProps<{
@@ -14,6 +15,7 @@ const emit = defineEmits<{ createBoard: [], invite: [] }>()
 const route = useRoute()
 const router = useRouter()
 const ccActions = useControlCenterActions()
+const { combos } = useShortcutPrefs()
 
 const isMac = computed(() => import.meta.client && /Mac|iPhone|iPad/i.test(navigator.userAgent))
 
@@ -26,7 +28,7 @@ function createTaskOn(boardId: string) {
 const items = computed<DropdownMenuItem[][]>(() => {
   const routeBoardId = typeof route.params.boardId === 'string' ? route.params.boardId : null
   const task: DropdownMenuItem = routeBoardId
-    ? { label: 'Задача', icon: 'i-hugeicons-task-add-01', onSelect: () => createTaskOn(routeBoardId) }
+    ? { label: 'Задача', icon: 'i-hugeicons-task-add-01', kbds: describeCombo(combos.value.new_task).keys, onSelect: () => createTaskOn(routeBoardId) }
     : {
         label: 'Задача',
         icon: 'i-hugeicons-task-add-01',

@@ -23,6 +23,7 @@ export default defineEventHandler(async (event) => {
         notificationPrefs: user.notificationPrefs ?? {},
         controlCenterPrefs: user.controlCenterPrefs ?? {},
         sidebarPrefs: user.sidebarPrefs ?? {},
+        shortcutPrefs: user.shortcutPrefs ?? {},
         changelogSeenAt: user.changelogSeenAt ? user.changelogSeenAt.toISOString() : null,
         emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
         createdAt: user.createdAt,

@@ -11,11 +11,20 @@ withDefaults(defineProps<{
   external?: boolean
   badge?: number
   badgeTone?: 'accent' | 'muted'
-}>(), { exact: false, external: false, badge: 0, badgeTone: 'muted' })
+  combo?: string
+}>(), { exact: false, external: false, badge: 0, badgeTone: 'muted', combo: undefined })
 </script>
 
 <template>
-  <UTooltip :text="label" :disabled="!collapsed" :content="{ side: 'right' }">
+  <UTooltip
+    :text="label"
+    :disabled="!collapsed && !combo"
+    :content="{ side: 'right' }"
+    :delay-duration="collapsed ? 0 : 700"
+  >
+    <template v-if="combo" #content>
+      <span class="flex items-center gap-2">{{ label }} <UiComboKeys :combo="combo" size="sm" /></span>
+    </template>
     <a
       v-if="external"
       :href="to"

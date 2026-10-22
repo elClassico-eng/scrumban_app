@@ -1,13 +1,23 @@
+import type { ShortcutId } from '#shared/types/shortcuts'
 import { pageRoutes } from '~/routing'
+import { resolveContextBoard } from '~/utils/control-center-context'
+import { keyOf, SHORTCUT_DEFS } from '~/utils/shortcuts'
 
-export type ShortcutHint = { keys: string[], label: string }
+export type LeaderHint = { leader: string, options: { key: string, label: string }[] }
+
+const LEADER_HINT_MS = 1200
 
 export function useGlobalShortcuts() {
   const router = useRouter()
   const route = useRoute()
   const { current } = useCurrentWorkspace()
   const ccActions = useControlCenterActions()
-  const helpOpen = useState('shortcuts-help-open', () => false)
+  const { combos } = useShortcutPrefs()
+  const help = useHelpPanel()
+  const activeElement = useActiveElement()
+  const { me } = useProfileApi()
+  const { list: boardsList } = useBoardsApi(computed(() => current.value?.id ?? ''))
+  const toast = useToast()
 
   function goTo(path: (ws: string) => string) {
     return () => {
@@ -15,28 +25,62 @@ export function useGlobalShortcuts() {
     }
   }
 
-  const SHORTCUTS: (ShortcutHint & { combo: string, run: () => void })[] = [
-    { combo: 'g-i', keys: ['G', 'I'], label: 'Входящие', run: goTo(pageRoutes.workspaceInbox) },
-    { combo: 'g-m', keys: ['G', 'M'], label: 'Мои задачи', run: goTo(pageRoutes.workspaceMyTasks) },
-    { combo: 'g-o', keys: ['G', 'O'], label: 'Обзор воркспейса', run: goTo(pageRoutes.workspace) },
-    { combo: 'g-b', keys: ['G', 'B'], label: 'Доски', run: goTo(pageRoutes.boards) },
-    {
-      combo: 'c',
-      keys: ['C'],
-      label: 'Новая задача (на странице доски)',
-      run: () => {
-        if (route.params.boardId) ccActions.requestCreateTask()
-      },
+  const handlers: Record<ShortcutId, () => void> = {
+    go_inbox: goTo(pageRoutes.workspaceInbox),
+    go_my_tasks: goTo(pageRoutes.workspaceMyTasks),
+    go_overview: goTo(pageRoutes.workspace),
+    go_boards: goTo(pageRoutes.boards),
+    new_task: () => {
+      if (!current.value) return
+      const boardId = resolveContextBoard({
+        routeBoardId: typeof route.params.boardId === 'string' ? route.params.boardId : null,
+        lastBoardId: me.data.value?.user.controlCenterPrefs.lastBoardId,
+        boards: boardsList.data.value?.boards ?? [],
+      })
+      if (!boardId) {
+        toast.add({ title: 'Сначала создайте доску', icon: 'i-hugeicons-square-kanban' })
+        return
+      }
+      const boardPath = pageRoutes.board(current.value.id, boardId)
+      if (route.path === boardPath) ccActions.requestCreateTask()
+      else router.push({ path: boardPath, query: { create: '1' } })
     },
-    { combo: '?', keys: ['?'], label: 'Эта подсказка', run: () => { helpOpen.value = !helpOpen.value } },
-  ]
+  }
 
-  defineShortcuts(Object.fromEntries(SHORTCUTS.map(s => [s.combo, s.run])))
+  defineShortcuts(
+    computed(() => Object.fromEntries((Object.keys(handlers) as ShortcutId[]).map(id => [combos.value[id], handlers[id]]))),
+    { layoutIndependent: true, chainDelay: LEADER_HINT_MS },
+  )
 
-  const hints: ShortcutHint[] = [
-    { keys: ['⌘', 'K'], label: 'Поиск и команды' },
-    ...SHORTCUTS.map(({ keys, label }) => ({ keys, label })),
-  ]
+  const hint = ref<LeaderHint | null>(null)
+  let hintTimer: ReturnType<typeof setTimeout> | undefined
 
-  return { helpOpen, hints }
+  function typing(): boolean {
+    const el = activeElement.value
+    return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+  }
+
+  useEventListener('keydown', (e: KeyboardEvent) => {
+    if (typing() || e.metaKey || e.ctrlKey || e.altKey) return
+    if (e.key === '?') {
+      if (help.open.value) help.open.value = false
+      else help.show('page')
+      return
+    }
+    if (hint.value) {
+      hint.value = null
+      return
+    }
+    const key = keyOf(e.code)
+    if (!key) return
+    const options = (Object.keys(combos.value) as ShortcutId[])
+      .filter(id => combos.value[id].startsWith(`${key}-`))
+      .map(id => ({ key: combos.value[id].split('-')[1]!.toUpperCase(), label: SHORTCUT_DEFS[id].label }))
+    if (!options.length) return
+    hint.value = { leader: key.toUpperCase(), options }
+    clearTimeout(hintTimer)
+    hintTimer = setTimeout(() => { hint.value = null }, LEADER_HINT_MS)
+  })
+
+  return { hint }
 }
