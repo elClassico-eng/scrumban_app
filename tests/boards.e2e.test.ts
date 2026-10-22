@@ -432,3 +432,42 @@ describe('DELETE /api/workspaces/:id/boards/:boardId', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe('board archive', () => {
+  async function setup() {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const res = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, {
+      method: 'POST',
+      body: { name: 'Old', slug: 'old' },
+    })
+    return { owner, wsId, boardId: res.body.board.id }
+  }
+
+  async function names(actor: UserCtx, wsId: string, query = '') {
+    const res = await fetchWithJar<{ boards: { name: string }[] }>(actor.jar, `/api/workspaces/${wsId}/boards${query}`)
+    return res.body.boards.map(b => b.name)
+  }
+
+  it('archived boards leave the list, show up under archived=true and come back on restore', async () => {
+    const { owner, wsId, boardId } = await setup()
+    const url = `/api/workspaces/${wsId}/boards/${boardId}`
+    const archived = await fetchWithJar<{ board: { archivedAt: string | null } }>(owner.jar, url, { method: 'PATCH', body: { archived: true } })
+    expect(archived.status).toBe(200)
+    expect(archived.body.board.archivedAt).not.toBeNull()
+    expect(await names(owner, wsId)).not.toContain('Old')
+    expect(await names(owner, wsId, '?archived=true')).toEqual(['Old'])
+
+    await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { archived: false } })
+    expect(await names(owner, wsId)).toContain('Old')
+    expect(await names(owner, wsId, '?archived=true')).toEqual([])
+  })
+
+  it('a member cannot archive a board', async () => {
+    const { owner, wsId, boardId } = await setup()
+    const member = await registerUser('member@example.com')
+    await addMember(owner, wsId, member.email, 'member')
+    const res = await fetchWithJar(member.jar, `/api/workspaces/${wsId}/boards/${boardId}`, { method: 'PATCH', body: { archived: true } })
+    expect(res.status).toBe(403)
+  })
+})

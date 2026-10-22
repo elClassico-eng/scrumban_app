@@ -8,7 +8,7 @@
 //   update    → admin+
 //   delete    → owner (destructive: cascades to columns + tasks + events)
 //   replenishment / SLE recompute → scrum_master+ (flow discipline, primary persona)
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { boardColorForIndex } from '#shared/constants/board-colors'
 import {
   boardColumns,
@@ -39,9 +39,12 @@ const DEFAULT_COLUMNS = [
 export async function listBoards(
   workspaceId: string,
   actorRole: WorkspaceMemberRole,
+  opts: { archived?: boolean } = {},
 ): Promise<Board[]> {
   requireMinRole(actorRole, 'viewer')
-  return withTenant(workspaceId, async (tx) => tx.select().from(boards))
+  return withTenant(workspaceId, async (tx) =>
+    tx.select().from(boards).where(opts.archived ? isNotNull(boards.archivedAt) : isNull(boards.archivedAt)),
+  )
 }
 
 export async function getBoard(input: {
@@ -117,6 +120,7 @@ export async function updateBoard(input: {
     sleProbability?: string
     replenishmentPeriodDays?: number
     columnTint?: boolean
+    archived?: boolean
   }
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
@@ -131,6 +135,7 @@ export async function updateBoard(input: {
     sleProbability?: string
     replenishmentPeriodDays?: number
     columnTint?: boolean
+    archivedAt?: Date | null
     updatedAt: Date
   } = { updatedAt: new Date() }
   if (input.patch.name !== undefined) set.name = input.patch.name
@@ -139,6 +144,7 @@ export async function updateBoard(input: {
   if ('sleDays' in input.patch) set.sleDays = input.patch.sleDays ?? null
   if (input.patch.sleProbability !== undefined) set.sleProbability = input.patch.sleProbability
   if (input.patch.columnTint !== undefined) set.columnTint = input.patch.columnTint
+  if (input.patch.archived !== undefined) set.archivedAt = input.patch.archived ? new Date() : null
   if (input.patch.replenishmentPeriodDays !== undefined) {
     set.replenishmentPeriodDays = input.patch.replenishmentPeriodDays
   }

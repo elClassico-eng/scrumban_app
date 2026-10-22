@@ -351,6 +351,13 @@
       "when": 1792710790095,
       "tag": "0049_shortcut_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1792712334289,
+      "tag": "0050_board_archive",
+      "breakpoints": true
     }
   ]
 }

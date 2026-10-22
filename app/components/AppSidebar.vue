@@ -218,5 +218,6 @@ const customizeOpen = ref(false)
       <BoardCreateModal v-model:open="createBoardOpen" :workspace-id="current.id" />
       <WorkspaceInviteModal v-model:open="inviteOpen" :workspace-id="current.id" :workspace-name="current.name" />
     </template>
+    <BoardDeleteModal v-if="current" :workspace-id="current.id" />
   </aside>
 </template>

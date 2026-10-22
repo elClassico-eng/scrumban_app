@@ -18,3 +18,15 @@ export const BOARD_COLOR_RE = /^#[0-9a-fA-F]{6}$/
 export function boardColorForIndex(index: number): string {
   return BOARD_COLORS[index % BOARD_COLORS.length] ?? DEFAULT_BOARD_COLOR
 }
+export const BOARD_COLOR_LABELS: Record<(typeof BOARD_COLORS)[number], string> = {
+  '#e85002': 'Оранжевый',
+  '#f59e0b': 'Янтарный',
+  '#eab308': 'Жёлтый',
+  '#22c55e': 'Зелёный',
+  '#14b8a6': 'Бирюзовый',
+  '#3b82f6': 'Синий',
+  '#6366f1': 'Индиго',
+  '#a855f7': 'Фиолетовый',
+  '#ec4899': 'Розовый',
+  '#64748b': 'Серый',
+}

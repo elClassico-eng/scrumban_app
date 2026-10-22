@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
 import type { Board } from '#shared/types/board'
 
 const props = defineProps<{ workspaceId: string, board: Board }>()
@@ -9,10 +10,11 @@ const schema = z.object({
   name: z.string().trim().min(1, 'Введи название').max(255),
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
+  color: z.string().regex(BOARD_COLOR_RE),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: props.board.name, slug: props.board.slug })
+const state = reactive<State>({ name: props.board.name, slug: props.board.slug, color: props.board.color })
 
 const slugTouched = ref(false)
 watch(() => state.name, (name) => {
@@ -29,13 +31,14 @@ const errorMessage = computed(() =>
 function syncFromBoard() {
   state.name = props.board.name
   state.slug = props.board.slug
+  state.color = props.board.color
   slugTouched.value = false
   update.reset()
 }
 
 async function onSubmit() {
   try {
-    await update.mutateAsync({ boardId: props.board.id, name: state.name.trim(), slug: state.slug })
+    await update.mutateAsync({ boardId: props.board.id, name: state.name.trim(), slug: state.slug, color: state.color })
     open.value = false
   }
   catch {
@@ -66,6 +69,9 @@ watch(open, (v) => {
             class="w-full"
             @update:model-value="slugTouched = true"
           />
+        </UFormField>
+        <UFormField label="Цвет" name="color">
+          <BoardColorPicker v-model="state.color" class="pt-1" />
         </UFormField>
         <UAlert
           v-if="errorMessage"

@@ -233,7 +233,9 @@ export async function runAll(): Promise<{ opened: number; resolved: number }> {
   let opened = 0
   let resolved = 0
   for (const ws of wsList) {
-    const boardIds = await withTenant(ws.id, (tx) => tx.select({ id: boards.id }).from(boards))
+    const boardIds = await withTenant(ws.id, (tx) =>
+      tx.select({ id: boards.id }).from(boards).where(isNull(boards.archivedAt)),
+    )
     for (const b of boardIds) {
       try {
         const r = await runBoard(ws.id, b.id)

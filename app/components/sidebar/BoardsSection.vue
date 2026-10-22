@@ -55,6 +55,8 @@ function onEnd() {
       class="flex flex-col gap-0.5"
       ghost-class="opacity-40"
       animation="150"
+      filter="input"
+      :prevent-on-filter="false"
       :disabled="collapsed"
       @end="onEnd"
     >

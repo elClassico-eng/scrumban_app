@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { pageRoutes } from '~/routing'
-import type { Board } from '#shared/types/board'
+import { useQuery } from '@tanstack/vue-query'
+import { apiRoutes, pageRoutes } from '~/routing'
+import type { Board, BoardsListResponse } from '#shared/types/board'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -9,7 +10,7 @@ const workspaceStore = useWorkspaceStore()
 workspaceStore.setCurrent(wsId.value)
 
 const { list: workspacesList } = useWorkspacesApi()
-const { list: boardsList, remove: removeBoard } = useBoardsApi(wsId)
+const { list: boardsList } = useBoardsApi(wsId)
 
 const workspace = computed(() =>
   workspacesList.data.value?.workspaces.find(w => w.id === wsId.value),
@@ -25,7 +26,16 @@ useHead({
 })
 
 const createOpen = ref(false)
-const confirm = useConfirm()
+const canDelete = computed(() => hasRole(workspace.value?.role, 'owner'))
+const actions = useBoardActions(wsId)
+
+const archivedList = useQuery({
+  queryKey: computed(() => ['boards', wsId.value, 'archived']),
+  queryFn: () => $fetch<BoardsListResponse>(apiRoutes.boards(wsId.value), { query: { archived: 'true' } }),
+  enabled: canManage,
+})
+const archived = computed(() => archivedList.data.value?.boards ?? [])
+const archiveOpen = ref(false)
 
 const editTarget = ref<Board | null>(null)
 const editOpen = computed({
@@ -35,29 +45,17 @@ const editOpen = computed({
 
 function menuItems(board: Board) {
   return [
-    {
-      label: 'Изменить',
-      icon: 'i-hugeicons-pencil',
-      onSelect: () => { editTarget.value = board },
-    },
-    {
-      label: 'Удалить',
-      icon: 'i-hugeicons-delete-02',
-      color: 'error' as const,
-      onSelect: () => onRemove(board),
-    },
+    [
+      { label: 'Изменить', icon: 'i-hugeicons-pencil', onSelect: () => { editTarget.value = board } },
+      { label: 'Скопировать ссылку', icon: 'i-hugeicons-link-01', onSelect: () => actions.copyLink(board) },
+    ],
+    [
+      { label: 'В архив', icon: 'i-hugeicons-archive', onSelect: () => actions.archive(board) },
+      ...(canDelete.value
+        ? [{ label: 'Удалить навсегда', icon: 'i-hugeicons-delete-02', color: 'error' as const, onSelect: () => actions.askDelete(board) }]
+        : []),
+    ],
   ]
-}
-
-async function onRemove(board: Board) {
-  const ok = await confirm({
-    title: `Удалить доску «${board.name}»?`,
-    description: 'Все её колонки и задачи будут потеряны. Действие необратимо.',
-    confirmLabel: 'Удалить',
-    confirmColor: 'error',
-  })
-  if (!ok) return
-  removeBoard.mutate(board.id)
 }
 </script>
 
@@ -108,8 +106,12 @@ async function onRemove(board: Board) {
       >
         <div class="space-y-2">
           <div class="flex items-start justify-between gap-2">
-            <h2 class="text-lg font-semibold tracking-tight truncate text-default">
-              {{ board.name }}
+            <h2 class="flex min-w-0 items-center gap-2.5 text-lg font-semibold tracking-tight text-default">
+              <span
+                class="grid size-6 shrink-0 place-items-center rounded-md text-xs font-bold text-white"
+                :style="{ background: board.color }"
+              >{{ board.name.trim().charAt(0).toUpperCase() }}</span>
+              <span class="truncate">{{ board.name }}</span>
             </h2>
             <div v-if="canManage" class="shrink-0" @click.prevent.stop>
               <UDropdownMenu :items="menuItems(board)" :ui="{ content: 'w-48' }">
@@ -132,6 +134,46 @@ async function onRemove(board: Board) {
         </div>
       </NuxtLink>
     </div>
+
+    <section v-if="canManage && archived.length" class="pt-2">
+      <button
+        type="button"
+        class="flex cursor-pointer items-center gap-2 text-sm font-semibold text-muted transition-colors hover:text-default"
+        :aria-expanded="archiveOpen"
+        @click="archiveOpen = !archiveOpen"
+      >
+        <UIcon name="i-hugeicons-archive" class="size-4" />
+        Архив
+        <span class="font-normal text-dimmed">{{ archived.length }}</span>
+        <UIcon name="i-hugeicons-arrow-down-01" :class="['size-4 transition-transform', archiveOpen ? 'rotate-180' : '']" />
+      </button>
+      <ul v-if="archiveOpen" class="surface mt-3 divide-y divide-default overflow-hidden rounded-2xl">
+        <li v-for="board in archived" :key="board.id" class="flex items-center gap-3 px-4 py-3">
+          <span
+            class="grid size-6 shrink-0 place-items-center rounded-md text-xs font-bold text-white opacity-60"
+            :style="{ background: board.color }"
+          >{{ board.name.trim().charAt(0).toUpperCase() }}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-medium text-default">{{ board.name }}</span>
+            <span v-if="board.archivedAt" class="block text-xs text-dimmed">
+              в архиве с {{ new Date(board.archivedAt).toLocaleDateString('ru', { day: 'numeric', month: 'long' }) }}
+            </span>
+          </span>
+          <UButton size="xs" color="neutral" variant="outline" icon="i-hugeicons-undo-02" @click="actions.restore(board)">
+            Восстановить
+          </UButton>
+          <UButton
+            v-if="canDelete"
+            size="xs"
+            color="error"
+            variant="ghost"
+            icon="i-hugeicons-delete-02"
+            aria-label="Удалить навсегда"
+            @click="actions.askDelete(board)"
+          />
+        </li>
+      </ul>
+    </section>
 
     <BoardCreateModal v-if="canCreate" v-model:open="createOpen" :workspace-id="wsId" />
 

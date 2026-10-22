@@ -1,4 +1,4 @@
-// PATCH /api/workspaces/:id/boards/:boardId — rename / change slug (admin+).
+// PATCH /api/workspaces/:id/boards/:boardId — rename, recolor, settings, archive (admin+).
 import { z } from 'zod'
 import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
 import { updateBoard } from '../../../../services/boards.service'
@@ -18,6 +18,7 @@ const BodySchema = z
     sleProbability: z.number().min(0.5).max(0.99).optional(),
     replenishmentPeriodDays: z.number().int().positive().max(60).optional(),
     columnTint: z.boolean().optional(),
+    archived: z.boolean().optional(),
   })
   .refine(
     (d) =>
@@ -27,7 +28,8 @@ const BodySchema = z
       d.sleDays !== undefined ||
       d.sleProbability !== undefined ||
       d.replenishmentPeriodDays !== undefined ||
-      d.columnTint !== undefined,
+      d.columnTint !== undefined ||
+      d.archived !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -52,6 +54,7 @@ export default defineEventHandler(async (event) => {
           : {}),
         replenishmentPeriodDays: body.replenishmentPeriodDays,
         columnTint: body.columnTint,
+        archived: body.archived,
       },
       actorRole: workspace.role,
     })

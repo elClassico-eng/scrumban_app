@@ -9,6 +9,7 @@ export interface Board {
   lastReplenishmentAt: string | null
   replenishmentPeriodDays: number
   columnTint: boolean
+  archivedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -36,6 +37,7 @@ export interface UpdateBoardInput {
   sleProbability?: number
   replenishmentPeriodDays?: number
   columnTint?: boolean
+  archived?: boolean
 }
 
 export interface SleRecomputeResponse {

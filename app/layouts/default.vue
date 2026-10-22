@@ -4,7 +4,7 @@ const { hint } = useGlobalShortcuts()
 </script>
 
 <template>
-  <div class="relative h-dvh flex overflow-hidden app-canvas">
+  <div class="relative h-dvh flex overflow-clip app-canvas">
     <div class="pointer-events-none absolute -top-40 -right-24 size-[40rem] rounded-full dark:bg-accent-500/15 blur-[130px]" />
     <AppSidebar />
     <div class="flex-1 flex flex-col min-w-0 lg:p-3">
