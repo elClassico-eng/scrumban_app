@@ -13,7 +13,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{ open: [] }>()
 
-const letter = computed(() => props.board?.name.trim().charAt(0).toUpperCase() ?? '·')
 const due = computed(() => (props.task.closedAt ? null : dueInfo(props.task.dueDate)))
 
 const dueText = computed(() => {
@@ -46,11 +45,7 @@ const closedText = computed(() => props.task.closedAt
     @keydown.enter="emit('open')"
   >
     <div class="flex min-w-0 items-center gap-2.5">
-      <span
-        class="grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-bold text-white"
-        :style="{ background: board?.color ?? '#94a3b8' }"
-        :title="board?.name"
-      >{{ letter }}</span>
+      <BoardAvatar :board="board" />
       <span :class="['truncate text-sm', task.closedAt ? 'text-muted line-through' : 'font-medium text-highlighted']">{{ task.title }}</span>
     </div>
 

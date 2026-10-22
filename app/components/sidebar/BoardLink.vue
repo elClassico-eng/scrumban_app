@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { Motion } from 'motion-v'
-import { BOARD_COLOR_LABELS, BOARD_COLORS } from '#shared/constants/board-colors'
 import type { Board } from '#shared/types/board'
 import { pageRoutes } from '~/routing'
 import { SIDEBAR_SPRING } from '~/utils/sidebar-items'
@@ -21,8 +20,6 @@ const actions = useBoardActions(() => props.workspaceId)
 const canManage = computed(() => hasRole(current.value?.role, 'admin'))
 const canDelete = computed(() => hasRole(current.value?.role, 'owner'))
 
-const letter = computed(() => props.board.name.trim().charAt(0).toUpperCase() || '·')
-
 const menuOpen = ref(false)
 const editing = ref(false)
 const draft = ref('')
@@ -41,25 +38,12 @@ function commitRename() {
   actions.rename(props.board, draft.value)
 }
 
-function swatchOf(item: unknown): string | undefined {
-  return (item as { swatch?: string }).swatch
-}
-
 const items = computed<DropdownMenuItem[][]>(() => {
   const b = props.board
   const edit: DropdownMenuItem[] = canManage.value
     ? [
         { label: 'Переименовать', icon: 'i-hugeicons-pencil-edit-02', onSelect: startRename },
-        {
-          label: 'Цвет',
-          icon: 'i-hugeicons-paint-board',
-          children: BOARD_COLORS.map(c => ({
-            label: BOARD_COLOR_LABELS[c],
-            slot: 'swatch' as const,
-            swatch: c,
-            onSelect: () => actions.recolor(b, c),
-          })),
-        },
+        { label: 'Изменить…', icon: 'i-hugeicons-paint-board', onSelect: () => actions.askEdit(b) },
       ]
     : []
   const everyone: DropdownMenuItem[] = [
@@ -79,10 +63,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
     v-if="editing && !collapsed"
     class="flex items-center gap-3 rounded-xl bg-elevated py-1 pl-3 pr-1.5"
   >
-    <span
-      class="grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-bold text-white"
-      :style="{ background: board.color }"
-    >{{ letter }}</span>
+    <BoardAvatar :board="board" />
     <UInput
       ref="input"
       v-model="draft"
@@ -110,10 +91,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
         class="absolute inset-0 rounded-xl bg-accented"
         :transition="SIDEBAR_SPRING"
       />
-      <span
-        class="relative grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-bold text-white"
-        :style="{ background: board.color }"
-      >{{ letter }}</span>
+      <BoardAvatar :board="board" class="relative" />
       <template v-if="!collapsed">
         <span class="relative min-w-0 flex-1 truncate" @dblclick.prevent="startRename">{{ board.name }}</span>
         <span class="relative flex items-center" @click.prevent.stop>
@@ -128,12 +106,6 @@ const items = computed<DropdownMenuItem[][]>(() => {
             >
               <UIcon name="i-hugeicons-more-horizontal" class="size-3.5" />
             </button>
-            <template #swatch-leading="{ item }">
-              <span class="size-4 shrink-0 rounded-full" :style="{ background: swatchOf(item) }" />
-            </template>
-            <template #swatch-trailing="{ item }">
-              <UIcon v-if="swatchOf(item) === board.color" name="i-hugeicons-check" class="size-4 text-accent-600 dark:text-accent-400" />
-            </template>
           </UDropdownMenu>
           <button
             type="button"

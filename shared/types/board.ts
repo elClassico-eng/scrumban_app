@@ -4,6 +4,7 @@ export interface Board {
   name: string
   slug: string
   color: string
+  icon: string | null
   sleDays: number | null
   sleProbability: string 
   lastReplenishmentAt: string | null
@@ -26,6 +27,7 @@ export interface CreateBoardInput {
   name: string
   slug: string
   color?: string
+  icon?: string | null
   seedDefaults?: boolean
 }
 
@@ -33,6 +35,7 @@ export interface UpdateBoardInput {
   name?: string
   slug?: string
   color?: string
+  icon?: string | null
   sleDays?: number | null
   sleProbability?: number
   replenishmentPeriodDays?: number

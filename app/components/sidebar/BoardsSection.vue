@@ -10,6 +10,7 @@ const props = defineProps<{
   favorites: Set<string>
   collapsed: boolean
   canCreate: boolean
+  archivedCount: number
 }>()
 const emit = defineEmits<{
   reorder: [ids: string[]]
@@ -73,5 +74,14 @@ function onEnd() {
         </div>
       </template>
     </draggable>
+    <NuxtLink
+      v-if="archivedCount && !collapsed"
+      :to="{ path: pageRoutes.boards(workspaceId), query: { archive: '1' } }"
+      class="mt-0.5 flex items-center gap-3 rounded-xl py-1.5 pl-3 pr-2.5 text-xs text-dimmed transition-colors hover:bg-elevated hover:text-default"
+    >
+      <UIcon name="i-hugeicons-archive" class="size-5 shrink-0 p-0.5" />
+      <span class="flex-1">Архив</span>
+      <span class="tabular-nums">{{ archivedCount }}</span>
+    </NuxtLink>
   </div>
 </template>

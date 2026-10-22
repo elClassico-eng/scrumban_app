@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { useQuery } from '@tanstack/vue-query'
-import { apiRoutes, pageRoutes } from '~/routing'
-import type { Board, BoardsListResponse } from '#shared/types/board'
+import { pageRoutes } from '~/routing'
+import type { Board } from '#shared/types/board'
 
 const route = useRoute()
 const wsId = computed(() => route.params.id as string)
@@ -21,7 +20,7 @@ const canManage = canCreate
 
 useHead({
   title: () => workspace.value
-    ? `${workspace.value.name} — Доски`
+    ? `${workspace.value.name} – Доски`
     : 'Доски – Такт',
 })
 
@@ -29,24 +28,15 @@ const createOpen = ref(false)
 const canDelete = computed(() => hasRole(workspace.value?.role, 'owner'))
 const actions = useBoardActions(wsId)
 
-const archivedList = useQuery({
-  queryKey: computed(() => ['boards', wsId.value, 'archived']),
-  queryFn: () => $fetch<BoardsListResponse>(apiRoutes.boards(wsId.value), { query: { archived: 'true' } }),
-  enabled: canManage,
-})
+const archivedList = useArchivedBoards(wsId, canManage)
 const archived = computed(() => archivedList.data.value?.boards ?? [])
-const archiveOpen = ref(false)
-
-const editTarget = ref<Board | null>(null)
-const editOpen = computed({
-  get: () => editTarget.value !== null,
-  set: (v) => { if (!v) editTarget.value = null },
-})
+const archiveOpen = ref(route.query.archive === '1')
+watch(() => route.query.archive, (v) => { if (v === '1') archiveOpen.value = true })
 
 function menuItems(board: Board) {
   return [
     [
-      { label: 'Изменить', icon: 'i-hugeicons-pencil', onSelect: () => { editTarget.value = board } },
+      { label: 'Изменить', icon: 'i-hugeicons-pencil', onSelect: () => actions.askEdit(board) },
       { label: 'Скопировать ссылку', icon: 'i-hugeicons-link-01', onSelect: () => actions.copyLink(board) },
     ],
     [
@@ -107,10 +97,7 @@ function menuItems(board: Board) {
         <div class="space-y-2">
           <div class="flex items-start justify-between gap-2">
             <h2 class="flex min-w-0 items-center gap-2.5 text-lg font-semibold tracking-tight text-default">
-              <span
-                class="grid size-6 shrink-0 place-items-center rounded-md text-xs font-bold text-white"
-                :style="{ background: board.color }"
-              >{{ board.name.trim().charAt(0).toUpperCase() }}</span>
+              <BoardAvatar :board="board" size="sm" />
               <span class="truncate">{{ board.name }}</span>
             </h2>
             <div v-if="canManage" class="shrink-0" @click.prevent.stop>
@@ -135,7 +122,7 @@ function menuItems(board: Board) {
       </NuxtLink>
     </div>
 
-    <section v-if="canManage && archived.length" class="pt-2">
+    <section v-if="canManage && archived.length" id="archive" class="pt-2">
       <button
         type="button"
         class="flex cursor-pointer items-center gap-2 text-sm font-semibold text-muted transition-colors hover:text-default"
@@ -149,10 +136,7 @@ function menuItems(board: Board) {
       </button>
       <ul v-if="archiveOpen" class="surface mt-3 divide-y divide-default overflow-hidden rounded-2xl">
         <li v-for="board in archived" :key="board.id" class="flex items-center gap-3 px-4 py-3">
-          <span
-            class="grid size-6 shrink-0 place-items-center rounded-md text-xs font-bold text-white opacity-60"
-            :style="{ background: board.color }"
-          >{{ board.name.trim().charAt(0).toUpperCase() }}</span>
+          <BoardAvatar :board="board" size="sm" class="opacity-60" />
           <span class="min-w-0 flex-1">
             <span class="block truncate text-sm font-medium text-default">{{ board.name }}</span>
             <span v-if="board.archivedAt" class="block text-xs text-dimmed">
@@ -177,11 +161,5 @@ function menuItems(board: Board) {
 
     <BoardCreateModal v-if="canCreate" v-model:open="createOpen" :workspace-id="wsId" />
 
-    <BoardEditModal
-      v-if="editTarget"
-      v-model:open="editOpen"
-      :workspace-id="wsId"
-      :board="editTarget"
-    />
   </div>
 </template>

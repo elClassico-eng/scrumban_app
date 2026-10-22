@@ -10,11 +10,12 @@ const schema = z.object({
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
   color: z.string().regex(BOARD_COLOR_RE),
+  icon: z.string().nullable(),
   seedDefaults: z.boolean(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: '', slug: '', color: DEFAULT_BOARD_COLOR, seedDefaults: true })
+const state = reactive<State>({ name: '', slug: '', color: DEFAULT_BOARD_COLOR, icon: null, seedDefaults: true })
 
 const slugTouched = ref(false)
 watch(() => state.name, (name) => {
@@ -32,6 +33,7 @@ function resetForm() {
   state.name = ''
   state.slug = ''
   state.color = DEFAULT_BOARD_COLOR
+  state.icon = null
   state.seedDefaults = true
   slugTouched.value = false
   create.reset()
@@ -72,8 +74,8 @@ watch(open, (v) => {
             @update:model-value="slugTouched = true"
           />
         </UFormField>
-        <UFormField label="Цвет" name="color">
-          <BoardColorPicker v-model="state.color" class="pt-1" />
+        <UFormField label="Аватарка и цвет" name="color">
+          <BoardAppearancePicker v-model:color="state.color" v-model:icon="state.icon" :name="state.name" class="pt-1" />
         </UFormField>
         <UFormField name="seedDefaults">
           <UCheckbox

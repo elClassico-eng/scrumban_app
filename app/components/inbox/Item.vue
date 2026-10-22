@@ -51,7 +51,6 @@ const snoozeItems = computed<DropdownMenuItem[][]>(() => [[
 ]])
 
 const snoozeOpen = ref(false)
-const letter = computed(() => props.board?.name.trim().charAt(0).toUpperCase() ?? '·')
 const snoozeLabel = computed(() => props.snoozedUntil
   ? new Date(props.snoozedUntil).toLocaleString('ru', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   : '')
@@ -66,11 +65,7 @@ const snoozeLabel = computed(() => props.snoozedUntil
     @keydown.enter="emit('open')"
   >
     <div class="flex min-w-0 items-center gap-2.5">
-      <span
-        class="grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-bold text-white"
-        :style="{ background: board?.color ?? '#94a3b8' }"
-        :title="board?.name"
-      >{{ letter }}</span>
+      <BoardAvatar :board="board" />
       <span :class="['truncate text-sm', unread ? 'font-semibold text-highlighted' : 'text-default']">{{ subject }}</span>
     </div>
 

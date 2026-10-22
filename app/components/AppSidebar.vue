@@ -32,6 +32,8 @@ const { hasUnread: hasChangelogUnread } = useChangelog()
 const { list: boardsList } = useBoardsApi(computed(() => current.value?.id ?? ''))
 const activeBoardId = computed(() => (route.params.boardId as string) || null)
 const canManage = computed(() => hasRole(current.value?.role, 'admin'))
+const archivedBoards = useArchivedBoards(computed(() => current.value?.id ?? ''), canManage)
+const archivedCount = computed(() => archivedBoards.data.value?.boards.length ?? 0)
 
 const { isVisible, favorites, toggleFavorite, sortBoards, setBoardOrder } = useSidebarPrefs()
 const { combos } = useShortcutPrefs()
@@ -157,6 +159,7 @@ const customizeOpen = ref(false)
           :favorites="favorites"
           :collapsed="collapsed"
           :can-create="canManage"
+          :archived-count="archivedCount"
           @reorder="setBoardOrder"
           @toggle-favorite="toggleFavorite"
           @create="createBoardOpen = true"
@@ -218,6 +221,9 @@ const customizeOpen = ref(false)
       <BoardCreateModal v-model:open="createBoardOpen" :workspace-id="current.id" />
       <WorkspaceInviteModal v-model:open="inviteOpen" :workspace-id="current.id" :workspace-name="current.name" />
     </template>
-    <BoardDeleteModal v-if="current" :workspace-id="current.id" />
+    <template v-if="current">
+      <BoardEditModal :workspace-id="current.id" />
+      <BoardDeleteModal :workspace-id="current.id" />
+    </template>
   </aside>
 </template>

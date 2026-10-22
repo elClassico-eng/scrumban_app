@@ -9,6 +9,7 @@ export function useBoardActions(workspaceId: MaybeRefOrGetter<string>) {
   const router = useRouter()
   const toast = useToast()
   const deleteTarget = useState<Board | null>('board-delete-target', () => null)
+  const editTarget = useState<Board | null>('board-edit-target', () => null)
 
   function fail(err: unknown, fallback: string) {
     toast.add({ title: getErrorMessage(err, fallback), color: 'error', icon: 'i-hugeicons-alert-circle' })
@@ -24,36 +25,46 @@ export function useBoardActions(workspaceId: MaybeRefOrGetter<string>) {
     update.mutate({ boardId: board.id, name: next }, { onError: err => fail(err, 'Не удалось переименовать доску') })
   }
 
-  function recolor(board: Board, color: string) {
-    if (color === board.color) return
-    update.mutate({ boardId: board.id, color }, { onError: err => fail(err, 'Не удалось сменить цвет') })
-  }
-
   async function copyLink(board: Board) {
     await navigator.clipboard.writeText(`${location.origin}${pageRoutes.board(wsId.value, board.id)}`)
     toast.add({ title: 'Ссылка на доску скопирована', icon: 'i-hugeicons-link-01' })
   }
 
-  function restore(board: Board) {
-    update.mutate({ boardId: board.id, archived: false }, {
-      onSuccess: () => toast.add({ title: `Доска «${board.name}» восстановлена`, icon: 'i-hugeicons-undo-02' }),
-      onError: err => fail(err, 'Не удалось восстановить доску'),
+  async function restore(board: Board) {
+    try {
+      await update.mutateAsync({ boardId: board.id, archived: false })
+      toast.add({ title: `Доска «${board.name}» восстановлена`, icon: 'i-hugeicons-undo-02' })
+    }
+    catch (err) {
+      fail(err, 'Не удалось восстановить доску')
+    }
+  }
+
+  async function archive(board: Board) {
+    try {
+      await update.mutateAsync({ boardId: board.id, archived: true })
+    }
+    catch (err) {
+      fail(err, 'Не удалось убрать доску в архив')
+      return
+    }
+    leaveIfOpen(board)
+    toast.add({
+      title: `Доска «${board.name}» в архиве`,
+      icon: 'i-hugeicons-archive',
+      actions: [
+        { label: 'Вернуть', color: 'neutral', variant: 'outline', onClick: () => { restore(board) } },
+        { label: 'Открыть архив', color: 'neutral', variant: 'ghost', onClick: () => { router.push(archiveRoute()) } },
+      ],
     })
   }
 
-  function archive(board: Board) {
-    update.mutate({ boardId: board.id, archived: true }, {
-      onSuccess: () => {
-        leaveIfOpen(board)
-        toast.add({
-          title: `Доска «${board.name}» в архиве`,
-          description: 'Её можно вернуть со страницы «Доски».',
-          icon: 'i-hugeicons-archive',
-          actions: [{ label: 'Вернуть', color: 'neutral', variant: 'outline', onClick: () => restore(board) }],
-        })
-      },
-      onError: err => fail(err, 'Не удалось убрать доску в архив'),
-    })
+  function archiveRoute() {
+    return { path: pageRoutes.boards(wsId.value), query: { archive: '1' } }
+  }
+
+  function askEdit(board: Board) {
+    editTarget.value = board
   }
 
   function askDelete(board: Board) {
@@ -74,5 +85,5 @@ export function useBoardActions(workspaceId: MaybeRefOrGetter<string>) {
     }
   }
 
-  return { rename, recolor, copyLink, archive, restore, askDelete, confirmDelete, deleteTarget, deleting: remove.isPending }
+  return { rename, copyLink, archive, restore, archiveRoute, askEdit, editTarget, askDelete, confirmDelete, deleteTarget, deleting: remove.isPending }
 }

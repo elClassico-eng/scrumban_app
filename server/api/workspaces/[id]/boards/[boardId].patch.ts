@@ -1,6 +1,7 @@
 // PATCH /api/workspaces/:id/boards/:boardId — rename, recolor, settings, archive (admin+).
 import { z } from 'zod'
 import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
+import { BOARD_ICONS } from '#shared/constants/board-icons'
 import { updateBoard } from '../../../../services/boards.service'
 import { getWorkspaceForUserOrThrow } from '../../../../services/workspaces.service'
 import { requireAuth } from '../../../../utils/auth'
@@ -18,6 +19,7 @@ const BodySchema = z
     sleProbability: z.number().min(0.5).max(0.99).optional(),
     replenishmentPeriodDays: z.number().int().positive().max(60).optional(),
     columnTint: z.boolean().optional(),
+    icon: z.enum(BOARD_ICONS).nullable().optional(),
     archived: z.boolean().optional(),
   })
   .refine(
@@ -29,7 +31,8 @@ const BodySchema = z
       d.sleProbability !== undefined ||
       d.replenishmentPeriodDays !== undefined ||
       d.columnTint !== undefined ||
-      d.archived !== undefined,
+      d.archived !== undefined ||
+      d.icon !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -47,6 +50,7 @@ export default defineEventHandler(async (event) => {
         name: body.name,
         slug: body.slug,
         ...(body.color !== undefined ? { color: body.color } : {}),
+        ...(body.icon !== undefined ? { icon: body.icon } : {}),
         ...('sleDays' in body ? { sleDays: body.sleDays } : {}),
         // numeric(3,2) is text in postgres-js; coerce.
         ...(body.sleProbability !== undefined

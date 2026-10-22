@@ -1,54 +1,49 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
-import type { Board } from '#shared/types/board'
 
-const props = defineProps<{ workspaceId: string, board: Board }>()
-const open = defineModel<boolean>('open', { default: false })
+const props = defineProps<{ workspaceId: string }>()
+
+const { editTarget } = useBoardActions(() => props.workspaceId)
+const open = computed({
+  get: () => editTarget.value !== null,
+  set: (v) => { if (!v) editTarget.value = null },
+})
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Введи название').max(255),
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
   color: z.string().regex(BOARD_COLOR_RE),
+  icon: z.string().nullable(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: props.board.name, slug: props.board.slug, color: props.board.color })
+const state = reactive<State>({ name: '', slug: '', color: '', icon: null })
 
-const slugTouched = ref(false)
-watch(() => state.name, (name) => {
-  if (!slugTouched.value) state.slug = slugify(name)
-})
-
-const wsId = computed(() => props.workspaceId)
-const { update } = useBoardsApi(wsId)
+const { update } = useBoardsApi(computed(() => props.workspaceId))
 
 const errorMessage = computed(() =>
   update.isError.value ? getErrorMessage(update.error.value, 'Не удалось сохранить') : null,
 )
 
-function syncFromBoard() {
-  state.name = props.board.name
-  state.slug = props.board.slug
-  state.color = props.board.color
-  slugTouched.value = false
+watch(editTarget, (board) => {
+  if (!board) return
+  Object.assign(state, { name: board.name, slug: board.slug, color: board.color, icon: board.icon })
   update.reset()
-}
+}, { immediate: true })
 
 async function onSubmit() {
+  const board = editTarget.value
+  if (!board) return
   try {
-    await update.mutateAsync({ boardId: props.board.id, name: state.name.trim(), slug: state.slug, color: state.color })
+    await update.mutateAsync({ boardId: board.id, name: state.name.trim(), slug: state.slug, color: state.color, icon: state.icon })
     open.value = false
   }
   catch {
     // mutation state captured the error
   }
 }
-
-watch(open, (v) => {
-  if (v) syncFromBoard()
-})
 </script>
 
 <template>
@@ -64,14 +59,10 @@ watch(open, (v) => {
           hint="URL-идентификатор: латиница, цифры и дефисы"
           required
         >
-          <UInput
-            v-model="state.slug"
-            class="w-full"
-            @update:model-value="slugTouched = true"
-          />
+          <UInput v-model="state.slug" class="w-full" />
         </UFormField>
-        <UFormField label="Цвет" name="color">
-          <BoardColorPicker v-model="state.color" class="pt-1" />
+        <UFormField label="Аватарка и цвет" name="color">
+          <BoardAppearancePicker v-model:color="state.color" v-model:icon="state.icon" :name="state.name" class="pt-1" />
         </UFormField>
         <UAlert
           v-if="errorMessage"

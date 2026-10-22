@@ -60,3 +60,11 @@ export function useBoardsApi(workspaceId: MaybeRef<string>) {
 
   return { list, create, update, recomputeSLE, recordReplenishment, remove }
 }
+
+export function useArchivedBoards(workspaceId: MaybeRef<string>, enabled: MaybeRef<boolean>) {
+  return useQuery({
+    queryKey: computed(() => ['boards', unref(workspaceId), 'archived']),
+    queryFn: () => $fetch<BoardsListResponse>(apiRoutes.boards(unref(workspaceId)), { query: { archived: 'true' } }),
+    enabled: computed(() => !!unref(workspaceId) && unref(enabled)),
+  })
+}

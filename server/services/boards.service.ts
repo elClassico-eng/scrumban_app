@@ -65,6 +65,7 @@ export async function createBoard(input: {
   name: string
   slug: string
   color?: string
+  icon?: string | null
   seedDefaults?: boolean
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
@@ -80,6 +81,7 @@ export async function createBoard(input: {
           name: input.name,
           slug: input.slug,
           color,
+          icon: input.icon ?? null,
         })
         .returning()
 
@@ -116,6 +118,7 @@ export async function updateBoard(input: {
     name?: string
     slug?: string
     color?: string
+    icon?: string | null
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
@@ -131,6 +134,7 @@ export async function updateBoard(input: {
     name?: string
     slug?: string
     color?: string
+    icon?: string | null
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
@@ -141,6 +145,7 @@ export async function updateBoard(input: {
   if (input.patch.name !== undefined) set.name = input.patch.name
   if (input.patch.slug !== undefined) set.slug = input.patch.slug
   if (input.patch.color !== undefined) set.color = input.patch.color
+  if ('icon' in input.patch) set.icon = input.patch.icon ?? null
   if ('sleDays' in input.patch) set.sleDays = input.patch.sleDays ?? null
   if (input.patch.sleProbability !== undefined) set.sleProbability = input.patch.sleProbability
   if (input.patch.columnTint !== undefined) set.columnTint = input.patch.columnTint

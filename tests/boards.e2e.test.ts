@@ -471,3 +471,24 @@ describe('board archive', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe('board icon', () => {
+  it('accepts an icon from the set, clears it with null and rejects anything else', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const created = await fetchWithJar<{ board: { id: string, icon: string | null } }>(owner.jar, `/api/workspaces/${wsId}/boards`, {
+      method: 'POST',
+      body: { name: 'Web', slug: 'web', icon: '🚀' },
+    })
+    expect(created.body.board.icon).toBe('🚀')
+    const url = `/api/workspaces/${wsId}/boards/${created.body.board.id}`
+
+    const set = await fetchWithJar<{ board: { icon: string | null } }>(owner.jar, url, { method: 'PATCH', body: { icon: 'i-hugeicons-code' } })
+    expect(set.body.board.icon).toBe('i-hugeicons-code')
+    const cleared = await fetchWithJar<{ board: { icon: string | null } }>(owner.jar, url, { method: 'PATCH', body: { icon: null } })
+    expect(cleared.body.board.icon).toBeNull()
+
+    const bad = await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { icon: '<img src=x>' } })
+    expect(bad.status).toBe(400)
+  })
+})
