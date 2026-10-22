@@ -28,7 +28,7 @@ const PG_FK_VIOLATION = '23503'
 
 export async function listColumns(input: {
   workspaceId: string
-  boardId: string
+  boardId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<BoardColumn[]> {
   requireMinRole(input.actorRole, 'viewer')
@@ -36,8 +36,8 @@ export async function listColumns(input: {
     tx
       .select()
       .from(boardColumns)
-      .where(eq(boardColumns.boardId, input.boardId))
-      .orderBy(boardColumns.position),
+      .where(input.boardId ? eq(boardColumns.boardId, input.boardId) : undefined)
+      .orderBy(boardColumns.boardId, boardColumns.position),
   )
 }
 

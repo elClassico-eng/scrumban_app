@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { Motion, MotionConfig } from 'motion-v'
+import { MotionConfig } from 'motion-v'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { AssignedComment } from '#shared/types/comment'
 import type { Notification, NotificationType } from '#shared/types/notification'
 import type { InboxView } from '#shared/utils/notification-category'
-import { apiRoutes, pageRoutes } from '~/routing'
+import { apiRoutes } from '~/routing'
 import { inboxGroupKey, inboxRow, renderNotification } from '~/utils/notification-render'
-import { SIDEBAR_SPRING } from '~/utils/sidebar-items'
 
 const route = useRoute()
 const router = useRouter()
@@ -138,9 +137,13 @@ function boardOf(payload: Record<string, unknown>) {
 
 async function openRow(r: Row) {
   if (r.unread) update.mutate({ ids: r.ids, read: true })
+  const { taskId, boardId } = r.latest.payload
+  if (typeof taskId === 'string' && typeof boardId === 'string') return openTask(boardId, taskId)
   const target = renderNotification(r.latest).target
   if (target) await router.push(target)
 }
+
+const { taskId: modalTaskId, boardId: modalBoardId, open: modalOpen, openTask } = useTaskModalQuery()
 
 const qc = useQueryClient()
 const toast = useToast()
@@ -172,31 +175,7 @@ const EMPTY: Record<InboxView, { title: string, hint: string }> = {
       <p class="mt-1 text-sm text-muted">Что касается вас в этом воркспейсе: разберите и двигайтесь дальше</p>
     </div>
 
-    <nav class="grid grid-cols-2 border-b border-default sm:grid-cols-4" aria-label="Разделы входящих">
-      <button
-        v-for="t in tabs"
-        :key="t.value"
-        type="button"
-        :class="[
-          'relative flex cursor-pointer items-center gap-2.5 px-3 py-3 text-left transition-colors',
-          view === t.value ? 'text-highlighted' : 'text-muted hover:text-default',
-        ]"
-        :aria-current="view === t.value ? 'page' : undefined"
-        @click="view = t.value"
-      >
-        <UIcon :name="t.icon" class="size-5 shrink-0" />
-        <span class="min-w-0">
-          <span class="block text-sm font-semibold">{{ t.label }}</span>
-          <span v-if="t.sub" class="block truncate text-xs text-dimmed">{{ t.sub }}</span>
-        </span>
-        <Motion
-          v-if="view === t.value"
-          layout-id="inbox-tab"
-          class="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent-500"
-          :transition="SIDEBAR_SPRING"
-        />
-      </button>
-    </nav>
+    <UiUnderlineTabs v-model="view" :items="tabs" label="Разделы входящих" indicator-id="inbox-tab" />
 
     <div class="flex flex-wrap items-center gap-2">
       <UDropdownMenu v-if="view === 'primary'" :items="filterItems" :ui="{ content: 'w-52' }">
@@ -263,7 +242,7 @@ const EMPTY: Record<InboxView, { title: string, hint: string }> = {
           unread
           :time="timeOf(c.createdAt)"
           view="assigned"
-          @open="router.push(pageRoutes.task(c.workspaceId, c.boardId, c.taskId))"
+          @open="openTask(c.boardId, c.taskId)"
           @resolve="resolve.mutate(c)"
         />
       </div>
@@ -320,6 +299,13 @@ const EMPTY: Record<InboxView, { title: string, hint: string }> = {
     </template>
       </div>
     </Transition>
+    <TaskFocusModal
+      v-if="modalBoardId"
+      v-model:open="modalOpen"
+      :workspace-id="wsId"
+      :board-id="modalBoardId"
+      :task-id="modalTaskId"
+    />
   </div>
   </MotionConfig>
 </template>

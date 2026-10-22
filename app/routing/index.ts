@@ -177,6 +177,7 @@ export const apiRoutes = {
 
   workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
   workspaceAssignedComments: (wsId: string) => `/api/workspaces/${wsId}/assigned-comments`,
+  workspaceColumns: (wsId: string) => `/api/workspaces/${wsId}/columns`,
 
   workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
 
