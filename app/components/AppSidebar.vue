@@ -80,8 +80,8 @@ const customizeOpen = ref(false)
       'flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
       'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 ease-out',
       uiStore.mobileNavOpen ? 'translate-x-0' : '-translate-x-[110%]',
-      'lg:static lg:z-auto lg:max-w-none lg:translate-x-0 lg:transition-[width] lg:border-0 lg:bg-transparent lg:shadow-none lg:pt-3',
-      collapsed ? 'lg:w-20' : 'lg:w-64 lg:pl-3',
+      'lg:static lg:z-auto lg:max-w-none lg:translate-x-0 lg:transition-[width] lg:my-3 lg:ml-3 lg:rounded-3xl lg:border lg:border-default lg:bg-default lg:shadow-none',
+      collapsed ? 'lg:w-20' : 'lg:w-64',
     ]"
   >
     <SidebarBrand :collapsed="collapsed" :mobile="!isDesktop" @toggle="uiStore.toggleSidebar" @close="uiStore.closeMobileNav" />

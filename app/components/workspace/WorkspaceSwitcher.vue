@@ -12,7 +12,6 @@ const router = useRouter()
 
 const createOpen = ref(false)
 const canManage = computed(() => hasRole(current.value?.role, 'admin'))
-const initial = computed(() => current.value?.name.trim().charAt(0).toUpperCase() ?? '·')
 
 function selectWorkspace(id: string) {
   workspaceStore.setCurrent(id)
@@ -26,7 +25,9 @@ const items = computed<DropdownMenuItem[][]>(() => {
     ...workspaces.value.map(w => ({
       label: w.name,
       description: ROLE_LABEL[w.role],
-      avatar: { text: w.name.trim().charAt(0).toUpperCase(), size: 'sm' as const },
+      avatar: w.logoUrl
+        ? { src: w.logoUrl, alt: w.name, size: 'sm' as const }
+        : { text: w.name.trim().charAt(0).toUpperCase(), size: 'sm' as const },
       current: w.id === ws?.id,
       onSelect: () => selectWorkspace(w.id),
     })),
@@ -59,11 +60,11 @@ const items = computed<DropdownMenuItem[][]>(() => {
       <button
         v-if="collapsed"
         type="button"
-        class="grid size-9 place-items-center rounded-xl bg-primary text-sm font-bold text-white"
+        class="cursor-pointer rounded-xl"
         :title="current?.name ?? 'Воркспейс'"
         aria-label="Меню воркспейса"
       >
-        {{ initial }}
+        <WorkspaceAvatar :name="current?.name ?? ''" :logo-url="current?.logoUrl" size="md" />
       </button>
       <button
         v-else
@@ -71,9 +72,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
         class="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-default bg-default px-2.5 py-2 text-left shadow-xs transition-colors hover:border-[var(--ui-border-accented)] hover:bg-elevated data-[state=open]:border-[var(--ui-border-accented)] data-[state=open]:bg-elevated"
         aria-label="Меню воркспейса"
       >
-        <span class="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-xs font-bold text-white">
-          {{ initial }}
-        </span>
+        <WorkspaceAvatar :name="current?.name ?? ''" :logo-url="current?.logoUrl" size="sm" />
         <span class="min-w-0 flex-1">
           <span class="block truncate text-sm font-semibold text-highlighted">
             {{ current?.name ?? 'Выбрать workspace' }}
