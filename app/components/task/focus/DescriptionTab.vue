@@ -4,12 +4,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [value: string]
+  save: [value: string, base: string]
 }>()
 
 const toast = useToast()
 const isEditing = ref(false)
 const draft = ref(props.description)
+const base = ref(props.description)
+const changedMeanwhile = computed(() => isEditing.value && props.description !== base.value)
 const textareaWrapper = ref<HTMLElement | null>(null)
 
 watch(() => props.description, (v) => {
@@ -18,6 +20,7 @@ watch(() => props.description, (v) => {
 
 function startEdit() {
   draft.value = props.description
+  base.value = props.description
   isEditing.value = true
   nextTick(() => {
     textareaWrapper.value?.querySelector('textarea')?.focus()
@@ -27,7 +30,7 @@ function startEdit() {
 function commitEdit() {
   isEditing.value = false
   const next = draft.value
-  if (next !== props.description) emit('save', next)
+  if (next !== base.value) emit('save', next, base.value)
 }
 
 function cancelEdit() {
@@ -70,6 +73,13 @@ function onComingSoon(feature: string) {
     </div>
 
     <div v-if="isEditing" ref="textareaWrapper" class="w-full">
+      <p
+        v-if="changedMeanwhile"
+        class="mb-2 flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-[12.5px] text-warning"
+      >
+        <UIcon name="i-hugeicons-alert-02" class="mt-0.5 size-4 shrink-0" />
+        Описание только что изменил кто-то ещё. При сохранении покажем обе версии, чтобы ничего не потерялось.
+      </p>
       <textarea
         v-model="draft"
         rows="8"

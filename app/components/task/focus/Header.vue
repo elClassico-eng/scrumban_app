@@ -12,7 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'column-change': [columnId: string]
   'class-change': [value: ServiceClass]
-  'title-change': [value: string]
+  'title-change': [value: string, base: string]
 }>()
 
 const CLASS_ICON: Record<ServiceClass, string> = {
@@ -42,9 +42,19 @@ const columnOptions = computed(() =>
   props.columns.map(c => ({ label: c.name, onSelect: () => emit('column-change', c.id) })),
 )
 
+const titleBase = ref<string | null>(null)
+const shownTitle = computed(() => titleBase.value ?? props.task.title)
+
+function onTitleFocus() {
+  titleBase.value = props.task.title
+}
+
 function onTitleBlur(e: FocusEvent) {
+  const base = titleBase.value ?? props.task.title
+  titleBase.value = null
   const next = (e.target as HTMLElement).textContent?.trim() ?? ''
-  if (next && next !== props.task.title) emit('title-change', next)
+  if (next && next !== base) emit('title-change', next, base)
+  else (e.target as HTMLElement).textContent = props.task.title
 }
 </script>
 
@@ -88,10 +98,10 @@ function onTitleBlur(e: FocusEvent) {
       :class="task.isEpic ? 'text-[26px]' : 'text-2xl'"
       :contenteditable="true"
       spellcheck="false"
+      @focus="onTitleFocus"
       @blur="onTitleBlur"
       @keydown.enter.prevent="($event.target as HTMLElement).blur()"
-    >
-      {{ task.title }}
-    </h1>
+      v-text="shownTitle"
+    />
   </div>
 </template>

@@ -125,9 +125,33 @@ function saveDeferred(
   })
 }
 
-function onTitleChange(next: string) {
+type TextField = 'title' | 'description'
+const conflict = ref<{ field: TextField, mine: string } | null>(null)
+
+async function saveText(field: TextField, next: string, base: string) {
+  if (!task.value) return
+  try {
+    await update.mutateAsync({ taskId: task.value.id, [field]: next, expected: { [field]: base } })
+  }
+  catch (err) {
+    if (getErrorStatus(err) !== 409) {
+      toast.add({ title: getErrorMessage(err, 'Не удалось сохранить'), color: 'error', icon: 'i-hugeicons-alert-circle' })
+      return
+    }
+    await qc.refetchQueries({ queryKey: tasksKey.value })
+    conflict.value = { field, mine: next }
+  }
+}
+
+function keepMine() {
+  const c = conflict.value
+  conflict.value = null
+  if (c && task.value) saveText(c.field, c.mine, task.value[c.field])
+}
+
+function onTitleChange(next: string, base: string) {
   if (!task.value || next === task.value.title) return
-  saveWithFeedback({ title: next })
+  saveText('title', next, base)
 }
 
 function onServiceClassChange(v: ServiceClass) {
@@ -324,6 +348,8 @@ onMounted(() => {
     <template v-else-if="task">
       <TaskFocusTopBar
         :short-id="shortId"
+        :workspace-id="wsId"
+        :board-id="bId"
         :workspace-name="workspace?.name"
         :board-name="board?.name"
         :parent-task="parentTask"
@@ -357,7 +383,7 @@ onMounted(() => {
             <TaskFocusDescriptionTab
               v-if="tab === 'desc'"
               :description="task.description"
-              @save="(v: string) => saveWithFeedback({ description: v })"
+              @save="(v: string, base: string) => saveText('description', v, base)"
             />
             <TaskFocusChecklistTab
               v-else-if="tab === 'checks'"
@@ -448,6 +474,14 @@ onMounted(() => {
       :column-id="backlogColumnId"
       :parent-task-id="task.id"
       :parent-title="task.title"
+    />
+    <TaskFocusConflictModal
+      v-if="conflict && task"
+      :field="conflict.field"
+      :theirs="task[conflict.field]"
+      :mine="conflict.mine"
+      @keep-mine="keepMine"
+      @take-theirs="conflict = null"
     />
   </div>
 </template>

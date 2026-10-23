@@ -382,3 +382,44 @@ describe('GET /tasks — checklist aggregate', () => {
     expect(t.checklistDone).toBe(0)
   })
 })
+
+describe('PATCH /tasks/:taskId with expected values', () => {
+  async function setup() {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const created = await fetchWithJar<{ task: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+      method: 'POST',
+      body: { columnId: columns.backlog, title: 'Spec' },
+    })
+    const url = `/api/workspaces/${wsId}/boards/${boardId}/tasks/${created.body.task.id}`
+    await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { description: 'v1' } })
+    return { owner, url }
+  }
+
+  it('rejects a description save based on a stale value and keeps the stored text', async () => {
+    const { owner, url } = await setup()
+    await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { description: 'v2 by someone else', expected: { description: 'v1' } } })
+
+    const stale = await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { description: 'v3 mine', expected: { description: 'v1' } } })
+    expect(stale.status).toBe(409)
+
+    const fresh = await fetchWithJar<{ task: { description: string } }>(owner.jar, url, {
+      method: 'PATCH',
+      body: { description: 'v3 mine', expected: { description: 'v2 by someone else' } },
+    })
+    expect(fresh.status).toBe(200)
+    expect(fresh.body.task.description).toBe('v3 mine')
+  })
+
+  it('checks the title the same way and ignores fields that were not edited', async () => {
+    const { owner, url } = await setup()
+    const stale = await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { title: 'Mine', expected: { title: 'Old' } } })
+    expect(stale.status).toBe(409)
+
+    const unrelated = await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { serviceClass: 'expedite' } })
+    expect(unrelated.status).toBe(200)
+    const ok = await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { title: 'Mine', expected: { title: 'Spec' } } })
+    expect(ok.status).toBe(200)
+  })
+})

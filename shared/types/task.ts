@@ -56,6 +56,7 @@ export interface UpdateTaskInput {
   blockedReason?: string | null
   isEpic?: boolean
   storyPoints?: number | null
+  expected?: { title?: string, description?: string }
 }
 
 export interface TaskDependencyView {

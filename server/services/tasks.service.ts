@@ -29,7 +29,7 @@ import {
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant, type DbTransaction } from '../utils/db'
-import { NotFoundError, ValidationError } from '../utils/errors'
+import { ConflictError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { emitNotification } from './notifications.service'
 import { requireMinRole } from '../utils/rbac'
@@ -244,6 +244,9 @@ export async function updateTaskFields(input: {
     storyPoints?: number | null
     estimateDays?: number | null
   }
+  // Text the client started editing from. If the stored value has moved on,
+  // someone else saved in between and writing would silently drop their edit.
+  expected?: { title?: string, description?: string }
   actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
@@ -290,10 +293,19 @@ export async function updateTaskFields(input: {
         title: tasks.title,
         boardId: tasks.boardId,
         blockedReason: tasks.blockedReason,
+        description: tasks.description,
       })
       .from(tasks)
       .where(eq(tasks.id, input.taskId))
+      .for('update')
     if (!prev) throw new NotFoundError('Задача не найдена')
+    const expected = input.expected
+    if (expected?.title !== undefined && expected.title !== prev.title) {
+      throw new ConflictError('Название успели изменить, пока вы его редактировали')
+    }
+    if (expected?.description !== undefined && expected.description !== prev.description) {
+      throw new ConflictError('Описание успели изменить, пока вы его редактировали')
+    }
 
     const [updated] = await tx
       .update(tasks)

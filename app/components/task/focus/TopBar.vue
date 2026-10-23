@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { Task } from '#shared/types/task'
+import { pageRoutes } from '~/routing'
 
 defineProps<{
   shortId: string
+  workspaceId: string
+  boardId: string
   workspaceName: string | undefined
   boardName: string | undefined
   parentTask: Task | null
@@ -27,9 +30,15 @@ const emit = defineEmits<{
 
     <span class="flex flex-1 items-center gap-1.5 text-[12.5px] text-muted min-w-0 overflow-hidden">
       <span class="text-dimmed">/</span>
-      <span class="truncate max-w-[14ch]">{{ workspaceName ?? '' }}</span>
+      <NuxtLink
+        :to="pageRoutes.workspace(workspaceId)"
+        class="truncate max-w-[14ch] rounded px-1 -mx-1 transition-colors hover:bg-elevated hover:text-default"
+      >{{ workspaceName ?? '' }}</NuxtLink>
       <span class="text-dimmed">/</span>
-      <span class="truncate max-w-[14ch]">{{ boardName ?? '' }}</span>
+      <NuxtLink
+        :to="pageRoutes.board(workspaceId, boardId)"
+        class="truncate max-w-[14ch] rounded px-1 -mx-1 transition-colors hover:bg-elevated hover:text-default"
+      >{{ boardName ?? '' }}</NuxtLink>
       <template v-if="parentTask">
         <span class="text-dimmed">/</span>
         <button
