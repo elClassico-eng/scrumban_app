@@ -1,7 +1,7 @@
 import type { ShortcutId } from '#shared/types/shortcuts'
 import { pageRoutes } from '~/routing'
 import { resolveContextBoard } from '~/utils/control-center-context'
-import { keyOf, SHORTCUT_DEFS } from '~/utils/shortcuts'
+import { isPunctuationCombo, keyOf, matchesCombo, SHORTCUT_DEFS } from '~/utils/shortcuts'
 
 export type LeaderHint = { leader: string, options: { key: string, label: string }[] }
 
@@ -18,6 +18,8 @@ export function useGlobalShortcuts() {
   const { me } = useProfileApi()
   const { list: boardsList } = useBoardsApi(computed(() => current.value?.id ?? ''))
   const toast = useToast()
+  const uiStore = useUiStore()
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
 
   function goTo(path: (ws: string) => string) {
     return () => {
@@ -45,10 +47,16 @@ export function useGlobalShortcuts() {
       if (route.path === boardPath) ccActions.requestCreateTask()
       else router.push({ path: boardPath, query: { create: '1' } })
     },
+    toggle_sidebar: () => {
+      if (isDesktop.value) uiStore.toggleSidebar()
+      else uiStore.toggleMobileNav()
+    },
   }
 
   defineShortcuts(
-    computed(() => Object.fromEntries((Object.keys(handlers) as ShortcutId[]).map(id => [combos.value[id], handlers[id]]))),
+    computed(() => Object.fromEntries((Object.keys(handlers) as ShortcutId[])
+      .filter(id => !isPunctuationCombo(combos.value[id]))
+      .map(id => [combos.value[id], handlers[id]]))),
     { layoutIndependent: true, chainDelay: LEADER_HINT_MS },
   )
 
@@ -61,7 +69,16 @@ export function useGlobalShortcuts() {
   }
 
   useEventListener('keydown', (e: KeyboardEvent) => {
-    if (typing() || e.metaKey || e.ctrlKey || e.altKey) return
+    if (typing()) return
+    const stroke = { code: e.code, meta: e.metaKey, ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey }
+    const punctuation = (Object.keys(handlers) as ShortcutId[])
+      .find(id => isPunctuationCombo(combos.value[id]) && matchesCombo(combos.value[id], stroke))
+    if (punctuation) {
+      e.preventDefault()
+      handlers[punctuation]()
+      return
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return
     if (e.key === '?') {
       if (help.open.value) help.open.value = false
       else help.show('page')

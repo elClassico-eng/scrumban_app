@@ -3,7 +3,7 @@ import { onKeyStroke, useMediaQuery, useSwipe } from '@vueuse/core'
 import { MotionConfig } from 'motion-v'
 import { pageRoutes } from '~/routing'
 import type { SidebarItemId } from '#shared/types/sidebar'
-import { SIDEBAR_ITEM_META } from '~/utils/sidebar-items'
+import { SIDEBAR_ITEM_META, SIDEBAR_ROW, sidebarFade } from '~/utils/sidebar-items'
 
 const uiStore = useUiStore()
 const route = useRoute()
@@ -24,7 +24,39 @@ useSwipe(asideRef, {
   },
 })
 
-const collapsed = computed(() => isDesktop.value && uiStore.sidebarCollapsed)
+const rail = computed(() => isDesktop.value && uiStore.sidebarCollapsed)
+const peekRequested = ref(false)
+const peek = computed(() => rail.value && peekRequested.value)
+const collapsed = computed(() => rail.value && !peekRequested.value)
+let peekTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(() => uiStore.sidebarCollapsed, () => {
+  clearTimeout(peekTimer)
+  peekRequested.value = false
+})
+
+function startPeek(delay: number) {
+  if (!rail.value) return
+  clearTimeout(peekTimer)
+  peekTimer = setTimeout(() => { peekRequested.value = true }, delay)
+}
+
+// Menus opened from the rail render outside it, so leaving the rail toward a
+// menu must not fold it; wait until the menu closes and the pointer is gone.
+function endPeek() {
+  clearTimeout(peekTimer)
+  peekTimer = setTimeout(function tryHide() {
+    const el = asideRef.value
+    if (el?.matches(':hover') || el?.querySelector(':focus-visible')) return
+    if (el?.querySelector('[aria-expanded="true"]')) {
+      peekTimer = setTimeout(tryHide, 300)
+      return
+    }
+    peekRequested.value = false
+  }, 80)
+}
+
+onBeforeUnmount(() => clearTimeout(peekTimer))
 
 const changelogOpen = ref(false)
 const { hasUnread: hasChangelogUnread } = useChangelog()
@@ -35,7 +67,7 @@ const canManage = computed(() => hasRole(current.value?.role, 'admin'))
 const archivedBoards = useArchivedBoards(computed(() => current.value?.id ?? ''), canManage)
 const archivedCount = computed(() => archivedBoards.data.value?.boards.length ?? 0)
 
-const { isVisible, favorites, toggleFavorite, sortBoards, setBoardOrder } = useSidebarPrefs()
+const { isVisible, favorites, frame, toggleFavorite, sortBoards, setBoardOrder } = useSidebarPrefs()
 const { combos } = useShortcutPrefs()
 const help = useHelpPanel()
 const boards = computed(() => sortBoards(boardsList.data.value?.boards ?? []))
@@ -78,17 +110,27 @@ const customizeOpen = ref(false)
     class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
     @click="uiStore.closeMobileNav"
   />
+  <div :class="rail ? 'relative w-14 shrink-0' : 'contents'">
   <aside
     ref="asideRef"
     :class="[
       'flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
+      { dark: frame === 'dark' },
       'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 ease-out',
       uiStore.mobileNavOpen ? 'translate-x-0' : '-translate-x-[110%]',
-      'lg:static lg:z-auto lg:max-w-none lg:translate-x-0 lg:transition-[width] lg:my-3 lg:ml-3 lg:rounded-3xl lg:border lg:border-default lg:bg-default lg:shadow-none',
-      collapsed ? 'lg:w-20' : 'lg:w-64',
+      'lg:max-w-none lg:translate-x-0 lg:border-0 lg:transition-[width,box-shadow]',
+      collapsed ? 'lg:duration-150 lg:ease-[cubic-bezier(0.4,0,1,1)]' : 'lg:duration-[220ms] lg:ease-[cubic-bezier(0.32,0.72,0,1)]',
+      rail ? 'lg:absolute lg:inset-y-0 lg:left-0 lg:z-40' : 'lg:static lg:z-auto',
+      collapsed ? 'lg:w-14' : 'lg:w-64',
+      'lg:bg-[var(--frame-bg)]',
+      peek ? 'lg:shadow-2xl lg:shadow-black/30' : 'lg:shadow-none',
     ]"
+    @mouseenter="startPeek(150)"
+    @mouseleave="endPeek"
+    @focusin="startPeek(0)"
+    @focusout="endPeek"
   >
-    <SidebarBrand :collapsed="collapsed" :mobile="!isDesktop" @toggle="uiStore.toggleSidebar" @close="uiStore.closeMobileNav" />
+    <SidebarBrand :collapsed="collapsed" :peek="peek" :mobile="!isDesktop" @toggle="uiStore.toggleSidebar" @close="uiStore.closeMobileNav" />
 
     <WorkspaceSwitcher :collapsed="collapsed" @invite="inviteOpen = true" @customize="customizeOpen = true" />
 
@@ -103,7 +145,7 @@ const customizeOpen = ref(false)
     />
 
     <MotionConfig reduced-motion="user">
-    <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-3 py-2">
+    <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-2 py-2">
       <template v-if="current">
         <div v-if="personalLinks.length" class="flex flex-col gap-0.5 pt-1">
           <SidebarNavItem
@@ -170,11 +212,7 @@ const customizeOpen = ref(false)
         <UTooltip v-if="isVisible('whats_new')" text="Что нового" :disabled="!collapsed" :content="{ side: 'right' }">
           <button
             type="button"
-            :class="[
-              'flex w-full items-center rounded-xl text-sm font-medium transition-colors duration-200',
-              collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-              'text-muted hover:bg-elevated hover:text-default',
-            ]"
+:class="[SIDEBAR_ROW, 'cursor-pointer pl-3 pr-2.5 text-muted hover:bg-elevated hover:text-default']"
             @click="changelogOpen = true"
           >
             <span class="relative shrink-0">
@@ -184,22 +222,18 @@ const customizeOpen = ref(false)
                 class="absolute -right-1 -top-1 size-2 rounded-full bg-primary ring-2 ring-default"
               />
             </span>
-            <span v-if="!collapsed" class="truncate">{{ SIDEBAR_ITEM_META.whats_new.label }}</span>
+            <span :class="['truncate', sidebarFade(collapsed)]">{{ SIDEBAR_ITEM_META.whats_new.label }}</span>
           </button>
         </UTooltip>
         <UTooltip v-if="isVisible('help')" :disabled="!collapsed" :content="{ side: 'right' }" text="Справка">
           <button
             type="button"
-            :class="[
-              'flex w-full items-center rounded-xl text-sm font-medium transition-colors duration-200',
-              collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-              'text-muted hover:bg-elevated hover:text-default',
-            ]"
+:class="[SIDEBAR_ROW, 'cursor-pointer pl-3 pr-2.5 text-muted hover:bg-elevated hover:text-default']"
             @click="help.show('page')"
           >
             <UIcon :name="SIDEBAR_ITEM_META.help.icon" class="size-4 shrink-0" />
-            <span v-if="!collapsed" class="flex-1 truncate text-left">{{ SIDEBAR_ITEM_META.help.label }}</span>
-            <UKbd v-if="!collapsed" value="?" size="sm" />
+            <span :class="['flex-1 truncate text-left', sidebarFade(collapsed)]">{{ SIDEBAR_ITEM_META.help.label }}</span>
+            <UKbd value="?" size="sm" :class="sidebarFade(collapsed)" />
           </button>
         </UTooltip>
         <SidebarNavItem
@@ -226,4 +260,5 @@ const customizeOpen = ref(false)
       <BoardDeleteModal :workspace-id="current.id" />
     </template>
   </aside>
+  </div>
 </template>

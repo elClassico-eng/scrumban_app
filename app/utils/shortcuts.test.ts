@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { comboFromStrokes, conflictOf, describeCombo, effectiveCombos, isReserved, type KeyStroke } from './shortcuts'
+import { SHORTCUT_COMBO } from '#shared/validation/shortcuts'
+import { comboFromStrokes, conflictOf, describeCombo, effectiveCombos, isReserved, matchesCombo, type KeyStroke } from './shortcuts'
 
 const key = (code: string, mods: Partial<KeyStroke> = {}): KeyStroke =>
   ({ code, meta: false, ctrl: false, alt: false, shift: false, ...mods })
@@ -22,6 +23,17 @@ describe('comboFromStrokes', () => {
   it('records a single key and a modifier combo', () => {
     expect(comboFromStrokes([key('KeyN')])).toBe('n')
     expect(comboFromStrokes([key('KeyN', { shift: true })])).toBe('shift_n')
+  })
+
+  it('records brackets by physical key, alone or with modifiers, never as a chain leader', () => {
+    expect(comboFromStrokes([key('BracketLeft')])).toBe('[')
+    expect(comboFromStrokes([key('BracketRight', { meta: true })])).toBe('meta_]')
+    expect(comboFromStrokes([key('BracketLeft'), key('KeyX')])).toBe('[')
+    expect(SHORTCUT_COMBO.test('[')).toBe(true)
+    expect(SHORTCUT_COMBO.test('[-x')).toBe(false)
+    expect(matchesCombo('[', key('BracketLeft'))).toBe(true)
+    expect(matchesCombo('[', key('BracketLeft', { meta: true }))).toBe(false)
+    expect(matchesCombo('meta_]', key('BracketRight', { meta: true }))).toBe(true)
   })
 
   it('refuses keys it cannot store', () => {

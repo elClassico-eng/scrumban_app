@@ -2,6 +2,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { pageRoutes } from '~/routing'
 import { ROLE_LABEL } from '~/utils/role-labels'
+import { sidebarFade } from '~/utils/sidebar-items'
 
 defineProps<{ collapsed: boolean }>()
 const emit = defineEmits<{ invite: [], customize: [] }>()
@@ -57,31 +58,27 @@ const items = computed<DropdownMenuItem[][]>(() => {
 </script>
 
 <template>
-  <div :class="collapsed ? 'flex justify-center pb-2' : 'px-3 pt-1 pb-2'">
+  <div class="px-2 pb-1">
     <UDropdownMenu :items="items" :content="{ side: collapsed ? 'right' : 'bottom', align: 'start' }" :ui="{ content: 'w-64' }">
       <button
-        v-if="collapsed"
         type="button"
-        class="cursor-pointer rounded-xl"
-        :title="current?.name ?? 'Воркспейс'"
-        aria-label="Меню воркспейса"
-      >
-        <WorkspaceAvatar :name="current?.name ?? ''" :logo-url="current?.logoUrl" size="md" />
-      </button>
-      <button
-        v-else
-        type="button"
-        class="group flex w-full cursor-pointer items-center gap-2.5 rounded-xl border border-default bg-default px-2.5 py-2 text-left shadow-xs transition-colors hover:border-[var(--ui-border-accented)] hover:bg-elevated data-[state=open]:border-[var(--ui-border-accented)] data-[state=open]:bg-elevated"
+        :class="[
+          'group flex w-full cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl border py-1.5 pl-[5px] pr-2 text-left transition-colors',
+          collapsed
+            ? 'border-transparent duration-75 hover:bg-elevated data-[state=open]:bg-elevated'
+            : 'border-default bg-default shadow-xs duration-200 hover:border-[var(--ui-border-accented)] hover:bg-elevated data-[state=open]:border-[var(--ui-border-accented)] data-[state=open]:bg-elevated',
+        ]"
+        :title="collapsed ? current?.name : undefined"
         aria-label="Меню воркспейса"
       >
         <WorkspaceAvatar :name="current?.name ?? ''" :logo-url="current?.logoUrl" size="sm" />
-        <span class="min-w-0 flex-1">
+        <span :class="['min-w-0 flex-1', sidebarFade(collapsed)]">
           <span class="block truncate text-sm font-semibold text-highlighted">
             {{ current?.name ?? 'Выбрать workspace' }}
           </span>
           <span v-if="current" class="block truncate text-xs text-dimmed">{{ ROLE_LABEL[current.role] }}</span>
         </span>
-        <span class="grid size-6 shrink-0 place-items-center rounded-md bg-elevated text-muted transition-colors group-hover:bg-accented group-hover:text-default group-data-[state=open]:bg-accented">
+        <span :class="['grid size-6 shrink-0 place-items-center rounded-md bg-elevated text-muted group-hover:bg-accented group-hover:text-default group-data-[state=open]:bg-accented', sidebarFade(collapsed)]">
           <UIcon name="i-hugeicons-arrow-down-01" class="size-3.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
         </span>
       </button>

@@ -14,3 +14,9 @@ export const SIDEBAR_ITEM_META: Record<SidebarItemId, { label: string, icon: str
 }
 
 export const SIDEBAR_SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.8 } as const
+
+export const SIDEBAR_ROW = 'relative flex h-9 w-full shrink-0 items-center gap-3 overflow-hidden rounded-xl text-sm font-medium transition-colors duration-200'
+
+export function sidebarFade(collapsed: boolean) {
+  return ['whitespace-nowrap transition-opacity', collapsed ? 'pointer-events-none opacity-0 duration-100' : 'opacity-100 duration-200 delay-75']
+}

@@ -3,7 +3,7 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import { Motion } from 'motion-v'
 import type { Board } from '#shared/types/board'
 import { pageRoutes } from '~/routing'
-import { SIDEBAR_SPRING } from '~/utils/sidebar-items'
+import { SIDEBAR_ROW, SIDEBAR_SPRING, sidebarFade } from '~/utils/sidebar-items'
 
 const props = defineProps<{
   workspaceId: string
@@ -80,21 +80,21 @@ const items = computed<DropdownMenuItem[][]>(() => {
       :to="pageRoutes.board(workspaceId, board.id)"
       :aria-current="active ? 'page' : undefined"
       :class="[
-        'group relative flex items-center rounded-xl text-sm font-medium transition-colors duration-200',
-        collapsed ? 'justify-center p-2' : 'gap-3 py-2 pl-3 pr-1.5',
+        SIDEBAR_ROW,
+        'group pl-2.5 pr-1.5',
         active ? 'text-highlighted font-semibold' : 'text-muted hover:bg-elevated hover:text-default',
       ]"
     >
       <Motion
         v-if="active"
         :layout-id="indicator ?? 'sidebar-active'"
+        :layout-dependency="0"
         class="absolute inset-0 rounded-xl bg-accented"
         :transition="SIDEBAR_SPRING"
       />
       <BoardAvatar :board="board" class="relative" />
-      <template v-if="!collapsed">
-        <span class="relative min-w-0 flex-1 truncate" @dblclick.prevent="startRename">{{ board.name }}</span>
-        <span class="relative flex items-center" @click.prevent.stop>
+      <span :class="['relative min-w-0 flex-1 truncate', sidebarFade(collapsed)]" @dblclick.prevent="startRename">{{ board.name }}</span>
+      <span :class="['relative flex items-center', sidebarFade(collapsed)]" @click.prevent.stop>
           <UDropdownMenu v-model:open="menuOpen" :items="items" :content="{ align: 'start', side: 'right' }" :ui="{ content: 'w-56' }">
             <button
               type="button"
@@ -119,8 +119,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
           >
             <UIcon name="i-hugeicons-star" class="size-3.5" />
           </button>
-        </span>
-      </template>
+      </span>
     </NuxtLink>
   </UTooltip>
 </template>

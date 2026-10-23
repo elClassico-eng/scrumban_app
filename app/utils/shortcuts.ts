@@ -8,6 +8,7 @@ export const SHORTCUT_DEFS: Record<ShortcutId, ShortcutDef> = {
   go_overview: { label: 'Обзор воркспейса', combo: 'g-o', where: 'везде' },
   go_boards: { label: 'Доски', combo: 'g-b', where: 'везде' },
   new_task: { label: 'Новая задача', combo: 'c', where: 'везде: на текущей или последней доске' },
+  toggle_sidebar: { label: 'Свернуть или развернуть сайдбар', combo: '[', where: 'везде' },
 }
 
 const MODIFIER_LABEL: Record<string, string> = { meta: '⌘', ctrl: 'Ctrl', alt: 'Alt', shift: 'Shift' }
@@ -45,7 +46,23 @@ export function isReserved(combo: string): boolean {
 
 export type KeyStroke = { code: string, meta: boolean, ctrl: boolean, alt: boolean, shift: boolean }
 
+const PUNCTUATION_KEYS: Record<string, string> = { BracketLeft: '[', BracketRight: ']' }
+
+// defineShortcuts lowercases key names, so it cannot match punctuation by physical
+// code; such combos are matched by hand instead.
+export function isPunctuationCombo(combo: string): boolean {
+  return /[[\]]/.test(combo)
+}
+
+export function matchesCombo(combo: string, stroke: KeyStroke): boolean {
+  const parts = combo.split('_')
+  const key = parts.pop()
+  return keyOf(stroke.code) === key
+    && (['meta', 'ctrl', 'alt', 'shift'] as const).every(m => stroke[m] === parts.includes(m))
+}
+
 export function keyOf(code: string): string | null {
+  if (PUNCTUATION_KEYS[code]) return PUNCTUATION_KEYS[code]!
   const letter = /^Key([A-Z])$/.exec(code)
   if (letter) return letter[1]!.toLowerCase()
   const digit = /^Digit(\d)$/.exec(code)
@@ -59,7 +76,7 @@ export function comboFromStrokes(strokes: KeyStroke[]): string | null {
   if (!firstKey) return null
   const mods = (['meta', 'ctrl', 'alt', 'shift'] as const).filter(m => first[m])
   if (mods.length) return [...mods, firstKey].join('_')
-  if (!second) return firstKey
+  if (!second || !/^[a-z0-9]$/.test(firstKey)) return firstKey
   const secondKey = keyOf(second.code)
   const plain = !second.meta && !second.ctrl && !second.alt && !second.shift
   return secondKey && plain ? `${firstKey}-${secondKey}` : null

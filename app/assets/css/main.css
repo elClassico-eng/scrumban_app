@@ -143,7 +143,20 @@ body {
 }
 
 @utility app-canvas {
-  background: #f4f4f5;
+  --frame-bg: #f4f4f5;
+  background: var(--frame-bg);
+}
+
+@utility app-canvas-dark {
+  @media (width >= 64rem) {
+    --frame-bg: #0a0a0a;
+  }
+}
+
+@utility app-canvas-light {
+  @media (width >= 64rem) {
+    --frame-bg: #ffffff;
+  }
 }
 
 @utility brand-gradient {
@@ -217,7 +230,7 @@ body {
 }
 
 .dark .app-canvas {
-  background: #000000;
+  --frame-bg: #000000;
 }
 
 .dark .glass {

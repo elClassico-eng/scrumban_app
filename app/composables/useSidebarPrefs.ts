@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/vue-query'
 import type { Board } from '#shared/types/board'
-import type { SidebarItemId, SidebarPrefs } from '#shared/types/sidebar'
+import type { SidebarFrame, SidebarItemId, SidebarPrefs } from '#shared/types/sidebar'
 
 export function useSidebarPrefs() {
   const { me, update } = useProfileApi()
@@ -10,6 +10,7 @@ export function useSidebarPrefs() {
   const prefs = computed<SidebarPrefs>(() => me.data.value?.user.sidebarPrefs ?? {})
   const hidden = computed(() => new Set(prefs.value.hidden ?? []))
   const favorites = computed(() => new Set(prefs.value.favorites ?? []))
+  const frame = computed<SidebarFrame>(() => prefs.value.frame ?? 'dark')
 
   function save(patch: Partial<SidebarPrefs>) {
     const prev = me.data.value
@@ -25,6 +26,10 @@ export function useSidebarPrefs() {
 
   function isVisible(id: SidebarItemId) {
     return !hidden.value.has(id)
+  }
+
+  function setFrame(value: SidebarFrame) {
+    save({ frame: value })
   }
 
   function setHidden(ids: SidebarItemId[]) {
@@ -48,5 +53,5 @@ export function useSidebarPrefs() {
     save({ boardOrder: [...workspaceBoardIds, ...others] })
   }
 
-  return { isVisible, hidden, favorites, setHidden, toggleFavorite, sortBoards, setBoardOrder }
+  return { isVisible, hidden, favorites, frame, setFrame, setHidden, toggleFavorite, sortBoards, setBoardOrder }
 }

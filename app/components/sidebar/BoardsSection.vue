@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import draggable from 'vuedraggable'
 import { pageRoutes } from '~/routing'
+import { SIDEBAR_ROW, sidebarFade } from '~/utils/sidebar-items'
 import type { Board } from '#shared/types/board'
 
 const props = defineProps<{
@@ -28,18 +29,22 @@ function onEnd() {
 
 <template>
   <div>
-    <SidebarSectionLabel v-if="collapsed" label="Доски" collapsed />
-    <div v-else class="flex items-center pt-5 pb-1.5 pl-3 pr-1.5">
+    <div class="relative flex h-9 items-end pb-1 pl-3 pr-1.5">
+      <span
+        :class="['absolute left-5 top-1/2 h-px w-4 -translate-x-1/2 bg-[var(--ui-border-accented)] transition-opacity duration-200', collapsed ? 'opacity-100' : 'opacity-0']"
+      />
       <NuxtLink
         :to="pageRoutes.boards(workspaceId)"
-        class="flex-1 text-[11px] font-semibold uppercase tracking-wider text-dimmed transition-colors hover:text-default"
+        :class="['flex-1 pb-0.5 text-[11px] font-semibold uppercase tracking-wider text-dimmed transition-colors hover:text-default', sidebarFade(collapsed)]"
+        :tabindex="collapsed ? -1 : 0"
       >
         Доски
       </NuxtLink>
       <button
         v-if="canCreate"
         type="button"
-        class="grid size-6 place-items-center rounded-md text-dimmed transition-colors hover:bg-elevated hover:text-default"
+        :class="['grid size-6 place-items-center rounded-md text-dimmed transition-colors hover:bg-elevated hover:text-default', sidebarFade(collapsed)]"
+        :tabindex="collapsed ? -1 : 0"
         aria-label="Создать доску"
         @click="emit('create')"
       >
@@ -47,7 +52,7 @@ function onEnd() {
       </button>
     </div>
 
-    <p v-if="!local.length && !collapsed" class="px-3 py-2 text-xs text-dimmed">
+    <p v-if="!local.length" :class="['px-3 py-2 text-xs text-dimmed', sidebarFade(collapsed)]">
       Нет досок
     </p>
     <draggable
@@ -75,13 +80,14 @@ function onEnd() {
       </template>
     </draggable>
     <NuxtLink
-      v-if="archivedCount && !collapsed"
+      v-if="archivedCount"
       :to="{ path: pageRoutes.boards(workspaceId), query: { archive: '1' } }"
-      class="mt-0.5 flex items-center gap-3 rounded-xl py-1.5 pl-3 pr-2.5 text-xs text-dimmed transition-colors hover:bg-elevated hover:text-default"
+      :class="[SIDEBAR_ROW, 'mt-0.5 pl-3 pr-2.5 text-xs text-dimmed hover:bg-elevated hover:text-default']"
+      :title="collapsed ? `Архив досок: ${archivedCount}` : undefined"
     >
-      <UIcon name="i-hugeicons-archive" class="size-5 shrink-0 p-0.5" />
-      <span class="flex-1">Архив</span>
-      <span class="tabular-nums">{{ archivedCount }}</span>
+      <UIcon name="i-hugeicons-archive" class="size-4 shrink-0" />
+      <span :class="['flex-1', sidebarFade(collapsed)]">Архив</span>
+      <span :class="['tabular-nums', sidebarFade(collapsed)]">{{ archivedCount }}</span>
     </NuxtLink>
   </div>
 </template>

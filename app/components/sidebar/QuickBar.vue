@@ -2,6 +2,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { pageRoutes } from '~/routing'
 import { describeCombo } from '~/utils/shortcuts'
+import { SIDEBAR_ROW, sidebarFade } from '~/utils/sidebar-items'
 import type { Board } from '#shared/types/board'
 
 const props = defineProps<{
@@ -46,37 +47,34 @@ const items = computed<DropdownMenuItem[][]>(() => {
 </script>
 
 <template>
-  <div :class="['flex gap-1.5 px-3 pb-1', collapsed ? 'flex-col items-center' : 'items-center']">
+  <div class="flex flex-col gap-0.5 px-2 pb-1">
     <UTooltip text="Поиск" :disabled="!collapsed" :content="{ side: 'right' }">
       <button
         type="button"
-        :class="[
-          'flex cursor-pointer items-center rounded-xl border border-default bg-default text-sm text-muted shadow-xs transition-colors hover:border-[var(--ui-border-accented)] hover:text-default',
-          collapsed ? 'size-9 justify-center' : 'h-9 min-w-0 flex-1 gap-2 px-2.5',
-        ]"
+        :class="[SIDEBAR_ROW, 'cursor-pointer pl-3 pr-2 text-muted hover:bg-elevated hover:text-default']"
         aria-label="Поиск"
         @click="ccActions.requestSearch"
       >
         <UIcon name="i-hugeicons-search-01" class="size-4 shrink-0" />
-        <template v-if="!collapsed">
-          <span class="truncate">Поиск</span>
-          <UKbd class="ml-auto" :value="isMac ? 'meta' : 'ctrl'" />
+        <span :class="['flex-1 text-left', sidebarFade(collapsed)]">Поиск</span>
+        <span :class="['flex gap-0.5', sidebarFade(collapsed)]">
+          <UKbd :value="isMac ? 'meta' : 'ctrl'" />
           <UKbd value="K" />
-        </template>
+        </span>
       </button>
     </UTooltip>
     <UDropdownMenu :items="items" :content="{ side: collapsed ? 'right' : 'bottom', align: 'start' }" :ui="{ content: 'w-56' }">
       <button
         type="button"
-        :class="[
-          'group flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-inverted text-inverted shadow-xs transition-colors hover:bg-accent-500 hover:text-white data-[state=open]:bg-accent-500 data-[state=open]:text-white',
-          collapsed ? 'w-9' : 'gap-0.5 px-2',
-        ]"
+        :class="[SIDEBAR_ROW, 'group cursor-pointer pl-2.5 pr-2 text-default hover:bg-elevated data-[state=open]:bg-elevated']"
         title="Создать"
         aria-label="Создать"
       >
-        <UIcon name="i-hugeicons-plus" class="size-4 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-data-[state=open]:rotate-45 motion-reduce:transition-none" />
-        <UIcon v-if="!collapsed" name="i-hugeicons-arrow-down-01" class="size-3 opacity-70" />
+        <span class="grid size-5 shrink-0 place-items-center rounded-md bg-inverted text-inverted transition-colors group-hover:bg-accent-500 group-hover:text-white group-data-[state=open]:bg-accent-500 group-data-[state=open]:text-white">
+          <UIcon name="i-hugeicons-plus" class="size-3.5 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-data-[state=open]:rotate-45 motion-reduce:transition-none" />
+        </span>
+        <span :class="['flex-1 text-left', sidebarFade(collapsed)]">Создать</span>
+        <UIcon name="i-hugeicons-arrow-down-01" :class="['size-3.5 text-dimmed', sidebarFade(collapsed)]" />
       </button>
     </UDropdownMenu>
   </div>
