@@ -217,9 +217,9 @@ export async function updateRetroNote(input: {
     if (input.patch.category !== undefined) set.category = input.patch.category
     if (input.patch.isResolved !== undefined) set.isResolved = input.patch.isResolved
 
-    const ownerChange = 'assigneeId' in input.patch || 'dueDate' in input.patch
-    if (ownerChange && existing.category !== 'action_item') {
-      throw new ValidationError('Ответственный и срок бывают только у действий')
+    const actionOnly = input.patch.isResolved !== undefined || 'assigneeId' in input.patch || 'dueDate' in input.patch
+    if (actionOnly && existing.category !== 'action_item') {
+      throw new ValidationError('Отметка, ответственный и срок бывают только у действий')
     }
     if (input.patch.assigneeId) {
       const [member] = await tx
@@ -237,7 +237,8 @@ export async function updateRetroNote(input: {
       .where(eq(sprintRetroNotes.id, input.noteId))
       .returning()
     const sprint = await sprintOrThrow(tx, input.sprintId)
-    return { row: row!, boardId: sprint.boardId }
+    const hidden = sprint.retroPhase === 'collect' && OPINION.includes(row!.category) && row!.authorId !== input.actorId
+    return { row: hidden ? { ...row!, body: '', taskId: null } : row!, boardId: sprint.boardId }
   }).then(({ row, boardId }) => {
     retroChanged(input.workspaceId, boardId, input.sprintId)
     return row

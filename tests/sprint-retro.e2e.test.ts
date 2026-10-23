@@ -99,7 +99,7 @@ describe('sprint retro', () => {
 
     const created = await fetchWithJar<{ note: Note }>(owner.jar, retroPath(wsId, boardId, sId), {
       method: 'POST',
-      body: { category: 'to_improve', body: 'Долго ждали ревью' },
+      body: { category: 'action_item', body: 'Ревью в течение дня' },
     })
     expect(created.status).toBe(201)
     const noteId = created.body.note.id
@@ -269,6 +269,20 @@ describe('retro meeting', () => {
     const open = await view(member)
     expect(open.phase).toBe('discuss')
     expect(open.notes.every(n => !n.hidden)).toBe(true)
+  })
+
+  it('does not leak a hidden note through an update', async () => {
+    const { owner, member, wsId, path, add } = await team()
+    const hidden = await add(owner, 'to_improve', 'Секретная мысль')
+    const resolve = await fetchWithJar(member.jar, `${path}/${hidden}`, { method: 'PATCH', body: { isResolved: true } })
+    expect(resolve.status).toBe(422)
+    expect(JSON.stringify(resolve.body)).not.toContain('Секретная мысль')
+
+    const admin = await registerUser('admin@example.com')
+    await inviteMember(owner, wsId, admin.email, 'admin')
+    const recat = await fetchWithJar<{ note: Note }>(admin.jar, `${path}/${hidden}`, { method: 'PATCH', body: { category: 'went_well' } })
+    expect(recat.status).toBe(200)
+    expect(recat.body.note.body).toBe('')
   })
 
   it('gives everyone three votes in discussion, only on opinions', async () => {
