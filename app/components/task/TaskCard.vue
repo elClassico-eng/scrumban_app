@@ -83,7 +83,8 @@ const stripeColor = computed(() => {
   return 'bg-zinc-400'
 })
 
-const shortId = computed(() => props.task.id.slice(0, 6).toUpperCase())
+const taskKey = useTaskKey()
+const shortId = computed(() => taskKey(props.task))
 const isDone = computed(() => props.task.closedAt != null)
 </script>
 
@@ -115,7 +116,7 @@ const isDone = computed(() => props.task.closedAt != null)
           name="i-hugeicons-corner-left-up"
           class="size-3 shrink-0"
         />
-        <span class="truncate">{{ parentTask.id.slice(0, 6).toUpperCase() }}</span>
+        <span class="truncate">{{ taskKey(parentTask) }}</span>
       </span>
       <span
         v-if="sprintChip"

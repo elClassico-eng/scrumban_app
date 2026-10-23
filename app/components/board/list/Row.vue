@@ -39,7 +39,8 @@ const memberById = computed(() => {
 const assignees = computed(() =>
   (props.task.assigneeIds ?? []).map(id => memberById.value.get(id)).filter((x): x is MemberView => !!x),
 )
-const shortId = computed(() => props.task.id.slice(0, 6).toUpperCase())
+const taskKey = useTaskKey()
+const shortId = computed(() => taskKey(props.task))
 const hasBlocker = computed(() => !!props.task.blockedReason || props.blockerCount > 0)
 const cos = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const checklistFull = computed(() => props.task.checklistTotal > 0 && props.task.checklistDone === props.task.checklistTotal)

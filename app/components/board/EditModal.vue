@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
+import { BOARD_KEY_RE } from '#shared/utils/board-key'
 
 const props = defineProps<{ workspaceId: string }>()
 
@@ -15,11 +16,12 @@ const schema = z.object({
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
   color: z.string().regex(BOARD_COLOR_RE),
+  key: z.string().trim().toUpperCase().regex(BOARD_KEY_RE, '2–6 букв или цифр, с буквы в начале'),
   icon: z.string().nullable(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: '', slug: '', color: '', icon: null })
+const state = reactive<State>({ name: '', slug: '', color: '', key: '', icon: null })
 
 const { update } = useBoardsApi(computed(() => props.workspaceId))
 
@@ -29,7 +31,7 @@ const errorMessage = computed(() =>
 
 watch(editTarget, (board) => {
   if (!board) return
-  Object.assign(state, { name: board.name, slug: board.slug, color: board.color, icon: board.icon })
+  Object.assign(state, { name: board.name, slug: board.slug, color: board.color, key: board.key, icon: board.icon })
   update.reset()
 }, { immediate: true })
 
@@ -37,7 +39,7 @@ async function onSubmit() {
   const board = editTarget.value
   if (!board) return
   try {
-    await update.mutateAsync({ boardId: board.id, name: state.name.trim(), slug: state.slug, color: state.color, icon: state.icon })
+    await update.mutateAsync({ boardId: board.id, name: state.name.trim(), slug: state.slug, color: state.color, key: state.key.trim().toUpperCase(), icon: state.icon })
     open.value = false
   }
   catch {
@@ -53,14 +55,20 @@ async function onSubmit() {
         <UFormField label="Название" name="name" required>
           <UInput v-model="state.name" class="w-full" autofocus />
         </UFormField>
-        <UFormField
-          label="Slug"
-          name="slug"
-          hint="URL-идентификатор: латиница, цифры и дефисы"
-          required
+        <div class="grid grid-cols-[1fr_8rem] gap-3">
+          <UFormField label="Slug" name="slug" hint="латиница, цифры, дефисы" required>
+            <UInput v-model="state.slug" class="w-full" />
+          </UFormField>
+          <UFormField label="Ключ задач" name="key" required>
+            <UInput v-model="state.key" class="w-full uppercase" maxlength="6" />
+          </UFormField>
+        </div>
+        <p
+          v-if="editTarget && state.key.trim().toUpperCase() !== editTarget.key"
+          class="-mt-2 text-xs text-warning"
         >
-          <UInput v-model="state.slug" class="w-full" />
-        </UFormField>
+          Номера задач сменятся с {{ editTarget.key }}-12 на {{ state.key.trim().toUpperCase() || '…' }}-12. Старые номера в комментариях и коммитах перестанут находиться.
+        </p>
         <UFormField label="Аватарка и цвет" name="color">
           <BoardAppearancePicker v-model:color="state.color" v-model:icon="state.icon" :name="state.name" class="pt-1" />
         </UFormField>

@@ -20,6 +20,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
@@ -49,6 +50,8 @@ export const tasks = pgTable(
     columnId: uuid('column_id')
       .notNull()
       .references(() => boardColumns.id, { onDelete: 'restrict' }),
+    // Per-board sequential number (ПОТ-42). 0 on insert = next number from boards.task_seq (trigger).
+    number: integer('number').notNull().default(0),
     title: varchar('title', { length: 255 }).notNull(),
     description: text('description').notNull().default(''),
     // set null on user delete: a deleted user shouldn't drop tasks; the
@@ -91,6 +94,7 @@ export const tasks = pgTable(
       table.position,
     ),
     index('tasks_assignee_id_idx').on(table.assigneeId),
+    uniqueIndex('tasks_board_number_idx').on(table.boardId, table.number),
     // Per-CoS analytics (throughput per class, etc.) — Phase 8.
     index('tasks_board_service_class_idx').on(table.boardId, table.serviceClass),
     // "Show me children of X" — Phase 6 subtask drawer.

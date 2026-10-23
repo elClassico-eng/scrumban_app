@@ -5,6 +5,8 @@ export interface Board {
   slug: string
   color: string
   icon: string | null
+  key: string
+  taskSeq: number
   sleDays: number | null
   sleProbability: string 
   lastReplenishmentAt: string | null
@@ -28,6 +30,7 @@ export interface CreateBoardInput {
   slug: string
   color?: string
   icon?: string | null
+  key?: string
   seedDefaults?: boolean
 }
 
@@ -36,6 +39,7 @@ export interface UpdateBoardInput {
   slug?: string
   color?: string
   icon?: string | null
+  key?: string
   sleDays?: number | null
   sleProbability?: number
   replenishmentPeriodDays?: number

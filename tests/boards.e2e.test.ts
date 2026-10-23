@@ -492,3 +492,43 @@ describe('board icon', () => {
     expect(bad.status).toBe(400)
   })
 })
+
+describe('board keys and task numbers', () => {
+  async function createBoard(owner: UserCtx, wsId: string, body: Record<string, unknown>) {
+    return fetchWithJar<{ board: { id: string, key: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body })
+  }
+
+  it('derives a key from the name, suffixes duplicates and accepts a custom key', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    expect((await createBoard(owner, wsId, { name: 'Поток', slug: 'potok' })).body.board.key).toBe('ПОТ')
+    expect((await createBoard(owner, wsId, { name: 'Поток 2', slug: 'potok-2' })).body.board.key).toBe('ПОТ2')
+    expect((await createBoard(owner, wsId, { name: 'Web', slug: 'web', key: 'fe' })).body.board.key).toBe('FE')
+  })
+
+  it('rejects a taken or malformed key', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    await createBoard(owner, wsId, { name: 'Web', slug: 'web', key: 'WEB' })
+    const other = await createBoard(owner, wsId, { name: 'Api', slug: 'api' })
+    const url = `/api/workspaces/${wsId}/boards/${other.body.board.id}`
+    expect((await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { key: 'WEB' } })).status).toBe(409)
+    expect((await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { key: '1AB' } })).status).toBe(400)
+  })
+
+  it('numbers tasks per board without gaps or repeats under parallel creates', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const board = await createBoard(owner, wsId, { name: 'Main', slug: 'main' })
+    const boardId = board.body.board.id
+    const cols = await fetchWithJar<{ columns: { id: string }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/columns`)
+    const columnId = cols.body.columns[0]!.id
+    const created = await Promise.all(Array.from({ length: 8 }, (_, i) =>
+      fetchWithJar<{ task: { number: number } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+        method: 'POST',
+        body: { columnId, title: `T${i}` },
+      }),
+    ))
+    expect(created.map(r => r.body.task.number).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+  })
+})

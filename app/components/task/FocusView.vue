@@ -65,7 +65,8 @@ const currentColumn = computed(() =>
   columns.value.find(c => c.id === task.value?.columnId) ?? null,
 )
 
-const shortId = computed(() => task.value ? task.value.id.slice(0, 8).toUpperCase() : '')
+const taskKey = useTaskKey()
+const shortId = computed(() => task.value ? taskKey(task.value) : '')
 
 const localDueDate = ref('')
 

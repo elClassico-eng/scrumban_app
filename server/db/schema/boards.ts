@@ -34,6 +34,10 @@ export const boards = pgTable(
     slug: varchar('slug', { length: 64 }).notNull(),
     color: varchar('color', { length: 7 }).notNull().default('#e85002'),
     icon: varchar('icon', { length: 64 }),
+    // Prefix of task keys (ПОТ-42). '' on insert = derived from the name by a trigger.
+    key: varchar('key', { length: 10 }).notNull().default(''),
+    // Last task number handed out on this board; bumped by the tasks insert trigger.
+    taskSeq: integer('task_seq').notNull().default(0),
     sleDays: integer('sle_days'),
     sleProbability: decimal('sle_probability', { precision: 3, scale: 2 })
       .notNull()
@@ -47,6 +51,7 @@ export const boards = pgTable(
   },
   (table) => [
     uniqueIndex('boards_workspace_slug_idx').on(table.workspaceId, table.slug),
+    uniqueIndex('boards_workspace_key_idx').on(table.workspaceId, table.key),
     index('boards_workspace_id_idx').on(table.workspaceId),
   ],
 )

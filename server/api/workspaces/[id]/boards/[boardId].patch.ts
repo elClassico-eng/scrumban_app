@@ -2,6 +2,7 @@
 import { z } from 'zod'
 import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
 import { BOARD_ICONS } from '#shared/constants/board-icons'
+import { BOARD_KEY_RE } from '#shared/utils/board-key'
 import { updateBoard } from '../../../../services/boards.service'
 import { getWorkspaceForUserOrThrow } from '../../../../services/workspaces.service'
 import { requireAuth } from '../../../../utils/auth'
@@ -20,6 +21,7 @@ const BodySchema = z
     replenishmentPeriodDays: z.number().int().positive().max(60).optional(),
     columnTint: z.boolean().optional(),
     icon: z.enum(BOARD_ICONS).nullable().optional(),
+    key: z.string().trim().toUpperCase().regex(BOARD_KEY_RE, { message: 'Ключ: 2–6 букв или цифр, начиная с буквы' }).optional(),
     archived: z.boolean().optional(),
   })
   .refine(
@@ -32,7 +34,8 @@ const BodySchema = z
       d.replenishmentPeriodDays !== undefined ||
       d.columnTint !== undefined ||
       d.archived !== undefined ||
-      d.icon !== undefined,
+      d.icon !== undefined ||
+      d.key !== undefined,
     { message: 'Provide at least one field to update' },
   )
 
@@ -51,6 +54,7 @@ export default defineEventHandler(async (event) => {
         slug: body.slug,
         ...(body.color !== undefined ? { color: body.color } : {}),
         ...(body.icon !== undefined ? { icon: body.icon } : {}),
+        ...(body.key !== undefined ? { key: body.key } : {}),
         ...('sleDays' in body ? { sleDays: body.sleDays } : {}),
         // numeric(3,2) is text in postgres-js; coerce.
         ...(body.sleProbability !== undefined

@@ -4,6 +4,7 @@ import type { Task } from '#shared/types/task'
 import type { BoardColumn } from '#shared/types/column'
 import type { MemberView } from '#shared/types/workspace'
 
+const taskKey = useTaskKey()
 const props = defineProps<{
   sprint: Sprint
   backlog: Task[]
@@ -48,8 +49,7 @@ const filteredBacklog = computed(() => {
     if (filter.value === 'urgent' && t.serviceClass !== 'expedite') return false
     if (filter.value === 'stale' && ageInDays(t.createdAt) < STALE_THRESHOLD_DAYS) return false
     if (q) {
-      const id = t.id.slice(0, 8).toLowerCase()
-      if (!id.includes(q) && !t.title.toLowerCase().includes(q)) return false
+      if (!taskKey(t).toLowerCase().includes(q) && !t.title.toLowerCase().includes(q)) return false
     }
     return true
   })
@@ -210,7 +210,7 @@ function onClose() {
                   {{ t.title }}
                 </div>
                 <div class="flex flex-wrap items-center gap-2 mt-1 text-[11.5px] text-muted">
-                  <span class="font-mono">{{ t.id.slice(0, 8).toUpperCase() }}</span>
+                  <span class="font-mono">{{ taskKey(t) }}</span>
                   <span
                     v-if="CLASS_BADGE[t.serviceClass]"
                     class="text-[10.5px] font-medium px-1.5 py-0.5 rounded"

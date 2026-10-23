@@ -4,6 +4,7 @@ import { pageRoutes } from '~/routing'
 
 export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: () => void) {
   const router = useRouter()
+  const taskKey = useTaskKey(wsId)
   const { requestCreateTask } = useControlCenterActions()
   const { focus, toggle: toggleFocus } = useFocusMode()
   const colorMode = useColorMode()
@@ -58,7 +59,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
           label: col.name,
           items: colTasks.map<CommandPaletteItem>(t => ({
             label: t.title,
-            suffix: t.id.slice(0, 6).toUpperCase(),
+            suffix: taskKey(t),
             icon: 'i-hugeicons-square-check-big',
             onSelect: () => go(pageRoutes.task(wsId.value, bId.value, t.id)),
           })),
@@ -74,7 +75,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
           label: board.name,
           items: boardTasks.map<CommandPaletteItem>(t => ({
             label: t.title,
-            suffix: t.id.slice(0, 6).toUpperCase(),
+            suffix: taskKey(t),
             icon: 'i-hugeicons-square-check-big',
             onSelect: () => go(pageRoutes.task(wsId.value, t.boardId, t.id)),
           })),
