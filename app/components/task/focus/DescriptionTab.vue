@@ -57,14 +57,6 @@ function onComingSoon(feature: string) {
       <button
         type="button"
         class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
-        @click="onComingSoon('Улучшить с AI')"
-      >
-        <UIcon name="i-hugeicons-sparkles" class="size-3" />
-        Улучшить с AI
-      </button>
-      <button
-        type="button"
-        class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="onComingSoon('Вложение')"
       >
         <UIcon name="i-hugeicons-plus" class="size-3" />

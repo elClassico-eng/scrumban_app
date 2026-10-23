@@ -8,6 +8,8 @@ export type NotificationType =
   | 'automation'
   | 'reply'
   | 'comment_assigned'
+  | 'watched_comment'
+  | 'watched_status'
 
 export interface Notification {
   id: string

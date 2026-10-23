@@ -32,6 +32,7 @@ import { withTenant, type DbTransaction } from '../utils/db'
 import { ConflictError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { emitNotification } from './notifications.service'
+import { addWatcher, notifyWatchers } from './task-watchers.service'
 import { requireMinRole } from '../utils/rbac'
 
 // `tasks.id` is written as a SQL literal (not Drizzle's ${tasks.id}) so the
@@ -189,6 +190,10 @@ export async function createTask(input: {
       payload: { initialPosition: row!.position },
     })
 
+    for (const userId of new Set([input.actorId, row!.assigneeId])) {
+      if (userId) await addWatcher(tx, { workspaceId: input.workspaceId, taskId: row!.id, userId })
+    }
+
     if (row!.assigneeId) {
       await tx
         .insert(taskAssignees)
@@ -344,6 +349,7 @@ export async function updateTaskFields(input: {
             addedBy: input.actorId ?? null,
           })
           .onConflictDoNothing()
+        await addWatcher(tx, { workspaceId: input.workspaceId, taskId: input.taskId, userId: updated.assigneeId })
 
         await emitNotification({
           tx,
@@ -663,6 +669,23 @@ export async function moveTask(input: {
             : {}),
       },
     })
+
+    if (isCrossColumn) {
+      await notifyWatchers(tx, {
+        workspaceId: input.workspaceId,
+        taskId: input.taskId,
+        actorId: input.actorId,
+        type: 'watched_status',
+        payload: {
+          taskId: input.taskId,
+          boardId: task.boardId,
+          taskTitle: task.title,
+          actorId: input.actorId,
+          columnName: toCol.name,
+          columnRole: toCol.columnRole,
+        },
+      })
+    }
 
     return { moved: moved!, fromColumnId: task.columnId }
   }).then(({ moved, fromColumnId }) => {

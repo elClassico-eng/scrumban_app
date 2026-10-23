@@ -11,6 +11,7 @@ defineProps<{
   parentTask: Task | null
   canDelete: boolean
   watching: boolean
+  watcherCount: number
 }>()
 
 const emit = defineEmits<{
@@ -54,15 +55,19 @@ const emit = defineEmits<{
     </span>
 
     <div class="flex items-center gap-0.5 shrink-0">
-      <button
-        type="button"
-        class="size-7 rounded-md grid place-items-center cursor-pointer transition-colors hover:bg-elevated"
-        :class="watching ? 'text-accent-500' : 'text-muted hover:text-default'"
-        title="Следить"
-        @click="emit('toggle-watch')"
-      >
-        <UIcon name="i-hugeicons-eye" class="size-4" />
-      </button>
+      <UTooltip :text="watching ? `Вы следите · всего ${watcherCount}` : `Следить за задачей${watcherCount ? ` · уже ${watcherCount}` : ''}`">
+        <button
+          type="button"
+          class="h-7 px-1.5 rounded-md inline-flex items-center gap-1 cursor-pointer transition-colors hover:bg-elevated"
+          :class="watching ? 'text-accent-500' : 'text-muted hover:text-default'"
+          :aria-pressed="watching"
+          :aria-label="watching ? 'Перестать следить' : 'Следить за задачей'"
+          @click="emit('toggle-watch')"
+        >
+          <UIcon :name="watching ? 'i-hugeicons-eye' : 'i-hugeicons-eye-off'" class="size-4" />
+          <span v-if="watcherCount" class="text-[11px] tabular-nums">{{ watcherCount }}</span>
+        </button>
+      </UTooltip>
       <button
         type="button"
         class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"

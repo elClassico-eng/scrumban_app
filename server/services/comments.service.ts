@@ -13,6 +13,7 @@ import { publishBoardEvent } from '../utils/events'
 import { extractMentionedUserIds } from '../utils/mentions'
 import { requireMinRole, roleAtLeast } from '../utils/rbac'
 import { emitNotification } from './notifications.service'
+import { addWatcher, notifyWatchers } from './task-watchers.service'
 
 const COMMENT_SNIPPET_LEN = 140
 
@@ -201,6 +202,23 @@ export async function createComment(input: {
         },
       })
     }
+
+    await addWatcher(tx, { workspaceId: input.workspaceId, taskId: input.taskId, userId: input.authorId })
+    await notifyWatchers(tx, {
+      workspaceId: input.workspaceId,
+      taskId: input.taskId,
+      actorId: input.authorId,
+      type: 'watched_comment',
+      payload: {
+        taskId: input.taskId,
+        boardId: parent.boardId,
+        commentId: inserted!.id,
+        actorId: input.authorId,
+        taskTitle: parent.title,
+        snippet,
+      },
+      skip: [...mentionedUserIds, ...replyRecipients, ...(parent.assigneeId ? [parent.assigneeId] : [])],
+    })
 
     publishBoardEvent({
       type: 'task.commented',

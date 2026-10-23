@@ -37,7 +37,10 @@ export function useTaskCommentsApi(
         apiRoutes.taskComments(unref(workspaceId), unref(boardId), unref(taskId)),
         { method: 'POST', body: input },
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKey.value })
+      qc.invalidateQueries({ queryKey: ['task-watchers', unref(workspaceId), unref(boardId), unref(taskId)] })
+    },
   })
 
   const update = useMutation({

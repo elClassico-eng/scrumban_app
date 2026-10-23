@@ -74,6 +74,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/tasks/${taskId}/dependencies/${blockerTaskId}`,
   boardDependencyCounts: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/dependencies`,
+  taskWatchers: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/watchers`,
   taskAssignees: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/assignees`,
   taskAssignee: (wsId: string, boardId: string, taskId: string, userId: string) =>

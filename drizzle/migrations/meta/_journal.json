@@ -372,6 +372,13 @@
       "when": 1792756679466,
       "tag": "0052_task_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1792781972903,
+      "tag": "0053_task_watchers",
+      "breakpoints": true
     }
   ]
 }

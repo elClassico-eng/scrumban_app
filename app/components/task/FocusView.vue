@@ -319,9 +319,16 @@ const deadlineMeta = computed(() => {
   return { date: `${formatted}, ${weekday}`, countdown, overdue }
 })
 
-const watching = ref(true)
+const { watchers, watching, toggle: toggleWatching } = useTaskWatchersApi(wsId, bId, tId)
 function toggleWatch() {
-  watching.value = !watching.value
+  const next = !watching.value
+  toggleWatching.mutate(next, {
+    onSuccess: () => toast.add({
+      title: next ? 'Вы следите за задачей' : 'Вы больше не следите за задачей',
+      description: next ? 'Комментарии и смена статуса придут во «Входящие», во вкладку «Поток».' : undefined,
+      icon: next ? 'i-hugeicons-eye' : 'i-hugeicons-eye-off',
+    }),
+  })
 }
 
 onMounted(() => {
@@ -356,6 +363,7 @@ onMounted(() => {
         :parent-task="parentTask"
         :can-delete="canDelete"
         :watching="watching"
+        :watcher-count="watchers.length"
         @close="emit('close')"
         @toggle-watch="toggleWatch"
         @copy-link="onCopyLink"

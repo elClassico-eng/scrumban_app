@@ -31,6 +31,7 @@ export function useTaskAssigneesApi(
   function invalidate() {
     qc.invalidateQueries({ queryKey: queryKey.value })
     qc.invalidateQueries({ queryKey: ['tasks', unref(workspaceId), unref(boardId)] })
+    qc.invalidateQueries({ queryKey: ['task-watchers', unref(workspaceId), unref(boardId), unref(taskId)] })
   }
 
   const add = useMutation({

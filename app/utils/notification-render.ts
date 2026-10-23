@@ -163,6 +163,24 @@ export function renderNotification(n: Notification): RenderedNotification {
         icon: 'i-hugeicons-message-square-reply',
         color: PURPLE,
       }
+    case 'watched_comment':
+      return {
+        title: 'Новый комментарий',
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
+        cta: 'Открыть задачу',
+        target: taskTarget(n, p),
+        icon: 'i-hugeicons-message-square',
+        color: PURPLE,
+      }
+    case 'watched_status':
+      return {
+        title: `Перешла в «${p.columnName ?? ''}»`,
+        why: `«${p.taskTitle ?? ''}»`,
+        cta: 'Открыть задачу',
+        target: taskTarget(n, p),
+        icon: p.columnRole === 'done' ? 'i-hugeicons-checkmark-circle-02' : 'i-hugeicons-arrow-right-02',
+        color: BLUE,
+      }
     case 'comment_assigned':
       return {
         title: 'Вам поручение',
@@ -187,6 +205,7 @@ const PERSONAL_LABEL: Partial<Record<Notification['type'], string>> = {
   comment_assigned: 'поручение',
   assigned: 'назначил(а) вам задачу',
   comment_on_assigned: 'комментарий к вашей задаче',
+  watched_comment: 'комментарий',
 }
 
 export function inboxRow(n: Notification): InboxRow {
@@ -197,7 +216,7 @@ export function inboxRow(n: Notification): InboxRow {
   }
   const r = renderNotification(n)
   const subject = p.taskTitle ?? p.sprintName ?? p.boardName ?? p.columnName ?? r.title
-  return { subject: String(subject), label: r.title, detail: r.why.replace(/^«[^»]*»:\s*/, '') }
+  return { subject: String(subject), label: r.title, detail: r.why.replace(/^«[^»]*»:?\s*/, '') }
 }
 
 export function inboxGroupKey(n: Notification): string {
