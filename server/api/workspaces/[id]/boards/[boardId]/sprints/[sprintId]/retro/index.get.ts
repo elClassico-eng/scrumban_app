@@ -11,8 +11,7 @@ export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
     const { id, sprintId } = await getValidatedRouterParams(event, ParamsSchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
-    const notes = await listRetroNotes({ workspaceId: id, sprintId, actorRole: workspace.role })
-    return { notes }
+    return await listRetroNotes({ workspaceId: id, sprintId, actorId: user.id, actorRole: workspace.role })
   }
   catch (err) {
     throw toHttpError(err)

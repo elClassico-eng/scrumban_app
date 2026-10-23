@@ -26,6 +26,10 @@ import { workspaces } from './workspaces'
 export const sprintState = pgEnum('sprint_state', ['planned', 'active', 'closed'])
 export type SprintState = (typeof sprintState.enumValues)[number]
 
+// Retro meeting phase: notes stay private while collecting, open for discussion.
+export const retroPhase = pgEnum('retro_phase', ['collect', 'discuss'])
+export type RetroPhase = (typeof retroPhase.enumValues)[number]
+
 export const sprints = pgTable(
   'sprints',
   {
@@ -49,6 +53,7 @@ export const sprints = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }),
     endedAt: timestamp('ended_at', { withTimezone: true }),
     capacity: integer('capacity'),
+    retroPhase: retroPhase('retro_phase').notNull().default('collect'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

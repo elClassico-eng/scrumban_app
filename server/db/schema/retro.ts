@@ -1,4 +1,4 @@
-import { boolean, index, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { sprints } from './sprints'
 import { tasks } from './tasks'
 import { users } from './users'
@@ -27,6 +27,8 @@ export const sprintRetroNotes = pgTable(
     taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'set null' }),
     convertedTaskId: uuid('converted_task_id').references(() => tasks.id, { onDelete: 'set null' }),
     isResolved: boolean('is_resolved').notNull().default(false),
+    assigneeId: uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
+    dueDate: timestamp('due_date', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -38,3 +40,23 @@ export const sprintRetroNotes = pgTable(
 
 export type SprintRetroNote = typeof sprintRetroNotes.$inferSelect
 export type NewSprintRetroNote = typeof sprintRetroNotes.$inferInsert
+
+export const sprintRetroVotes = pgTable(
+  'sprint_retro_votes',
+  {
+    noteId: uuid('note_id')
+      .notNull()
+      .references(() => sprintRetroNotes.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.noteId, table.userId] }),
+    index('sprint_retro_votes_workspace_id_idx').on(table.workspaceId),
+  ],
+)

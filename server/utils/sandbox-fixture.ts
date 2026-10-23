@@ -58,6 +58,7 @@ export function buildSandboxData(): SprintNetworkData {
       name: 'Демо-спринт: интеграция с 1С',
       goal: 'Показать симулятор на учебных данных',
       state: 'active',
+      retroPhase: 'collect',
       plannedStartAt: new Date(now - 2 * DAY_MS),
       plannedEndAt: new Date(now + 12 * DAY_MS),
       startedAt: new Date(now - 2 * DAY_MS),
