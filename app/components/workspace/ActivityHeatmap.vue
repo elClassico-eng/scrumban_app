@@ -375,9 +375,9 @@ const EVENTS = ['событие', 'события', 'событий'] as [string
 .hm--3 { background: #f2600f; }
 .hm--4 { background: #a83309; }
 
-:global(.dark) .hm--0 { background: #27272a; }
-:global(.dark) .hm--1 { background: #5c2410; }
-:global(.dark) .hm--2 { background: #9c3410; }
-:global(.dark) .hm--3 { background: #e05410; }
-:global(.dark) .hm--4 { background: #ff9d5c; }
+:global(.dark .hm--0) { background: #27272a; }
+:global(.dark .hm--1) { background: #5c2410; }
+:global(.dark .hm--2) { background: #9c3410; }
+:global(.dark .hm--3) { background: #e05410; }
+:global(.dark .hm--4) { background: #ff9d5c; }
 </style>
