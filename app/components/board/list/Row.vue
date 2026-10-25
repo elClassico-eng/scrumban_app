@@ -12,6 +12,7 @@ const props = defineProps<{
   childCount: number
   expanded: boolean
   selected: boolean
+  selecting: boolean
   depth: number
   canCreate: boolean
   workspaceId: string
@@ -19,7 +20,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'toggle-select': [id: string]
+  'toggle-select': [id: string, shift: boolean]
   'toggle-expand': [id: string]
   'add-subtask': [id: string]
   'move-to-column': [taskId: string, columnId: string]
@@ -113,8 +114,9 @@ const classDotClass = computed(() => {
           class="size-4 rounded border-[1.5px] grid place-items-center shrink-0 transition-all"
           :class="selected
             ? 'opacity-100 bg-accent-500 border-accent-500 text-white'
-            : 'opacity-0 group-hover:opacity-100 border-[var(--ui-border-accented)] bg-default text-transparent'"
-          @click.stop="emit('toggle-select', task.id)"
+            : [selecting ? 'opacity-100' : 'opacity-0 group-hover:opacity-100', 'border-[var(--ui-border-accented)] bg-default text-transparent']"
+          @mousedown="$event.shiftKey && $event.preventDefault()"
+          @click.stop="emit('toggle-select', task.id, $event.shiftKey)"
         >
           <UIcon name="i-hugeicons-check" class="size-2.5" />
         </span>
@@ -211,8 +213,9 @@ const classDotClass = computed(() => {
           class="size-[17px] rounded-[5px] border-[1.6px] grid place-items-center shrink-0 transition-all"
           :class="selected
             ? 'opacity-100 bg-accent-500 border-accent-500 text-white'
-            : 'opacity-0 group-hover:opacity-100 border-[var(--ui-border-accented)] bg-default text-transparent'"
-          @click.stop="emit('toggle-select', task.id)"
+            : [selecting ? 'opacity-100' : 'opacity-0 group-hover:opacity-100', 'border-[var(--ui-border-accented)] bg-default text-transparent']"
+          @mousedown="$event.shiftKey && $event.preventDefault()"
+          @click.stop="emit('toggle-select', task.id, $event.shiftKey)"
         >
           <UIcon name="i-hugeicons-check" class="size-2.5" />
         </span>

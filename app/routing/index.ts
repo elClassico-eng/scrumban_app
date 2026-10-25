@@ -60,6 +60,7 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/columns/reorder`,
 
   tasks: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/tasks`,
+  tasksBulk: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/tasks/bulk`,
   task: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}`,
   taskMove: (wsId: string, boardId: string, taskId: string) =>

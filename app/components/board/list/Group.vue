@@ -20,7 +20,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'toggle-collapse': [key: string]
-  'toggle-select': [id: string]
+  'toggle-select': [id: string, shift: boolean]
+  'select-group': [ids: string[], on: boolean]
   'toggle-expand': [id: string]
   'add-subtask': [id: string]
   'move-to-column': [taskId: string, columnId: string]
@@ -28,6 +29,9 @@ const emit = defineEmits<{
 }>()
 
 const count = computed(() => props.group.tasks.length)
+const groupIds = computed(() => props.group.tasks.map(t => t.id))
+const selectedInGroup = computed(() => groupIds.value.filter(id => props.selected.has(id)).length)
+const allSelected = computed(() => count.value > 0 && selectedInGroup.value === count.value)
 const spSum = computed(() => props.group.tasks.reduce((a, t) => a + (t.storyPoints ?? 0), 0))
 const over = computed(() => props.group.limit != null && count.value > props.group.limit)
 const warn = computed(() => props.group.limit != null && count.value === props.group.limit)
@@ -47,6 +51,21 @@ function onAdd() {
       class="group/head flex items-center gap-2 sm:gap-[11px] px-4 sm:px-[18px] py-2.5 sm:py-[11px] cursor-pointer select-none transition-colors sticky top-0 sm:top-[42px] bg-muted z-20"
       @click="emit('toggle-collapse', group.key)"
     >
+      <span
+        v-if="count > 0"
+        role="checkbox"
+        :aria-checked="allSelected ? 'true' : selectedInGroup ? 'mixed' : 'false'"
+        aria-label="Выбрать все задачи группы"
+        :class="[
+          'hidden size-[17px] shrink-0 cursor-pointer place-items-center rounded-[5px] border-[1.6px] transition-all sm:grid',
+          selectedInGroup
+            ? 'border-accent-500 bg-accent-500 text-white'
+            : [selected.size > 0 ? 'opacity-100' : 'opacity-0 group-hover/head:opacity-100', 'border-[var(--ui-border-accented)] bg-default text-transparent'],
+        ]"
+        @click.stop="emit('select-group', groupIds, !allSelected)"
+      >
+        <UIcon :name="allSelected ? 'i-hugeicons-check' : 'i-hugeicons-minus-sign'" class="size-2.5" />
+      </span>
       <span
         class="text-dimmed grid place-items-center transition-transform shrink-0"
         :class="collapsed ? '-rotate-90' : ''"
@@ -116,9 +135,9 @@ function onAdd() {
         <BoardListRow
           :task="t" :is-done="group.doneGroup || t.closedAt != null" :members="members" :columns="columns"
           :blocker-count="blockerCount(t.id)" :child-count="(childrenByParent.get(t.id)?.length ?? 0)"
-          :expanded="expanded.has(t.id)" :selected="selected.has(t.id)" :depth="0"
+          :expanded="expanded.has(t.id)" :selected="selected.has(t.id)" :selecting="selected.size > 0" :depth="0"
           :can-create="canCreate" :workspace-id="workspaceId" :board-id="boardId"
-          @toggle-select="emit('toggle-select', $event)"
+          @toggle-select="(id, shift) => emit('toggle-select', id, shift)"
           @toggle-expand="emit('toggle-expand', $event)"
           @add-subtask="emit('add-subtask', $event)"
           @move-to-column="(id, col) => emit('move-to-column', id, col)"
@@ -128,9 +147,9 @@ function onAdd() {
             v-for="child in (childrenByParent.get(t.id) ?? [])" :key="child.id"
             :task="child" :is-done="child.closedAt != null" :members="members" :columns="columns"
             :blocker-count="blockerCount(child.id)" :child-count="0"
-            :expanded="false" :selected="selected.has(child.id)" :depth="1"
+            :expanded="false" :selected="selected.has(child.id)" :selecting="selected.size > 0" :depth="1"
             :can-create="canCreate" :workspace-id="workspaceId" :board-id="boardId"
-            @toggle-select="emit('toggle-select', $event)"
+            @toggle-select="(id, shift) => emit('toggle-select', id, shift)"
             @move-to-column="(id, col) => emit('move-to-column', id, col)"
           />
         </template>
