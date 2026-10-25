@@ -40,7 +40,7 @@ function onSubmit() {
       color="error"
       variant="soft"
       :title="errorMessage"
-      icon="i-lucide-alert-circle"
+      icon="i-hugeicons-alert-circle"
     />
     <UButton type="submit" :loading="login.isPending.value" block size="xl" class="font-semibold">
       Войти

@@ -1,5 +1,6 @@
 // PATCH /api/workspaces/:id/boards/:boardId/tasks/:taskId — change
-// title / description / service_class / due_date / assignee. Moving the
+// title / description / service_class / due_date / assignee. `expected`
+// turns a title/description write into compare-and-set (409 on mismatch). Moving the
 // task between columns goes through the dedicated /move endpoint
 // (Step 12) so we can run state-machine logic and write task_events.
 import { z } from 'zod'
@@ -25,6 +26,9 @@ const BodySchema = z
     isEpic: z.boolean().optional(),
     storyPoints: z.number().int().min(0).max(1000).nullable().optional(),
     estimateDays: z.number().positive().max(365).nullable().optional(),
+    expected: z
+      .object({ title: z.string().optional(), description: z.string().optional() })
+      .optional(),
   })
   .refine(
     (d) =>
@@ -65,6 +69,7 @@ export default defineEventHandler(async (event) => {
         ...('storyPoints' in body ? { storyPoints: body.storyPoints } : {}),
         ...('estimateDays' in body ? { estimateDays: body.estimateDays } : {}),
       },
+      expected: body.expected,
       actorId: user.id,
       actorRole: workspace.role,
     })

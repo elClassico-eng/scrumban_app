@@ -37,7 +37,10 @@ export function useTaskCommentsApi(
         apiRoutes.taskComments(unref(workspaceId), unref(boardId), unref(taskId)),
         { method: 'POST', body: input },
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKey.value })
+      qc.invalidateQueries({ queryKey: ['task-watchers', unref(workspaceId), unref(boardId), unref(taskId)] })
+    },
   })
 
   const update = useMutation({
@@ -58,5 +61,17 @@ export function useTaskCommentsApi(
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKey.value }),
   })
 
-  return { list, create, update, remove }
+  const assign = useMutation({
+    mutationFn: ({ commentId, ...body }: { commentId: string, assigneeId?: string | null, resolved?: boolean }) =>
+      $fetch<TaskCommentResponse>(
+        apiRoutes.taskCommentAssignment(unref(workspaceId), unref(boardId), unref(taskId), commentId),
+        { method: 'PATCH', body },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKey.value })
+      qc.invalidateQueries({ queryKey: ['assigned-comments'] })
+    },
+  })
+
+  return { list, create, update, remove, assign }
 }

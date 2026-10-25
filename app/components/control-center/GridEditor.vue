@@ -54,7 +54,7 @@ const isDefault = computed(() => JSON.stringify(local.value.map(t => t.id)) === 
           style="background: var(--island-tile); border: 1px dashed var(--island-line);"
         >
           <span class="drag cursor-grab active:cursor-grabbing text-[var(--island-ink-3)] shrink-0">
-            <UIcon name="i-lucide-grip-vertical" class="w-4 h-4" />
+            <UIcon name="i-hugeicons-grip-vertical" class="w-4 h-4" />
           </span>
           <UIcon :name="TILE_CATALOG[element.id as TileId].icon" class="w-[14px] h-[14px] shrink-0" style="color: var(--island-orange-2);" />
           <span class="flex-1 min-w-0 truncate text-[12px] font-semibold text-[var(--island-ink)]">{{ TILE_CATALOG[element.id as TileId].label }}</span>
@@ -65,7 +65,7 @@ const isDefault = computed(() => JSON.stringify(local.value.map(t => t.id)) === 
             :title="`Убрать «${TILE_CATALOG[element.id as TileId].label}»`"
             @click="remove(element.id as TileId)"
           >
-            <UIcon name="i-lucide-x" class="w-3 h-3" />
+            <UIcon name="i-hugeicons-x" class="w-3 h-3" />
           </button>
         </div>
       </template>
@@ -80,7 +80,7 @@ const isDefault = computed(() => JSON.stringify(local.value.map(t => t.id)) === 
         style="background: var(--island-fill); color: var(--island-ink-2);"
         @click="add(id)"
       >
-        <UIcon name="i-lucide-plus" class="w-3 h-3" />
+        <UIcon name="i-hugeicons-plus" class="w-3 h-3" />
         {{ TILE_CATALOG[id].label }}
       </button>
       <span v-if="spare.length === 0" class="text-[11.5px] text-[var(--island-ink-3)]">Все плитки включены</span>

@@ -24,7 +24,7 @@ function onMarkAll() {
 
 <template>
   <UButton
-    icon="i-lucide-bell"
+    icon="i-hugeicons-bell"
     color="neutral"
     variant="ghost"
     size="sm"
@@ -99,7 +99,7 @@ function onMarkAll() {
         </button>
 
         <div v-if="items.length === 0 && !list.isLoading.value" class="px-4 py-12 text-center space-y-2">
-          <UIcon name="i-lucide-bell-off" class="size-10 mx-auto text-muted" />
+          <UIcon name="i-hugeicons-bell-off" class="size-10 mx-auto text-muted" />
           <p class="text-sm text-muted">Пока нет уведомлений</p>
         </div>
       </div>

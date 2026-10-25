@@ -38,7 +38,7 @@ async function onPick(blockerTaskId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось добавить зависимость'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -51,7 +51,7 @@ async function onRemove(blockerTaskId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось удалить зависимость'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -63,7 +63,7 @@ async function onRemove(blockerTaskId: string) {
     <div class="flex items-center justify-between">
       <p class="text-xs text-muted uppercase tracking-wide">Зависимости</p>
       <UButton
-        icon="i-lucide-plus"
+        icon="i-hugeicons-plus"
         size="xs"
         variant="ghost"
         color="neutral"
@@ -80,7 +80,7 @@ async function onRemove(blockerTaskId: string) {
         :key="dep.blockerTaskId"
         class="flex items-center gap-2 px-2 py-1.5 rounded bg-elevated"
       >
-        <UIcon name="i-lucide-lock" class="size-3.5 text-warning shrink-0" />
+        <UIcon name="i-hugeicons-lock" class="size-3.5 text-warning shrink-0" />
         <NuxtLink
           :to="pageRoutes.task(workspaceId, boardId, dep.blockerTaskId)"
           class="text-sm flex-1 text-left truncate hover:text-primary"
@@ -88,7 +88,7 @@ async function onRemove(blockerTaskId: string) {
           {{ dep.blockerTitle }}
         </NuxtLink>
         <UButton
-          icon="i-lucide-x"
+          icon="i-hugeicons-x"
           size="xs"
           variant="ghost"
           color="neutral"
@@ -107,7 +107,7 @@ async function onRemove(blockerTaskId: string) {
         :key="dep.blockedTaskId"
         class="flex items-center gap-2 px-2 py-1.5 rounded bg-elevated"
       >
-        <UIcon name="i-lucide-link" class="size-3.5 text-muted shrink-0" />
+        <UIcon name="i-hugeicons-link" class="size-3.5 text-muted shrink-0" />
         <NuxtLink
           :to="pageRoutes.task(workspaceId, boardId, dep.blockedTaskId)"
           class="text-sm flex-1 text-left truncate hover:text-primary"

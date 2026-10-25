@@ -72,7 +72,7 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
     <div class="text-xs text-muted tabular-nums">
       <template v-if="isEditing && canEdit">
         <UButton
-          icon="i-lucide-trash-2"
+          icon="i-hugeicons-delete-02"
           color="error"
           variant="ghost"
           size="xs"
@@ -87,7 +87,7 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
     <div class="flex justify-end">
       <UButton
         v-if="isEditing && canEdit"
-        icon="i-lucide-x"
+        icon="i-hugeicons-x"
         color="neutral"
         variant="ghost"
         size="xs"
@@ -96,7 +96,7 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
       />
       <UButton
         v-else-if="canEdit"
-        icon="i-lucide-pencil"
+        icon="i-hugeicons-pencil"
         color="neutral"
         variant="ghost"
         size="xs"

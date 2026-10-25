@@ -86,7 +86,7 @@ export function buildAttention(tasks: Task[]): AttentionItem[] {
 }
 
 export const ATTENTION_TONE: Record<AttentionKind, { icon: string, text: string, bg: string }> = {
-  overdue: { icon: 'i-lucide-calendar-x', text: 'text-error-600', bg: 'bg-error-50 dark:bg-error-950/40' },
-  blocked: { icon: 'i-lucide-octagon-alert', text: 'text-error-600', bg: 'bg-error-50 dark:bg-error-950/40' },
-  due_soon: { icon: 'i-lucide-calendar-clock', text: 'text-accent-600', bg: 'bg-accent-50 dark:bg-accent-950/40' },
+  overdue: { icon: 'i-hugeicons-calendar-x', text: 'text-error-600', bg: 'bg-error-50 dark:bg-error-950/40' },
+  blocked: { icon: 'i-hugeicons-octagon-alert', text: 'text-error-600', bg: 'bg-error-50 dark:bg-error-950/40' },
+  due_soon: { icon: 'i-hugeicons-calendar-clock', text: 'text-accent-600', bg: 'bg-accent-50 dark:bg-accent-950/40' },
 }

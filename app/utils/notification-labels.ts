@@ -6,4 +6,6 @@ export const NOTIFICATION_TYPE_LABEL: Record<string, string> = {
   replenishment_overdue: 'Просроченное пополнение',
   sprint_forecast_drop: 'Падение прогноза спринта',
   automation: 'Автоматизации доски',
+  watched_comment: 'Комментарии в задачах, за которыми слежу',
+  watched_status: 'Смена статуса задач, за которыми слежу',
 }

@@ -88,7 +88,7 @@ async function copyLink() {
     toast.add({
       title: 'Ссылка скопирована',
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 2500,
     })
   }
@@ -96,7 +96,7 @@ async function copyLink() {
     toast.add({
       title: 'Не удалось скопировать. Скопируйте вручную.',
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
       duration: 4000,
     })
   }
@@ -124,7 +124,7 @@ async function sendInvitations() {
       title: `Отправлено ${success} ${pluralRu(success, 'приглашение', 'приглашения', 'приглашений')}`,
       description: failed > 0 ? `Не удалось отправить: ${failed}` : undefined,
       color: failed > 0 ? 'warning' : 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 5000,
     })
   }
@@ -132,7 +132,7 @@ async function sendInvitations() {
     toast.add({
       title: 'Не удалось отправить приглашения',
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
       duration: 5000,
     })
   }
@@ -170,7 +170,7 @@ watch(open, (v) => {
     <template #content>
       <div class="flex items-start gap-3 p-4 sm:p-5 border-b border-default">
         <span class="inline-flex size-9 items-center justify-center rounded-lg bg-primary shrink-0">
-          <UIcon name="i-lucide-mail-plus" class="size-4 text-accent-500" />
+          <UIcon name="i-hugeicons-mail-plus" class="size-4 text-accent-500" />
         </span>
         <div class="min-w-0 flex-1">
           <h3 class="text-base font-semibold text-default tracking-tight">
@@ -181,7 +181,7 @@ watch(open, (v) => {
           </p>
         </div>
         <UButton
-          icon="i-lucide-x"
+          icon="i-hugeicons-x"
           size="sm"
           color="neutral"
           variant="soft"
@@ -202,7 +202,7 @@ watch(open, (v) => {
               class="inline-flex items-center gap-1 text-xs text-muted hover:text-accent-600 transition-colors"
               @click="switchMode"
             >
-              <UIcon :name="mode === 'emails' ? 'i-lucide-link' : 'i-lucide-mail'" class="size-3" />
+              <UIcon :name="mode === 'emails' ? 'i-hugeicons-link' : 'i-hugeicons-mail-01'" class="size-3" />
               {{ mode === 'emails' ? 'Получить ссылку без email' : 'Пригласить по email' }}
             </button>
           </div>
@@ -225,7 +225,7 @@ watch(open, (v) => {
                   class="inline-flex size-4 items-center justify-center rounded-full hover:bg-default/50 transition-colors"
                   @click.stop="removeChip(i)"
                 >
-                  <UIcon name="i-lucide-x" class="size-3" />
+                  <UIcon name="i-hugeicons-x" class="size-3" />
                 </button>
               </span>
               <input
@@ -250,7 +250,7 @@ watch(open, (v) => {
               class="flex items-center gap-3 p-3 rounded-lg border border-dashed border-default bg-elevated/40"
             >
               <span class="inline-flex size-7 items-center justify-center rounded-md bg-default text-default shrink-0">
-                <UIcon name="i-lucide-link" class="size-3.5" />
+                <UIcon name="i-hugeicons-link" class="size-3.5" />
               </span>
               <p class="flex-1 text-xs text-default leading-relaxed">
                 Будет создана открытая ссылка с ролью
@@ -270,7 +270,7 @@ watch(open, (v) => {
               class="flex items-center gap-3 p-3 rounded-lg border border-default bg-elevated/40"
             >
               <span class="inline-flex size-7 items-center justify-center rounded-md bg-success-50 dark:bg-success-950 text-success-600 dark:text-success-400 shrink-0">
-                <UIcon name="i-lucide-check" class="size-4" />
+                <UIcon name="i-hugeicons-check" class="size-4" />
               </span>
               <div class="flex-1 min-w-0">
                 <p class="text-xs text-default mb-1">
@@ -280,7 +280,7 @@ watch(open, (v) => {
                   {{ linkUrl }}
                 </code>
               </div>
-              <UButton size="xs" icon="i-lucide-copy" @click="copyLink">
+              <UButton size="xs" icon="i-hugeicons-copy" @click="copyLink">
                 Копировать
               </UButton>
             </div>
@@ -348,7 +348,7 @@ watch(open, (v) => {
           </UButton>
           <UButton
             v-if="mode === 'emails'"
-            icon="i-lucide-send"
+            icon="i-hugeicons-send"
             :disabled="validCount === 0"
             :loading="create.isPending.value"
             @click="sendInvitations"
@@ -357,7 +357,7 @@ watch(open, (v) => {
           </UButton>
           <UButton
             v-else-if="linkToken"
-            icon="i-lucide-copy"
+            icon="i-hugeicons-copy"
             @click="copyLink"
           >
             Копировать ссылку

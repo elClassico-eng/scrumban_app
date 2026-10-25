@@ -24,15 +24,15 @@ const weekday = computed(() => {
 })
 
 const themeItems = computed(() => [
-  { label: 'Светлая', icon: 'i-lucide-sun', onSelect: () => { colorMode.preference = 'light' } },
-  { label: 'Тёмная', icon: 'i-lucide-moon', onSelect: () => { colorMode.preference = 'dark' } },
-  { label: 'Система', icon: 'i-lucide-monitor', onSelect: () => { colorMode.preference = 'system' } },
+  { label: 'Светлая', icon: 'i-hugeicons-sun-03', onSelect: () => { colorMode.preference = 'light' } },
+  { label: 'Тёмная', icon: 'i-hugeicons-moon', onSelect: () => { colorMode.preference = 'dark' } },
+  { label: 'Система', icon: 'i-hugeicons-monitor', onSelect: () => { colorMode.preference = 'system' } },
 ])
 
 const themeIcon = computed(() => {
-  if (colorMode.preference === 'light') return 'i-lucide-sun'
-  if (colorMode.preference === 'dark') return 'i-lucide-moon'
-  return 'i-lucide-monitor'
+  if (colorMode.preference === 'light') return 'i-hugeicons-sun-03'
+  if (colorMode.preference === 'dark') return 'i-hugeicons-moon'
+  return 'i-hugeicons-monitor'
 })
 
 function onLogout() {
@@ -55,7 +55,7 @@ function onLogout() {
       </UDropdownMenu>
       <UButton
         v-if="authStore.isAuthenticated"
-        icon="i-lucide-log-out"
+        icon="i-hugeicons-log-out"
         :loading="logout.isPending.value"
         color="neutral"
         variant="ghost"

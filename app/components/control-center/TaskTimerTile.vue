@@ -35,7 +35,7 @@ defineEmits<{
             :aria-label="running ? 'Пауза' : 'Запустить'"
             @click="$emit('toggle', $event)"
           >
-            <UIcon :name="running ? 'i-lucide-pause' : 'i-lucide-play'" class="w-4 h-4" />
+            <UIcon :name="running ? 'i-hugeicons-pause' : 'i-hugeicons-play'" class="w-4 h-4" />
           </button>
           <button
             class="w-9 h-9 rounded-[10px] border-none cursor-pointer grid place-items-center"
@@ -44,7 +44,7 @@ defineEmits<{
             aria-label="Стоп"
             @click="$emit('stop', $event)"
           >
-            <UIcon name="i-lucide-square" class="w-[14px] h-[14px]" />
+            <UIcon name="i-hugeicons-square" class="w-[14px] h-[14px]" />
           </button>
         </div>
       </div>

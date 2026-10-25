@@ -41,19 +41,19 @@ const EVENT_OPTIONS: { value: TaskEventType; label: string }[] = [
 ]
 
 const EVENT_ICON: Record<TaskEventType, string> = {
-  task_created: 'i-lucide-plus-circle',
-  task_moved: 'i-lucide-arrow-right-circle',
-  task_closed: 'i-lucide-check-circle',
-  task_reopened: 'i-lucide-rotate-ccw',
-  task_assigned: 'i-lucide-user-check',
-  task_updated: 'i-lucide-pencil',
-  task_archived: 'i-lucide-archive',
-  task_commented: 'i-lucide-message-square',
-  task_comment_deleted: 'i-lucide-message-square-off',
-  task_added_to_sprint: 'i-lucide-circle-plus',
-  task_removed_from_sprint: 'i-lucide-circle-minus',
-  task_blocked: 'i-lucide-octagon-x',
-  task_unblocked: 'i-lucide-octagon',
+  task_created: 'i-hugeicons-circle-plus',
+  task_moved: 'i-hugeicons-circle-arrow-right-01',
+  task_closed: 'i-hugeicons-circle-check-big',
+  task_reopened: 'i-hugeicons-rotate-ccw',
+  task_assigned: 'i-hugeicons-user-check-01',
+  task_updated: 'i-hugeicons-pencil',
+  task_archived: 'i-hugeicons-archive',
+  task_commented: 'i-hugeicons-message-square',
+  task_comment_deleted: 'i-hugeicons-message-square-off',
+  task_added_to_sprint: 'i-hugeicons-circle-plus',
+  task_removed_from_sprint: 'i-hugeicons-circle-minus',
+  task_blocked: 'i-hugeicons-octagon-x',
+  task_unblocked: 'i-hugeicons-octagon',
 }
 
 const filters = computed(() => ({
@@ -148,7 +148,7 @@ function targetFor(e: ActivityEvent) {
       </div>
       <UButton
         v-if="hasAnyFilter"
-        icon="i-lucide-x"
+        icon="i-hugeicons-x"
         size="sm"
         color="neutral"
         variant="ghost"
@@ -161,14 +161,14 @@ function targetFor(e: ActivityEvent) {
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
       <div class="space-y-6 min-w-0">
         <div v-if="list.isLoading.value" class="text-center py-12 text-muted">
-          <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+          <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
         </div>
 
         <div
           v-else-if="events.length === 0"
           class="text-center py-16 space-y-3 rounded-3xl border border-dashed border-default"
         >
-          <UIcon name="i-lucide-activity" class="size-12 text-muted mx-auto" />
+          <UIcon name="i-hugeicons-activity-01" class="size-12 text-muted mx-auto" />
           <p class="font-medium">Нет событий</p>
           <p class="text-sm text-muted">
             За последние 14 дней по этим фильтрам ничего не происходило.

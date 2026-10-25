@@ -35,7 +35,7 @@ const gap = computed(() => (cell.value >= 26 ? 5 : 3))
 const actor = ref<string>(props.userId ?? ALL_ACTORS)
 
 const actorItems = computed(() => [
-  { label: 'Вся команда', value: ALL_ACTORS, icon: 'i-lucide-users' },
+  { label: 'Вся команда', value: ALL_ACTORS, icon: 'i-hugeicons-users' },
   ...props.members.map(m => ({
     label: m.userId === props.userId ? `${displayName(m)} (вы)` : displayName(m),
     value: m.userId,
@@ -320,7 +320,7 @@ const EVENTS = ['событие', 'события', 'событий'] as [string
             aria-label="Снять закрепление"
             @click="pinned = null"
           >
-            <UIcon name="i-lucide-x" class="size-4" />
+            <UIcon name="i-hugeicons-x" class="size-4" />
           </button>
         </div>
 
@@ -375,9 +375,9 @@ const EVENTS = ['событие', 'события', 'событий'] as [string
 .hm--3 { background: #f2600f; }
 .hm--4 { background: #a83309; }
 
-:global(.dark) .hm--0 { background: #27272a; }
-:global(.dark) .hm--1 { background: #5c2410; }
-:global(.dark) .hm--2 { background: #9c3410; }
-:global(.dark) .hm--3 { background: #e05410; }
-:global(.dark) .hm--4 { background: #ff9d5c; }
+:global(.dark .hm--0) { background: #27272a; }
+:global(.dark .hm--1) { background: #5c2410; }
+:global(.dark .hm--2) { background: #9c3410; }
+:global(.dark .hm--3) { background: #e05410; }
+:global(.dark .hm--4) { background: #ff9d5c; }
 </style>

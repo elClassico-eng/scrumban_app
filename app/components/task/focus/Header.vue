@@ -12,14 +12,14 @@ const props = defineProps<{
 const emit = defineEmits<{
   'column-change': [columnId: string]
   'class-change': [value: ServiceClass]
-  'title-change': [value: string]
+  'title-change': [value: string, base: string]
 }>()
 
 const CLASS_ICON: Record<ServiceClass, string> = {
-  standard: 'i-lucide-flag',
-  expedite: 'i-lucide-zap',
-  intangible: 'i-lucide-circle',
-  fixed_date: 'i-lucide-calendar-clock',
+  standard: 'i-hugeicons-flag-02',
+  expedite: 'i-hugeicons-zap',
+  intangible: 'i-hugeicons-circle',
+  fixed_date: 'i-hugeicons-calendar-clock',
 }
 
 const CLASS_VARIANT: Record<ServiceClass, string> = {
@@ -42,9 +42,19 @@ const columnOptions = computed(() =>
   props.columns.map(c => ({ label: c.name, onSelect: () => emit('column-change', c.id) })),
 )
 
+const titleBase = ref<string | null>(null)
+const shownTitle = computed(() => titleBase.value ?? props.task.title)
+
+function onTitleFocus() {
+  titleBase.value = props.task.title
+}
+
 function onTitleBlur(e: FocusEvent) {
+  const base = titleBase.value ?? props.task.title
+  titleBase.value = null
   const next = (e.target as HTMLElement).textContent?.trim() ?? ''
-  if (next && next !== props.task.title) emit('title-change', next)
+  if (next && next !== base) emit('title-change', next, base)
+  else (e.target as HTMLElement).textContent = props.task.title
 }
 </script>
 
@@ -58,7 +68,7 @@ function onTitleBlur(e: FocusEvent) {
         >
           <span class="size-1.5 rounded-full bg-accent-500" />
           {{ currentColumn?.name ?? '—' }}
-          <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
         </button>
       </UDropdownMenu>
 
@@ -70,7 +80,7 @@ function onTitleBlur(e: FocusEvent) {
         >
           <UIcon :name="CLASS_ICON[task.serviceClass]" class="size-3.5" />
           {{ SERVICE_CLASS_INFO[task.serviceClass].shortLabel }}
-          <UIcon name="i-lucide-chevron-down" class="size-3 opacity-60" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-3 opacity-60" />
         </button>
       </UDropdownMenu>
 
@@ -78,7 +88,7 @@ function onTitleBlur(e: FocusEvent) {
         v-if="task.isEpic"
         class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-inverted text-accent-500 text-[12px] font-semibold uppercase tracking-[0.04em] border border-inverted"
       >
-        <UIcon name="i-lucide-crown" class="size-3.5" />
+        <UIcon name="i-hugeicons-crown" class="size-3.5" />
         Epic
       </span>
     </div>
@@ -88,10 +98,10 @@ function onTitleBlur(e: FocusEvent) {
       :class="task.isEpic ? 'text-[26px]' : 'text-2xl'"
       :contenteditable="true"
       spellcheck="false"
+      @focus="onTitleFocus"
       @blur="onTitleBlur"
       @keydown.enter.prevent="($event.target as HTMLElement).blur()"
-    >
-      {{ task.title }}
-    </h1>
+      v-text="shownTitle"
+    />
   </div>
 </template>

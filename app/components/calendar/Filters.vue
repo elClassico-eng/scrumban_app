@@ -40,8 +40,8 @@ function clear() {
       variant="outline"
       color="neutral"
       size="sm"
-      icon="i-lucide-users"
-      trailing-icon="i-lucide-chevron-down"
+      icon="i-hugeicons-users"
+      trailing-icon="i-hugeicons-chevron-down"
       :class="isFiltered ? 'ring-1 ring-accent-500/40' : ''"
     >
       {{ label }}

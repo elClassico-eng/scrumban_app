@@ -47,7 +47,7 @@ async function onSubmit() {
     <div v-if="submitted" class="space-y-6">
       <div class="rounded-xl border border-default bg-elevated/60 p-5 space-y-2">
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-mail-check" class="size-5 text-success-600" />
+          <UIcon name="i-hugeicons-mail-check" class="size-5 text-success-600" />
           <p class="font-medium">Письмо отправлено</p>
         </div>
         <p class="text-sm text-muted">
@@ -74,7 +74,7 @@ async function onSubmit() {
         color="error"
         variant="soft"
         :title="error"
-        icon="i-lucide-alert-circle"
+        icon="i-hugeicons-alert-circle"
       />
       <UButton type="submit" :loading="submitting" block size="xl" class="font-semibold">
         Отправить ссылку

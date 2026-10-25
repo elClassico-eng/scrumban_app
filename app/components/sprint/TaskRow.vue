@@ -3,6 +3,7 @@ import type { Task } from '#shared/types/task'
 import type { BoardColumn } from '#shared/types/column'
 import type { MemberView } from '#shared/types/workspace'
 
+const taskKey = useTaskKey()
 const props = defineProps<{
   task: Task
   column: BoardColumn | null
@@ -69,7 +70,7 @@ function openTask() {
   >
     <span class="size-2 rounded-full shrink-0" :class="dotClass" :title="columnLabel" />
     <span class="text-[11px] font-mono text-muted shrink-0">
-      {{ task.id.slice(0, 8).toUpperCase() }}
+      {{ taskKey(task) }}
     </span>
     <span class="flex-1 text-[13px] text-default truncate">
       {{ task.title }}

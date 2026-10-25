@@ -6,6 +6,10 @@ export type NotificationType =
   | 'replenishment_overdue'
   | 'sprint_forecast_drop'
   | 'automation'
+  | 'reply'
+  | 'comment_assigned'
+  | 'watched_comment'
+  | 'watched_status'
 
 export interface Notification {
   id: string
@@ -14,7 +18,18 @@ export interface Notification {
   type: NotificationType
   payload: Record<string, unknown>
   readAt: string | null
+  clearedAt?: string | null
+  snoozedUntil?: string | null
   createdAt: string
+  actor?: NotificationActor | null
+}
+
+export type NotificationActor = {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  avatarUrl: string | null
 }
 
 export interface NotificationListResponse {

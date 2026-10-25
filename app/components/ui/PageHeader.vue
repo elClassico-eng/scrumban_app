@@ -19,7 +19,7 @@ defineProps<{
           :to="back.to"
           class="inline-flex items-center gap-1 text-[12.5px] text-muted transition-colors hover:text-default mb-1"
         >
-          <UIcon name="i-lucide-arrow-left" class="size-3.5" />
+          <UIcon name="i-hugeicons-arrow-left-02" class="size-3.5" />
           {{ back.label }}
         </NuxtLink>
         <h1 class="m-0 flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-default sm:text-[28px]">

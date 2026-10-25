@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import { BOARD_COLOR_RE, DEFAULT_BOARD_COLOR } from '#shared/constants/board-colors'
+import { BOARD_KEY_RE, deriveBoardKey } from '#shared/utils/board-key'
 
 const props = defineProps<{ workspaceId: string }>()
 const open = defineModel<boolean>('open', { default: false })
@@ -10,11 +11,13 @@ const schema = z.object({
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
   color: z.string().regex(BOARD_COLOR_RE),
+  key: z.string().trim().toUpperCase().refine(v => v === '' || BOARD_KEY_RE.test(v), '2–6 букв или цифр, с буквы в начале'),
+  icon: z.string().nullable(),
   seedDefaults: z.boolean(),
 })
 
 type State = z.infer<typeof schema>
-const state = reactive<State>({ name: '', slug: '', color: DEFAULT_BOARD_COLOR, seedDefaults: true })
+const state = reactive<State>({ name: '', slug: '', color: DEFAULT_BOARD_COLOR, key: '', icon: null, seedDefaults: true })
 
 const slugTouched = ref(false)
 watch(() => state.name, (name) => {
@@ -32,6 +35,8 @@ function resetForm() {
   state.name = ''
   state.slug = ''
   state.color = DEFAULT_BOARD_COLOR
+  state.icon = null
+  state.key = ''
   state.seedDefaults = true
   slugTouched.value = false
   create.reset()
@@ -39,7 +44,7 @@ function resetForm() {
 
 async function onSubmit() {
   try {
-    await create.mutateAsync(state)
+    await create.mutateAsync({ ...state, key: state.key.trim().toUpperCase() || undefined })
     open.value = false
     resetForm()
   }
@@ -60,20 +65,28 @@ watch(open, (v) => {
         <UFormField label="Название" name="name" required>
           <UInput v-model="state.name" class="w-full" autofocus />
         </UFormField>
-        <UFormField
-          label="Slug"
-          name="slug"
-          hint="URL-идентификатор: латиница, цифры и дефисы"
-          required
-        >
-          <UInput
-            v-model="state.slug"
-            class="w-full"
-            @update:model-value="slugTouched = true"
-          />
-        </UFormField>
-        <UFormField label="Цвет" name="color">
-          <BoardColorPicker v-model="state.color" class="pt-1" />
+        <div class="grid grid-cols-[1fr_8rem] gap-3">
+          <UFormField label="Slug" name="slug" hint="латиница, цифры, дефисы" required>
+            <UInput
+              v-model="state.slug"
+              class="w-full"
+              @update:model-value="slugTouched = true"
+            />
+          </UFormField>
+          <UFormField label="Ключ задач" name="key">
+            <UInput
+              v-model="state.key"
+              class="w-full uppercase"
+              :placeholder="deriveBoardKey(state.name)"
+              maxlength="6"
+            />
+          </UFormField>
+        </div>
+        <p class="-mt-2 text-xs text-dimmed">
+          Задачи получат номера вида {{ (state.key || deriveBoardKey(state.name)).toUpperCase() }}-1, -2, …
+        </p>
+        <UFormField label="Аватарка и цвет" name="color">
+          <BoardAppearancePicker v-model:color="state.color" v-model:icon="state.icon" :name="state.name" class="pt-1" />
         </UFormField>
         <UFormField name="seedDefaults">
           <UCheckbox
@@ -86,7 +99,7 @@ watch(open, (v) => {
           color="error"
           variant="soft"
           :title="errorMessage"
-          icon="i-lucide-alert-circle"
+          icon="i-hugeicons-alert-circle"
         />
         <div class="flex justify-end gap-2 pt-2">
           <UButton type="button" variant="ghost" color="neutral" @click="open = false">

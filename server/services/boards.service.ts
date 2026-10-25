@@ -8,7 +8,7 @@
 //   update    → admin+
 //   delete    → owner (destructive: cascades to columns + tasks + events)
 //   replenishment / SLE recompute → scrum_master+ (flow discipline, primary persona)
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { boardColorForIndex } from '#shared/constants/board-colors'
 import {
   boardColumns,
@@ -39,9 +39,12 @@ const DEFAULT_COLUMNS = [
 export async function listBoards(
   workspaceId: string,
   actorRole: WorkspaceMemberRole,
+  opts: { archived?: boolean } = {},
 ): Promise<Board[]> {
   requireMinRole(actorRole, 'viewer')
-  return withTenant(workspaceId, async (tx) => tx.select().from(boards))
+  return withTenant(workspaceId, async (tx) =>
+    tx.select().from(boards).where(opts.archived ? isNotNull(boards.archivedAt) : isNull(boards.archivedAt)),
+  )
 }
 
 export async function getBoard(input: {
@@ -62,6 +65,8 @@ export async function createBoard(input: {
   name: string
   slug: string
   color?: string
+  icon?: string | null
+  key?: string
   seedDefaults?: boolean
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
@@ -77,6 +82,8 @@ export async function createBoard(input: {
           name: input.name,
           slug: input.slug,
           color,
+          icon: input.icon ?? null,
+          ...(input.key ? { key: input.key } : {}),
         })
         .returning()
 
@@ -100,7 +107,7 @@ export async function createBoard(input: {
     })
   } catch (err) {
     if (isPgUniqueViolation(err)) {
-      throw new ConflictError('Этот slug доски уже занят в workspace')
+      throw new ConflictError(uniqueViolationMessage(err))
     }
     throw err
   }
@@ -113,10 +120,13 @@ export async function updateBoard(input: {
     name?: string
     slug?: string
     color?: string
+    icon?: string | null
+    key?: string
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
     columnTint?: boolean
+    archived?: boolean
   }
   actorRole: WorkspaceMemberRole
 }): Promise<Board> {
@@ -127,18 +137,24 @@ export async function updateBoard(input: {
     name?: string
     slug?: string
     color?: string
+    icon?: string | null
+    key?: string
     sleDays?: number | null
     sleProbability?: string
     replenishmentPeriodDays?: number
     columnTint?: boolean
+    archivedAt?: Date | null
     updatedAt: Date
   } = { updatedAt: new Date() }
   if (input.patch.name !== undefined) set.name = input.patch.name
   if (input.patch.slug !== undefined) set.slug = input.patch.slug
   if (input.patch.color !== undefined) set.color = input.patch.color
+  if ('icon' in input.patch) set.icon = input.patch.icon ?? null
+  if (input.patch.key !== undefined) set.key = input.patch.key
   if ('sleDays' in input.patch) set.sleDays = input.patch.sleDays ?? null
   if (input.patch.sleProbability !== undefined) set.sleProbability = input.patch.sleProbability
   if (input.patch.columnTint !== undefined) set.columnTint = input.patch.columnTint
+  if (input.patch.archived !== undefined) set.archivedAt = input.patch.archived ? new Date() : null
   if (input.patch.replenishmentPeriodDays !== undefined) {
     set.replenishmentPeriodDays = input.patch.replenishmentPeriodDays
   }
@@ -155,7 +171,7 @@ export async function updateBoard(input: {
     return row
   } catch (err) {
     if (isPgUniqueViolation(err)) {
-      throw new ConflictError('Этот slug доски уже занят в workspace')
+      throw new ConflictError(uniqueViolationMessage(err))
     }
     throw err
   }
@@ -172,6 +188,13 @@ export async function deleteBoard(input: {
     tx.delete(boards).where(eq(boards.id, input.boardId)),
   )
   if ((result.count ?? 0) === 0) throw new NotFoundError('Доска не найдена')
+}
+
+function uniqueViolationMessage(err: unknown): string {
+  const cause = (err as { cause?: { constraint_name?: string } }).cause ?? (err as { constraint_name?: string })
+  return cause.constraint_name === 'boards_workspace_key_idx'
+    ? 'Этот ключ уже занят другой доской'
+    : 'Этот slug доски уже занят в workspace'
 }
 
 function isPgUniqueViolation(err: unknown): boolean {

@@ -77,7 +77,7 @@ function resetDraft() {
           ← Спринты
         </NuxtLink>
         <h1 class="text-[26px] font-semibold tracking-tight text-highlighted mt-0.5 mb-0 flex items-center gap-2.5">
-          <UIcon name="i-lucide-flask-conical" class="size-6 text-accent-500" />
+          <UIcon name="i-hugeicons-flask-conical" class="size-6 text-accent-500" />
           Симулятор решений
           <span v-if="sprint" class="text-muted font-normal truncate">· {{ sprint.name }}</span>
         </h1>
@@ -92,7 +92,7 @@ function resetDraft() {
         size="sm"
         variant="ghost"
         color="neutral"
-        icon="i-lucide-rotate-ccw"
+        icon="i-hugeicons-rotate-ccw"
         @click="resetDraft"
       >
         Сбросить
@@ -107,7 +107,7 @@ function resetDraft() {
       v-else-if="networkReport.data.value && !networkReport.data.value.ok"
       class="surface-soft rounded-2xl px-6 py-6 flex items-start gap-2.5"
     >
-      <UIcon name="i-lucide-database" class="size-4 text-muted shrink-0 mt-0.5" />
+      <UIcon name="i-hugeicons-database" class="size-4 text-muted shrink-0 mt-0.5" />
       <p class="text-[12.5px] text-muted m-0 leading-relaxed">
         Недостаточно истории для оценок: закрыто
         <b class="text-default">{{ networkReport.data.value.closedSamples }}</b> задач из

@@ -4,6 +4,7 @@ import type { Task } from '#shared/types/task'
 import type { BoardColumn } from '#shared/types/column'
 import type { MemberView } from '#shared/types/workspace'
 
+const taskKey = useTaskKey()
 const props = defineProps<{
   sprint: Sprint
   backlog: Task[]
@@ -48,8 +49,7 @@ const filteredBacklog = computed(() => {
     if (filter.value === 'urgent' && t.serviceClass !== 'expedite') return false
     if (filter.value === 'stale' && ageInDays(t.createdAt) < STALE_THRESHOLD_DAYS) return false
     if (q) {
-      const id = t.id.slice(0, 8).toLowerCase()
-      if (!id.includes(q) && !t.title.toLowerCase().includes(q)) return false
+      if (!taskKey(t).toLowerCase().includes(q) && !t.title.toLowerCase().includes(q)) return false
     }
     return true
   })
@@ -141,14 +141,14 @@ function onClose() {
             title="Закрыть"
             @click="onClose"
           >
-            <UIcon name="i-lucide-x" class="size-4" />
+            <UIcon name="i-hugeicons-x" class="size-4" />
           </button>
         </header>
 
         <div class="px-5 py-3 border-b border-default">
           <UInput
             v-model="query"
-            icon="i-lucide-search"
+            icon="i-hugeicons-search-01"
             placeholder="Найти задачу по ID или заголовку…"
             size="md"
             class="w-full"
@@ -203,14 +203,14 @@ function onClose() {
                   ? 'bg-accent-500 border-accent-500 text-white'
                   : 'border-zinc-400 bg-default'"
               >
-                <UIcon v-if="selected.has(t.id)" name="i-lucide-check" class="size-3" />
+                <UIcon v-if="selected.has(t.id)" name="i-hugeicons-check" class="size-3" />
               </span>
               <div class="flex-1 min-w-0">
                 <div class="text-[13px] font-medium text-default leading-snug">
                   {{ t.title }}
                 </div>
                 <div class="flex flex-wrap items-center gap-2 mt-1 text-[11.5px] text-muted">
-                  <span class="font-mono">{{ t.id.slice(0, 8).toUpperCase() }}</span>
+                  <span class="font-mono">{{ taskKey(t) }}</span>
                   <span
                     v-if="CLASS_BADGE[t.serviceClass]"
                     class="text-[10.5px] font-medium px-1.5 py-0.5 rounded"
@@ -222,7 +222,7 @@ function onClose() {
                     class="inline-flex items-center gap-1"
                     :class="ageInDays(t.createdAt) >= STALE_THRESHOLD_DAYS ? 'text-accent-600' : ''"
                   >
-                    <UIcon name="i-lucide-calendar" class="size-3" />
+                    <UIcon name="i-hugeicons-calendar-03" class="size-3" />
                     {{ ageInDays(t.createdAt) }} дн в бэклоге
                   </span>
                   <span v-if="columnById.get(t.columnId)" class="text-dimmed">
@@ -252,7 +252,7 @@ function onClose() {
           <div class="flex-1 text-[12.5px] text-default">
             Выбрано: <b>{{ selected.size }}</b> задач
             <span v-if="selected.size > 0" class="ml-2 inline-flex items-center gap-1 text-accent-700">
-              <UIcon name="i-lucide-zap" class="size-3" />
+              <UIcon name="i-hugeicons-zap" class="size-3" />
               {{ selectedSum }} SP
             </span>
           </div>
@@ -261,7 +261,7 @@ function onClose() {
           </UButton>
           <UButton
             size="sm"
-            icon="i-lucide-plus"
+            icon="i-hugeicons-plus"
             :disabled="selected.size === 0"
             @click="onConfirm"
           >

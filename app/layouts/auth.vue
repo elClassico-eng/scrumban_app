@@ -50,7 +50,7 @@ onBeforeUnmount(() => {
         <div class="auth2__top">
           <span class="auth2__mark"><TaktMark /></span>
           <NuxtLink to="/" external class="auth2__home">
-            <UIcon name="i-lucide-arrow-left" class="size-3.5" /> На главную
+            <UIcon name="i-hugeicons-arrow-left-02" class="size-3.5" /> На главную
           </NuxtLink>
         </div>
         <slot />
@@ -92,7 +92,7 @@ onBeforeUnmount(() => {
             :disabled="stepper.step.value <= 1"
             @click="stepper.prev()"
           >
-            <UIcon name="i-lucide-arrow-left" class="size-4" />
+            <UIcon name="i-hugeicons-arrow-left-02" class="size-4" />
           </button>
           <button
             type="button"
@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
             :disabled="stepper.step.value >= stepper.total"
             @click="stepper.next()"
           >
-            <UIcon name="i-lucide-arrow-right" class="size-4" />
+            <UIcon name="i-hugeicons-arrow-right-02" class="size-4" />
           </button>
         </div>
       </Transition>

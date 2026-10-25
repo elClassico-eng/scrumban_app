@@ -7,13 +7,15 @@ import { requireAuth } from '../../../../utils/auth'
 import { toHttpError } from '../../../../utils/errors'
 
 const ParamsSchema = z.object({ id: z.uuid() })
+const QuerySchema = z.object({ archived: z.enum(['true', 'false']).optional() })
 
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event)
     const { id } = await getValidatedRouterParams(event, ParamsSchema.parse)
+    const { archived } = await getValidatedQuery(event, QuerySchema.parse)
     const workspace = await getWorkspaceForUserOrThrow(id, user.id)
-    const boards = await listBoards(id, workspace.role)
+    const boards = await listBoards(id, workspace.role, { archived: archived === 'true' })
     return { boards }
   } catch (err) {
     throw toHttpError(err)

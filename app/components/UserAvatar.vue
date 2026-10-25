@@ -24,6 +24,10 @@ const SIZE_CLASS = {
   xl: 'size-14 text-base',
 } as const
 
+const failed = ref(false)
+watch(() => props.user?.avatarUrl, () => { failed.value = false })
+const photo = computed(() => (failed.value ? null : props.user?.avatarUrl ?? null))
+
 const label = computed(() => displayName(props.user))
 const fallback = computed(() => initials(props.user))
 
@@ -38,20 +42,22 @@ const containerClass = computed(() => [
   <UTooltip v-if="tooltip && user" :text="label">
     <div :class="containerClass">
       <img
-        v-if="user?.avatarUrl"
-        :src="user.avatarUrl"
+        v-if="photo"
+        :src="photo"
         :alt="label"
         class="size-full object-cover"
+        @error="failed = true"
       >
       <span v-else>{{ fallback }}</span>
     </div>
   </UTooltip>
   <div v-else :class="containerClass">
     <img
-      v-if="user?.avatarUrl"
-      :src="user.avatarUrl"
+      v-if="photo"
+      :src="photo"
       :alt="label"
       class="size-full object-cover"
+      @error="failed = true"
     >
     <span v-else>{{ fallback }}</span>
   </div>

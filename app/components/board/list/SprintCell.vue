@@ -30,5 +30,4 @@ const sprint = computed(() =>
     />
     <span class="truncate">{{ sprint.name }}</span>
   </span>
-  <span v-else class="text-dimmed text-xs">—</span>
 </template>

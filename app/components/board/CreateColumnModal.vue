@@ -85,7 +85,7 @@ watch(open, (v) => {
           color="error"
           variant="soft"
           :title="errorMessage"
-          icon="i-lucide-alert-circle"
+          icon="i-hugeicons-alert-circle"
         />
         <div class="flex justify-end gap-2 pt-2">
           <UButton type="button" variant="ghost" color="neutral" @click="open = false">

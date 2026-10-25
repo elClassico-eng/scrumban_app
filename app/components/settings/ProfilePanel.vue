@@ -40,7 +40,7 @@ async function resendVerification() {
     toast.add({
       title: 'Письмо отправлено',
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 2000,
     })
   }
@@ -91,13 +91,13 @@ async function save(fields: Partial<State>, okTitle: string) {
   )
   try {
     await update.mutateAsync(body)
-    toast.add({ title: okTitle, color: 'success', icon: 'i-lucide-check', duration: 1500 })
+    toast.add({ title: okTitle, color: 'success', icon: 'i-hugeicons-check', duration: 1500 })
   }
   catch (err) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -126,7 +126,7 @@ const previewInitials = computed(() => initials({
 <template>
   <div class="space-y-4">
     <div v-if="me.isLoading.value" class="py-12 text-center text-muted">
-      <UIcon name="i-lucide-loader" class="size-6 animate-spin" />
+      <UIcon name="i-hugeicons-loader" class="size-6 animate-spin" />
     </div>
 
     <template v-else-if="me.data.value">
@@ -158,7 +158,7 @@ const previewInitials = computed(() => initials({
                 : 'bg-white/15 text-white/90'"
             >
               <UIcon
-                :name="isVerified ? 'i-lucide-badge-check' : 'i-lucide-circle-dashed'"
+                :name="isVerified ? 'i-hugeicons-badge-check' : 'i-hugeicons-circle-dashed'"
                 class="size-3.5"
               />
               {{ isVerified ? 'Email подтверждён' : 'Email не подтверждён' }}
@@ -181,7 +181,7 @@ const previewInitials = computed(() => initials({
         style="border-color: var(--island-orange-tint-border)"
       >
         <div class="flex items-start gap-2.5">
-          <UIcon name="i-lucide-mail-warning" class="mt-0.5 size-4 shrink-0 text-accent-600" />
+          <UIcon name="i-hugeicons-mail-warning" class="mt-0.5 size-4 shrink-0 text-accent-600" />
           <div class="min-w-0 space-y-2">
             <p class="text-xs leading-relaxed text-muted">
               Подтвердите email, чтобы принимать приглашения в чужие workspace'ы. Ссылка действительна 24 часа.

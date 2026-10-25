@@ -27,7 +27,7 @@ async function onAccept(invitationId: string, workspaceName: string) {
         ? 'Текущая роль сохранена — изменение ролей делается через members на admin-стороне.'
         : undefined,
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 8000,
     })
     await router.push(pageRoutes.boards(res.workspaceId))
@@ -41,7 +41,7 @@ async function onAccept(invitationId: string, workspaceName: string) {
     toast.add({
       title: message,
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
       duration: 8000,
     })
   }
@@ -54,7 +54,7 @@ async function onAccept(invitationId: string, workspaceName: string) {
 <template>
   <section v-if="invitations.length > 0" class="space-y-3">
     <div class="flex items-center gap-2.5">
-      <UIcon name="i-lucide-mail-plus" class="size-4 text-accent-600" />
+      <UIcon name="i-hugeicons-mail-plus" class="size-4 text-accent-600" />
       <h2 class="text-sm font-semibold text-default">Вас приглашают</h2>
       <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent-50 text-[10px] text-accent-700 font-semibold tabular-nums">
         {{ invitations.length }}
@@ -68,7 +68,7 @@ async function onAccept(invitationId: string, workspaceName: string) {
         class="flex items-center gap-3 px-4 py-3"
       >
         <span class="inline-flex size-9 items-center justify-center rounded-lg bg-accent-50 shrink-0">
-          <UIcon name="i-lucide-mail-plus" class="size-4 text-accent-600" />
+          <UIcon name="i-hugeicons-mail-plus" class="size-4 text-accent-600" />
         </span>
 
         <div class="flex-1 min-w-0">
@@ -82,7 +82,7 @@ async function onAccept(invitationId: string, workspaceName: string) {
             </span>
             <span class="text-dimmed">·</span>
             <span class="inline-flex items-center gap-1">
-              <UIcon name="i-lucide-calendar" class="size-3" />
+              <UIcon name="i-hugeicons-calendar-03" class="size-3" />
               до {{ shortDate(inv.expiresAt) }}
             </span>
           </div>

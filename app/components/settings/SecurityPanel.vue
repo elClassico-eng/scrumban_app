@@ -16,13 +16,13 @@ async function onChangePassword() {
     await changePassword.mutateAsync({ ...pwState })
     pwState.currentPassword = ''
     pwState.newPassword = ''
-    toast.add({ title: 'Пароль изменён', color: 'success', icon: 'i-lucide-check', duration: 1500 })
+    toast.add({ title: 'Пароль изменён', color: 'success', icon: 'i-hugeicons-check', duration: 1500 })
   }
   catch (err) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сменить пароль'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -44,13 +44,13 @@ function deviceLabel(ua: string | null): string {
 async function onRevokeSession(id: string) {
   try {
     await revokeSession.mutateAsync(id)
-    toast.add({ title: 'Сессия завершена', color: 'success', icon: 'i-lucide-check', duration: 1500 })
+    toast.add({ title: 'Сессия завершена', color: 'success', icon: 'i-hugeicons-check', duration: 1500 })
   }
   catch (err) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось завершить сессию'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -65,7 +65,7 @@ async function onRevokeOthers() {
     toast.add({
       title: `Завершено сеансов: ${revoked}`,
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 1500,
     })
   }
@@ -73,7 +73,7 @@ async function onRevokeOthers() {
     toast.add({
       title: getErrorMessage(err, 'Не удалось завершить сеансы'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -107,7 +107,7 @@ async function onRevokeOthers() {
         >
           <div class="min-w-0">
             <p class="flex items-center gap-2 text-sm text-default">
-              <UIcon name="i-lucide-monitor-smartphone" class="size-4 shrink-0 text-muted" />
+              <UIcon name="i-hugeicons-monitor-smartphone" class="size-4 shrink-0 text-muted" />
               <span class="truncate">{{ deviceLabel(s.userAgent) }}</span>
               <span
                 v-if="s.current"

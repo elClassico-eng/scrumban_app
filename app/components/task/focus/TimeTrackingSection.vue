@@ -87,7 +87,7 @@ async function onDelete(entry: TimeEntryView) {
     await remove.mutateAsync(entry.id)
   }
   catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось удалить'), color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: getErrorMessage(err, 'Не удалось удалить'), color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
@@ -115,7 +115,7 @@ async function commitEdit() {
   if (!id) return
   const secs = editHours.value * 3600 + editMinutes.value * 60
   if (secs <= 0) {
-    toast.add({ title: 'Укажи длительность > 0', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Укажи длительность > 0', color: 'error', icon: 'i-hugeicons-alert-circle' })
     return
   }
   try {
@@ -128,7 +128,7 @@ async function commitEdit() {
     editingId.value = null
   }
   catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось обновить'), color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: getErrorMessage(err, 'Не удалось обновить'), color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
@@ -154,7 +154,7 @@ function cancelAdd() {
 async function commitAdd() {
   const secs = addHours.value * 3600 + addMinutes.value * 60
   if (secs <= 0) {
-    toast.add({ title: 'Укажи длительность > 0', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Укажи длительность > 0', color: 'error', icon: 'i-hugeicons-alert-circle' })
     return
   }
   try {
@@ -166,7 +166,7 @@ async function commitAdd() {
     addOpen.value = false
   }
   catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось добавить запись'), color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: getErrorMessage(err, 'Не удалось добавить запись'), color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 </script>
@@ -194,7 +194,7 @@ async function commitAdd() {
           :disabled="stop.isPending.value"
           @click="stop.mutate()"
         >
-          <UIcon name="i-lucide-square" class="size-3" />
+          <UIcon name="i-hugeicons-square" class="size-3" />
           Стоп
         </button>
       </template>
@@ -205,7 +205,7 @@ async function commitAdd() {
           :disabled="start.isPending.value"
           @click="start.mutate()"
         >
-          <UIcon name="i-lucide-play" class="size-3" />
+          <UIcon name="i-hugeicons-play" class="size-3" />
           Старт
         </button>
       </template>
@@ -304,7 +304,7 @@ async function commitAdd() {
               title="Изменить"
               @click="startEdit(entry)"
             >
-              <UIcon name="i-lucide-pencil" class="size-3" />
+              <UIcon name="i-hugeicons-pencil" class="size-3" />
             </button>
             <button
               type="button"
@@ -312,7 +312,7 @@ async function commitAdd() {
               title="Удалить"
               @click="onDelete(entry)"
             >
-              <UIcon name="i-lucide-trash-2" class="size-3" />
+              <UIcon name="i-hugeicons-delete-02" class="size-3" />
             </button>
           </div>
         </div>
@@ -375,7 +375,7 @@ async function commitAdd() {
         class="inline-flex items-center gap-1.5 h-[26px] px-2.5 rounded-md text-[12px] text-muted bg-transparent border border-dashed border-default cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="openAdd"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         Добавить вручную
       </button>
     </template>

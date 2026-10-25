@@ -56,7 +56,7 @@ const pct = (v: number | null) => (v === null ? '—' : `${Math.round(v * 100)}%
         :title="open ? 'Свернуть снапшоты' : 'Показать снапшоты'"
         @click="open = !open"
       >
-        <UIcon name="i-lucide-chevron-right" class="size-4 transition-transform" :class="open ? 'rotate-90' : ''" />
+        <UIcon name="i-hugeicons-chevron-right" class="size-4 transition-transform" :class="open ? 'rotate-90' : ''" />
       </button>
 
       <div class="flex-1 min-w-0">

@@ -3,18 +3,18 @@ import { TILE_IDS, type ControlCenterTab, type TileId } from '#shared/types/cont
 export type TileMeta = { tab: ControlCenterTab; label: string; icon: string }
 
 export const TILE_CATALOG: Record<TileId, TileMeta> = {
-  timer: { tab: 'overview', label: 'Активная задача', icon: 'i-lucide-timer' },
-  my_tasks: { tab: 'overview', label: 'Мои задачи', icon: 'i-lucide-user-check' },
-  firings: { tab: 'overview', label: 'Горит', icon: 'i-lucide-zap' },
-  sprint: { tab: 'overview', label: 'Спринт', icon: 'i-lucide-flag' },
-  due_soon: { tab: 'overview', label: 'Ближайший дедлайн', icon: 'i-lucide-calendar-clock' },
-  presence: { tab: 'overview', label: 'Команда', icon: 'i-lucide-users' },
-  wip: { tab: 'flow', label: 'WIP по колонкам', icon: 'i-lucide-layers' },
-  aging: { tab: 'flow', label: 'Старение', icon: 'i-lucide-hourglass' },
-  blockers: { tab: 'flow', label: 'Блокеры', icon: 'i-lucide-octagon' },
-  sle: { tab: 'flow', label: 'SLE', icon: 'i-lucide-sparkles' },
-  throughput: { tab: 'flow', label: 'Throughput', icon: 'i-lucide-trending-up' },
-  replenishment: { tab: 'flow', label: 'Пополнение', icon: 'i-lucide-refresh-cw' },
+  timer: { tab: 'overview', label: 'Активная задача', icon: 'i-hugeicons-timer-02' },
+  my_tasks: { tab: 'overview', label: 'Мои задачи', icon: 'i-hugeicons-user-check-01' },
+  firings: { tab: 'overview', label: 'Горит', icon: 'i-hugeicons-zap' },
+  sprint: { tab: 'overview', label: 'Спринт', icon: 'i-hugeicons-flag-02' },
+  due_soon: { tab: 'overview', label: 'Ближайший дедлайн', icon: 'i-hugeicons-calendar-clock' },
+  presence: { tab: 'overview', label: 'Команда', icon: 'i-hugeicons-users' },
+  wip: { tab: 'flow', label: 'WIP по колонкам', icon: 'i-hugeicons-layers-01' },
+  aging: { tab: 'flow', label: 'Старение', icon: 'i-hugeicons-hourglass' },
+  blockers: { tab: 'flow', label: 'Блокеры', icon: 'i-hugeicons-octagon' },
+  sle: { tab: 'flow', label: 'SLE', icon: 'i-hugeicons-sparkles' },
+  throughput: { tab: 'flow', label: 'Throughput', icon: 'i-hugeicons-trending-up' },
+  replenishment: { tab: 'flow', label: 'Пополнение', icon: 'i-hugeicons-refresh-cw' },
 }
 
 export const DEFAULT_TILES: Record<ControlCenterTab, TileId[]> = {

@@ -1,7 +1,9 @@
-import { and, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, lte, or, sql, type SQL } from 'drizzle-orm'
+import { FLOW_TYPES, PRIMARY_TYPES, type InboxView } from '#shared/utils/notification-category'
 import {
   notifications,
   users,
+  workspaceMembers,
   type Notification,
   type NotificationType,
 } from '../db/schema'
@@ -13,25 +15,141 @@ const DEFAULT_LIMIT = 50
 
 export async function listForUser(input: {
   userId: string
+  workspaceId?: string
+  view?: InboxView
+  types?: NotificationType[]
   unreadOnly?: boolean
+  before?: Date
   limit?: number
-}): Promise<Notification[]> {
+}): Promise<NotificationWithActor[]> {
   const limit = Math.min(input.limit ?? DEFAULT_LIMIT, 200)
-  return withUser(input.userId, async (tx) => {
-    const base = tx.select().from(notifications)
-    const filtered = input.unreadOnly
-      ? base.where(and(eq(notifications.userId, input.userId), isNull(notifications.readAt)))
-      : base.where(eq(notifications.userId, input.userId))
-    return filtered.orderBy(desc(notifications.createdAt)).limit(limit)
+  const conds = [eq(notifications.userId, input.userId), ...viewConds(input.view)]
+  if (input.workspaceId) conds.push(eq(notifications.workspaceId, input.workspaceId))
+  if (input.types?.length) conds.push(inArray(notifications.type, input.types))
+  if (input.unreadOnly) conds.push(isNull(notifications.readAt))
+  if (input.before) conds.push(lt(notifications.createdAt, input.before))
+  const rows = await withUser(input.userId, async (tx) =>
+    tx
+      .select({
+        notification: notifications,
+        actor: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          avatarUrl: users.avatarUrl,
+        },
+      })
+      .from(notifications)
+      .leftJoin(users, sql`${users.id} = (${notifications.payload}->>'actorId')::uuid`)
+      .where(and(...conds))
+      .orderBy(desc(notifications.createdAt))
+      .limit(limit),
+  )
+  return rows.map(r => ({ ...r.notification, actor: r.actor?.id ? r.actor : null }))
+}
+
+function activeConds(now = new Date()): SQL[] {
+  return [
+    isNull(notifications.clearedAt),
+    or(isNull(notifications.snoozedUntil), lte(notifications.snoozedUntil, now))!,
+  ]
+}
+
+function viewConds(view: InboxView | undefined): SQL[] {
+  switch (view) {
+    case 'primary': return [...activeConds(), inArray(notifications.type, PRIMARY_TYPES)]
+    case 'flow': return [...activeConds(), inArray(notifications.type, FLOW_TYPES)]
+    case 'later': return [isNull(notifications.clearedAt), gt(notifications.snoozedUntil, new Date())]
+    case 'cleared': return [isNotNull(notifications.clearedAt)]
+    default: return activeConds()
+  }
+}
+
+export type InboxCounts = { primary: number, flow: number, later: number }
+
+export async function inboxCounts(userId: string, workspaceId: string): Promise<InboxCounts> {
+  const unread = (types: NotificationType[]) =>
+    sql<number>`count(*) filter (where ${and(...activeConds(), isNull(notifications.readAt), inArray(notifications.type, types))})::int`
+  return withUser(userId, async (tx) => {
+    const [row] = await tx
+      .select({
+        primary: unread(PRIMARY_TYPES),
+        flow: unread(FLOW_TYPES),
+        later: sql<number>`count(*) filter (where ${and(...viewConds('later'))})::int`,
+      })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.workspaceId, workspaceId)))
+    return row ?? { primary: 0, flow: 0, later: 0 }
   })
 }
 
-export async function unreadCountForUser(userId: string): Promise<number> {
+export async function updateMany(input: {
+  userId: string
+  ids: string[]
+  read?: boolean
+  cleared?: boolean
+  snoozedUntil?: Date | null
+}): Promise<number> {
+  const now = new Date()
+  const set: Partial<typeof notifications.$inferInsert> = {}
+  if (input.read !== undefined) set.readAt = input.read ? now : null
+  if (input.cleared !== undefined) {
+    set.clearedAt = input.cleared ? now : null
+    if (input.cleared) set.readAt = now
+  }
+  if (input.snoozedUntil !== undefined) {
+    set.snoozedUntil = input.snoozedUntil
+    if (input.snoozedUntil) Object.assign(set, { readAt: null, clearedAt: null })
+  }
+  return withUser(input.userId, async (tx) => {
+    const rows = await tx
+      .update(notifications)
+      .set(set)
+      .where(and(eq(notifications.userId, input.userId), inArray(notifications.id, input.ids)))
+      .returning({ id: notifications.id })
+    return rows.length
+  })
+}
+
+export async function clearAll(input: {
+  userId: string
+  workspaceId: string
+  view: 'primary' | 'flow'
+}): Promise<number> {
+  const now = new Date()
+  return withUser(input.userId, async (tx) => {
+    const rows = await tx
+      .update(notifications)
+      .set({ clearedAt: now, readAt: sql`coalesce(${notifications.readAt}, now())` })
+      .where(and(
+        eq(notifications.userId, input.userId),
+        eq(notifications.workspaceId, input.workspaceId),
+        ...viewConds(input.view),
+      ))
+      .returning({ id: notifications.id })
+    return rows.length
+  })
+}
+
+export type NotificationActor = {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  avatarUrl: string | null
+}
+
+export type NotificationWithActor = Notification & { actor: NotificationActor | null }
+
+export async function unreadCountForUser(userId: string, workspaceId?: string): Promise<number> {
+  const conds = [eq(notifications.userId, userId), isNull(notifications.readAt)]
+  if (workspaceId) conds.push(eq(notifications.workspaceId, workspaceId))
   return withUser(userId, async (tx) => {
     const [row] = await tx
       .select({ count: sql<number>`count(*)::int` })
       .from(notifications)
-      .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
+      .where(and(...conds))
     return row?.count ?? 0
   })
 }
@@ -81,6 +199,17 @@ export interface EmitInput {
 
 export async function emitNotification(input: EmitInput): Promise<void> {
   if (input.actorId && input.actorId === input.recipientId) return
+
+  // Recipients come from history (thread authors, old assignees); someone
+  // removed from the workspace must not keep receiving task titles and text.
+  const [membership] = await input.tx
+    .select({ userId: workspaceMembers.userId })
+    .from(workspaceMembers)
+    .where(and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, input.recipientId),
+    ))
+  if (!membership) return
 
   const [recipient] = await input.tx
     .select({ prefs: users.notificationPrefs })

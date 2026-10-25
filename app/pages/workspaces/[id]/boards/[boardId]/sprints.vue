@@ -68,7 +68,7 @@ const activeFilterLabel = computed(() => {
 const filterMenu = computed(() =>
   FILTERS.map(f => ({
     label: `${f.label} (${counts.value[f.key]})`,
-    icon: filter.value === f.key ? 'i-lucide-check' : undefined,
+    icon: filter.value === f.key ? 'i-hugeicons-check' : undefined,
     onSelect: () => { filter.value = f.key },
   })),
 )
@@ -191,7 +191,7 @@ async function onAddTasks(taskIds: string[]) {
     addTaskPanel.value = null
     toast.add({
       title: `Добавлено ${taskIds.length} задач`,
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 1500,
     })
   }
@@ -199,7 +199,7 @@ async function onAddTasks(taskIds: string[]) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось добавить задачи в спринт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -209,7 +209,7 @@ async function onStart(sprint: Sprint) {
     await start.mutateAsync(sprint.id)
     toast.add({
       title: `Спринт «${sprint.name}» запущен`,
-      icon: 'i-lucide-play',
+      icon: 'i-hugeicons-play',
       duration: 1500,
     })
   }
@@ -217,7 +217,7 @@ async function onStart(sprint: Sprint) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось запустить спринт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -247,7 +247,7 @@ async function onCloseConfirm(payload: import('#shared/types/sprint').CloseSprin
     membershipsList.refetch()
     toast.add({
       title: `Спринт «${sprint.name}» закрыт`,
-      icon: 'i-lucide-check-square',
+      icon: 'i-hugeicons-square-check-big',
       duration: 1500,
     })
   }
@@ -255,7 +255,7 @@ async function onCloseConfirm(payload: import('#shared/types/sprint').CloseSprin
     toast.add({
       title: getErrorMessage(err, 'Не удалось закрыть спринт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -283,7 +283,7 @@ async function onDelete(sprint: Sprint) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось удалить спринт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -329,13 +329,13 @@ const isFilteredEmpty = computed(() =>
       <template #actions>
         <UInput
           v-model="query"
-          icon="i-lucide-search"
+          icon="i-hugeicons-search-01"
           placeholder="Найти спринт…"
           size="md"
           class="w-full sm:w-56"
         />
         <UDropdownMenu :items="filterMenu" :ui="{ content: 'w-44' }" class="sm:hidden">
-          <UButton color="neutral" variant="outline" size="md" trailing-icon="i-lucide-chevron-down" class="shrink-0">
+          <UButton color="neutral" variant="outline" size="md" trailing-icon="i-hugeicons-chevron-down" class="shrink-0">
             {{ activeFilterLabel }}
           </UButton>
         </UDropdownMenu>
@@ -353,7 +353,7 @@ const isFilteredEmpty = computed(() =>
             <span class="text-[10.5px] tabular-nums text-dimmed">{{ counts[f.key] }}</span>
           </button>
         </div>
-        <UButton v-if="canManage" icon="i-lucide-plus" size="md" @click="createOpen = true">
+        <UButton v-if="canManage" icon="i-hugeicons-plus" size="md" @click="createOpen = true">
           Создать спринт
         </UButton>
       </template>
@@ -361,17 +361,17 @@ const isFilteredEmpty = computed(() =>
 
     <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-4">
       <div v-if="isLoading" class="text-center py-12 text-muted">
-        <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+        <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
       </div>
 
       <UiEmptyState
         v-else-if="isEmpty"
-        icon="i-lucide-calendar-check-2"
+        icon="i-hugeicons-calendar-check-in-01"
         title="Спринтов пока нет"
         :text="canManage ? 'Создай первый, чтобы запустить итерацию команды.' : 'Попроси scrum-мастера создать первый спринт.'"
       >
         <template v-if="canManage" #actions>
-          <UButton icon="i-lucide-plus" @click="createOpen = true">
+          <UButton icon="i-hugeicons-plus" @click="createOpen = true">
             Создать спринт
           </UButton>
         </template>
@@ -380,7 +380,7 @@ const isFilteredEmpty = computed(() =>
       <div v-else class="min-w-0 space-y-8">
           <UiEmptyState
             v-if="isFilteredEmpty"
-            icon="i-lucide-search-x"
+            icon="i-hugeicons-search-x"
             title="Ничего не нашлось"
             text="Попробуй сбросить фильтр или поиск."
           />

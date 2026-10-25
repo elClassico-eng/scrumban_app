@@ -99,7 +99,7 @@ describe('sprint retro', () => {
 
     const created = await fetchWithJar<{ note: Note }>(owner.jar, retroPath(wsId, boardId, sId), {
       method: 'POST',
-      body: { category: 'to_improve', body: 'Долго ждали ревью' },
+      body: { category: 'action_item', body: 'Ревью в течение дня' },
     })
     expect(created.status).toBe(201)
     const noteId = created.body.note.id
@@ -228,5 +228,114 @@ describe('sprint retro', () => {
     const stranger = await registerUser('stranger@example.com')
     const res = await fetchWithJar(stranger.jar, retroPath(wsId, boardId, sId))
     expect(res.status).toBe(404)
+  })
+})
+
+type BoardView = { phase: string, myVotesLeft: number, notes: (Note & { hidden: boolean, voteCount: number, votedByMe: boolean })[] }
+
+describe('retro meeting', () => {
+  async function team() {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const boardId = await createBoard(owner, wsId)
+    const sId = await createSprint(owner, wsId, boardId, { close: true })
+    const member = await registerUser('member@example.com')
+    await inviteMember(owner, wsId, member.email, 'member')
+    const sm = await registerUser('sm@example.com')
+    await inviteMember(owner, wsId, sm.email, 'scrum_master')
+    const path = retroPath(wsId, boardId, sId)
+    const add = async (actor: UserCtx, category: string, body: string) =>
+      (await fetchWithJar<{ note: Note }>(actor.jar, path, { method: 'POST', body: { category, body } })).body.note.id
+    const view = async (actor: UserCtx) => (await fetchWithJar<BoardView>(actor.jar, path)).body
+    return { owner, member, sm, wsId, boardId, sId, path, add, view }
+  }
+
+  it('while collecting, other people\'s opinions are hidden, actions are not; only a scrum master opens them', async () => {
+    const { owner, member, sm, path, add, view } = await team()
+    await add(owner, 'to_improve', 'Долгое ревью')
+    await add(member, 'went_well', 'Быстрые релизы')
+    await add(owner, 'action_item', 'Лимит на ревью')
+
+    const seen = await view(member)
+    expect(seen.phase).toBe('collect')
+    const byBody = (b: string) => seen.notes.find(n => n.body === b)
+    expect(byBody('Быстрые релизы')?.hidden).toBe(false)
+    expect(byBody('Лимит на ревью')?.hidden).toBe(false)
+    expect(seen.notes.filter(n => n.hidden)).toHaveLength(1)
+    expect(seen.notes.find(n => n.hidden)?.body).toBe('')
+
+    expect((await fetchWithJar(member.jar, path, { method: 'PATCH', body: { phase: 'discuss' } })).status).toBe(403)
+    expect((await fetchWithJar(sm.jar, path, { method: 'PATCH', body: { phase: 'discuss' } })).status).toBe(200)
+    const open = await view(member)
+    expect(open.phase).toBe('discuss')
+    expect(open.notes.every(n => !n.hidden)).toBe(true)
+  })
+
+  it('does not leak a hidden note through an update', async () => {
+    const { owner, member, wsId, path, add } = await team()
+    const hidden = await add(owner, 'to_improve', 'Секретная мысль')
+    const resolve = await fetchWithJar(member.jar, `${path}/${hidden}`, { method: 'PATCH', body: { isResolved: true } })
+    expect(resolve.status).toBe(422)
+    expect(JSON.stringify(resolve.body)).not.toContain('Секретная мысль')
+
+    const admin = await registerUser('admin@example.com')
+    await inviteMember(owner, wsId, admin.email, 'admin')
+    const recat = await fetchWithJar<{ note: Note }>(admin.jar, `${path}/${hidden}`, { method: 'PATCH', body: { category: 'went_well' } })
+    expect(recat.status).toBe(200)
+    expect(recat.body.note.body).toBe('')
+  })
+
+  it('gives everyone three votes in discussion, only on opinions', async () => {
+    const { owner, member, sm, path, add, view } = await team()
+    const ids = [
+      await add(owner, 'to_improve', 'a'),
+      await add(owner, 'to_improve', 'b'),
+      await add(owner, 'went_well', 'c'),
+      await add(owner, 'went_well', 'd'),
+    ]
+    const action = await add(owner, 'action_item', 'e')
+    const vote = (actor: UserCtx, id: string, method: 'PUT' | 'DELETE' = 'PUT') =>
+      fetchWithJar(actor.jar, `${path}/${id}/vote`, { method })
+
+    expect((await vote(member, ids[0]!)).status).toBe(422)
+    await fetchWithJar(sm.jar, path, { method: 'PATCH', body: { phase: 'discuss' } })
+
+    for (const id of ids.slice(0, 3)) expect((await vote(member, id)).status).toBe(200)
+    expect((await vote(member, ids[3]!)).status).toBe(409)
+    expect((await view(member)).myVotesLeft).toBe(0)
+    await vote(member, ids[0]!, 'DELETE')
+    expect((await vote(member, ids[3]!)).status).toBe(200)
+    expect((await vote(member, action)).status).toBe(422)
+
+    const seen = await view(owner)
+    expect(seen.notes.find(n => n.id === ids[3])?.voteCount).toBe(1)
+    expect(seen.notes.find(n => n.id === ids[0])?.voteCount).toBe(0)
+    expect(seen.myVotesLeft).toBe(3)
+  })
+
+  it('an action carries its owner and due date into the task', async () => {
+    const { owner, member, wsId, boardId, path, add } = await team()
+    const action = await add(owner, 'action_item', 'Настроить линтер в CI')
+    const opinion = await add(owner, 'went_well', 'x')
+    const due = '2026-11-20T23:59:59.000Z'
+
+    expect((await fetchWithJar(owner.jar, `${path}/${opinion}`, { method: 'PATCH', body: { assigneeId: member.id } })).status).toBe(422)
+    const stranger = await registerUser('stranger@example.com')
+    expect((await fetchWithJar(owner.jar, `${path}/${action}`, { method: 'PATCH', body: { assigneeId: stranger.id } })).status).toBe(422)
+
+    const set = await fetchWithJar<{ note: Note & { assigneeId: string | null, dueDate: string | null } }>(owner.jar, `${path}/${action}`, {
+      method: 'PATCH',
+      body: { assigneeId: member.id, dueDate: due },
+    })
+    expect(set.body.note.assigneeId).toBe(member.id)
+
+    const conv = await fetchWithJar<{ taskId: string }>(owner.jar, `${path}/${action}/convert`, { method: 'POST' })
+    const tasks = await fetchWithJar<{ tasks: { id: string, assigneeId: string | null, dueDate: string | null }[] }>(
+      owner.jar,
+      `/api/workspaces/${wsId}/boards/${boardId}/tasks`,
+    )
+    const task = tasks.body.tasks.find(t => t.id === conv.body.taskId)
+    expect(task?.assigneeId).toBe(member.id)
+    expect(task?.dueDate).toBe(due)
   })
 })

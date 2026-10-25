@@ -45,7 +45,7 @@ watch(() => props.focusTick, () => { if (props.active) focusInput() })
     >
       <template #empty>
         <div class="flex flex-col items-center gap-2">
-          <UIcon name="i-lucide-search-x" class="size-8 text-[var(--island-ink-3)] opacity-40" />
+          <UIcon name="i-hugeicons-search-x" class="size-8 text-[var(--island-ink-3)] opacity-40" />
           <span>Ничего не найдено</span>
         </div>
       </template>

@@ -22,7 +22,10 @@ export type PeekChip = {
 }
 
 export function useIslandNotifications() {
-  const { list, unreadCount: unreadQuery, markRead: markReadMutation } = useNotificationsApi()
+  const workspaceStore = useWorkspaceStore()
+  const currentId = computed(() => workspaceStore.currentId ?? null)
+  const { list, markRead: markReadMutation } = useNotificationsApi(currentId)
+  const unreadCount = useInboxBadge(currentId)
 
   const rawNotifs = computed(() => list.data.value?.notifications ?? [])
   const notifs = computed<TileNotif[]>(() => rawNotifs.value.map((n) => {
@@ -39,7 +42,6 @@ export function useIslandNotifications() {
       unread: n.readAt === null,
     }
   }))
-  const unreadCount = computed(() => unreadQuery.data.value?.count ?? 0)
 
   const primed = ref(false)
   watch(() => list.isFetched.value, (fetched) => {

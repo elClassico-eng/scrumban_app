@@ -76,7 +76,7 @@ function addBlocker(blockerTaskId: string) {
       <UInput
         v-model="query"
         size="lg"
-        icon="i-lucide-search"
+        icon="i-hugeicons-search-01"
         placeholder="Найти задачу в бэклоге…"
         class="flex-1"
       />
@@ -113,7 +113,7 @@ function addBlocker(blockerTaskId: string) {
       class="border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 rounded-xl px-4 py-3 space-y-2"
     >
       <div class="text-[12px] font-semibold text-amber-800 dark:text-amber-200 inline-flex items-center gap-1.5">
-        <UIcon name="i-lucide-triangle-alert" class="size-3.5" />
+        <UIcon name="i-hugeicons-triangle-alert" class="size-3.5" />
         Внешние зависимости
       </div>
       <div

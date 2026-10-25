@@ -64,7 +64,7 @@ async function onSubmit() {
       title: 'Пароль обновлён',
       description: 'Войдите с новым паролем.',
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 2500,
     })
     await router.push(pageRoutes.login)
@@ -94,7 +94,7 @@ async function onSubmit() {
   <div class="space-y-8">
     <template v-if="check.kind === 'loading'">
       <div class="flex flex-col items-center gap-3 py-10">
-        <UIcon name="i-lucide-loader" class="size-7 animate-spin text-primary" />
+        <UIcon name="i-hugeicons-loader" class="size-7 animate-spin text-primary" />
         <p class="text-sm text-muted">Проверяем ссылку...</p>
       </div>
     </template>
@@ -125,7 +125,7 @@ async function onSubmit() {
           color="error"
           variant="soft"
           :title="error"
-          icon="i-lucide-alert-circle"
+          icon="i-hugeicons-alert-circle"
         />
         <UButton type="submit" :loading="submitting" block size="xl" class="font-semibold">
           Установить пароль
@@ -141,7 +141,7 @@ async function onSubmit() {
     <template v-else>
       <div class="space-y-3 text-center">
         <UIcon
-          :name="check.kind === 'expired' ? 'i-lucide-clock' : 'i-lucide-x-circle'"
+          :name="check.kind === 'expired' ? 'i-hugeicons-clock-01' : 'i-hugeicons-circle-x'"
           :class="['size-12 mx-auto', check.kind === 'expired' ? 'text-warning-500' : 'text-error-500']"
         />
         <h1 class="text-2xl font-bold tracking-tight">

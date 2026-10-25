@@ -1,5 +1,6 @@
 import type { Notification } from '#shared/types/notification'
 import { pageRoutes } from '~/routing'
+import { displayName } from '~/utils/display-name'
 
 export type RouteTarget = string | { path: string; query: Record<string, string> }
 
@@ -18,7 +19,8 @@ const BLUE = '#2e6df5'
 
 type P = Record<string, string | number | undefined>
 
-function actorOf(p: P): string {
+function actorOf(n: Notification, p: P): string {
+  if (n.actor) return displayName(n.actor)
   return String(p.actorName ?? p.actorEmail ?? 'Кто-то')
 }
 
@@ -42,7 +44,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `«${p.taskTitle}» в колонке ${p.columnName} уже ${p.ageDays} дн – это ${p.pct}% от SLE доски (${p.sleDays} дн)`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-alert-triangle',
+        icon: 'i-hugeicons-triangle-alert',
         color: ACCENT,
       }
     case 'task_blocked':
@@ -51,7 +53,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `«${p.taskTitle}»: ${p.reason}`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-octagon',
+        icon: 'i-hugeicons-octagon',
         color: ACCENT,
       }
     case 'sprint_forecast':
@@ -60,7 +62,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `${p.sprintName}: шанс закрыть в срок ${p.probability}%, осталось ${p.tasksRemaining} задач на ${p.daysLeft} дн`,
         cta: 'Открыть спринты',
         target: sprintsTarget(n, p),
-        icon: 'i-lucide-trending-down',
+        icon: 'i-hugeicons-trending-down',
         color: ACCENT,
       }
     case 'wip_exceeded':
@@ -69,7 +71,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `${p.columnName}: ${p.count} задач при лимите ${p.limit}`,
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-layers',
+        icon: 'i-hugeicons-layers-01',
         color: ACCENT,
       }
     case 'replenishment_overdue':
@@ -78,7 +80,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: `${p.boardName}: просрочка ${p.daysOverdue} дн`,
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-refresh-cw',
+        icon: 'i-hugeicons-refresh-cw',
         color: ACCENT,
       }
     default:
@@ -87,7 +89,7 @@ function renderAutomation(n: Notification, p: P): RenderedNotification {
         why: '',
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-zap',
+        icon: 'i-hugeicons-zap',
         color: ACCENT,
       }
   }
@@ -99,28 +101,28 @@ export function renderNotification(n: Notification): RenderedNotification {
     case 'mention':
       return {
         title: 'Упомянули в комментарии',
-        why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-at-sign',
+        icon: 'i-hugeicons-at-sign',
         color: PURPLE,
       }
     case 'assigned':
       return {
         title: 'Назначили задачу',
-        why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-user-check',
+        icon: 'i-hugeicons-user-check-01',
         color: BLUE,
       }
     case 'comment_on_assigned':
       return {
         title: 'Прокомментировали вашу задачу',
-        why: `${actorOf(p)} · «${p.taskTitle ?? ''}»`,
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-message-square',
+        icon: 'i-hugeicons-message-square',
         color: PURPLE,
       }
     case 'sle_breach':
@@ -129,7 +131,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `«${p.taskTitle ?? ''}»: возраст ${p.agePct}% от SLE`,
         cta: 'Открыть задачу',
         target: taskTarget(n, p),
-        icon: 'i-lucide-alert-triangle',
+        icon: 'i-hugeicons-triangle-alert',
         color: ACCENT,
       }
     case 'replenishment_overdue':
@@ -138,7 +140,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `${p.boardName ?? ''}: просрочка ${p.daysOverdue} дн`,
         cta: 'Открыть доску',
         target: boardTarget(n, p),
-        icon: 'i-lucide-refresh-cw',
+        icon: 'i-hugeicons-refresh-cw',
         color: ACCENT,
       }
     case 'sprint_forecast_drop':
@@ -147,10 +149,78 @@ export function renderNotification(n: Notification): RenderedNotification {
         why: `${p.sprintName ?? ''}: шанс ${Math.round(Number(p.probability ?? 0) * 100)}%`,
         cta: 'Открыть спринты',
         target: sprintsTarget(n, p),
-        icon: 'i-lucide-trending-down',
+        icon: 'i-hugeicons-trending-down',
         color: ACCENT,
       }
     case 'automation':
       return renderAutomation(n, p)
+    case 'reply':
+      return {
+        title: 'Ответили в ветке',
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
+        cta: 'Открыть ветку',
+        target: taskTarget(n, p),
+        icon: 'i-hugeicons-message-square-reply',
+        color: PURPLE,
+      }
+    case 'watched_comment':
+      return {
+        title: 'Новый комментарий',
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
+        cta: 'Открыть задачу',
+        target: taskTarget(n, p),
+        icon: 'i-hugeicons-message-square',
+        color: PURPLE,
+      }
+    case 'watched_status':
+      return {
+        title: `Перешла в «${p.columnName ?? ''}»`,
+        why: `«${p.taskTitle ?? ''}»`,
+        cta: 'Открыть задачу',
+        target: taskTarget(n, p),
+        icon: p.columnRole === 'done' ? 'i-hugeicons-checkmark-circle-02' : 'i-hugeicons-arrow-right-02',
+        color: BLUE,
+      }
+    case 'comment_assigned':
+      return {
+        title: 'Вам поручение',
+        why: `${actorOf(n, p)} · «${p.taskTitle ?? ''}»`,
+        cta: 'Открыть задачу',
+        target: taskTarget(n, p),
+        icon: 'i-hugeicons-message-user-01',
+        color: BLUE,
+      }
   }
+}
+
+export type InboxRow = {
+  subject: string
+  label: string
+  detail: string
+}
+
+const PERSONAL_LABEL: Partial<Record<Notification['type'], string>> = {
+  mention: 'упоминание',
+  reply: 'ответ в ветке',
+  comment_assigned: 'поручение',
+  assigned: 'назначил(а) вам задачу',
+  comment_on_assigned: 'комментарий к вашей задаче',
+  watched_comment: 'комментарий',
+}
+
+export function inboxRow(n: Notification): InboxRow {
+  const p = n.payload as P
+  const personal = PERSONAL_LABEL[n.type]
+  if (personal) {
+    return { subject: String(p.taskTitle ?? 'Задача'), label: personal, detail: String(p.snippet ?? '') }
+  }
+  const r = renderNotification(n)
+  const subject = p.taskTitle ?? p.sprintName ?? p.boardName ?? p.columnName ?? r.title
+  return { subject: String(subject), label: r.title, detail: r.why.replace(/^«[^»]*»:?\s*/, '') }
+}
+
+export function inboxGroupKey(n: Notification): string {
+  const p = n.payload as P
+  if (p.taskId) return `task:${p.taskId}`
+  return `${n.type}:${p.sprintId ?? p.boardId ?? n.id}`
 }

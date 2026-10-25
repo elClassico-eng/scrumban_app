@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, or } from 'drizzle-orm'
 import {
   taskComments,
   taskEvents,
@@ -7,12 +7,13 @@ import {
   workspaceMembers,
   type WorkspaceMemberRole,
 } from '../db/schema'
-import { withTenant } from '../utils/db'
+import { withTenant, type DbTransaction } from '../utils/db'
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { extractMentionedUserIds } from '../utils/mentions'
 import { requireMinRole, roleAtLeast } from '../utils/rbac'
 import { emitNotification } from './notifications.service'
+import { addWatcher, notifyWatchers } from './task-watchers.service'
 
 const COMMENT_SNIPPET_LEN = 140
 
@@ -35,6 +36,10 @@ const commentSelect = {
   editedAt: taskComments.editedAt,
   createdAt: taskComments.createdAt,
   automationRuleId: taskComments.automationRuleId,
+  parentId: taskComments.parentId,
+  assigneeId: taskComments.assigneeId,
+  resolvedAt: taskComments.resolvedAt,
+  resolvedBy: taskComments.resolvedBy,
   author: authorSelect,
 } as const
 
@@ -47,6 +52,10 @@ export interface CommentView {
   editedAt: Date | null
   createdAt: Date
   automationRuleId: string | null
+  parentId: string | null
+  assigneeId: string | null
+  resolvedAt: Date | null
+  resolvedBy: string | null
   author: {
     id: string
     email: string
@@ -78,6 +87,7 @@ export async function createComment(input: {
   taskId: string
   authorId: string
   body: string
+  parentId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<CommentView> {
   requireMinRole(input.actorRole, 'member')
@@ -99,6 +109,8 @@ export async function createComment(input: {
       .where(eq(tasks.id, input.taskId))
     if (!parent) throw new NotFoundError('Задача не найдена')
 
+    const rootId = input.parentId ? await resolveThreadRoot(tx, input.parentId, input.taskId) : null
+
     const [inserted] = await tx
       .insert(taskComments)
       .values({
@@ -106,6 +118,7 @@ export async function createComment(input: {
         taskId: input.taskId,
         authorId: input.authorId,
         body: trimmed,
+        parentId: rootId,
       })
       .returning()
 
@@ -146,7 +159,33 @@ export async function createComment(input: {
       })
     }
 
-    if (parent.assigneeId && !mentionedUserIds.includes(parent.assigneeId)) {
+    const replyRecipients = rootId
+      ? (await threadParticipants(tx, rootId)).filter(id => !mentionedUserIds.includes(id))
+      : []
+    for (const userId of replyRecipients) {
+      await emitNotification({
+        tx,
+        workspaceId: input.workspaceId,
+        recipientId: userId,
+        actorId: input.authorId,
+        type: 'reply',
+        payload: {
+          taskId: input.taskId,
+          boardId: parent.boardId,
+          commentId: inserted!.id,
+          parentId: rootId,
+          actorId: input.authorId,
+          taskTitle: parent.title,
+          snippet,
+        },
+      })
+    }
+
+    if (
+      parent.assigneeId
+      && !mentionedUserIds.includes(parent.assigneeId)
+      && !replyRecipients.includes(parent.assigneeId)
+    ) {
       await emitNotification({
         tx,
         workspaceId: input.workspaceId,
@@ -163,6 +202,23 @@ export async function createComment(input: {
         },
       })
     }
+
+    await addWatcher(tx, { workspaceId: input.workspaceId, taskId: input.taskId, userId: input.authorId })
+    await notifyWatchers(tx, {
+      workspaceId: input.workspaceId,
+      taskId: input.taskId,
+      actorId: input.authorId,
+      type: 'watched_comment',
+      payload: {
+        taskId: input.taskId,
+        boardId: parent.boardId,
+        commentId: inserted!.id,
+        actorId: input.authorId,
+        taskTitle: parent.title,
+        snippet,
+      },
+      skip: [...mentionedUserIds, ...replyRecipients, ...(parent.assigneeId ? [parent.assigneeId] : [])],
+    })
 
     publishBoardEvent({
       type: 'task.commented',
@@ -295,6 +351,23 @@ export async function removeComment(input: {
   })
 }
 
+async function resolveThreadRoot(tx: DbTransaction, parentId: string, taskId: string): Promise<string> {
+  const [target] = await tx
+    .select({ id: taskComments.id, taskId: taskComments.taskId, parentId: taskComments.parentId })
+    .from(taskComments)
+    .where(eq(taskComments.id, parentId))
+  if (!target || target.taskId !== taskId) throw new NotFoundError('Комментарий для ответа не найден')
+  return target.parentId ?? target.id
+}
+
+async function threadParticipants(tx: DbTransaction, rootId: string): Promise<string[]> {
+  const rows = await tx
+    .select({ authorId: taskComments.authorId })
+    .from(taskComments)
+    .where(or(eq(taskComments.id, rootId), eq(taskComments.parentId, rootId)))
+  return [...new Set(rows.map(r => r.authorId).filter((id): id is string => id !== null))]
+}
+
 async function resolveMentionedMembers(
   workspaceId: string,
   candidateIds: string[],
@@ -320,6 +393,10 @@ type CommentRow = {
   editedAt: Date | null
   createdAt: Date
   automationRuleId: string | null
+  parentId: string | null
+  assigneeId: string | null
+  resolvedAt: Date | null
+  resolvedBy: string | null
   author: {
     id: string | null
     email: string | null
@@ -341,6 +418,10 @@ function toView(row: CommentRow, mentionedUserIds: string[] = []): CommentView {
     editedAt: row.editedAt,
     createdAt: row.createdAt,
     automationRuleId: row.automationRuleId ?? null,
+    parentId: row.parentId,
+    assigneeId: row.assigneeId,
+    resolvedAt: row.resolvedAt,
+    resolvedBy: row.resolvedBy,
     author: row.author?.id
       ? {
           id: row.author.id,
@@ -351,4 +432,127 @@ function toView(row: CommentRow, mentionedUserIds: string[] = []): CommentView {
         }
       : null,
   }
+}
+export async function updateCommentAssignment(input: {
+  workspaceId: string
+  commentId: string
+  actorId: string
+  actorRole: WorkspaceMemberRole
+  assigneeId?: string | null
+  resolved?: boolean
+}): Promise<CommentView> {
+  requireMinRole(input.actorRole, 'member')
+  const isLead = roleAtLeast(input.actorRole, 'scrum_master')
+
+  return withTenant(input.workspaceId, async (tx) => {
+    const [existing] = await tx
+      .select({
+        id: taskComments.id,
+        taskId: taskComments.taskId,
+        authorId: taskComments.authorId,
+        assigneeId: taskComments.assigneeId,
+        body: taskComments.body,
+      })
+      .from(taskComments)
+      .where(eq(taskComments.id, input.commentId))
+    if (!existing) throw new NotFoundError('Комментарий не найден')
+    const isAuthor = existing.authorId === input.actorId
+
+    const set: Partial<typeof taskComments.$inferInsert> = {}
+    let assigneeId = existing.assigneeId
+
+    if (input.assigneeId !== undefined) {
+      if (!isAuthor && !isLead) throw new ForbiddenError('Поручить можно только свой комментарий')
+      if (input.assigneeId) {
+        const [member] = await tx
+          .select({ role: workspaceMembers.role })
+          .from(workspaceMembers)
+          .where(and(
+            eq(workspaceMembers.workspaceId, input.workspaceId),
+            eq(workspaceMembers.userId, input.assigneeId),
+          ))
+        if (!member || !roleAtLeast(member.role, 'member')) {
+          throw new ValidationError('Поручить можно только участнику, который может работать с задачами')
+        }
+      }
+      assigneeId = input.assigneeId
+      Object.assign(set, { assigneeId, resolvedAt: null, resolvedBy: null })
+    }
+
+    if (input.resolved !== undefined) {
+      if (!assigneeId) throw new ValidationError('У комментария нет поручения')
+      if (!isAuthor && !isLead && assigneeId !== input.actorId) {
+        throw new ForbiddenError('Закрыть поручение может исполнитель, автор или скрам-мастер')
+      }
+      Object.assign(set, input.resolved
+        ? { resolvedAt: new Date(), resolvedBy: input.actorId }
+        : { resolvedAt: null, resolvedBy: null })
+    }
+
+    if (Object.keys(set).length) {
+      await tx.update(taskComments).set(set).where(eq(taskComments.id, input.commentId))
+    }
+
+    const [task] = await tx
+      .select({ boardId: tasks.boardId, title: tasks.title })
+      .from(tasks)
+      .where(eq(tasks.id, existing.taskId))
+
+    if (input.assigneeId && input.assigneeId !== existing.assigneeId && task) {
+      await emitNotification({
+        tx,
+        workspaceId: input.workspaceId,
+        recipientId: input.assigneeId,
+        actorId: input.actorId,
+        type: 'comment_assigned',
+        payload: {
+          taskId: existing.taskId,
+          boardId: task.boardId,
+          commentId: existing.id,
+          actorId: input.actorId,
+          taskTitle: task.title,
+          snippet: existing.body.length > COMMENT_SNIPPET_LEN
+            ? `${existing.body.slice(0, COMMENT_SNIPPET_LEN)}…`
+            : existing.body,
+        },
+      })
+    }
+
+    const [row] = await tx
+      .select(commentSelect)
+      .from(taskComments)
+      .leftJoin(users, eq(users.id, taskComments.authorId))
+      .where(eq(taskComments.id, input.commentId))
+    const view = toView(row!)
+
+    if (task) {
+      publishBoardEvent({
+        type: 'task.commented',
+        workspaceId: input.workspaceId,
+        boardId: task.boardId,
+        payload: { taskId: existing.taskId, comment: view, edited: true },
+      })
+    }
+    return view
+  })
+}
+
+export type AssignedCommentView = CommentView & { taskTitle: string, boardId: string }
+
+export async function listOpenAssignedComments(input: {
+  workspaceId: string
+  userId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<AssignedCommentView[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  return withTenant(input.workspaceId, async (tx) => {
+    const rows = await tx
+      .select({ ...commentSelect, taskTitle: tasks.title, boardId: tasks.boardId })
+      .from(taskComments)
+      .innerJoin(tasks, eq(tasks.id, taskComments.taskId))
+      .leftJoin(users, eq(users.id, taskComments.authorId))
+      .where(and(eq(taskComments.assigneeId, input.userId), isNull(taskComments.resolvedAt)))
+      .orderBy(desc(taskComments.createdAt))
+    return rows.map(({ taskTitle, boardId, ...r }) => ({ ...toView(r), taskTitle, boardId }))
+  })
 }

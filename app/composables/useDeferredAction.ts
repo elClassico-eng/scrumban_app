@@ -53,7 +53,7 @@ export function useDeferredAction() {
             title: 'Не удалось сохранить',
             description: getErrorMessage(err, 'Попробуй ещё раз'),
             color: 'error',
-            icon: 'i-lucide-alert-circle',
+            icon: 'i-hugeicons-alert-circle',
           })
         }
       })
@@ -62,7 +62,7 @@ export function useDeferredAction() {
     const t = toast.add({
       title: action.toast.title,
       description: action.toast.description,
-      icon: action.toast.icon ?? 'i-lucide-undo-2',
+      icon: action.toast.icon ?? 'i-hugeicons-undo-02',
       duration: delay,
       actions: [
         {

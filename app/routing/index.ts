@@ -60,6 +60,7 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/columns/reorder`,
 
   tasks: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/tasks`,
+  tasksBulk: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/tasks/bulk`,
   task: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}`,
   taskMove: (wsId: string, boardId: string, taskId: string) =>
@@ -74,6 +75,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/tasks/${taskId}/dependencies/${blockerTaskId}`,
   boardDependencyCounts: (wsId: string, boardId: string) =>
     `${boardBase(wsId, boardId)}/dependencies`,
+  taskWatchers: (wsId: string, boardId: string, taskId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/watchers`,
   taskAssignees: (wsId: string, boardId: string, taskId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/assignees`,
   taskAssignee: (wsId: string, boardId: string, taskId: string, userId: string) =>
@@ -102,6 +105,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/tasks/${taskId}/comments`,
   taskComment: (wsId: string, boardId: string, taskId: string, commentId: string) =>
     `${boardBase(wsId, boardId)}/tasks/${taskId}/comments/${commentId}`,
+  taskCommentAssignment: (wsId: string, boardId: string, taskId: string, commentId: string) =>
+    `${boardBase(wsId, boardId)}/tasks/${taskId}/comments/${commentId}/assignment`,
 
   sprints: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/sprints`,
   sprint: (wsId: string, boardId: string, sprintId: string) =>
@@ -174,6 +179,8 @@ export const apiRoutes = {
     `${boardBase(wsId, boardId)}/automations/run`,
 
   workspaceTasks: (wsId: string) => `/api/workspaces/${wsId}/tasks`,
+  workspaceAssignedComments: (wsId: string) => `/api/workspaces/${wsId}/assigned-comments`,
+  workspaceColumns: (wsId: string) => `/api/workspaces/${wsId}/columns`,
 
   workspaceSprints: (wsId: string) => `/api/workspaces/${wsId}/sprints`,
 
@@ -184,6 +191,8 @@ export const apiRoutes = {
   notificationsUnreadCount: '/api/notifications/unread-count',
   notificationRead: (id: string) => `/api/notifications/${id}/read`,
   notificationsReadAll: '/api/notifications/read-all',
+  notificationsClearAll: '/api/notifications/clear-all',
+  notificationsCounts: '/api/notifications/counts',
   notificationsStream: '/api/notifications/stream',
 
   adminLeads: '/api/admin/leads',
@@ -217,6 +226,8 @@ export const pageRoutes = {
   workspace: (id: string) => `/workspaces/${id}`,
   workspaceMembers: (id: string) => `/workspaces/${id}/members`,
   workspaceActivity: (id: string) => `/workspaces/${id}/activity`,
+  workspaceInbox: (id: string) => `/workspaces/${id}/inbox`,
+  workspaceMyTasks: (id: string) => `/workspaces/${id}/my-tasks`,
   workspaceReports: (id: string) => `/workspaces/${id}/reports`,
   workspaceSimulator: (id: string) => `/workspaces/${id}/simulator`,
 

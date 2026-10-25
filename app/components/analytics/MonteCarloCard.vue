@@ -106,7 +106,7 @@ const histogramOption = computed(() => {
       class="inline-flex items-center gap-1.5 text-xs text-muted hover:text-accent-600 transition-colors mb-3"
       @click="whatIfOpen = !whatIfOpen"
     >
-      <UIcon :name="whatIfOpen ? 'i-lucide-chevron-up' : 'i-lucide-flask-conical'" class="size-3.5" />
+      <UIcon :name="whatIfOpen ? 'i-hugeicons-chevron-up' : 'i-hugeicons-flask-conical'" class="size-3.5" />
       Что-если: изменить вводные
     </button>
 
@@ -125,11 +125,11 @@ const histogramOption = computed(() => {
     </div>
 
     <div v-if="mc.isLoading.value" class="h-48 flex items-center justify-center text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <div v-else-if="report && !report.ok" class="space-y-2 py-6 text-center">
-      <UIcon name="i-lucide-chart-no-axes-combined" class="size-10 text-muted mx-auto" />
+      <UIcon name="i-hugeicons-chart-no-axes-combined" class="size-10 text-muted mx-auto" />
       <p class="text-sm font-medium">Недостаточно истории</p>
       <p class="text-xs text-muted">
         Нужно ≥{{ report.requiredDays }} дней закрытых задач, у нас {{ report.sampleDays }}

@@ -12,6 +12,7 @@ import { ConflictError, NotFoundError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { requireMinRole } from '../utils/rbac'
 import { emitNotification } from './notifications.service'
+import { addWatcher } from './task-watchers.service'
 
 export interface AssigneeView {
   userId: string
@@ -107,6 +108,7 @@ export async function addAssignee(input: {
       actorId: input.actorId ?? null,
       payload: { addedUserId: input.userId },
     })
+    await addWatcher(tx, { workspaceId: input.workspaceId, taskId: input.taskId, userId: input.userId })
 
     await emitNotification({
       tx,

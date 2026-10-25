@@ -4,12 +4,14 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [value: string]
+  save: [value: string, base: string]
 }>()
 
 const toast = useToast()
 const isEditing = ref(false)
 const draft = ref(props.description)
+const base = ref(props.description)
+const changedMeanwhile = computed(() => isEditing.value && props.description !== base.value)
 const textareaWrapper = ref<HTMLElement | null>(null)
 
 watch(() => props.description, (v) => {
@@ -18,6 +20,7 @@ watch(() => props.description, (v) => {
 
 function startEdit() {
   draft.value = props.description
+  base.value = props.description
   isEditing.value = true
   nextTick(() => {
     textareaWrapper.value?.querySelector('textarea')?.focus()
@@ -27,7 +30,7 @@ function startEdit() {
 function commitEdit() {
   isEditing.value = false
   const next = draft.value
-  if (next !== props.description) emit('save', next)
+  if (next !== base.value) emit('save', next, base.value)
 }
 
 function cancelEdit() {
@@ -38,7 +41,7 @@ function cancelEdit() {
 function onComingSoon(feature: string) {
   toast.add({
     title: `${feature} скоро будет`,
-    icon: 'i-lucide-sparkles',
+    icon: 'i-hugeicons-sparkles',
     duration: 1500,
   })
 }
@@ -54,22 +57,21 @@ function onComingSoon(feature: string) {
       <button
         type="button"
         class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
-        @click="onComingSoon('Улучшить с AI')"
-      >
-        <UIcon name="i-lucide-sparkles" class="size-3" />
-        Улучшить с AI
-      </button>
-      <button
-        type="button"
-        class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
         @click="onComingSoon('Вложение')"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         Вложение
       </button>
     </div>
 
     <div v-if="isEditing" ref="textareaWrapper" class="w-full">
+      <p
+        v-if="changedMeanwhile"
+        class="mb-2 flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-[12.5px] text-warning"
+      >
+        <UIcon name="i-hugeicons-alert-02" class="mt-0.5 size-4 shrink-0" />
+        Описание только что изменил кто-то ещё. При сохранении покажем обе версии, чтобы ничего не потерялось.
+      </p>
       <textarea
         v-model="draft"
         rows="8"
@@ -111,7 +113,7 @@ function onComingSoon(feature: string) {
         class="inline-flex items-center gap-1.5 text-[12px] text-muted bg-transparent border-0 p-0 mt-3 cursor-pointer hover:text-accent-500 transition-colors"
         @click="startEdit"
       >
-        <UIcon name="i-lucide-pencil" class="size-3" />
+        <UIcon name="i-hugeicons-pencil" class="size-3" />
         Редактировать описание
       </button>
     </template>

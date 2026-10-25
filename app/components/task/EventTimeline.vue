@@ -8,19 +8,19 @@ const wsId = computed(() => props.workspaceId)
 const { list: membersList } = useMembersApi(wsId)
 
 const EVENT_ICON: Record<TaskEventType, string> = {
-  task_created: 'i-lucide-plus-circle',
-  task_moved: 'i-lucide-arrow-right-circle',
-  task_closed: 'i-lucide-check-circle',
-  task_reopened: 'i-lucide-rotate-ccw',
-  task_assigned: 'i-lucide-user-check',
-  task_updated: 'i-lucide-pencil',
-  task_archived: 'i-lucide-archive',
-  task_commented: 'i-lucide-message-square',
-  task_comment_deleted: 'i-lucide-message-square-off',
-  task_added_to_sprint: 'i-lucide-circle-plus',
-  task_removed_from_sprint: 'i-lucide-circle-minus',
-  task_blocked: 'i-lucide-octagon-x',
-  task_unblocked: 'i-lucide-octagon',
+  task_created: 'i-hugeicons-circle-plus',
+  task_moved: 'i-hugeicons-circle-arrow-right-01',
+  task_closed: 'i-hugeicons-circle-check-big',
+  task_reopened: 'i-hugeicons-rotate-ccw',
+  task_assigned: 'i-hugeicons-user-check-01',
+  task_updated: 'i-hugeicons-pencil',
+  task_archived: 'i-hugeicons-archive',
+  task_commented: 'i-hugeicons-message-square',
+  task_comment_deleted: 'i-hugeicons-message-square-off',
+  task_added_to_sprint: 'i-hugeicons-circle-plus',
+  task_removed_from_sprint: 'i-hugeicons-circle-minus',
+  task_blocked: 'i-hugeicons-octagon-x',
+  task_unblocked: 'i-hugeicons-octagon',
 }
 
 const EVENT_COLOR: Record<TaskEventType, string> = {

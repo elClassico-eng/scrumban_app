@@ -432,3 +432,103 @@ describe('DELETE /api/workspaces/:id/boards/:boardId', () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe('board archive', () => {
+  async function setup() {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const res = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, {
+      method: 'POST',
+      body: { name: 'Old', slug: 'old' },
+    })
+    return { owner, wsId, boardId: res.body.board.id }
+  }
+
+  async function names(actor: UserCtx, wsId: string, query = '') {
+    const res = await fetchWithJar<{ boards: { name: string }[] }>(actor.jar, `/api/workspaces/${wsId}/boards${query}`)
+    return res.body.boards.map(b => b.name)
+  }
+
+  it('archived boards leave the list, show up under archived=true and come back on restore', async () => {
+    const { owner, wsId, boardId } = await setup()
+    const url = `/api/workspaces/${wsId}/boards/${boardId}`
+    const archived = await fetchWithJar<{ board: { archivedAt: string | null } }>(owner.jar, url, { method: 'PATCH', body: { archived: true } })
+    expect(archived.status).toBe(200)
+    expect(archived.body.board.archivedAt).not.toBeNull()
+    expect(await names(owner, wsId)).not.toContain('Old')
+    expect(await names(owner, wsId, '?archived=true')).toEqual(['Old'])
+
+    await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { archived: false } })
+    expect(await names(owner, wsId)).toContain('Old')
+    expect(await names(owner, wsId, '?archived=true')).toEqual([])
+  })
+
+  it('a member cannot archive a board', async () => {
+    const { owner, wsId, boardId } = await setup()
+    const member = await registerUser('member@example.com')
+    await addMember(owner, wsId, member.email, 'member')
+    const res = await fetchWithJar(member.jar, `/api/workspaces/${wsId}/boards/${boardId}`, { method: 'PATCH', body: { archived: true } })
+    expect(res.status).toBe(403)
+  })
+})
+
+describe('board icon', () => {
+  it('accepts an icon from the set, clears it with null and rejects anything else', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const created = await fetchWithJar<{ board: { id: string, icon: string | null } }>(owner.jar, `/api/workspaces/${wsId}/boards`, {
+      method: 'POST',
+      body: { name: 'Web', slug: 'web', icon: '🚀' },
+    })
+    expect(created.body.board.icon).toBe('🚀')
+    const url = `/api/workspaces/${wsId}/boards/${created.body.board.id}`
+
+    const set = await fetchWithJar<{ board: { icon: string | null } }>(owner.jar, url, { method: 'PATCH', body: { icon: 'i-hugeicons-code' } })
+    expect(set.body.board.icon).toBe('i-hugeicons-code')
+    const cleared = await fetchWithJar<{ board: { icon: string | null } }>(owner.jar, url, { method: 'PATCH', body: { icon: null } })
+    expect(cleared.body.board.icon).toBeNull()
+
+    const bad = await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { icon: '<img src=x>' } })
+    expect(bad.status).toBe(400)
+  })
+})
+
+describe('board keys and task numbers', () => {
+  async function createBoard(owner: UserCtx, wsId: string, body: Record<string, unknown>) {
+    return fetchWithJar<{ board: { id: string, key: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body })
+  }
+
+  it('derives a key from the name, suffixes duplicates and accepts a custom key', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    expect((await createBoard(owner, wsId, { name: 'Поток', slug: 'potok' })).body.board.key).toBe('ПОТ')
+    expect((await createBoard(owner, wsId, { name: 'Поток 2', slug: 'potok-2' })).body.board.key).toBe('ПОТ2')
+    expect((await createBoard(owner, wsId, { name: 'Web', slug: 'web', key: 'fe' })).body.board.key).toBe('FE')
+  })
+
+  it('rejects a taken or malformed key', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    await createBoard(owner, wsId, { name: 'Web', slug: 'web', key: 'WEB' })
+    const other = await createBoard(owner, wsId, { name: 'Api', slug: 'api' })
+    const url = `/api/workspaces/${wsId}/boards/${other.body.board.id}`
+    expect((await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { key: 'WEB' } })).status).toBe(409)
+    expect((await fetchWithJar(owner.jar, url, { method: 'PATCH', body: { key: '1AB' } })).status).toBe(400)
+  })
+
+  it('numbers tasks per board without gaps or repeats under parallel creates', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const board = await createBoard(owner, wsId, { name: 'Main', slug: 'main' })
+    const boardId = board.body.board.id
+    const cols = await fetchWithJar<{ columns: { id: string }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/columns`)
+    const columnId = cols.body.columns[0]!.id
+    const created = await Promise.all(Array.from({ length: 8 }, (_, i) =>
+      fetchWithJar<{ task: { number: number } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+        method: 'POST',
+        body: { columnId, title: `T${i}` },
+      }),
+    ))
+    expect(created.map(r => r.body.task.number).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+  })
+})

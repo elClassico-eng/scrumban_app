@@ -49,10 +49,10 @@ function deltaLabel(delta: number): string {
 }
 
 const STAT_META: { key: 'done' | 'wip' | 'blocked' | 'aging'; label: string; icon: string; get: (s: DailyStat) => number }[] = [
-  { key: 'done', label: 'Done', icon: 'i-lucide-check-circle-2', get: s => s.value },
-  { key: 'wip', label: 'WIP', icon: 'i-lucide-loader', get: s => s.value },
-  { key: 'blocked', label: 'Blocked', icon: 'i-lucide-octagon-x', get: s => s.value },
-  { key: 'aging', label: 'Aging', icon: 'i-lucide-hourglass', get: s => s.value },
+  { key: 'done', label: 'Done', icon: 'i-hugeicons-circle-check', get: s => s.value },
+  { key: 'wip', label: 'WIP', icon: 'i-hugeicons-loader', get: s => s.value },
+  { key: 'blocked', label: 'Blocked', icon: 'i-hugeicons-octagon-x', get: s => s.value },
+  { key: 'aging', label: 'Aging', icon: 'i-hugeicons-hourglass', get: s => s.value },
 ]
 
 const CHANGE_LABEL: Record<DailyChangeKind, string> = {
@@ -114,7 +114,7 @@ function openTask(taskId: string) {
 
         <section v-if="d.aging.length > 0" class="space-y-2">
           <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted inline-flex items-center gap-1.5">
-            <UIcon name="i-lucide-hourglass" class="size-3.5 text-accent-600" />
+            <UIcon name="i-hugeicons-hourglass" class="size-3.5 text-accent-600" />
             Aging WIP
             <span class="text-dimmed font-normal normal-case">старше P85 = {{ d.p85Days }} дн</span>
           </div>
@@ -159,7 +159,7 @@ function openTask(taskId: string) {
 
         <section v-if="d.attention.length > 0" class="space-y-2">
           <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted inline-flex items-center gap-1.5">
-            <UIcon name="i-lucide-zap" class="size-3.5 text-accent-500" />
+            <UIcon name="i-hugeicons-zap" class="size-3.5 text-accent-500" />
             Требует внимания
           </div>
           <div class="border border-default rounded-xl overflow-hidden divide-y divide-default">
@@ -181,7 +181,7 @@ function openTask(taskId: string) {
 
         <section v-if="d.blockers.length > 0" class="space-y-2">
           <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted inline-flex items-center gap-1.5">
-            <UIcon name="i-lucide-octagon-x" class="size-3.5 text-red-500" />
+            <UIcon name="i-hugeicons-octagon-x" class="size-3.5 text-red-500" />
             Блокеры
           </div>
           <div class="border border-default rounded-xl overflow-hidden divide-y divide-default">
@@ -209,7 +209,7 @@ function openTask(taskId: string) {
               :key="v.columnId"
               class="flex items-center gap-2 text-[12.5px] border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 rounded-lg px-3 py-2"
             >
-              <UIcon name="i-lucide-layers" class="size-3.5 text-red-500 shrink-0" />
+              <UIcon name="i-hugeicons-layers-01" class="size-3.5 text-red-500 shrink-0" />
               <span class="flex-1 text-red-800 dark:text-red-200">«{{ v.columnName }}» превышает WIP-лимит</span>
               <span class="font-semibold text-red-600 dark:text-red-300 tabular-nums">{{ v.count }}/{{ v.limit }}</span>
             </div>
@@ -218,7 +218,7 @@ function openTask(taskId: string) {
               class="border border-accent-200 dark:border-accent-900 bg-accent-50 dark:bg-accent-950 rounded-lg px-3 py-2 space-y-1"
             >
               <div class="text-[12px] font-semibold text-accent-800 dark:text-accent-200 inline-flex items-center gap-1.5">
-                <UIcon name="i-lucide-flag-triangle-right" class="size-3.5" />
+                <UIcon name="i-hugeicons-flag-triangle-right" class="size-3.5" />
                 Рискуют не успеть в спринте «{{ d.sprintRisk.sprintName }}»
                 <span v-if="d.sprintRisk.horizonDays !== null" class="font-normal">· осталось {{ d.sprintRisk.horizonDays }} дн</span>
               </div>

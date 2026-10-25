@@ -11,15 +11,15 @@ const emit = defineEmits<{ 'update:modelValue': [SettingsTab] }>()
 type Item = { key: SettingsTab; label: string; icon: string }
 
 const accountItems: Item[] = [
-  { key: 'profile', label: 'Профиль', icon: 'i-lucide-user' },
-  { key: 'security', label: 'Безопасность', icon: 'i-lucide-lock' },
-  { key: 'notifications', label: 'Уведомления', icon: 'i-lucide-bell' },
-  { key: 'appearance', label: 'Внешний вид', icon: 'i-lucide-palette' },
-  { key: 'danger', label: 'Опасная зона', icon: 'i-lucide-triangle-alert' },
+  { key: 'profile', label: 'Профиль', icon: 'i-hugeicons-user' },
+  { key: 'security', label: 'Безопасность', icon: 'i-hugeicons-lock' },
+  { key: 'notifications', label: 'Уведомления', icon: 'i-hugeicons-bell' },
+  { key: 'appearance', label: 'Внешний вид', icon: 'i-hugeicons-palette' },
+  { key: 'danger', label: 'Опасная зона', icon: 'i-hugeicons-triangle-alert' },
 ]
 
 const teamItems: Item[] = [
-  { key: 'team', label: 'Команда', icon: 'i-lucide-users' },
+  { key: 'team', label: 'Команда', icon: 'i-hugeicons-users' },
 ]
 
 const groups = computed(() => [

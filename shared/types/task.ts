@@ -6,6 +6,7 @@ export interface Task {
   workspaceId: string
   boardId: string
   columnId: string
+  number: number
   title: string
   description: string
   assigneeId: string | null
@@ -56,6 +57,7 @@ export interface UpdateTaskInput {
   blockedReason?: string | null
   isEpic?: boolean
   storyPoints?: number | null
+  expected?: { title?: string, description?: string }
 }
 
 export interface TaskDependencyView {

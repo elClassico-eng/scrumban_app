@@ -21,7 +21,7 @@ defineEmits<{
   >
     <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--island-ink-3)]">
       {{ label }}
-      <UIcon v-if="clickable" name="i-lucide-arrow-up-right" class="w-3 h-3 ml-auto" />
+      <UIcon v-if="clickable" name="i-hugeicons-arrow-up-right-01" class="w-3 h-3 ml-auto" />
     </div>
     <slot />
   </component>

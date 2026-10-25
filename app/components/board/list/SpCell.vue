@@ -13,12 +13,12 @@ const { update } = useTasksApi(toRef(props, 'workspaceId'), toRef(props, 'boardI
 const items = computed(() => [
   ...STORY_POINTS_OPTIONS.map(p => ({
     label: String(p),
-    icon: props.task.storyPoints === p ? 'i-lucide-check' : undefined,
+    icon: props.task.storyPoints === p ? 'i-hugeicons-check' : undefined,
     onSelect: () => { if (props.task.storyPoints !== p) update.mutate({ taskId: props.task.id, storyPoints: p }) },
   })),
   {
     label: 'Без оценки',
-    icon: props.task.storyPoints == null ? 'i-lucide-check' : undefined,
+    icon: props.task.storyPoints == null ? 'i-hugeicons-check' : undefined,
     onSelect: () => { if (props.task.storyPoints != null) update.mutate({ taskId: props.task.id, storyPoints: null }) },
   },
 ])
@@ -28,16 +28,16 @@ const items = computed(() => [
   <UDropdownMenu v-if="canEdit" :items="items" :ui="{ content: 'w-32' }">
     <button
       class="font-mono text-[12px] font-semibold tabular-nums min-w-[26px] h-[24px] px-[7px] rounded-[7px] inline-grid place-items-center transition-opacity hover:opacity-80"
-      :class="task.storyPoints == null ? 'text-dimmed bg-transparent' : 'text-toned bg-elevated'"
+      :class="task.storyPoints == null ? 'bg-transparent text-[11px] text-dimmed opacity-50 transition-opacity group-hover:opacity-100' : 'text-toned bg-elevated'"
+      :title="task.storyPoints == null ? 'Оценить в SP' : undefined"
     >
-      {{ task.storyPoints == null ? '—' : task.storyPoints }}
+      {{ task.storyPoints == null ? 'SP' : task.storyPoints }}
     </button>
   </UDropdownMenu>
   <span
-    v-else
-    class="font-mono text-[12px] font-semibold tabular-nums min-w-[26px] h-[24px] px-[7px] rounded-[7px] inline-grid place-items-center"
-    :class="task.storyPoints == null ? 'text-dimmed' : 'text-toned bg-elevated'"
+    v-else-if="task.storyPoints != null"
+    class="font-mono text-[12px] font-semibold tabular-nums min-w-[26px] h-[24px] px-[7px] rounded-[7px] inline-grid place-items-center text-toned bg-elevated"
   >
-    {{ task.storyPoints == null ? '—' : task.storyPoints }}
+    {{ task.storyPoints }}
   </span>
 </template>

@@ -53,8 +53,8 @@ const boardName = computed(() => {
       </div>
     </div>
 
-    <UiEmptyState v-else-if="!userId" compact icon="i-lucide-user" title="Войдите, чтобы увидеть свои задачи" />
-    <UiEmptyState v-else-if="!open.length" compact icon="i-lucide-check-circle-2" title="Открытых задач на вас нет" />
-    <UiEmptyState v-else compact icon="i-lucide-coffee" title="Ничего не горит" text="Ни просрочек, ни блокировок, ни близких сроков." />
+    <UiEmptyState v-else-if="!userId" compact icon="i-hugeicons-user" title="Войдите, чтобы увидеть свои задачи" />
+    <UiEmptyState v-else-if="!open.length" compact icon="i-hugeicons-circle-check" title="Открытых задач на вас нет" />
+    <UiEmptyState v-else compact icon="i-hugeicons-coffee-01" title="Ничего не горит" text="Ни просрочек, ни блокировок, ни близких сроков." />
   </UiPanel>
 </template>

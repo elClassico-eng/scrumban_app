@@ -2,10 +2,9 @@
 import { pageRoutes } from '~/routing'
 
 const uiStore = useUiStore()
+const workspaceStore = useWorkspaceStore()
 const ccActions = useControlCenterActions()
-const { unreadCount } = useNotificationsApi()
-
-const unread = computed(() => unreadCount.data.value?.count ?? 0)
+const unread = useInboxBadge(computed(() => workspaceStore.currentId ?? null))
 </script>
 
 <template>
@@ -18,7 +17,7 @@ const unread = computed(() => unreadCount.data.value?.count ?? 0)
       aria-label="Меню"
       @click="uiStore.toggleMobileNav"
     >
-      <UIcon name="i-lucide-menu" class="size-5" />
+      <UIcon name="i-hugeicons-menu" class="size-5" />
     </button>
 
     <NuxtLink :to="pageRoutes.workspaces" class="takt-logo flex min-w-0 items-center gap-2">
@@ -34,20 +33,20 @@ const unread = computed(() => unreadCount.data.value?.count ?? 0)
       aria-label="Поиск"
       @click="ccActions.requestSearch"
     >
-      <UIcon name="i-lucide-search" class="size-5" />
+      <UIcon name="i-hugeicons-search-01" class="size-5" />
     </button>
 
-    <button
-      type="button"
+    <NuxtLink
+      v-if="workspaceStore.currentId"
+      :to="pageRoutes.workspaceInbox(workspaceStore.currentId)"
       class="relative size-10 grid place-items-center rounded-xl text-toned hover:bg-elevated transition-colors"
-      aria-label="Центр управления"
-      @click="uiStore.openControlCenter"
+      aria-label="Входящие"
     >
-      <UIcon name="i-lucide-bell" class="size-5" />
+      <UIcon name="i-hugeicons-inbox" class="size-5" />
       <span
         v-if="unread > 0"
         class="absolute top-1.5 right-1.5 min-w-[15px] h-[15px] px-1 rounded-full bg-accent-500 text-white text-[9px] font-bold grid place-items-center"
       >{{ unread > 9 ? '9+' : unread }}</span>
-    </button>
+    </NuxtLink>
   </header>
 </template>

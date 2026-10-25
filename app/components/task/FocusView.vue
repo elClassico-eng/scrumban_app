@@ -65,7 +65,8 @@ const currentColumn = computed(() =>
   columns.value.find(c => c.id === task.value?.columnId) ?? null,
 )
 
-const shortId = computed(() => task.value ? task.value.id.slice(0, 8).toUpperCase() : '')
+const taskKey = useTaskKey()
+const shortId = computed(() => task.value ? taskKey(task.value) : '')
 
 const localDueDate = ref('')
 
@@ -85,7 +86,7 @@ async function saveWithFeedback(patch: Record<string, unknown>) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сохранить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -125,9 +126,33 @@ function saveDeferred(
   })
 }
 
-function onTitleChange(next: string) {
+type TextField = 'title' | 'description'
+const conflict = ref<{ field: TextField, mine: string } | null>(null)
+
+async function saveText(field: TextField, next: string, base: string) {
+  if (!task.value) return
+  try {
+    await update.mutateAsync({ taskId: task.value.id, [field]: next, expected: { [field]: base } })
+  }
+  catch (err) {
+    if (getErrorStatus(err) !== 409) {
+      toast.add({ title: getErrorMessage(err, 'Не удалось сохранить'), color: 'error', icon: 'i-hugeicons-alert-circle' })
+      return
+    }
+    await qc.refetchQueries({ queryKey: tasksKey.value })
+    conflict.value = { field, mine: next }
+  }
+}
+
+function keepMine() {
+  const c = conflict.value
+  conflict.value = null
+  if (c && task.value) saveText(c.field, c.mine, task.value[c.field])
+}
+
+function onTitleChange(next: string, base: string) {
   if (!task.value || next === task.value.title) return
-  saveWithFeedback({ title: next })
+  saveText('title', next, base)
 }
 
 function onServiceClassChange(v: ServiceClass) {
@@ -135,7 +160,7 @@ function onServiceClassChange(v: ServiceClass) {
   const label = SERVICE_CLASS_INFO[v].shortLabel
   saveDeferred(
     { serviceClass: v },
-    { title: `Класс изменён на «${label}»`, icon: 'i-lucide-zap' },
+    { title: `Класс изменён на «${label}»`, icon: 'i-hugeicons-zap' },
     'serviceClass',
   )
 }
@@ -147,7 +172,7 @@ async function onAssigneeAdd(userId: string) {
     await addAssignee.mutateAsync({ userId })
     toast.add({
       title: `Назначен ${member ? displayName(member) : 'участник'}`,
-      icon: 'i-lucide-user-check',
+      icon: 'i-hugeicons-user-check-01',
       duration: 1500,
     })
   }
@@ -155,7 +180,7 @@ async function onAssigneeAdd(userId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось назначить'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -169,7 +194,7 @@ async function onAssigneeRemove(userId: string) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось снять исполнителя'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -184,7 +209,7 @@ function onStoryPointsChange(value: number | null) {
   const title = value == null ? 'Оценка снята' : `Оценка: ${value} SP`
   saveDeferred(
     { storyPoints: value },
-    { title, icon: 'i-lucide-zap' },
+    { title, icon: 'i-hugeicons-zap' },
     'storyPoints',
   )
 }
@@ -219,10 +244,10 @@ async function onCopyLink() {
   const url = `${window.location.origin}${pageRoutes.task(wsId.value, bId.value, task.value.id).path}?task=${task.value.id}`
   try {
     await navigator.clipboard.writeText(url)
-    toast.add({ title: 'Ссылка скопирована', icon: 'i-lucide-link', duration: 1500 })
+    toast.add({ title: 'Ссылка скопирована', icon: 'i-hugeicons-link', duration: 1500 })
   }
   catch {
-    toast.add({ title: 'Не удалось скопировать', color: 'error', icon: 'i-lucide-alert-circle' })
+    toast.add({ title: 'Не удалось скопировать', color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
@@ -281,9 +306,8 @@ function openSubtask(taskId: string) {
 
 const deadlineMeta = computed(() => {
   if (!task.value?.dueDate) return null
-  const due = new Date(task.value.dueDate)
-  const now = new Date()
-  const days = Math.ceil((due.getTime() - now.getTime()) / 86_400_000)
+  const due = dueLocalDay(task.value.dueDate)
+  const days = dueDayInfo(task.value.dueDate).diff
   const overdue = days < 0
   const formatted = due.toLocaleDateString('ru', { day: '2-digit', month: 'short' })
   const weekday = due.toLocaleDateString('ru', { weekday: 'short' })
@@ -295,9 +319,16 @@ const deadlineMeta = computed(() => {
   return { date: `${formatted}, ${weekday}`, countdown, overdue }
 })
 
-const watching = ref(true)
+const { watchers, watching, toggle: toggleWatching } = useTaskWatchersApi(wsId, bId, tId)
 function toggleWatch() {
-  watching.value = !watching.value
+  const next = !watching.value
+  toggleWatching.mutate(next, {
+    onSuccess: () => toast.add({
+      title: next ? 'Вы следите за задачей' : 'Вы больше не следите за задачей',
+      description: next ? 'Комментарии и смена статуса придут во «Входящие», во вкладку «Поток».' : undefined,
+      icon: next ? 'i-hugeicons-eye' : 'i-hugeicons-eye-off',
+    }),
+  })
 }
 
 onMounted(() => {
@@ -310,12 +341,12 @@ onMounted(() => {
 <template>
   <div class="grid grid-rows-[44px_1fr] grid-cols-[minmax(0,1fr)] h-dvh sm:h-[90vh] sm:max-h-[920px] bg-default text-default rounded-none sm:rounded-2xl overflow-hidden">
     <div v-if="isLoading" class="row-span-2 grid place-items-center p-6">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6 text-muted" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6 text-muted" />
     </div>
 
     <div v-else-if="isMissing" class="row-span-2 grid place-items-center p-6">
       <div class="text-center space-y-3">
-        <UIcon name="i-lucide-alert-circle" class="size-12 text-muted mx-auto" />
+        <UIcon name="i-hugeicons-alert-circle" class="size-12 text-muted mx-auto" />
         <p class="font-medium">Задача не найдена</p>
         <p class="text-sm text-muted">Возможно, её удалили или у тебя нет доступа.</p>
         <UButton @click="emit('close')">К доске</UButton>
@@ -325,11 +356,14 @@ onMounted(() => {
     <template v-else-if="task">
       <TaskFocusTopBar
         :short-id="shortId"
+        :workspace-id="wsId"
+        :board-id="bId"
         :workspace-name="workspace?.name"
         :board-name="board?.name"
         :parent-task="parentTask"
         :can-delete="canDelete"
         :watching="watching"
+        :watcher-count="watchers.length"
         @close="emit('close')"
         @toggle-watch="toggleWatch"
         @copy-link="onCopyLink"
@@ -358,7 +392,7 @@ onMounted(() => {
             <TaskFocusDescriptionTab
               v-if="tab === 'desc'"
               :description="task.description"
-              @save="(v: string) => saveWithFeedback({ description: v })"
+              @save="(v: string, base: string) => saveText('description', v, base)"
             />
             <TaskFocusChecklistTab
               v-else-if="tab === 'checks'"
@@ -449,6 +483,14 @@ onMounted(() => {
       :column-id="backlogColumnId"
       :parent-task-id="task.id"
       :parent-title="task.title"
+    />
+    <TaskFocusConflictModal
+      v-if="conflict && task"
+      :field="conflict.field"
+      :theirs="task[conflict.field]"
+      :mine="conflict.mine"
+      @keep-mine="keepMine"
+      @take-theirs="conflict = null"
     />
   </div>
 </template>

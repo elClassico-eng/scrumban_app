@@ -17,7 +17,7 @@ const localDate = computed(() => props.task.dueDate ? props.task.dueDate.slice(0
 
 const pill = computed(() => {
   const d = props.due
-  if (!d) return { cls: 'bg-transparent text-dimmed pl-0', text: '—', noIcon: true }
+  if (!d) return { cls: 'bg-transparent text-dimmed px-1 opacity-50 transition-opacity group-hover:opacity-100', text: '', empty: true }
   if (props.isDone) return { cls: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400', text: d.dateLabel }
   if (d.tone === 'overdue') return { cls: 'bg-red-500 text-white', text: d.dateLabel }
   if (d.tone === 'today') return { cls: 'bg-accent-500 text-white', text: 'сегодня' }
@@ -42,7 +42,7 @@ function clearDue() {
       class="inline-flex items-center gap-[6px] h-[24px] px-[9px] rounded-[7px] text-[12px] font-medium tabular-nums transition-opacity hover:opacity-80"
       :class="pill.cls"
     >
-      <UIcon v-if="!pill.noIcon" name="i-lucide-calendar" class="size-[13px] shrink-0" />
+      <UIcon :name="pill.empty ? 'i-hugeicons-calendar-add-01' : 'i-hugeicons-calendar-03'" :class="pill.empty ? 'size-4' : 'size-[13px]'" class="shrink-0" />
       {{ pill.text }}
     </button>
     <template #content>
@@ -53,11 +53,11 @@ function clearDue() {
     </template>
   </UPopover>
   <span
-    v-else
+    v-else-if="!pill.empty"
     class="inline-flex items-center gap-[6px] h-[24px] px-[9px] rounded-[7px] text-[12px] font-medium tabular-nums"
     :class="pill.cls"
   >
-    <UIcon v-if="!pill.noIcon" name="i-lucide-calendar" class="size-[13px] shrink-0" />
+    <UIcon name="i-hugeicons-calendar-03" class="size-[13px] shrink-0" />
     {{ pill.text }}
   </span>
 </template>

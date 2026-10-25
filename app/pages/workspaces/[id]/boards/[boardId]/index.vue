@@ -208,6 +208,11 @@ function openCreateTask(columnId?: string) {
 
 const ccActions = useControlCenterActions()
 watch(() => ccActions.createTaskTick.value, () => openCreateTask())
+watch(createTaskColumnId, (columnId) => {
+  if (!columnId || route.query.create !== '1') return
+  openCreateTask()
+  router.replace({ query: { ...route.query, create: undefined } })
+}, { immediate: true })
 
 const listCompact = ref(false)
 
@@ -253,19 +258,19 @@ const isLoading = computed(() =>
     />
 
     <div v-if="isLoading" class="text-center py-12 text-muted">
-      <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+      <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
     </div>
 
     <UCard v-else-if="columns.length === 0" class="text-center py-12 mt-4">
       <div class="space-y-3">
-        <UIcon name="i-lucide-columns-3" class="size-12 text-muted mx-auto" />
+        <UIcon name="i-hugeicons-layout-3-column" class="size-12 text-muted mx-auto" />
         <div>
           <p class="font-medium">В доске пока нет колонок</p>
           <p class="text-sm text-muted mt-1">
             {{ canCreateColumns ? 'Создай первую, чтобы добавлять задачи.' : 'Попроси админа настроить колонки.' }}
           </p>
         </div>
-        <UButton v-if="canCreateColumns" icon="i-lucide-plus" @click="createColumnOpen = true">
+        <UButton v-if="canCreateColumns" icon="i-hugeicons-plus" @click="createColumnOpen = true">
           Создать колонку
         </UButton>
       </div>
@@ -315,7 +320,7 @@ const isLoading = computed(() =>
             class="w-[312px] shrink-0 rounded-xl border border-dashed border-default hover:border-accent-500 hover:bg-accent-50 text-muted hover:text-accent-600 flex items-center justify-center gap-2 text-[13px] transition-colors cursor-pointer self-start min-h-32"
             @click="createColumnOpen = true"
           >
-            <UIcon name="i-lucide-plus" class="size-4" />
+            <UIcon name="i-hugeicons-plus" class="size-4" />
             Добавить колонку
           </button>
         </template>
@@ -330,7 +335,7 @@ const isLoading = computed(() =>
           @click="toggleLane(lane.key)"
         >
           <UIcon
-            :name="collapsedLanes.has(lane.key) ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+            :name="collapsedLanes.has(lane.key) ? 'i-hugeicons-chevron-right' : 'i-hugeicons-chevron-down'"
             class="size-4 text-muted"
           />
           <h3 class="font-medium text-sm">{{ lane.label }}</h3>

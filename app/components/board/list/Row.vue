@@ -12,6 +12,7 @@ const props = defineProps<{
   childCount: number
   expanded: boolean
   selected: boolean
+  selecting: boolean
   depth: number
   canCreate: boolean
   workspaceId: string
@@ -19,7 +20,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'toggle-select': [id: string]
+  'toggle-select': [id: string, shift: boolean]
   'toggle-expand': [id: string]
   'add-subtask': [id: string]
   'move-to-column': [taskId: string, columnId: string]
@@ -39,7 +40,8 @@ const memberById = computed(() => {
 const assignees = computed(() =>
   (props.task.assigneeIds ?? []).map(id => memberById.value.get(id)).filter((x): x is MemberView => !!x),
 )
-const shortId = computed(() => props.task.id.slice(0, 6).toUpperCase())
+const taskKey = useTaskKey()
+const shortId = computed(() => taskKey(props.task))
 const hasBlocker = computed(() => !!props.task.blockedReason || props.blockerCount > 0)
 const cos = computed(() => SERVICE_CLASS_INFO[props.task.serviceClass])
 const checklistFull = computed(() => props.task.checklistTotal > 0 && props.task.checklistDone === props.task.checklistTotal)
@@ -50,7 +52,7 @@ const circleClass = computed(() => column.value ? COLUMN_ROLE_INFO[column.value.
 const columnItems = computed(() =>
   props.columns.map(c => ({
     label: c.name,
-    icon: c.id === props.task.columnId ? 'i-lucide-check' : undefined,
+    icon: c.id === props.task.columnId ? 'i-hugeicons-check' : undefined,
     onSelect: () => emit('move-to-column', props.task.id, c.id),
   })),
 )
@@ -94,9 +96,9 @@ const classDotClass = computed(() => {
 
 <template>
   <div
-    class="group relative cursor-pointer transition-colors border-t border-[var(--ui-border-muted)]"
+    class="group relative cursor-pointer border-b border-[var(--ui-border-muted)] transition-colors"
     :class="[
-      selected ? 'bg-accent-50 dark:bg-accent-950/40' : depth > 0 ? 'bg-muted/20 hover:bg-muted/40' : 'hover:bg-muted/30 dark:hover:bg-muted/20',
+      selected ? 'bg-accent-500/10' : 'hover:bg-elevated/50',
     ]"
     @click="openTask"
   >
@@ -112,10 +114,11 @@ const classDotClass = computed(() => {
           class="size-4 rounded border-[1.5px] grid place-items-center shrink-0 transition-all"
           :class="selected
             ? 'opacity-100 bg-accent-500 border-accent-500 text-white'
-            : 'opacity-0 group-hover:opacity-100 border-[var(--ui-border-accented)] bg-default text-transparent'"
-          @click.stop="emit('toggle-select', task.id)"
+            : [selecting ? 'opacity-100' : 'opacity-0 group-hover:opacity-100', 'border-[var(--ui-border-accented)] bg-default text-transparent']"
+          @mousedown="$event.shiftKey && $event.preventDefault()"
+          @click.stop="emit('toggle-select', task.id, $event.shiftKey)"
         >
-          <UIcon name="i-lucide-check" class="size-2.5" />
+          <UIcon name="i-hugeicons-check" class="size-2.5" />
         </span>
 
         <UDropdownMenu :items="columnItems" :ui="{ content: 'w-48' }">
@@ -125,7 +128,7 @@ const classDotClass = computed(() => {
             title="Сменить статус"
             @click.stop
           >
-            <UIcon v-if="isDone" name="i-lucide-check" class="size-2.5 text-white" />
+            <UIcon v-if="isDone" name="i-hugeicons-check" class="size-2.5 text-white" />
           </button>
         </UDropdownMenu>
 
@@ -136,7 +139,7 @@ const classDotClass = computed(() => {
           :class="isDone ? 'text-dimmed line-through' : depth > 0 ? 'text-toned' : 'text-default'"
         >{{ task.title }}</span>
 
-        <span v-if="hasBlocker" class="text-red-500 shrink-0"><UIcon name="i-lucide-alert-triangle" class="size-3" /></span>
+        <span v-if="hasBlocker" class="text-red-500 shrink-0"><UIcon name="i-hugeicons-triangle-alert" class="size-3" /></span>
       </div>
 
       <div class="flex items-center flex-wrap gap-1.5 pl-[26px]">
@@ -151,7 +154,7 @@ const classDotClass = computed(() => {
           class="inline-flex items-center gap-[5px] h-[22px] px-2 rounded-[6px] text-[11px] font-medium tabular-nums"
           :class="duePillClass"
         >
-          <UIcon name="i-lucide-calendar" class="size-2.5 shrink-0" />
+          <UIcon name="i-hugeicons-calendar-03" class="size-2.5 shrink-0" />
           {{ dueText }}
         </span>
 
@@ -190,14 +193,14 @@ const classDotClass = computed(() => {
           v-if="task.timeSpentSeconds > 0"
           class="inline-flex items-center gap-[5px] font-mono text-[11px] text-muted h-[22px] px-2 rounded-[6px] bg-elevated"
         >
-          <UIcon name="i-lucide-clock" class="size-2.5" />
+          <UIcon name="i-hugeicons-clock-01" class="size-2.5" />
           {{ formatDuration(task.timeSpentSeconds) }}
         </span>
       </div>
     </div>
 
     <div
-      class="hidden sm:grid grid-cols-[var(--kl-cols)] items-center min-h-[48px] pr-[18px]"
+      class="hidden sm:grid grid-cols-[var(--kl-cols)] items-center min-h-[42px] pr-[18px]"
     >
       <div class="flex items-center gap-2 py-2 pr-2 min-w-0" :style="{ paddingLeft: `${18 + depth * 26}px` }">
         <span
@@ -210,10 +213,11 @@ const classDotClass = computed(() => {
           class="size-[17px] rounded-[5px] border-[1.6px] grid place-items-center shrink-0 transition-all"
           :class="selected
             ? 'opacity-100 bg-accent-500 border-accent-500 text-white'
-            : 'opacity-0 group-hover:opacity-100 border-[var(--ui-border-accented)] bg-default text-transparent'"
-          @click.stop="emit('toggle-select', task.id)"
+            : [selecting ? 'opacity-100' : 'opacity-0 group-hover:opacity-100', 'border-[var(--ui-border-accented)] bg-default text-transparent']"
+          @mousedown="$event.shiftKey && $event.preventDefault()"
+          @click.stop="emit('toggle-select', task.id, $event.shiftKey)"
         >
-          <UIcon name="i-lucide-check" class="size-2.5" />
+          <UIcon name="i-hugeicons-check" class="size-2.5" />
         </span>
 
         <button
@@ -223,7 +227,7 @@ const classDotClass = computed(() => {
           :class="expanded ? '' : '-rotate-90'"
           @click.stop="emit('toggle-expand', task.id)"
         >
-          <UIcon name="i-lucide-chevron-down" class="size-3.5" />
+          <UIcon name="i-hugeicons-chevron-down" class="size-3.5" />
         </button>
         <span v-else class="w-3.5 shrink-0" />
 
@@ -234,7 +238,7 @@ const classDotClass = computed(() => {
             title="Сменить статус"
             @click.stop
           >
-            <UIcon v-if="isDone" name="i-lucide-check" class="size-2.5 text-white" />
+            <UIcon v-if="isDone" name="i-hugeicons-check" class="size-2.5 text-white" />
           </button>
         </UDropdownMenu>
 
@@ -246,13 +250,23 @@ const classDotClass = computed(() => {
         >{{ task.title }}</span>
 
         <span class="inline-flex items-center gap-[7px] shrink-0 ml-0.5">
-          <span v-if="hasBlocker" class="text-red-500"><UIcon name="i-lucide-alert-triangle" class="size-3" /></span>
+          <span v-if="hasBlocker" class="text-red-500" title="Есть блокер"><UIcon name="i-hugeicons-triangle-alert" class="size-3" /></span>
+          <button
+            v-if="childCount > 0 && depth === 0"
+            type="button"
+            class="inline-flex items-center gap-0.5 rounded text-[10.5px] tabular-nums text-dimmed hover:text-default"
+            :title="`Подзадачи: ${childCount}`"
+            @click.stop="emit('toggle-expand', task.id)"
+          >
+            <UIcon name="i-hugeicons-hierarchy-square-02" class="size-3" />{{ childCount }}
+          </button>
+          <span v-if="task.description.trim()" class="text-dimmed" title="Есть описание"><UIcon name="i-hugeicons-text-align-left" class="size-3" /></span>
           <span
             v-if="task.checklistTotal > 0"
             class="inline-flex items-center gap-0.5 text-[10px] tabular-nums"
             :class="checklistFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-dimmed'"
           >
-            <UIcon name="i-lucide-check-square" class="size-2.5" />{{ task.checklistDone }}/{{ task.checklistTotal }}
+            <UIcon name="i-hugeicons-square-check-big" class="size-2.5" />{{ task.checklistDone }}/{{ task.checklistTotal }}
           </span>
           <button
             v-if="canCreate"
@@ -261,7 +275,7 @@ const classDotClass = computed(() => {
             title="Добавить подзадачу"
             @click.stop="emit('add-subtask', task.id)"
           >
-            <UIcon name="i-lucide-plus" class="size-3.5" />
+            <UIcon name="i-hugeicons-plus" class="size-3.5" />
           </button>
         </span>
       </div>
@@ -303,7 +317,6 @@ const classDotClass = computed(() => {
             :class="checklistFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-dimmed'"
           >{{ task.checklistDone }}/{{ task.checklistTotal }}</span>
         </span>
-        <span v-else class="text-dimmed text-xs">—</span>
       </div>
 
       <div class="flex items-center justify-center px-2 h-full col-time">

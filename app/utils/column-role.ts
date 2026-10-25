@@ -4,6 +4,7 @@ type ChipColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'err
 
 interface ColumnRoleInfo {
   label: string
+  short: string
   hint: string
   chipClass: string
   bodyClass: string
@@ -16,6 +17,7 @@ interface ColumnRoleInfo {
 export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
   backlog: {
     label: 'Backlog — очередь задач',
+    short: 'Бэклог',
     hint: 'Пул задач до старта работы. Не считается в WIP, не входит в Lead Time.',
     chipClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
     bodyClass: 'bg-slate-50/40 dark:bg-slate-900/20',
@@ -26,6 +28,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
   },
   in_progress: {
     label: 'В работе — активный поток',
+    short: 'В работе',
     hint: 'Задачи в активной разработке. Входит в WIP, начинает Cycle Time.',
     chipClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200',
     bodyClass: 'bg-amber-50/40 dark:bg-amber-950/20',
@@ -36,6 +39,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
   },
   review: {
     label: 'На ревью — проверка/QA',
+    short: 'На ревью',
     hint: 'Задачи на ревью или тестировании. Считается в WIP и Cycle Time.',
     chipClass: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200',
     bodyClass: 'bg-violet-50/40 dark:bg-violet-950/20',
@@ -46,6 +50,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
   },
   done: {
     label: 'Готово — завершено',
+    short: 'Готово',
     hint: 'Конец цикла. Аналитика берёт сюда время финиша задачи.',
     chipClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
     bodyClass: 'bg-emerald-50/40 dark:bg-emerald-950/20',
@@ -56,6 +61,7 @@ export const COLUMN_ROLE_INFO: Record<ColumnRole, ColumnRoleInfo> = {
   },
   archived: {
     label: 'Архив — вне потока',
+    short: 'Архив',
     hint: 'Отменённые или отложенные задачи. Не учитываются в потоке.',
     chipClass: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
     bodyClass: 'bg-zinc-50/40 dark:bg-zinc-950/20',

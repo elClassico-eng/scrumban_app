@@ -189,7 +189,7 @@ async function finishOnboarding() {
         color="error"
         variant="soft"
         :title="submitError"
-        icon="i-lucide-alert-circle"
+        icon="i-hugeicons-alert-circle"
       />
       <UButton type="submit" block size="xl" class="font-semibold">
         Дальше
@@ -232,7 +232,7 @@ async function finishOnboarding() {
         color="error"
         variant="soft"
         :title="submitError"
-        icon="i-lucide-alert-circle"
+        icon="i-hugeicons-alert-circle"
       />
       <div class="grid grid-cols-[auto_1fr] gap-3 pt-2">
         <UButton type="button" variant="ghost" color="neutral" size="xl" @click="back">
@@ -299,7 +299,7 @@ async function finishOnboarding() {
         color="error"
         variant="soft"
         :title="submitError"
-        icon="i-lucide-alert-circle"
+        icon="i-hugeicons-alert-circle"
       />
       <div class="flex gap-3 pt-2">
         <UButton type="button" variant="ghost" color="neutral" size="xl" @click="back">

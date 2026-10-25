@@ -76,7 +76,7 @@ async function accept() {
         ? 'Текущая роль сохранена, поменять её можно на странице участников.'
         : undefined,
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 8000,
     })
     await router.push(pageRoutes.boards(res.workspaceId))
@@ -107,7 +107,7 @@ const registerWithNext = computed(() => ({
   <div class="space-y-6">
     <template v-if="state.kind === 'loading'">
       <div class="flex flex-col items-center gap-3 py-10">
-        <UIcon name="i-lucide-loader" class="size-7 animate-spin text-primary" />
+        <UIcon name="i-hugeicons-loader" class="size-7 animate-spin text-primary" />
         <p class="text-sm text-muted">Загружаем приглашение...</p>
       </div>
     </template>
@@ -115,7 +115,7 @@ const registerWithNext = computed(() => ({
     <template v-else-if="state.kind === 'invalid'">
       <div class="space-y-3 text-center">
         <UIcon
-          :name="state.reason === 'expired' ? 'i-lucide-clock' : 'i-lucide-x-circle'"
+          :name="state.reason === 'expired' ? 'i-hugeicons-clock-01' : 'i-hugeicons-circle-x'"
           :class="[
             'size-12 mx-auto',
             state.reason === 'expired' ? 'text-warning-500' : 'text-error-500',
@@ -139,7 +139,7 @@ const registerWithNext = computed(() => ({
 
     <template v-else-if="state.kind === 'ready' || state.kind === 'accepting'">
       <div class="space-y-2 text-center">
-        <UIcon name="i-lucide-users" class="size-10 text-primary mx-auto" />
+        <UIcon name="i-hugeicons-users" class="size-10 text-primary mx-auto" />
         <h1 class="text-2xl font-bold tracking-tight">
           Приглашение в workspace
         </h1>
@@ -167,7 +167,7 @@ const registerWithNext = computed(() => ({
       <div v-else-if="emailMismatch" class="space-y-3 pt-2">
         <div class="rounded-xl border border-default bg-elevated/60 p-4 space-y-2">
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-alert-triangle" class="size-4 text-muted" />
+            <UIcon name="i-hugeicons-triangle-alert" class="size-4 text-muted" />
             <p class="text-sm font-medium text-default">Не тот аккаунт</p>
           </div>
           <p class="text-sm text-muted leading-relaxed">
@@ -197,7 +197,7 @@ const registerWithNext = computed(() => ({
 
     <template v-else-if="state.kind === 'email_not_verified'">
       <div class="space-y-3 text-center">
-        <UIcon name="i-lucide-mail-warning" class="size-12 text-muted mx-auto" />
+        <UIcon name="i-hugeicons-mail-warning" class="size-12 text-muted mx-auto" />
         <h1 class="text-2xl font-bold tracking-tight">Сначала подтвердите email</h1>
         <p class="text-sm text-muted leading-relaxed">
           Приглашения с email-привязкой можно принять только после подтверждения собственного email – это защита от перехвата приглашений.
@@ -215,7 +215,7 @@ const registerWithNext = computed(() => ({
         color="error"
         variant="soft"
         :title="state.message"
-        icon="i-lucide-alert-circle"
+        icon="i-hugeicons-alert-circle"
       />
       <UButton :to="pageRoutes.workspaces" block size="xl" variant="ghost" color="neutral">
         В мои workspace

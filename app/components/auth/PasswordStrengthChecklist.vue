@@ -23,7 +23,7 @@ const checks = computed(() =>
       :class="check.passed ? 'text-success-600' : 'text-muted'"
     >
       <UIcon
-        :name="check.passed ? 'i-lucide-check-circle-2' : 'i-lucide-circle'"
+        :name="check.passed ? 'i-hugeicons-circle-check' : 'i-hugeicons-circle'"
         class="size-3.5 shrink-0"
       />
       <span>{{ check.label }}</span>

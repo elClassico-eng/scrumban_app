@@ -32,12 +32,12 @@ function download(url: string) {
 
 const exportItems = computed<DropdownMenuItem[][]>(() => [
   [
-    { label: 'Журнал снапшотов · CSV', icon: 'i-lucide-file-spreadsheet', onSelect: () => download(apiRoutes.forecastJournalExport(wsId.value, bId.value, 'csv')) },
-    { label: 'Журнал снапшотов · JSON', icon: 'i-lucide-braces', onSelect: () => download(apiRoutes.forecastJournalExport(wsId.value, bId.value, 'json')) },
+    { label: 'Журнал снапшотов · CSV', icon: 'i-hugeicons-file-spreadsheet', onSelect: () => download(apiRoutes.forecastJournalExport(wsId.value, bId.value, 'csv')) },
+    { label: 'Журнал снапшотов · JSON', icon: 'i-hugeicons-braces', onSelect: () => download(apiRoutes.forecastJournalExport(wsId.value, bId.value, 'json')) },
   ],
   [
-    { label: 'Калибровка · CSV', icon: 'i-lucide-file-spreadsheet', onSelect: () => download(apiRoutes.forecastCalibrationExport(wsId.value, bId.value, 'csv')) },
-    { label: 'Калибровка · JSON', icon: 'i-lucide-braces', onSelect: () => download(apiRoutes.forecastCalibrationExport(wsId.value, bId.value, 'json')) },
+    { label: 'Калибровка · CSV', icon: 'i-hugeicons-file-spreadsheet', onSelect: () => download(apiRoutes.forecastCalibrationExport(wsId.value, bId.value, 'csv')) },
+    { label: 'Калибровка · JSON', icon: 'i-hugeicons-braces', onSelect: () => download(apiRoutes.forecastCalibrationExport(wsId.value, bId.value, 'json')) },
   ],
 ])
 </script>
@@ -60,7 +60,7 @@ const exportItems = computed<DropdownMenuItem[][]>(() => [
         </template>
         <template #actions>
           <UDropdownMenu :items="exportItems" :content="{ align: 'end' }">
-            <UButton icon="i-lucide-download" color="neutral" variant="outline" trailing-icon="i-lucide-chevron-down">
+            <UButton icon="i-hugeicons-download-04" color="neutral" variant="outline" trailing-icon="i-hugeicons-chevron-down">
               Экспорт
             </UButton>
           </UDropdownMenu>
@@ -95,12 +95,12 @@ const exportItems = computed<DropdownMenuItem[][]>(() => [
       </section>
 
       <div v-if="journal.isLoading.value" class="h-32 flex items-center justify-center text-muted">
-        <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+        <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
       </div>
 
       <UiEmptyState
         v-else-if="entries.length === 0"
-        icon="i-lucide-history"
+        icon="i-hugeicons-history"
         title="Снапшотов пока нет"
         text="Они появятся, когда стартует первый спринт на доске с историей закрытых задач"
       />

@@ -10,8 +10,11 @@ const BodySchema = z
     body: z.string().trim().min(1).max(2000).optional(),
     category: z.enum(['went_well', 'to_improve', 'action_item']).optional(),
     isResolved: z.boolean().optional(),
+    assigneeId: z.uuid().nullable().optional(),
+    dueDate: z.iso.datetime().nullable().optional(),
   })
-  .refine(d => d.body !== undefined || d.category !== undefined || d.isResolved !== undefined, {
+  .refine(d => d.body !== undefined || d.category !== undefined || d.isResolved !== undefined
+    || d.assigneeId !== undefined || d.dueDate !== undefined, {
     message: 'Provide at least one field to update',
   })
 
@@ -25,7 +28,13 @@ export default defineEventHandler(async (event) => {
       workspaceId: id,
       sprintId,
       noteId,
-      patch: body,
+      patch: {
+        body: body.body,
+        category: body.category,
+        isResolved: body.isResolved,
+        ...(body.assigneeId !== undefined ? { assigneeId: body.assigneeId } : {}),
+        ...(body.dueDate !== undefined ? { dueDate: body.dueDate === null ? null : new Date(body.dueDate) } : {}),
+      },
       actorId: user.id,
       actorRole: workspace.role,
     })

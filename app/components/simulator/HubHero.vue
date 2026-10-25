@@ -6,17 +6,17 @@ const wsId = computed(() => route.params.id as string)
 
 const steps = [
   {
-    icon: 'i-lucide-sliders-horizontal',
+    icon: 'i-hugeicons-sliders-horizontal',
     title: 'Соберите сценарий',
     text: 'Исключите задачу, переоцените срок, разорвите зависимость или сдвиньте дедлайн — виртуально.',
   },
   {
-    icon: 'i-lucide-scale',
+    icon: 'i-hugeicons-scale',
     title: 'Сравните прогнозы',
     text: 'Вероятность успеть и сроки P50/P85 пересчитываются мгновенно — до и после, с честной дельтой.',
   },
   {
-    icon: 'i-lucide-check',
+    icon: 'i-hugeicons-check',
     title: 'Примените одним кликом',
     text: 'Понравившийся сценарий становится реальными действиями в спринте — одной транзакцией.',
   },
@@ -28,7 +28,7 @@ const steps = [
     <div class="absolute -top-24 -right-16 size-72 rounded-full bg-accent-600/30 blur-3xl pointer-events-none" />
     <div class="relative px-6 py-7 lg:px-9 lg:py-8 grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-7 items-start">
       <div class="space-y-3">
-        <UIcon name="i-lucide-flask-conical" class="size-5 text-accent-400" />
+        <UIcon name="i-hugeicons-flask-conical" class="size-5 text-accent-400" />
         <h2 class="text-[22px] lg:text-[26px] font-semibold tracking-tight m-0 leading-tight text-white">
           Симулятор решений
         </h2>
@@ -52,7 +52,7 @@ const steps = [
             :to="pageRoutes.simulatorDemo(wsId)"
             class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors"
           >
-            <UIcon name="i-lucide-play" class="size-3.5" />
+            <UIcon name="i-hugeicons-play" class="size-3.5" />
             Демо-пример
           </NuxtLink>
         </div>

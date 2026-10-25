@@ -12,11 +12,11 @@ defineEmits<{
 }>()
 
 const TABS: { id: FocusTab; label: string; icon: string }[] = [
-  { id: 'desc', label: 'Описание', icon: 'i-lucide-align-left' },
-  { id: 'checks', label: 'Чек-листы', icon: 'i-lucide-check-square' },
-  { id: 'deps', label: 'Связи', icon: 'i-lucide-link' },
-  { id: 'comments', label: 'Комментарии', icon: 'i-lucide-message-square' },
-  { id: 'activity', label: 'История', icon: 'i-lucide-history' },
+  { id: 'desc', label: 'Описание', icon: 'i-hugeicons-align-left' },
+  { id: 'checks', label: 'Чек-листы', icon: 'i-hugeicons-square-check-big' },
+  { id: 'deps', label: 'Связи', icon: 'i-hugeicons-link' },
+  { id: 'comments', label: 'Комментарии', icon: 'i-hugeicons-message-square' },
+  { id: 'activity', label: 'История', icon: 'i-hugeicons-history' },
 ]
 </script>
 

@@ -50,7 +50,7 @@ async function onCancel(invitationId: string, email: string | null) {
     toast.add({
       title: `Приглашение для ${target} отменено`,
       color: 'success',
-      icon: 'i-lucide-check',
+      icon: 'i-hugeicons-check',
       duration: 3000,
     })
   }
@@ -58,7 +58,7 @@ async function onCancel(invitationId: string, email: string | null) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось отменить приглашение'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
       duration: 5000,
     })
   }
@@ -68,7 +68,7 @@ async function onCancel(invitationId: string, email: string | null) {
 <template>
   <section v-if="invitations.length > 0" class="space-y-3 pt-2">
     <div class="flex items-center gap-2.5">
-      <UIcon name="i-lucide-mail" class="size-4 text-muted" />
+      <UIcon name="i-hugeicons-mail-01" class="size-4 text-muted" />
       <h2 class="text-sm font-semibold text-default">Активные приглашения</h2>
       <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent-50 text-[10px] text-accent-700 font-semibold tabular-nums">
         {{ invitations.length }}
@@ -83,7 +83,7 @@ async function onCancel(invitationId: string, email: string | null) {
       >
         <span class="inline-flex size-9 items-center justify-center rounded-lg bg-elevated shrink-0">
           <UIcon
-            :name="inv.email ? 'i-lucide-mail' : 'i-lucide-link'"
+            :name="inv.email ? 'i-hugeicons-mail-01' : 'i-hugeicons-link'"
             class="size-4 text-muted"
           />
         </span>
@@ -109,7 +109,7 @@ async function onCancel(invitationId: string, email: string | null) {
             </span>
             <span class="text-dimmed">·</span>
             <span class="inline-flex items-center gap-1">
-              <UIcon name="i-lucide-calendar" class="size-3" />
+              <UIcon name="i-hugeicons-calendar-03" class="size-3" />
               до {{ shortDate(inv.expiresAt) }}
             </span>
             <span class="text-dimmed">·</span>
@@ -120,7 +120,7 @@ async function onCancel(invitationId: string, email: string | null) {
         </div>
 
         <UButton
-          icon="i-lucide-x"
+          icon="i-hugeicons-x"
           size="xs"
           variant="ghost"
           color="neutral"

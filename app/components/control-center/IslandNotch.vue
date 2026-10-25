@@ -43,7 +43,7 @@ defineEmits<{
     aria-label="Уведомления"
     @click.stop="$emit('bell')"
   >
-    <UIcon name="i-lucide-bell" class="w-[18px] h-[18px]" />
+    <UIcon name="i-hugeicons-bell" class="w-[18px] h-[18px]" />
     <span
       v-if="unread > 0"
       class="absolute -top-[1px] -right-[1px] min-w-[16px] h-[16px] px-1 rounded-full bg-[var(--island-orange)] text-white text-[9.5px] font-bold grid place-items-center"
@@ -52,7 +52,7 @@ defineEmits<{
   </button>
   <UIcon
     v-if="expanded"
-    name="i-lucide-chevron-down"
+    name="i-hugeicons-chevron-down"
     class="w-4 h-4 text-[var(--island-ink-3)] shrink-0 ml-0.5"
   />
 </template>

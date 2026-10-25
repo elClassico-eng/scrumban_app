@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SprintReportPayload } from '#shared/types/sprint-report'
+import type { MemberView } from '#shared/types/workspace'
 import type { RetroCategory, RetroNote } from '~/composables/api/useSprintRetroApi'
-import { pageRoutes } from '~/routing'
 
 const props = defineProps<{
   wsId: string
@@ -11,12 +11,12 @@ const props = defineProps<{
   prevSprintId: string | null
 }>()
 
-const { notes, create, update, remove, convert } = useSprintRetroApi(
+const retro = useSprintRetroApi(
   computed(() => props.wsId),
   computed(() => props.boardId),
   computed(() => props.sprintId),
+  { live: true },
 )
-
 const prevRetro = useSprintRetroApi(
   computed(() => props.wsId),
   computed(() => props.boardId),
@@ -26,339 +26,289 @@ const prevRetro = useSprintRetroApi(
 const { list: membersList } = useMembersApi(computed(() => props.wsId))
 const { list: workspacesList } = useWorkspacesApi()
 const authStore = useAuthStore()
-
-const members = computed(() => membersList.data.value?.members ?? [])
-const workspace = computed(() =>
-  workspacesList.data.value?.workspaces.find(w => w.id === props.wsId),
-)
-const isAdmin = computed(() => hasRole(workspace.value?.role, 'admin'))
-const canWrite = computed(() => hasRole(workspace.value?.role, 'member'))
-const myId = computed(() => authStore.user?.id ?? null)
-
 const toast = useToast()
 const confirm = useConfirm()
 
-const COLUMNS: { category: RetroCategory; title: string; icon: string; hint: string }[] = [
-  { category: 'went_well', title: 'Что было хорошо', icon: 'i-lucide-thumbs-up', hint: 'Практики, которые стоит сохранить' },
-  { category: 'to_improve', title: 'Что улучшить', icon: 'i-lucide-wrench', hint: 'Что мешало и тормозило' },
-  { category: 'action_item', title: 'Действия', icon: 'i-lucide-list-checks', hint: 'Конкретные решения с исполнением' },
+const members = computed<MemberView[]>(() => membersList.data.value?.members ?? [])
+const role = computed(() => workspacesList.data.value?.workspaces.find(w => w.id === props.wsId)?.role)
+const canWrite = computed(() => hasRole(role.value, 'member'))
+const canFacilitate = computed(() => hasRole(role.value, 'scrum_master'))
+const isAdmin = computed(() => hasRole(role.value, 'admin'))
+const myId = computed(() => authStore.user?.id ?? null)
+
+const phase = computed(() => retro.board.data.value?.phase ?? 'collect')
+const votesLeft = computed(() => retro.board.data.value?.myVotesLeft ?? 0)
+
+const OPINIONS = [
+  { category: 'went_well' as const, title: 'Что было хорошо', icon: 'i-hugeicons-thumbs-up', tone: 'good' as const, placeholder: 'Что сработало и стоит сохранить' },
+  { category: 'to_improve' as const, title: 'Что улучшить', icon: 'i-hugeicons-wrench-01', tone: 'improve' as const, placeholder: 'Что мешало или тормозило' },
 ]
 
-const drafts = reactive<Record<RetroCategory, string>>({
-  went_well: '',
-  to_improve: '',
-  action_item: '',
-})
-
-function notesFor(category: RetroCategory): RetroNote[] {
-  return (notes.data.value ?? []).filter(n => n.category === category)
+function authorOf(id: string | null) {
+  return members.value.find(m => m.userId === id) ?? null
 }
 
-function authorOf(note: RetroNote) {
-  return members.value.find(m => m.userId === note.authorId) ?? null
-}
-
-function canManageNote(note: RetroNote): boolean {
+function canManage(note: RetroNote) {
   return isAdmin.value || (note.authorId !== null && note.authorId === myId.value)
 }
 
-async function addNote(category: RetroCategory) {
-  const body = drafts[category].trim()
-  if (!body) return
+function visible(category: RetroCategory) {
+  const list = retro.notes.value.filter(n => n.category === category && !n.hidden)
+  return phase.value === 'discuss' ? [...list].sort((a, b) => b.voteCount - a.voteCount) : list
+}
+
+function hiddenAuthors(category: RetroCategory) {
+  const hidden = retro.notes.value.filter(n => n.category === category && n.hidden)
+  const ids = [...new Set(hidden.map(n => n.authorId))]
+  return { count: hidden.length, authors: ids.map(authorOf).filter((m): m is MemberView => m !== null) }
+}
+
+const actions = computed(() => retro.notes.value.filter(n => n.category === 'action_item'))
+
+const drafts = reactive<Record<RetroCategory, string>>({ went_well: '', to_improve: '', action_item: '' })
+
+function fail(err: unknown, fallback: string) {
+  toast.add({ title: getErrorMessage(err, fallback), color: 'error', icon: 'i-hugeicons-alert-circle' })
+}
+
+async function add(category: RetroCategory, body = drafts[category]) {
+  const text = body.trim()
+  if (!text) return
   try {
-    await create.mutateAsync({ category, body })
-    drafts[category] = ''
+    await retro.create.mutateAsync({ category, body: text })
+    if (body === drafts[category]) drafts[category] = ''
   }
   catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось добавить заметку'), color: 'error' })
+    fail(err, 'Не удалось добавить заметку')
   }
 }
 
-async function deleteNote(note: RetroNote) {
-  const ok = await confirm({
-    title: 'Удалить заметку?',
-    description: note.body.slice(0, 120),
-    confirmLabel: 'Удалить',
-    confirmColor: 'error',
-  })
+async function remove(note: RetroNote) {
+  const ok = await confirm({ title: 'Удалить заметку?', description: note.body.slice(0, 120), confirmLabel: 'Удалить', confirmColor: 'error' })
   if (!ok) return
-  try {
-    await remove.mutateAsync(note.id)
-  }
-  catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось удалить'), color: 'error' })
-  }
+  retro.remove.mutate(note.id, { onError: err => fail(err, 'Не удалось удалить') })
 }
 
-async function toggleResolved(note: RetroNote, value: boolean) {
-  try {
-    await update.mutateAsync({ noteId: note.id, isResolved: value })
-  }
-  catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось обновить'), color: 'error' })
-  }
+function patch(note: RetroNote, data: { body?: string, isResolved?: boolean, assigneeId?: string | null, dueDate?: string | null }) {
+  retro.update.mutate({ noteId: note.id, ...data }, { onError: err => fail(err, 'Не удалось сохранить') })
 }
 
-async function convertNote(note: RetroNote) {
+function vote(note: RetroNote, on: boolean) {
+  retro.vote.mutate({ noteId: note.id, on }, { onError: err => fail(err, 'Не удалось проголосовать') })
+}
+
+async function convert(note: RetroNote) {
   try {
-    const res = await convert.mutateAsync(note.id)
+    const res = await retro.convert.mutateAsync(note.id)
     toast.add({
-      title: res.addedToSprintId
-        ? 'Задача создана и добавлена в следующий спринт'
-        : 'Задача создана в бэклоге',
-      icon: 'i-lucide-check',
-      duration: 2500,
+      title: res.addedToSprintId ? 'Задача создана и добавлена в следующий спринт' : 'Задача создана в бэклоге',
+      icon: 'i-hugeicons-task-done-01',
     })
   }
   catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось создать задачу'), color: 'error' })
+    fail(err, 'Не удалось создать задачу')
   }
 }
 
-const editingId = ref<string | null>(null)
-const editingBody = ref('')
-
-function startEdit(note: RetroNote) {
-  editingId.value = note.id
-  editingBody.value = note.body
+function openNotes() {
+  retro.setPhase.mutate('discuss', { onError: err => fail(err, 'Не удалось открыть заметки') })
 }
 
-async function saveEdit(note: RetroNote) {
-  const body = editingBody.value.trim()
-  if (!body) return
-  try {
-    await update.mutateAsync({ noteId: note.id, body })
-    editingId.value = null
-  }
-  catch (err) {
-    toast.add({ title: getErrorMessage(err, 'Не удалось сохранить'), color: 'error' })
-  }
+function backToCollect() {
+  retro.setPhase.mutate('collect', { onError: err => fail(err, 'Не удалось вернуть сбор') })
 }
 
 const facts = computed(() => {
   const p = props.payload
   if (!p) return []
-  const out: { icon: string; text: string; severity: 'warn' | 'info' }[] = []
-  if (p.goal.achieved === false) {
-    out.push({ icon: 'i-lucide-x-circle', text: 'Цель спринта не достигнута', severity: 'warn' })
-  }
+  const out: { icon: string, text: string, warn: boolean }[] = []
+  if (p.goal.achieved === false) out.push({ icon: 'i-hugeicons-target-02', text: 'Цель спринта не достигнута', warn: true })
   if (p.totals.startCount > 0) {
     const share = Math.round((p.totals.addedAfterStartCount / p.totals.startCount) * 100)
-    if (share >= 20) {
-      out.push({
-        icon: 'i-lucide-triangle-alert',
-        text: `${share}% состава добавлено после старта — scope change выше здоровой нормы`,
-        severity: 'warn',
-      })
-    }
+    if (share >= 20) out.push({ icon: 'i-hugeicons-triangle-alert', text: `${share}% задач добавили после старта – скоуп менялся сильнее нормы`, warn: true })
   }
   for (const c of p.carryOver.filter(x => x.streak >= 2)) {
-    out.push({
-      icon: 'i-lucide-repeat',
-      text: `«${c.title}» переносится ${c.streak}-й спринт подряд`,
-      severity: 'warn',
-    })
-  }
-  if (p.flow.cycleP85 !== null) {
-    out.push({
-      icon: 'i-lucide-timer',
-      text: `Cycle time P85 за спринт: ${p.flow.cycleP85} дн (P50: ${p.flow.cycleP50 ?? '—'} дн)`,
-      severity: 'info',
-    })
+    out.push({ icon: 'i-hugeicons-repeat', text: `«${c.title}» переносится ${c.streak}-й спринт подряд`, warn: true })
   }
   if (p.totals.carryOverCount > 0) {
-    out.push({
-      icon: 'i-lucide-corner-down-right',
-      text: `Перенесено ${p.totals.carryOverCount} задач (${p.totals.carryOverSp} SP)`,
-      severity: 'info',
-    })
+    out.push({ icon: 'i-hugeicons-corner-down-right', text: `Перенесено ${p.totals.carryOverCount} задач (${p.totals.carryOverSp} SP)`, warn: false })
+  }
+  if (p.flow.cycleP85 !== null) {
+    out.push({ icon: 'i-hugeicons-timer-02', text: `Время цикла P85 – ${p.flow.cycleP85} дн, медиана – ${p.flow.cycleP50 ?? '–'} дн`, warn: false })
   }
   return out
 })
 
-const prevActionItems = computed(() =>
-  (prevRetro.notes.data.value ?? []).filter(n => n.category === 'action_item'),
-)
-const prevResolvedCount = computed(() => prevActionItems.value.filter(n => n.isResolved).length)
+const prevActions = computed(() => (prevRetro.notes.value).filter(n => n.category === 'action_item'))
+const prevDone = computed(() => prevActions.value.filter(n => n.isResolved).length)
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div v-if="facts.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2.5">
-      <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-        Факты спринта — темы для обсуждения
+  <div class="space-y-5">
+    <section class="surface flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl px-5 py-4">
+      <ol class="flex items-center gap-2 text-[13px]">
+        <li :class="['flex items-center gap-2', phase === 'collect' ? 'font-semibold text-highlighted' : 'text-muted']">
+          <span :class="['grid size-6 place-items-center rounded-full text-[11px] font-bold', phase === 'collect' ? 'bg-accent-500 text-white' : 'bg-elevated text-muted']">1</span>
+          Сбор мыслей
+        </li>
+        <UIcon name="i-hugeicons-arrow-right-02" class="size-4 text-dimmed" />
+        <li :class="['flex items-center gap-2', phase === 'discuss' ? 'font-semibold text-highlighted' : 'text-muted']">
+          <span :class="['grid size-6 place-items-center rounded-full text-[11px] font-bold', phase === 'discuss' ? 'bg-accent-500 text-white' : 'bg-elevated text-muted']">2</span>
+          Обсуждение
+        </li>
+      </ol>
+      <p class="m-0 min-w-56 flex-1 text-[12.5px] text-muted">
+        <template v-if="phase === 'collect'">
+          Каждый пишет своё, чужие заметки скрыты до обсуждения, чтобы никто не подстраивался.
+        </template>
+        <template v-else>
+          Голосуйте за то, что обсудить первым, и записывайте решения в «Действия».
+        </template>
+      </p>
+      <div v-if="phase === 'discuss' && canWrite" class="flex items-center gap-1.5 text-[12px] text-muted" :title="`Осталось голосов: ${votesLeft}`">
+        Голоса
+        <span v-for="i in 3" :key="i" :class="['size-2.5 rounded-full', i <= votesLeft ? 'bg-accent-500' : 'bg-accented']" />
       </div>
-      <div class="space-y-1.5">
-        <div
-          v-for="(f, i) in facts"
-          :key="i"
-          class="flex items-start gap-2.5 text-[13px]"
-        >
-          <UIcon
-            :name="f.icon"
-            class="size-4 shrink-0 mt-0.5"
-            :class="f.severity === 'warn' ? 'text-accent-600' : 'text-muted'"
-          />
-          <span :class="f.severity === 'warn' ? 'text-default' : 'text-muted'">{{ f.text }}</span>
-        </div>
-      </div>
-    </div>
+      <template v-if="canFacilitate">
+        <UButton v-if="phase === 'collect'" icon="i-hugeicons-view" :loading="retro.setPhase.isPending.value" @click="openNotes">
+          Открыть заметки
+        </UButton>
+        <UButton v-else size="sm" variant="ghost" color="neutral" icon="i-hugeicons-undo-02" @click="backToCollect">
+          Вернуть сбор
+        </UButton>
+      </template>
+      <p v-else-if="phase === 'collect'" class="m-0 text-[12px] text-dimmed">Заметки откроет скрам-мастер</p>
+    </section>
 
-    <div
-      v-if="prevSprintId && prevActionItems.length > 0"
-      class="surface-soft rounded-2xl px-5 py-4 space-y-2.5"
-    >
-      <div class="flex items-center gap-2">
-        <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-          Action items прошлой ретро
+    <section v-if="facts.length" class="space-y-2.5">
+      <h3 class="m-0 text-[11px] font-semibold uppercase tracking-wider text-dimmed">Факты спринта – с чего начать разговор</h3>
+      <div class="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div v-for="f in facts" :key="f.text" class="surface flex items-start gap-3 rounded-xl px-3.5 py-3">
+          <UIcon :name="f.icon" :class="['mt-0.5 size-4 shrink-0', f.warn ? 'text-accent-600' : 'text-muted']" />
+          <span class="flex-1 text-[13px] text-default">{{ f.text }}</span>
+          <UButton
+            v-if="canWrite"
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            icon="i-hugeicons-plus"
+            title="Добавить в «Что улучшить»"
+            aria-label="Добавить в «Что улучшить»"
+            @click="add('to_improve', f.text)"
+          />
         </div>
-        <span
-          class="text-[11px] font-semibold px-1.5 py-0.5 rounded"
-          :class="prevResolvedCount === prevActionItems.length
-            ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-            : 'bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300'"
-        >
-          выполнено {{ prevResolvedCount }} из {{ prevActionItems.length }}
+      </div>
+    </section>
+
+    <section v-if="prevActions.length" class="surface rounded-2xl px-5 py-4">
+      <div class="mb-2.5 flex items-center gap-2">
+        <h3 class="m-0 text-[13px] font-semibold text-highlighted">Действия прошлой ретро</h3>
+        <span :class="['rounded-full px-2 py-0.5 text-[11px] font-semibold', prevDone === prevActions.length ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-accent-500/10 text-accent-700 dark:text-accent-300']">
+          выполнено {{ prevDone }} из {{ prevActions.length }}
         </span>
       </div>
-      <div class="space-y-1.5">
-        <div
-          v-for="n in prevActionItems"
-          :key="n.id"
-          class="flex items-center gap-2.5 text-[13px]"
-        >
+      <ul class="space-y-1.5">
+        <li v-for="n in prevActions" :key="n.id" class="flex items-center gap-2.5 text-[13px]">
           <UCheckbox
             :model-value="n.isResolved"
             :disabled="!canWrite"
             @update:model-value="prevRetro.update.mutate({ noteId: n.id, isResolved: Boolean($event) })"
           />
           <span :class="n.isResolved ? 'text-muted line-through' : 'text-default'">{{ n.body }}</span>
-        </div>
-      </div>
-    </div>
+        </li>
+      </ul>
+    </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-      <div
-        v-for="col in COLUMNS"
-        :key="col.category"
-        class="surface-soft rounded-2xl px-4 py-4 space-y-3"
-      >
-        <div>
-          <div class="text-[13px] font-semibold inline-flex items-center gap-1.5">
-            <UIcon :name="col.icon" class="size-4 text-accent-600" />
-            {{ col.title }}
-            <span class="text-[11px] text-muted font-normal">{{ notesFor(col.category).length }}</span>
+    <div class="grid items-start gap-4 lg:grid-cols-2">
+      <section v-for="col in OPINIONS" :key="col.category" class="surface space-y-3 rounded-2xl p-4">
+        <header class="flex items-center gap-2.5">
+          <span :class="['grid size-7 place-items-center rounded-lg', col.tone === 'good' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-accent-500/10 text-accent-600']">
+            <UIcon :name="col.icon" class="size-4" />
+          </span>
+          <h3 class="m-0 flex-1 text-[14px] font-semibold text-highlighted">{{ col.title }}</h3>
+          <span class="text-[12px] tabular-nums text-dimmed">{{ retro.notes.value.filter(n => n.category === col.category).length }}</span>
+        </header>
+
+        <UInput
+          v-if="canWrite"
+          v-model="drafts[col.category]"
+          class="w-full"
+          icon="i-hugeicons-plus"
+          :placeholder="`${col.placeholder}. Enter – добавить`"
+          @keydown.enter.prevent="add(col.category)"
+        />
+
+        <div
+          v-if="hiddenAuthors(col.category).count"
+          class="flex items-center gap-2.5 rounded-xl border border-dashed border-default px-3 py-2.5 text-[12.5px] text-muted"
+        >
+          <div class="flex -space-x-1.5">
+            <UserAvatar v-for="m in hiddenAuthors(col.category).authors" :key="m.userId" :user="m" size="xs" ring />
           </div>
-          <div class="text-[11px] text-dimmed mt-0.5">{{ col.hint }}</div>
-        </div>
-
-        <div v-if="canWrite" class="flex items-start gap-2">
-          <UTextarea
-            v-model="drafts[col.category]"
-            :rows="2"
-            autoresize
-            class="flex-1"
-            :placeholder="col.category === 'action_item' ? 'Что сделаем по-другому…' : 'Заметка…'"
-            @keydown.meta.enter="addNote(col.category)"
-          />
-          <UButton
-            size="sm"
-            icon="i-lucide-plus"
-            :disabled="!drafts[col.category].trim()"
-            :loading="create.isPending.value"
-            @click="addNote(col.category)"
-          />
+          Ещё {{ hiddenAuthors(col.category).count }} скрыто до обсуждения
         </div>
 
         <div class="space-y-2">
-          <div
-            v-for="n in notesFor(col.category)"
+          <SprintRetroNoteCard
+            v-for="n in visible(col.category)"
             :key="n.id"
-            class="rounded-xl bg-elevated/60 px-3 py-2.5 space-y-2"
-          >
-            <div v-if="editingId === n.id" class="space-y-2">
-              <UTextarea v-model="editingBody" :rows="2" autoresize class="w-full" />
-              <div class="flex items-center gap-1.5 justify-end">
-                <UButton size="xs" variant="ghost" color="neutral" @click="editingId = null">Отмена</UButton>
-                <UButton size="xs" :loading="update.isPending.value" @click="saveEdit(n)">Сохранить</UButton>
-              </div>
-            </div>
-            <template v-else>
-              <div class="flex items-start gap-2">
-                <UCheckbox
-                  v-if="n.category === 'action_item'"
-                  :model-value="n.isResolved"
-                  :disabled="!canWrite"
-                  class="mt-0.5"
-                  @update:model-value="toggleResolved(n, Boolean($event))"
-                />
-                <p
-                  class="flex-1 text-[13px] leading-relaxed m-0"
-                  :class="n.isResolved && n.category === 'action_item' ? 'text-muted line-through' : 'text-default'"
-                >
-                  {{ n.body }}
-                </p>
-                <UDropdownMenu
-                  v-if="canManageNote(n)"
-                  :items="[
-                    { label: 'Редактировать', icon: 'i-lucide-pencil', onSelect: () => startEdit(n) },
-                    { label: 'Удалить', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => deleteNote(n) },
-                  ]"
-                >
-                  <button type="button" class="size-6 rounded grid place-items-center text-dimmed hover:text-default hover:bg-elevated transition-colors cursor-pointer shrink-0">
-                    <UIcon name="i-lucide-ellipsis-vertical" class="size-3.5" />
-                  </button>
-                </UDropdownMenu>
-              </div>
-
-              <div class="flex items-center gap-2 flex-wrap">
-                <UserAvatar
-                  v-if="authorOf(n)"
-                  :user="authorOf(n)!"
-                  size="xs"
-                  tooltip
-                />
-                <NuxtLink
-                  v-if="n.taskId"
-                  :to="pageRoutes.task(wsId, boardId, n.taskId)"
-                  class="text-[11px] px-1.5 py-0.5 rounded bg-elevated text-muted hover:text-default transition-colors inline-flex items-center gap-1"
-                >
-                  <UIcon name="i-lucide-link" class="size-3" />
-                  из задачи
-                </NuxtLink>
-                <template v-if="n.category === 'action_item'">
-                  <NuxtLink
-                    v-if="n.convertedTaskId"
-                    :to="pageRoutes.task(wsId, boardId, n.convertedTaskId)"
-                    class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1"
-                  >
-                    <UIcon name="i-lucide-check" class="size-3" />
-                    задача создана
-                  </NuxtLink>
-                  <UButton
-                    v-else-if="canWrite"
-                    size="xs"
-                    variant="outline"
-                    color="neutral"
-                    icon="i-lucide-arrow-right-circle"
-                    :loading="convert.isPending.value"
-                    @click="convertNote(n)"
-                  >
-                    В задачу
-                  </UButton>
-                </template>
-              </div>
-            </template>
-          </div>
-
-          <div
-            v-if="notesFor(col.category).length === 0"
-            class="text-[12px] text-dimmed text-center py-4"
-          >
+            :note="n"
+            :author="authorOf(n.authorId)"
+            :phase="phase"
+            :tone="col.tone"
+            :can-vote="canWrite"
+            :votes-left="votesLeft"
+            :can-manage="canManage(n)"
+            :ws-id="wsId"
+            :board-id="boardId"
+            @vote="vote(n, $event)"
+            @save="patch(n, { body: $event })"
+            @remove="remove(n)"
+          />
+          <p v-if="!retro.notes.value.some(n => n.category === col.category)" class="py-3 text-center text-[12px] text-dimmed">
             Пока пусто
-          </div>
+          </p>
         </div>
-      </div>
+      </section>
     </div>
+
+    <section class="surface overflow-hidden rounded-2xl">
+      <header class="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 pt-4">
+        <span class="grid size-7 place-items-center rounded-lg bg-inverted text-inverted">
+          <UIcon name="i-hugeicons-task-done-01" class="size-4" />
+        </span>
+        <h3 class="m-0 text-[14px] font-semibold text-highlighted">Действия</h3>
+        <p class="m-0 text-[12.5px] text-muted">Что команда сделает по-другому: с ответственным и сроком</p>
+      </header>
+      <div v-if="canWrite" class="px-5 pt-3">
+        <UInput
+          v-model="drafts.action_item"
+          class="w-full"
+          icon="i-hugeicons-plus"
+          placeholder="Например: ревью не дольше суток. Enter – добавить"
+          @keydown.enter.prevent="add('action_item')"
+        />
+      </div>
+      <ul v-if="actions.length" class="mt-2 divide-y divide-default">
+        <SprintRetroActionRow
+          v-for="n in actions"
+          :key="n.id"
+          :note="n"
+          :members="members"
+          :can-write="canWrite"
+          :can-manage="canManage(n)"
+          :converting="retro.convert.isPending.value && retro.convert.variables.value === n.id"
+          :ws-id="wsId"
+          :board-id="boardId"
+          @patch="patch(n, $event)"
+          @convert="convert(n)"
+          @remove="remove(n)"
+        />
+      </ul>
+      <p v-else class="px-5 pb-5 pt-3 text-[12.5px] text-dimmed">
+        Решений пока нет. Хорошее действие проверяемо: через спринт понятно, сделано или нет.
+      </p>
+      <div v-if="actions.length" class="h-2" />
+    </section>
   </div>
 </template>

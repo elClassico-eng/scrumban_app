@@ -51,13 +51,13 @@ const toast = useToast()
 async function onGenerate() {
   try {
     await generate.mutateAsync()
-    toast.add({ title: 'Отчёт сформирован', icon: 'i-lucide-check', duration: 1500 })
+    toast.add({ title: 'Отчёт сформирован', icon: 'i-hugeicons-check', duration: 1500 })
   }
   catch (err) {
     toast.add({
       title: getErrorMessage(err, 'Не удалось сформировать отчёт'),
       color: 'error',
-      icon: 'i-lucide-alert-circle',
+      icon: 'i-hugeicons-alert-circle',
     })
   }
 }
@@ -155,7 +155,7 @@ function downloadCsv() {
 async function copyJson() {
   if (!payload.value) return
   await navigator.clipboard.writeText(JSON.stringify(payload.value, null, 2))
-  toast.add({ title: 'JSON скопирован', icon: 'i-lucide-clipboard-check', duration: 1200 })
+  toast.add({ title: 'JSON скопирован', icon: 'i-hugeicons-clipboard-check', duration: 1200 })
 }
 </script>
 
@@ -163,7 +163,7 @@ async function copyJson() {
   <div class="space-y-5">
     <UiPageHeader
       :title="payload ? `Отчёт спринта · ${payload.sprint.name}` : 'Отчёт спринта'"
-      icon="i-lucide-file-bar-chart-2"
+      icon="i-hugeicons-file-chart-column"
       :back="{ to: pageRoutes.boardSprints(wsId, bId), label: 'Спринты' }"
     >
       <template v-if="payload" #subtitle>
@@ -174,10 +174,10 @@ async function copyJson() {
         </template>
       </template>
       <template v-if="payload && tab === 'report'" #actions>
-        <UButton size="sm" variant="outline" color="neutral" icon="i-lucide-download" @click="downloadCsv">
+        <UButton size="sm" variant="outline" color="neutral" icon="i-hugeicons-download-04" @click="downloadCsv">
           CSV
         </UButton>
-        <UButton size="sm" variant="ghost" color="neutral" icon="i-lucide-braces" @click="copyJson">
+        <UButton size="sm" variant="ghost" color="neutral" icon="i-hugeicons-braces" @click="copyJson">
           JSON
         </UButton>
       </template>
@@ -185,7 +185,7 @@ async function copyJson() {
 
     <div class="flex items-center gap-1 border-b border-default">
       <button
-        v-for="t in [{ key: 'report', label: 'Отчёт', icon: 'i-lucide-file-bar-chart-2' }, { key: 'retro', label: 'Ретроспектива', icon: 'i-lucide-messages-square' }]"
+        v-for="t in [{ key: 'report', label: 'Отчёт', icon: 'i-hugeicons-file-chart-column' }, { key: 'retro', label: 'Ретроспектива', icon: 'i-hugeicons-messages-square' }]"
         :key="t.key"
         type="button"
         class="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-colors cursor-pointer"
@@ -214,7 +214,7 @@ async function copyJson() {
 
     <UiEmptyState
       v-else-if="!payload"
-      icon="i-lucide-file-question"
+      icon="i-hugeicons-file-question-mark"
       title="Отчёт ещё не сформирован"
       text="Спринт закрыт до появления отчётов. Отчёт можно собрать задним числом из журнала событий."
     >
@@ -236,7 +236,7 @@ async function copyJson() {
       >
         <div class="flex items-center gap-2.5">
           <UIcon
-            :name="payload.goal.achieved === true ? 'i-lucide-target' : payload.goal.achieved === false ? 'i-lucide-x-circle' : 'i-lucide-circle-help'"
+            :name="payload.goal.achieved === true ? 'i-hugeicons-target-02' : payload.goal.achieved === false ? 'i-hugeicons-circle-x' : 'i-hugeicons-circle-question-mark'"
             class="size-5"
             :class="payload.goal.achieved === true ? 'text-emerald-600' : payload.goal.achieved === false ? 'text-red-500' : 'text-muted'"
           />
@@ -384,7 +384,7 @@ async function copyJson() {
             class="flex items-center gap-2.5 py-2 text-[13px]"
           >
             <UIcon
-              :name="c.kind === 'added' ? 'i-lucide-circle-plus' : 'i-lucide-circle-minus'"
+              :name="c.kind === 'added' ? 'i-hugeicons-circle-plus' : 'i-hugeicons-circle-minus'"
               class="size-4 shrink-0"
               :class="c.kind === 'added' ? 'text-accent-600' : 'text-muted'"
             />
@@ -396,7 +396,7 @@ async function copyJson() {
 
       <div v-if="payload.appliedScenarios.length > 0" class="surface-soft rounded-2xl px-5 py-4 space-y-2">
         <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted inline-flex items-center gap-1.5">
-          <UIcon name="i-lucide-flask-conical" class="size-3.5" />
+          <UIcon name="i-hugeicons-flask-conical" class="size-3.5" />
           Решения через симулятор
         </div>
         <div class="divide-y divide-default">

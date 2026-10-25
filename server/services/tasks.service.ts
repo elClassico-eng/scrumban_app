@@ -29,9 +29,10 @@ import {
   type WorkspaceMemberRole,
 } from '../db/schema'
 import { withTenant, type DbTransaction } from '../utils/db'
-import { NotFoundError, ValidationError } from '../utils/errors'
+import { ConflictError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
 import { emitNotification } from './notifications.service'
+import { addWatcher, notifyWatchers } from './task-watchers.service'
 import { requireMinRole } from '../utils/rbac'
 
 // `tasks.id` is written as a SQL literal (not Drizzle's ${tasks.id}) so the
@@ -84,12 +85,20 @@ const blockedSinceSelect = sql<string | null>`(
 export async function listTasksForWorkspace(input: {
   workspaceId: string
   actorRole: WorkspaceMemberRole
+  assigneeId?: string
 }): Promise<Task[]> {
   requireMinRole(input.actorRole, 'viewer')
+  const assigned = input.assigneeId
+    ? sql`(${tasks.assigneeId} = ${input.assigneeId} OR EXISTS (
+        SELECT 1 FROM ${taskAssignees}
+        WHERE ${taskAssignees.taskId} = tasks.id AND ${taskAssignees.userId} = ${input.assigneeId}
+      ))`
+    : undefined
   return withTenant(input.workspaceId, async (tx) =>
     tx
       .select({ ...taskWithAssigneesSelect, blockedSince: blockedSinceSelect })
       .from(tasks)
+      .where(assigned)
       .orderBy(asc(tasks.boardId), asc(tasks.columnId), asc(tasks.position)),
   )
 }
@@ -181,6 +190,10 @@ export async function createTask(input: {
       payload: { initialPosition: row!.position },
     })
 
+    for (const userId of new Set([input.actorId, row!.assigneeId])) {
+      if (userId) await addWatcher(tx, { workspaceId: input.workspaceId, taskId: row!.id, userId })
+    }
+
     if (row!.assigneeId) {
       await tx
         .insert(taskAssignees)
@@ -236,6 +249,9 @@ export async function updateTaskFields(input: {
     storyPoints?: number | null
     estimateDays?: number | null
   }
+  // Text the client started editing from. If the stored value has moved on,
+  // someone else saved in between and writing would silently drop their edit.
+  expected?: { title?: string, description?: string }
   actorId?: string
   actorRole: WorkspaceMemberRole
 }): Promise<Task> {
@@ -282,10 +298,26 @@ export async function updateTaskFields(input: {
         title: tasks.title,
         boardId: tasks.boardId,
         blockedReason: tasks.blockedReason,
+        description: tasks.description,
+        serviceClass: tasks.serviceClass,
+        dueDate: tasks.dueDate,
       })
       .from(tasks)
       .where(eq(tasks.id, input.taskId))
+      .for('update')
     if (!prev) throw new NotFoundError('Задача не найдена')
+    const nextClass = input.patch.serviceClass ?? prev.serviceClass
+    const nextDue = 'dueDate' in input.patch ? input.patch.dueDate : prev.dueDate
+    if (nextClass === 'fixed_date' && !nextDue) {
+      throw new ValidationError('Для класса «С дедлайном» нужен дедлайн')
+    }
+    const expected = input.expected
+    if (expected?.title !== undefined && expected.title !== prev.title) {
+      throw new ConflictError('Название успели изменить, пока вы его редактировали')
+    }
+    if (expected?.description !== undefined && expected.description !== prev.description) {
+      throw new ConflictError('Описание успели изменить, пока вы его редактировали')
+    }
 
     const [updated] = await tx
       .update(tasks)
@@ -324,6 +356,7 @@ export async function updateTaskFields(input: {
             addedBy: input.actorId ?? null,
           })
           .onConflictDoNothing()
+        await addWatcher(tx, { workspaceId: input.workspaceId, taskId: input.taskId, userId: updated.assigneeId })
 
         await emitNotification({
           tx,
@@ -643,6 +676,23 @@ export async function moveTask(input: {
             : {}),
       },
     })
+
+    if (isCrossColumn) {
+      await notifyWatchers(tx, {
+        workspaceId: input.workspaceId,
+        taskId: input.taskId,
+        actorId: input.actorId,
+        type: 'watched_status',
+        payload: {
+          taskId: input.taskId,
+          boardId: task.boardId,
+          taskTitle: task.title,
+          actorId: input.actorId,
+          columnName: toCol.name,
+          columnRole: toCol.columnRole,
+        },
+      })
+    }
 
     return { moved: moved!, fromColumnId: task.columnId }
   }).then(({ moved, fromColumnId }) => {

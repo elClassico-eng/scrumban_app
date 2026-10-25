@@ -121,7 +121,7 @@ function closeTaskModal() {
       v-if="!hasActiveSprint"
       class="flex-1 flex flex-col items-center justify-center text-center gap-2 border border-default rounded-lg"
     >
-      <UIcon name="i-lucide-calendar-clock" class="size-10 text-dimmed" />
+      <UIcon name="i-hugeicons-calendar-clock" class="size-10 text-dimmed" />
       <p class="font-medium">Нет активного спринта</p>
       <p class="text-sm text-muted">Запусти спринт, чтобы увидеть сетевой план.</p>
     </div>
@@ -141,7 +141,7 @@ function closeTaskModal() {
         v-if="insufficient"
         class="flex items-center gap-2 px-3 py-2 rounded-lg bg-elevated text-sm text-muted"
       >
-        <UIcon name="i-lucide-info" class="size-4 shrink-0" />
+        <UIcon name="i-hugeicons-info" class="size-4 shrink-0" />
         Для сетевого плана нужно ещё {{ insufficient.missing }} закрытых задач — пока показан факт.
       </div>
 
@@ -151,14 +151,14 @@ function closeTaskModal() {
         <span class="inline-flex items-center gap-1.5"><span class="h-1 w-4 rounded-full bg-slate-400/40" />резерв</span>
         <span class="inline-flex items-center gap-1.5"><span class="h-3 w-0.5 bg-sky-500" />сегодня</span>
         <span class="inline-flex items-center gap-1.5"><span class="h-3 border-l-2 border-dashed border-red-400" />горизонт спринта</span>
-        <span class="inline-flex items-center gap-1.5"><UIcon name="i-lucide-move-right" class="size-3.5" />зависимость</span>
+        <span class="inline-flex items-center gap-1.5"><UIcon name="i-hugeicons-move-right" class="size-3.5" />зависимость</span>
       </div>
 
       <div
         v-if="isEmpty"
         class="flex-1 flex flex-col items-center justify-center text-center gap-2 border border-default rounded-lg"
       >
-        <UIcon name="i-lucide-bar-chart-horizontal" class="size-10 text-dimmed" />
+        <UIcon name="i-hugeicons-bar-chart-horizontal" class="size-10 text-dimmed" />
         <p class="text-sm text-muted">Нет задач для отображения.</p>
       </div>
       <GanttChart

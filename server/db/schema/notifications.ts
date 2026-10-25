@@ -10,6 +10,10 @@ export const notificationType = pgEnum('notification_type', [
   'replenishment_overdue',
   'sprint_forecast_drop',
   'automation',
+  'reply',
+  'comment_assigned',
+  'watched_comment',
+  'watched_status',
 ])
 
 export const notifications = pgTable(
@@ -25,11 +29,15 @@ export const notifications = pgTable(
     type: notificationType('type').notNull(),
     payload: jsonb('payload').notNull().default({}),
     readAt: timestamp('read_at', { withTimezone: true }),
+    // Cleared = handled and out of the queue; read only means seen.
+    clearedAt: timestamp('cleared_at', { withTimezone: true }),
+    snoozedUntil: timestamp('snoozed_until', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('notifications_user_read_idx').on(table.userId, table.readAt, table.createdAt),
     index('notifications_workspace_id_idx').on(table.workspaceId),
+    index('notifications_user_ws_cleared_idx').on(table.userId, table.workspaceId, table.clearedAt, table.createdAt),
   ],
 )
 

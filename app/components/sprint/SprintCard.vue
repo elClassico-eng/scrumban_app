@@ -114,7 +114,7 @@ function onAddClick(e: Event) {
 
     <div class="flex flex-wrap items-center gap-3 text-[12px] text-muted">
       <span class="inline-flex items-center gap-1.5">
-        <UIcon name="i-lucide-calendar" class="size-3.5" />
+        <UIcon name="i-hugeicons-calendar-03" class="size-3.5" />
         <b class="text-default">{{ formatDate(sprint.plannedStartAt) }}</b>
         →
         <b class="text-default">{{ formatDate(sprint.plannedEndAt) }}</b>
@@ -124,18 +124,18 @@ function onAddClick(e: Event) {
         v-if="sprint.state === 'closed' && useSp && doneSp > 0"
         class="inline-flex items-center gap-1.5"
       >
-        <UIcon name="i-lucide-zap" class="size-3.5" />
+        <UIcon name="i-hugeicons-zap" class="size-3.5" />
         velocity <b class="text-default">{{ doneSp }} SP</b>
       </span>
       <span
         v-else-if="sprint.state === 'closed' && doneCount > 0"
         class="inline-flex items-center gap-1.5"
       >
-        <UIcon name="i-lucide-zap" class="size-3.5" />
+        <UIcon name="i-hugeicons-zap" class="size-3.5" />
         закрыто <b class="text-default">{{ doneCount }}</b> задач
       </span>
       <span v-if="sprint.endedAt && sprint.state === 'closed'" class="inline-flex items-center gap-1.5">
-        <UIcon name="i-lucide-check" class="size-3.5" />
+        <UIcon name="i-hugeicons-check" class="size-3.5" />
         закрыт {{ formatDate(sprint.endedAt) }}
       </span>
     </div>
@@ -183,7 +183,7 @@ function onAddClick(e: Event) {
       v-else
       class="flex items-center gap-2 px-3 py-3 rounded-lg bg-muted border border-dashed border-default text-[12.5px] text-muted"
     >
-      <UIcon name="i-lucide-plus" class="size-3.5" />
+      <UIcon name="i-hugeicons-plus" class="size-3.5" />
       <span class="flex-1">В спринте пока нет задач</span>
       <button
         v-if="canManage"
@@ -191,7 +191,7 @@ function onAddClick(e: Event) {
         class="inline-flex items-center gap-1 text-[12px] text-accent-600 font-medium hover:text-accent-700 cursor-pointer"
         @click="emit('add-task')"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         Добавить
       </button>
     </div>
@@ -203,7 +203,7 @@ function onAddClick(e: Event) {
       @click="onCardExpandToggle"
     >
       <UIcon
-        name="i-lucide-chevron-right"
+        name="i-hugeicons-chevron-right"
         class="size-3.5 transition-transform"
         :class="expanded ? 'rotate-90' : ''"
       />
@@ -225,7 +225,7 @@ function onAddClick(e: Event) {
         class="inline-flex items-center gap-1 text-[11.5px] text-accent-600 font-medium hover:text-accent-700 cursor-pointer"
         @click="onAddClick"
       >
-        <UIcon name="i-lucide-plus" class="size-3" />
+        <UIcon name="i-hugeicons-plus" class="size-3" />
         Добавить
       </span>
     </button>
@@ -252,19 +252,19 @@ function onAddClick(e: Event) {
 
     <div class="flex items-center gap-1.5 pt-1">
       <template v-if="sprint.state === 'planned' && canManage">
-        <UButton size="xs" icon="i-lucide-play" @click="emit('start')">Запустить</UButton>
+        <UButton size="xs" icon="i-hugeicons-play" @click="emit('start')">Запустить</UButton>
         <UButton
           size="xs"
           variant="outline"
           color="neutral"
-          icon="i-lucide-pencil"
+          icon="i-hugeicons-pencil"
           @click="emit('edit')"
         >Редактировать</UButton>
         <UButton
           size="xs"
           variant="outline"
           color="neutral"
-          icon="i-lucide-trash-2"
+          icon="i-hugeicons-delete-02"
           @click="emit('delete')"
         >Удалить</UButton>
       </template>
@@ -273,7 +273,7 @@ function onAddClick(e: Event) {
         size="xs"
         variant="outline"
         color="neutral"
-        icon="i-lucide-flask-conical"
+        icon="i-hugeicons-flask-conical"
         :to="simulatorTo"
       >Симулятор</UButton>
       <template v-else-if="sprint.state === 'closed'">
@@ -282,7 +282,7 @@ function onAddClick(e: Event) {
           size="xs"
           variant="outline"
           color="neutral"
-          icon="i-lucide-file-bar-chart-2"
+          icon="i-hugeicons-file-chart-column"
           :to="reportTo"
         >
           Отчёт
@@ -292,7 +292,7 @@ function onAddClick(e: Event) {
           size="xs"
           variant="ghost"
           color="neutral"
-          icon="i-lucide-messages-square"
+          icon="i-hugeicons-messages-square"
           :to="`${reportTo}?tab=retro`"
         >Ретроспектива</UButton>
       </template>

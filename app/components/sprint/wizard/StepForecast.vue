@@ -57,13 +57,13 @@ function pct(p: number | null): string {
 <template>
   <div class="space-y-5">
     <div v-if="pending && !report" class="py-16 text-center text-[13px] text-muted">
-      <UIcon name="i-lucide-loader-2" class="size-5 animate-spin inline-block mb-2" />
+      <UIcon name="i-hugeicons-loader-circle" class="size-5 animate-spin inline-block mb-2" />
       <div>Гоняем 5000 симуляций по сети зависимостей…</div>
     </div>
 
     <template v-else-if="report && !report.ok">
       <div class="border border-default rounded-xl px-5 py-5 flex items-start gap-3">
-        <UIcon name="i-lucide-database" class="size-4 text-muted shrink-0 mt-0.5" />
+        <UIcon name="i-hugeicons-database" class="size-4 text-muted shrink-0 mt-0.5" />
         <div class="text-[13px] text-muted leading-relaxed">
           Недостаточно истории для прогноза: закрыто
           <b class="text-default">{{ report.closedSamples }}</b> задач из {{ report.requiredSamples }} необходимых.
@@ -122,7 +122,7 @@ function pct(p: number | null): string {
         <div class="flex flex-wrap items-center gap-1.5">
           <template v-for="(title, i) in criticalTitles" :key="i">
             <span class="text-[11.5px] font-medium px-1.5 py-0.5 rounded bg-accent-50 dark:bg-accent-950 text-accent-700 dark:text-accent-300">{{ title }}</span>
-            <UIcon v-if="i < criticalTitles.length - 1" name="i-lucide-arrow-right" class="size-3 text-dimmed" />
+            <UIcon v-if="i < criticalTitles.length - 1" name="i-hugeicons-arrow-right-02" class="size-3 text-dimmed" />
           </template>
         </div>
       </div>
@@ -135,7 +135,7 @@ function pct(p: number | null): string {
         v-if="unestimatedTitles.length > 0"
         class="border border-default rounded-xl px-4 py-3 flex items-start gap-2.5"
       >
-        <UIcon name="i-lucide-circle-help" class="size-4 text-muted shrink-0 mt-0.5" />
+        <UIcon name="i-hugeicons-circle-question-mark" class="size-4 text-muted shrink-0 mt-0.5" />
         <div class="text-[12.5px] text-muted leading-relaxed">
           <b class="text-default">Без оценки:</b> {{ unestimatedTitles.join(', ') }} —
           для них взяты общие перцентили доски, прогноз менее точен.
@@ -148,7 +148,7 @@ function pct(p: number | null): string {
         class="border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 rounded-xl px-4 py-3 flex items-center gap-2.5"
       >
         <template v-if="r.type === 'external_dependency'">
-          <UIcon name="i-lucide-triangle-alert" class="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <UIcon name="i-hugeicons-triangle-alert" class="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
           <span class="flex-1 min-w-0 text-[12.5px] text-amber-900 dark:text-amber-100">
             «{{ titleById.get(r.taskId) ?? '…' }}» ждёт «{{ r.blockerTitle }}», которой нет в составе
           </span>

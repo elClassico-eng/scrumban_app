@@ -55,7 +55,7 @@ useHead({ title: 'Заявки – Такт' })
             :to="pageRoutes.workspaces"
             class="text-sm text-muted hover:text-default inline-flex items-center gap-1.5 mb-2"
           >
-            <UIcon name="i-lucide-arrow-left" class="size-4" /> Воркспейсы
+            <UIcon name="i-hugeicons-arrow-left-02" class="size-4" /> Воркспейсы
           </NuxtLink>
           <h1 class="text-2xl font-semibold tracking-tight">Заявки с лендинга</h1>
         </div>
@@ -63,12 +63,12 @@ useHead({ title: 'Заявки – Такт' })
       </div>
 
       <div v-if="isLoading" class="h-40 grid place-items-center text-muted">
-        <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+        <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
       </div>
 
       <div v-else-if="forbidden" class="h-40 grid place-items-center text-center">
         <div>
-          <UIcon name="i-lucide-shield-x" class="size-10 text-muted mx-auto mb-3" />
+          <UIcon name="i-hugeicons-shield-x" class="size-10 text-muted mx-auto mb-3" />
           <p class="font-medium">Доступ запрещён</p>
           <p class="text-sm text-muted mt-1">Эта страница доступна только администратору.</p>
         </div>

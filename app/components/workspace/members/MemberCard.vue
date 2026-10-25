@@ -63,17 +63,17 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
           v-if="member.jobTitle"
           class="text-[12.5px] text-muted truncate flex items-center gap-1.5 mt-1"
         >
-          <UIcon name="i-lucide-briefcase" class="size-3 shrink-0 text-dimmed" />
+          <UIcon name="i-hugeicons-briefcase-01" class="size-3 shrink-0 text-dimmed" />
           {{ member.jobTitle }}
         </p>
         <p class="text-[12px] text-muted truncate flex items-center gap-1.5 mt-0.5 font-mono" :title="member.email">
-          <UIcon name="i-lucide-mail" class="size-3 shrink-0 text-dimmed" />
+          <UIcon name="i-hugeicons-mail-01" class="size-3 shrink-0 text-dimmed" />
           {{ member.email }}
         </p>
       </div>
       <UButton
         v-if="canEdit && !isEditing"
-        icon="i-lucide-pencil"
+        icon="i-hugeicons-pencil"
         color="neutral"
         variant="ghost"
         size="xs"
@@ -82,7 +82,7 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
       />
       <UButton
         v-else-if="isEditing"
-        icon="i-lucide-x"
+        icon="i-hugeicons-x"
         color="neutral"
         variant="ghost"
         size="xs"
@@ -101,7 +101,7 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
           @update:model-value="(v: Role) => emit('changeRole', v)"
         />
         <UButton
-          icon="i-lucide-trash-2"
+          icon="i-hugeicons-delete-02"
           color="error"
           variant="ghost"
           size="xs"
@@ -113,7 +113,7 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
       <template v-else>
         <WorkspaceMembersRoleChip :role="member.role" :editable="canEdit" />
         <span class="ml-auto text-[11.5px] text-dimmed flex items-center gap-1 tabular-nums">
-          <UIcon name="i-lucide-calendar" class="size-3" />
+          <UIcon name="i-hugeicons-calendar-03" class="size-3" />
           {{ since }}
         </span>
       </template>

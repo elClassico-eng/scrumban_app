@@ -53,7 +53,7 @@ function openEdit(rule: AutomationRule) {
 }
 
 function fail(err: unknown, fallback: string) {
-  toast.add({ title: getErrorMessage(err, fallback), color: 'error', icon: 'i-lucide-alert-circle' })
+  toast.add({ title: getErrorMessage(err, fallback), color: 'error', icon: 'i-hugeicons-alert-circle' })
 }
 
 async function onSubmit(input: RuleInput) {
@@ -73,7 +73,7 @@ async function addPresets(presets: typeof RECOMMENDED_RULES) {
   addingPreset.value = presets.length === 1 ? presets[0]!.title : 'all'
   try {
     for (const p of presets) await create.mutateAsync(p.input)
-    toast.add({ title: presets.length === 1 ? 'Правило добавлено' : 'Добавлены три правила', icon: 'i-lucide-zap' })
+    toast.add({ title: presets.length === 1 ? 'Правило добавлено' : 'Добавлены три правила', icon: 'i-hugeicons-zap' })
   }
   catch (err) {
     fail(err, 'Не удалось добавить правило')
@@ -114,7 +114,7 @@ async function onRun() {
     toast.add({
       title: 'Проверка выполнена',
       description: `Новых срабатываний: ${r.opened}, закрыто: ${r.resolved}`,
-      icon: 'i-lucide-zap',
+      icon: 'i-hugeicons-zap',
     })
   }
   catch (err) {
@@ -131,7 +131,7 @@ async function onRun() {
       <UiPageHeader title="Автоматизации" subtitle="Если математика видит проблему, система действует сама">
         <template v-if="canManage && items.length > 0" #actions>
           <UButton
-            icon="i-lucide-play"
+            icon="i-hugeicons-play"
             color="neutral"
             variant="outline"
             :loading="run.isPending.value"
@@ -139,7 +139,7 @@ async function onRun() {
           >
             Проверить сейчас
           </UButton>
-          <UButton icon="i-lucide-plus" @click="openCreate()">
+          <UButton icon="i-hugeicons-plus" @click="openCreate()">
             Правило
           </UButton>
         </template>
@@ -149,12 +149,12 @@ async function onRun() {
         v-if="burning > 0"
         class="flex items-center gap-2 text-[13px] text-red-600 dark:text-red-300"
       >
-        <UIcon name="i-lucide-flame" class="size-4" />
+        <UIcon name="i-hugeicons-flame" class="size-4" />
         Сейчас горит {{ burning }} {{ burning === 1 ? 'срабатывание' : 'срабатываний' }}
       </div>
 
       <div v-if="rules.isLoading.value" class="h-32 flex items-center justify-center text-muted">
-        <UIcon name="i-lucide-loader" class="animate-spin size-6" />
+        <UIcon name="i-hugeicons-loader" class="animate-spin size-6" />
       </div>
 
       <div v-else-if="items.length === 0" class="space-y-8">
@@ -166,7 +166,7 @@ async function onRun() {
             </div>
             <UButton
               v-if="canManage"
-              icon="i-lucide-check-check"
+              icon="i-hugeicons-check-check"
               :loading="addingPreset === 'all'"
               :disabled="addingPreset !== null"
               @click="addPresets(RECOMMENDED_RULES)"
@@ -194,7 +194,7 @@ async function onRun() {
                 size="sm"
                 variant="outline"
                 color="neutral"
-                icon="i-lucide-plus"
+                icon="i-hugeicons-plus"
                 :loading="addingPreset === p.title"
                 :disabled="addingPreset !== null"
                 @click="addPresets([p])"

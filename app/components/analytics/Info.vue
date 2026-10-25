@@ -14,7 +14,7 @@ defineProps<{
       class="size-5 grid place-items-center rounded-full text-dimmed hover:text-default hover:bg-elevated transition-colors cursor-pointer shrink-0"
       aria-label="Как это считается"
     >
-      <UIcon name="i-lucide-info" class="size-3.5" />
+      <UIcon name="i-hugeicons-info" class="size-3.5" />
     </button>
     <template #content>
       <div class="p-3 space-y-2 max-w-[260px]">

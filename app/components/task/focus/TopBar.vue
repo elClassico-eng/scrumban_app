@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { Task } from '#shared/types/task'
+import { pageRoutes } from '~/routing'
 
 defineProps<{
   shortId: string
+  workspaceId: string
+  boardId: string
   workspaceName: string | undefined
   boardName: string | undefined
   parentTask: Task | null
   canDelete: boolean
   watching: boolean
+  watcherCount: number
 }>()
 
 const emit = defineEmits<{
@@ -27,9 +31,15 @@ const emit = defineEmits<{
 
     <span class="flex flex-1 items-center gap-1.5 text-[12.5px] text-muted min-w-0 overflow-hidden">
       <span class="text-dimmed">/</span>
-      <span class="truncate max-w-[14ch]">{{ workspaceName ?? '' }}</span>
+      <NuxtLink
+        :to="pageRoutes.workspace(workspaceId)"
+        class="truncate max-w-[14ch] rounded px-1 -mx-1 transition-colors hover:bg-elevated hover:text-default"
+      >{{ workspaceName ?? '' }}</NuxtLink>
       <span class="text-dimmed">/</span>
-      <span class="truncate max-w-[14ch]">{{ boardName ?? '' }}</span>
+      <NuxtLink
+        :to="pageRoutes.board(workspaceId, boardId)"
+        class="truncate max-w-[14ch] rounded px-1 -mx-1 transition-colors hover:bg-elevated hover:text-default"
+      >{{ boardName ?? '' }}</NuxtLink>
       <template v-if="parentTask">
         <span class="text-dimmed">/</span>
         <button
@@ -38,34 +48,38 @@ const emit = defineEmits<{
           :title="parentTask.title"
           @click="emit('open-parent-picker')"
         >
-          <UIcon name="i-lucide-crown" class="size-3.5 shrink-0" />
+          <UIcon name="i-hugeicons-crown" class="size-3.5 shrink-0" />
           <span class="truncate">{{ parentTask.title }}</span>
         </button>
       </template>
     </span>
 
     <div class="flex items-center gap-0.5 shrink-0">
-      <button
-        type="button"
-        class="size-7 rounded-md grid place-items-center cursor-pointer transition-colors hover:bg-elevated"
-        :class="watching ? 'text-accent-500' : 'text-muted hover:text-default'"
-        title="Следить"
-        @click="emit('toggle-watch')"
-      >
-        <UIcon name="i-lucide-eye" class="size-4" />
-      </button>
+      <UTooltip :text="watching ? `Вы следите · всего ${watcherCount}` : `Следить за задачей${watcherCount ? ` · уже ${watcherCount}` : ''}`">
+        <button
+          type="button"
+          class="h-7 px-1.5 rounded-md inline-flex items-center gap-1 cursor-pointer transition-colors hover:bg-elevated"
+          :class="watching ? 'text-accent-500' : 'text-muted hover:text-default'"
+          :aria-pressed="watching"
+          :aria-label="watching ? 'Перестать следить' : 'Следить за задачей'"
+          @click="emit('toggle-watch')"
+        >
+          <UIcon :name="watching ? 'i-hugeicons-eye' : 'i-hugeicons-eye-off'" class="size-4" />
+          <span v-if="watcherCount" class="text-[11px] tabular-nums">{{ watcherCount }}</span>
+        </button>
+      </UTooltip>
       <button
         type="button"
         class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
         title="Копировать ссылку"
         @click="emit('copy-link')"
       >
-        <UIcon name="i-lucide-link-2" class="size-4" />
+        <UIcon name="i-hugeicons-link-02" class="size-4" />
       </button>
       <UDropdownMenu
         v-if="canDelete"
         :items="[
-          { label: 'Удалить задачу', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => emit('delete') },
+          { label: 'Удалить задачу', icon: 'i-hugeicons-delete-02', color: 'error', onSelect: () => emit('delete') },
         ]"
       >
         <button
@@ -73,7 +87,7 @@ const emit = defineEmits<{
           class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
           title="Ещё"
         >
-          <UIcon name="i-lucide-more-horizontal" class="size-4" />
+          <UIcon name="i-hugeicons-more-horizontal" class="size-4" />
         </button>
       </UDropdownMenu>
       <span class="w-1.5" />
@@ -83,7 +97,7 @@ const emit = defineEmits<{
         title="Закрыть (Esc)"
         @click="emit('close')"
       >
-        <UIcon name="i-lucide-x" class="size-4" />
+        <UIcon name="i-hugeicons-x" class="size-4" />
       </button>
     </div>
   </header>

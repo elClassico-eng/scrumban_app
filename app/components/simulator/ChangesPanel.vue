@@ -132,7 +132,7 @@ const deadlineShift = computed<number>({
 <template>
   <div class="surface-soft rounded-2xl px-5 py-5 space-y-5">
     <h4 class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted m-0 inline-flex items-center gap-1.5">
-      <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
+      <UIcon name="i-hugeicons-sliders-horizontal" class="size-3.5" />
       Изменения сценария
     </h4>
 
@@ -160,7 +160,7 @@ const deadlineShift = computed<number>({
                 size="xs"
                 variant="ghost"
                 :color="excludedIds.has(t.taskId) ? 'primary' : 'neutral'"
-                :icon="excludedIds.has(t.taskId) ? 'i-lucide-undo-2' : 'i-lucide-x'"
+                :icon="excludedIds.has(t.taskId) ? 'i-hugeicons-undo-02' : 'i-hugeicons-x'"
                 @click="toggleExclude(t.taskId)"
               />
             </UTooltip>
@@ -199,7 +199,7 @@ const deadlineShift = computed<number>({
           <span class="truncate max-w-[38%] text-default" :class="e.removed ? 'line-through' : ''">
             {{ titleById.get(e.blockerTaskId) ?? '…' }}
           </span>
-          <UIcon name="i-lucide-arrow-right" class="size-3 text-dimmed shrink-0" />
+          <UIcon name="i-hugeicons-arrow-right-02" class="size-3 text-dimmed shrink-0" />
           <span class="truncate max-w-[38%] text-default" :class="e.removed ? 'line-through' : ''">
             {{ titleById.get(e.blockedTaskId) ?? '…' }}
           </span>
@@ -213,7 +213,7 @@ const deadlineShift = computed<number>({
               size="xs"
               variant="ghost"
               :color="e.removed ? 'primary' : 'neutral'"
-              :icon="e.removed ? 'i-lucide-undo-2' : 'i-lucide-scissors'"
+              :icon="e.removed ? 'i-hugeicons-undo-02' : 'i-hugeicons-scissors'"
               @click="toggleEdgeRemoval(e)"
             />
           </UTooltip>
@@ -229,7 +229,7 @@ const deadlineShift = computed<number>({
           size="xs"
           class="flex-1 min-w-0"
         />
-        <UIcon name="i-lucide-arrow-right" class="size-3 text-dimmed shrink-0" />
+        <UIcon name="i-hugeicons-arrow-right-02" class="size-3 text-dimmed shrink-0" />
         <USelect
           v-model="newBlockedId"
           :items="taskOptions"
@@ -238,18 +238,18 @@ const deadlineShift = computed<number>({
           size="xs"
           class="flex-1 min-w-0"
         />
-        <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-plus" :disabled="!canAddEdge" @click="addEdge" />
+        <UButton size="xs" variant="outline" color="neutral" icon="i-hugeicons-plus" :disabled="!canAddEdge" @click="addEdge" />
       </div>
     </div>
 
     <div class="space-y-1.5">
       <div class="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">Дедлайн спринта</div>
       <div class="flex items-center gap-2">
-        <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-minus" @click="deadlineShift = deadlineShift - 1" />
+        <UButton size="xs" variant="outline" color="neutral" icon="i-hugeicons-minus" @click="deadlineShift = deadlineShift - 1" />
         <span class="text-[13px] font-semibold tabular-nums text-default min-w-16 text-center">
           {{ deadlineShift > 0 ? `+${deadlineShift}` : deadlineShift }} дн
         </span>
-        <UButton size="xs" variant="outline" color="neutral" icon="i-lucide-plus" @click="deadlineShift = deadlineShift + 1" />
+        <UButton size="xs" variant="outline" color="neutral" icon="i-hugeicons-plus" @click="deadlineShift = deadlineShift + 1" />
         <span v-if="horizonDays !== null" class="text-[11px] text-muted ml-1">
           горизонт: {{ Math.round((horizonDays + deadlineShift) * 10) / 10 }} дн
         </span>

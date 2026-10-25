@@ -25,12 +25,12 @@ useHead({ title: 'Симулятор – Такт' })
       v-else-if="boards.length === 0"
       class="surface-soft rounded-2xl px-6 py-10 text-center space-y-2"
     >
-      <UIcon name="i-lucide-square-kanban" class="size-8 text-dimmed" />
+      <UIcon name="i-hugeicons-square-kanban" class="size-8 text-dimmed" />
       <p class="text-[13px] text-muted m-0">
         В этом workspace пока нет досок — но симулятор можно попробовать прямо сейчас на учебном примере.
       </p>
       <div class="flex items-center justify-center gap-2">
-        <UButton size="sm" :to="pageRoutes.simulatorDemo(wsId)" icon="i-lucide-flask-conical">
+        <UButton size="sm" :to="pageRoutes.simulatorDemo(wsId)" icon="i-hugeicons-flask-conical">
           Открыть демо-пример
         </UButton>
         <UButton size="sm" variant="outline" color="neutral" :to="pageRoutes.boards(wsId)">

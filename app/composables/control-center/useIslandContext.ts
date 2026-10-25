@@ -42,7 +42,7 @@ export function useIslandContext(workspaceId: Ref<string>) {
     update.mutate({ controlCenterPrefs: next }, {
       onError: () => {
         if (prev) qc.setQueryData(['users', 'me'], prev)
-        toast.add({ title: 'Не удалось сохранить раскладку', color: 'error', icon: 'i-lucide-alert-circle' })
+        toast.add({ title: 'Не удалось сохранить раскладку', color: 'error', icon: 'i-hugeicons-alert-circle' })
       },
     })
   }

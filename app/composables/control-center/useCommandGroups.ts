@@ -4,10 +4,12 @@ import { pageRoutes } from '~/routing'
 
 export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: () => void) {
   const router = useRouter()
+  const taskKey = useTaskKey(wsId)
   const { requestCreateTask } = useControlCenterActions()
   const { focus, toggle: toggleFocus } = useFocusMode()
   const colorMode = useColorMode()
   const { logout } = useAuthApi()
+  const help = useHelpPanel()
 
   const onBoard = computed(() => !!wsId.value && !!bId.value)
 
@@ -24,6 +26,9 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
   const role = computed(() => workspacesList.data.value?.workspaces.find(w => w.id === wsId.value)?.role)
   const canCreateTask = computed(() => hasRole(role.value, 'member'))
 
+  const { pulse } = useBoardPulseApi(wsId, computed(() => (onBoard.value ? bId.value : null)), onBoard)
+  const nextSteps = useNextActions(() => wsId.value || null, () => (onBoard.value ? pulse.data.value ?? null : null))
+
   function go(to: string | { path: string; query: Record<string, string> }) {
     onDone()
     router.push(to)
@@ -31,6 +36,19 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
 
   const groups = computed<CommandPaletteGroup[]>(() => {
     const result: CommandPaletteGroup[] = []
+
+    if (nextSteps.value.length) {
+      result.push({
+        id: 'next',
+        label: 'Следующий шаг',
+        items: nextSteps.value.map(a => ({
+          label: a.title,
+          suffix: a.reason,
+          icon: a.icon,
+          onSelect: () => go(a.to),
+        })),
+      })
+    }
 
     if (onBoard.value) {
       for (const col of columns.value) {
@@ -41,8 +59,8 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
           label: col.name,
           items: colTasks.map<CommandPaletteItem>(t => ({
             label: t.title,
-            suffix: t.id.slice(0, 6).toUpperCase(),
-            icon: 'i-lucide-square-check-big',
+            suffix: taskKey(t),
+            icon: 'i-hugeicons-square-check-big',
             onSelect: () => go(pageRoutes.task(wsId.value, bId.value, t.id)),
           })),
         })
@@ -57,8 +75,8 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
           label: board.name,
           items: boardTasks.map<CommandPaletteItem>(t => ({
             label: t.title,
-            suffix: t.id.slice(0, 6).toUpperCase(),
-            icon: 'i-lucide-square-check-big',
+            suffix: taskKey(t),
+            icon: 'i-hugeicons-square-check-big',
             onSelect: () => go(pageRoutes.task(wsId.value, t.boardId, t.id)),
           })),
         })
@@ -69,7 +87,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
     if (canCreateTask.value) {
       actionItems.push({
         label: 'Создать задачу',
-        icon: 'i-lucide-plus',
+        icon: 'i-hugeicons-plus',
         onSelect: () => {
           onDone()
           if (bId.value) requestCreateTask()
@@ -77,15 +95,39 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
         },
       })
     }
+    if (wsId.value && onBoard.value && hasRole(role.value, 'scrum_master')) {
+      actionItems.push({
+        label: 'Спринты доски: начать или закрыть',
+        icon: 'i-hugeicons-flag-02',
+        onSelect: () => go(pageRoutes.boardSprints(wsId.value, bId.value)),
+      })
+    }
+    if (wsId.value && hasRole(role.value, 'admin')) {
+      actionItems.push(
+        { label: 'Пригласить участника', icon: 'i-hugeicons-user-add-01', onSelect: () => go(pageRoutes.workspaceMembers(wsId.value)) },
+        { label: 'Создать доску', icon: 'i-hugeicons-square-kanban', onSelect: () => go(pageRoutes.boards(wsId.value)) },
+      )
+    }
     actionItems.push(
       {
+        label: 'Справка по этой странице',
+        icon: 'i-hugeicons-information-circle',
+        kbds: ['?'],
+        onSelect: () => { onDone(); help.show('page') },
+      },
+      {
+        label: 'Горячие клавиши',
+        icon: 'i-hugeicons-keyboard',
+        onSelect: () => { onDone(); help.show('keys') },
+      },
+      {
         label: focus.value ? 'Выключить фокус' : 'Включить фокус',
-        icon: 'i-lucide-focus',
+        icon: 'i-hugeicons-focus',
         onSelect: () => { toggleFocus(); onDone() },
       },
       {
         label: 'Переключить тему',
-        icon: 'i-lucide-sun-moon',
+        icon: 'i-hugeicons-sun-moon',
         onSelect: () => {
           colorMode.preference = colorMode.preference === 'dark' ? 'light' : 'dark'
           onDone()
@@ -93,7 +135,7 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
       },
       {
         label: 'Выйти',
-        icon: 'i-lucide-log-out',
+        icon: 'i-hugeicons-log-out',
         onSelect: () => { logout.mutate(); onDone() },
       },
     )
@@ -101,17 +143,19 @@ export function useCommandGroups(wsId: Ref<string>, bId: Ref<string>, onDone: ()
 
     if (wsId.value) {
       const navItems: CommandPaletteItem[] = [
-        { label: 'Доски', icon: 'i-lucide-columns-3', onSelect: () => go(pageRoutes.boards(wsId.value)) },
-        { label: 'Участники', icon: 'i-lucide-users', onSelect: () => go(pageRoutes.workspaceMembers(wsId.value)) },
-        { label: 'Активность', icon: 'i-lucide-activity', onSelect: () => go(pageRoutes.workspaceActivity(wsId.value)) },
+        { label: 'Входящие', icon: 'i-hugeicons-inbox', onSelect: () => go(pageRoutes.workspaceInbox(wsId.value)) },
+        { label: 'Мои задачи', icon: 'i-hugeicons-task-done-01', onSelect: () => go(pageRoutes.workspaceMyTasks(wsId.value)) },
+        { label: 'Доски', icon: 'i-hugeicons-layout-3-column', onSelect: () => go(pageRoutes.boards(wsId.value)) },
+        { label: 'Участники', icon: 'i-hugeicons-users', onSelect: () => go(pageRoutes.workspaceMembers(wsId.value)) },
+        { label: 'Активность', icon: 'i-hugeicons-activity-01', onSelect: () => go(pageRoutes.workspaceActivity(wsId.value)) },
       ]
       if (onBoard.value) {
         navItems.push(
-          { label: 'Аналитика', icon: 'i-lucide-bar-chart-2', onSelect: () => go(pageRoutes.boardAnalytics(wsId.value, bId.value)) },
-          { label: 'Спринты', icon: 'i-lucide-zap', onSelect: () => go(pageRoutes.boardSprints(wsId.value, bId.value)) },
-          { label: 'Автоматизации', icon: 'i-lucide-workflow', onSelect: () => go(pageRoutes.boardAutomations(wsId.value, bId.value)) },
-          { label: 'Календарь', icon: 'i-lucide-calendar', onSelect: () => go(pageRoutes.boardCalendar(wsId.value, bId.value)) },
-          { label: 'Таймлайн', icon: 'i-lucide-gantt-chart', onSelect: () => go(pageRoutes.boardTimeline(wsId.value, bId.value)) },
+          { label: 'Аналитика', icon: 'i-hugeicons-chart-no-axes-column', onSelect: () => go(pageRoutes.boardAnalytics(wsId.value, bId.value)) },
+          { label: 'Спринты', icon: 'i-hugeicons-zap', onSelect: () => go(pageRoutes.boardSprints(wsId.value, bId.value)) },
+          { label: 'Автоматизации', icon: 'i-hugeicons-workflow', onSelect: () => go(pageRoutes.boardAutomations(wsId.value, bId.value)) },
+          { label: 'Календарь', icon: 'i-hugeicons-calendar-03', onSelect: () => go(pageRoutes.boardCalendar(wsId.value, bId.value)) },
+          { label: 'Таймлайн', icon: 'i-hugeicons-chart-no-axes-gantt', onSelect: () => go(pageRoutes.boardTimeline(wsId.value, bId.value)) },
         )
       }
       result.push({ id: 'nav', label: 'Навигация', items: navItems })
