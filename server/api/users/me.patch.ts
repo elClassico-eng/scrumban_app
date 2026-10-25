@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { ControlCenterPrefsSchema } from '#shared/validation/control-center'
 import { SidebarPrefsSchema } from '#shared/validation/sidebar'
 import { ShortcutPrefsSchema } from '#shared/validation/shortcuts'
+import { EmailPrefsSchema } from '#shared/validation/email-prefs'
 import { updateUserProfile } from '../../services/users.service'
 import { requireAuth } from '../../utils/auth'
 import { toHttpError } from '../../utils/errors'
@@ -19,6 +20,7 @@ const BodySchema = z
     controlCenterPrefs: ControlCenterPrefsSchema.optional(),
     sidebarPrefs: SidebarPrefsSchema.optional(),
     shortcutPrefs: ShortcutPrefsSchema.optional(),
+    emailPrefs: EmailPrefsSchema.optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
     message: 'Provide at least one field to update',
@@ -49,6 +51,7 @@ export default defineEventHandler(async (event) => {
         controlCenterPrefs: user.controlCenterPrefs ?? {},
         sidebarPrefs: user.sidebarPrefs ?? {},
         shortcutPrefs: user.shortcutPrefs ?? {},
+        emailPrefs: user.emailPrefs,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

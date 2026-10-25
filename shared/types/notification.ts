@@ -51,3 +51,13 @@ export interface MarkAllReadInput {
 export interface MarkAllReadResponse {
   count: number
 }
+export const INSTANT_EMAIL_TYPES = ['mention', 'reply', 'comment_assigned', 'assigned'] as const
+
+export type InstantEmailType = (typeof INSTANT_EMAIL_TYPES)[number]
+
+export type EmailPrefs = {
+  digest: boolean
+  instant: InstantEmailType[]
+}
+
+export const DEFAULT_EMAIL_PREFS: EmailPrefs = { digest: true, instant: [] }

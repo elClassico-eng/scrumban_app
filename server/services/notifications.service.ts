@@ -10,6 +10,7 @@ import {
 import { setUserContext, withUser, type DbTransaction } from '../utils/db'
 import { NotFoundError } from '../utils/errors'
 import { publishUserEvent } from '../utils/events'
+import { deliverExternally } from '../utils/notification-channels'
 
 const DEFAULT_LIMIT = 50
 
@@ -234,4 +235,5 @@ export async function emitNotification(input: EmitInput): Promise<void> {
     userId: input.recipientId,
     payload: row,
   })
+  deliverExternally({ notificationId: row.id, userId: input.recipientId })
 }

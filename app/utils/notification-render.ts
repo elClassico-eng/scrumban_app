@@ -1,6 +1,6 @@
 import type { Notification } from '#shared/types/notification'
 import { pageRoutes } from '~/routing'
-import { displayName } from '~/utils/display-name'
+import { displayName } from '#shared/utils/display-name'
 
 export type RouteTarget = string | { path: string; query: Record<string, string> }
 

@@ -1,3 +1,5 @@
+import type { InstantEmailType } from '#shared/types/notification'
+
 export const NOTIFICATION_TYPE_LABEL: Record<string, string> = {
   mention: 'Упоминания в комментариях',
   assigned: 'Назначение на задачу',
@@ -8,4 +10,11 @@ export const NOTIFICATION_TYPE_LABEL: Record<string, string> = {
   automation: 'Автоматизации доски',
   watched_comment: 'Комментарии в задачах, за которыми слежу',
   watched_status: 'Смена статуса задач, за которыми слежу',
+}
+
+export const INSTANT_EMAIL_LABEL: Record<InstantEmailType, string> = {
+  mention: 'Меня упомянули',
+  reply: 'Ответили в моей ветке',
+  comment_assigned: 'Мне дали поручение в комментарии',
+  assigned: 'Меня назначили на задачу',
 }

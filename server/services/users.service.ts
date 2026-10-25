@@ -1,6 +1,7 @@
 import type { ControlCenterPrefs } from '#shared/types/control-center'
 import type { SidebarPrefs } from '#shared/types/sidebar'
 import type { ShortcutPrefs } from '#shared/types/shortcuts'
+import type { EmailPrefs } from '#shared/types/notification'
 // UsersService: thin business-logic layer over the users table.
 // Normalises email to lowercase for predictable lookups, and translates
 // PostgreSQL unique-violation errors into a domain ConflictError so the
@@ -74,6 +75,7 @@ export async function updateUserProfile(input: {
     controlCenterPrefs?: ControlCenterPrefs
     sidebarPrefs?: SidebarPrefs
     shortcutPrefs?: ShortcutPrefs
+    emailPrefs?: EmailPrefs
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -90,6 +92,7 @@ export async function updateUserProfile(input: {
   if (input.patch.controlCenterPrefs) set.controlCenterPrefs = input.patch.controlCenterPrefs
   if (input.patch.sidebarPrefs) set.sidebarPrefs = input.patch.sidebarPrefs
   if (input.patch.shortcutPrefs) set.shortcutPrefs = input.patch.shortcutPrefs
+  if (input.patch.emailPrefs) set.emailPrefs = input.patch.emailPrefs
 
   const [row] = await useDB()
     .update(users)

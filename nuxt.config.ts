@@ -81,6 +81,7 @@ export default defineNuxtConfig({
     scheduledTasks: {
       '0 * * * *': ['automations:run'],
       '0 3 * * *': ['forecast:daily-snapshots'],
+      '0 6 * * *': ['notifications:daily-digest'],
     },
     externals: {
       inline: ['zod'],
