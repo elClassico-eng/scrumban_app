@@ -299,11 +299,18 @@ export async function updateTaskFields(input: {
         boardId: tasks.boardId,
         blockedReason: tasks.blockedReason,
         description: tasks.description,
+        serviceClass: tasks.serviceClass,
+        dueDate: tasks.dueDate,
       })
       .from(tasks)
       .where(eq(tasks.id, input.taskId))
       .for('update')
     if (!prev) throw new NotFoundError('Задача не найдена')
+    const nextClass = input.patch.serviceClass ?? prev.serviceClass
+    const nextDue = 'dueDate' in input.patch ? input.patch.dueDate : prev.dueDate
+    if (nextClass === 'fixed_date' && !nextDue) {
+      throw new ValidationError('Для класса «С дедлайном» нужен дедлайн')
+    }
     const expected = input.expected
     if (expected?.title !== undefined && expected.title !== prev.title) {
       throw new ConflictError('Название успели изменить, пока вы его редактировали')
