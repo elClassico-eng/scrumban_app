@@ -141,19 +141,8 @@ watch(() => y.value > 6, v => emit('update:compact', v), { immediate: true })
 </script>
 
 <template>
-  <div ref="scrollEl" class="overflow-auto pb-16" :class="hiddenColsClass" :style="colsStyle">
-    <div class="surface-soft rounded-2xl overflow-hidden mx-3 sm:mx-5 mt-3">
-      <div class="hidden sm:grid grid-cols-[var(--kl-cols)] items-center h-[42px] sticky top-0 z-30 bg-muted border-b border-default px-[18px]">
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">Задача</span>
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-class">Исполн.</span>
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed">Срок</span>
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-class">Класс</span>
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-sp">SP</span>
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-sprint">Спринт</span>
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed col-clist">Чек-лист</span>
-        <span class="text-[10.5px] font-bold uppercase tracking-[0.06em] text-dimmed text-center col-time">Время</span>
-      </div>
-
+  <div ref="scrollEl" class="overflow-auto pb-24" :class="hiddenColsClass" :style="colsStyle">
+    <div class="space-y-6 px-3 pt-2 sm:px-5">
       <BoardListGroup
         v-for="g in groups" :key="g.key"
         :group="g" :children-by-parent="childrenByParent" :members="members" :columns="columns" :dep-counts="depCounts"

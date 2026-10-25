@@ -96,9 +96,9 @@ const classDotClass = computed(() => {
 
 <template>
   <div
-    class="group relative cursor-pointer transition-colors border-t border-[var(--ui-border-muted)]"
+    class="group relative cursor-pointer border-b border-[var(--ui-border-muted)] transition-colors"
     :class="[
-      selected ? 'bg-accent-50 dark:bg-accent-950/40' : depth > 0 ? 'bg-muted/20 hover:bg-muted/40' : 'hover:bg-muted/30 dark:hover:bg-muted/20',
+      selected ? 'bg-accent-500/10' : 'hover:bg-elevated/50',
     ]"
     @click="openTask"
   >
@@ -200,7 +200,7 @@ const classDotClass = computed(() => {
     </div>
 
     <div
-      class="hidden sm:grid grid-cols-[var(--kl-cols)] items-center min-h-[48px] pr-[18px]"
+      class="hidden sm:grid grid-cols-[var(--kl-cols)] items-center min-h-[42px] pr-[18px]"
     >
       <div class="flex items-center gap-2 py-2 pr-2 min-w-0" :style="{ paddingLeft: `${18 + depth * 26}px` }">
         <span
@@ -250,7 +250,17 @@ const classDotClass = computed(() => {
         >{{ task.title }}</span>
 
         <span class="inline-flex items-center gap-[7px] shrink-0 ml-0.5">
-          <span v-if="hasBlocker" class="text-red-500"><UIcon name="i-hugeicons-triangle-alert" class="size-3" /></span>
+          <span v-if="hasBlocker" class="text-red-500" title="Есть блокер"><UIcon name="i-hugeicons-triangle-alert" class="size-3" /></span>
+          <button
+            v-if="childCount > 0 && depth === 0"
+            type="button"
+            class="inline-flex items-center gap-0.5 rounded text-[10.5px] tabular-nums text-dimmed hover:text-default"
+            :title="`Подзадачи: ${childCount}`"
+            @click.stop="emit('toggle-expand', task.id)"
+          >
+            <UIcon name="i-hugeicons-hierarchy-square-02" class="size-3" />{{ childCount }}
+          </button>
+          <span v-if="task.description.trim()" class="text-dimmed" title="Есть описание"><UIcon name="i-hugeicons-text-align-left" class="size-3" /></span>
           <span
             v-if="task.checklistTotal > 0"
             class="inline-flex items-center gap-0.5 text-[10px] tabular-nums"
@@ -307,7 +317,6 @@ const classDotClass = computed(() => {
             :class="checklistFull ? 'text-emerald-600 dark:text-emerald-400' : 'text-dimmed'"
           >{{ task.checklistDone }}/{{ task.checklistTotal }}</span>
         </span>
-        <span v-else class="text-dimmed text-xs">—</span>
       </div>
 
       <div class="flex items-center justify-center px-2 h-full col-time">

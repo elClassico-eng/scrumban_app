@@ -13,6 +13,6 @@ describe('visibleColumns', () => {
     expect(v).toEqual(new Set(['sprint', 'checklist']))
   })
   it('builds the grid template in column order', () => {
-    expect(listColumnsTemplate(new Set(['time']))).toBe('minmax(0,1fr) 96px 132px 138px 52px 86px')
+    expect(listColumnsTemplate(new Set(['time']))).toBe('minmax(0,1fr) 88px 120px 140px 48px 86px')
   })
 })

@@ -33,6 +33,7 @@ const groupIds = computed(() => props.group.tasks.map(t => t.id))
 const selectedInGroup = computed(() => groupIds.value.filter(id => props.selected.has(id)).length)
 const allSelected = computed(() => count.value > 0 && selectedInGroup.value === count.value)
 const spSum = computed(() => props.group.tasks.reduce((a, t) => a + (t.storyPoints ?? 0), 0))
+const timeSum = computed(() => props.group.tasks.reduce((a, t) => a + t.timeSpentSeconds, 0))
 const over = computed(() => props.group.limit != null && count.value > props.group.limit)
 const warn = computed(() => props.group.limit != null && count.value === props.group.limit)
 const wipPct = computed(() => props.group.limit != null && props.group.limit > 0 ? Math.min(100, count.value / props.group.limit * 100) : 0)
@@ -48,7 +49,7 @@ function onAdd() {
 <template>
   <div>
     <div
-      class="group/head flex items-center gap-2 sm:gap-[11px] px-4 sm:px-[18px] py-2.5 sm:py-[11px] cursor-pointer select-none transition-colors sticky top-0 sm:top-[42px] bg-muted z-20"
+      class="group/head sticky top-0 z-20 flex cursor-pointer select-none items-center gap-2 bg-default px-4 py-2 sm:gap-[11px] sm:px-[18px]"
       @click="emit('toggle-collapse', group.key)"
     >
       <span
@@ -74,11 +75,11 @@ function onAdd() {
       </span>
 
       <span
-        class="inline-flex items-center gap-[7px] h-[24px] sm:h-[26px] px-2.5 sm:px-3 rounded-full text-[10.5px] sm:text-[11.5px] font-bold uppercase tracking-[0.04em] text-white min-w-0 shrink sm:shrink-0"
+        class="inline-flex h-[22px] min-w-0 shrink items-center gap-1.5 rounded-md px-2 text-[11px] font-semibold uppercase tracking-[0.02em] text-white sm:shrink-0"
         :class="group.pillClass"
         :style="group.pillColor ? { background: group.pillColor } : undefined"
       >
-        <span class="w-1.5 h-1.5 rounded-full bg-white/90 shrink-0" />
+        <span class="size-1.5 shrink-0 rounded-full bg-white/90" />
         <span class="truncate">{{ group.title }}</span>
       </span>
 
@@ -100,9 +101,6 @@ function onAdd() {
 
       <span class="flex-1" />
 
-      <span v-if="spSum > 0" class="hidden sm:inline-block text-[11.5px] text-dimmed tabular-nums shrink-0">
-        <b class="text-toned font-semibold">{{ spSum }}</b> SP
-      </span>
 
       <button
         v-if="canCreate && group.columnId"
@@ -115,6 +113,16 @@ function onAdd() {
     </div>
 
     <template v-if="!collapsed">
+      <div v-if="count > 0" class="hidden h-8 grid-cols-[var(--kl-cols)] items-center border-b border-default pr-[18px] text-[11.5px] text-dimmed sm:grid">
+        <span class="pl-[63px]">Задача</span>
+        <span class="text-center">Исполнитель</span>
+        <span class="px-2.5">Срок</span>
+        <span class="col-class px-2.5">Класс</span>
+        <span class="col-sp text-center">SP</span>
+        <span class="col-sprint px-2.5">Спринт</span>
+        <span class="col-clist px-2.5">Чек-лист</span>
+        <span class="col-time text-center">Время</span>
+      </div>
       <div
         v-if="count === 0"
         class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-2.5 mx-4 sm:mx-[18px] mb-2 ml-4 sm:ml-10 px-[14px] py-[10px] border border-dashed border-default rounded-[10px] text-dimmed text-[12.5px] bg-muted/30 dark:bg-muted/10"
@@ -158,12 +166,22 @@ function onAdd() {
       <button
         v-if="canCreate && count > 0"
         type="button"
-        class="flex items-center gap-2 min-h-[42px] pl-4 sm:pl-[40px] pr-4 sm:pr-[18px] text-[12.5px] text-dimmed hover:text-accent-600 dark:hover:text-accent-400 w-full text-left transition-colors border-t border-[var(--ui-border-muted)]"
+        class="flex min-h-[38px] w-full items-center gap-2 pl-4 pr-4 text-left text-[12.5px] text-dimmed transition-colors hover:text-default sm:pl-[63px] sm:pr-[18px]"
         @click="onAdd"
       >
         <UIcon name="i-hugeicons-plus" class="size-3.5" />
         Добавить задачу
       </button>
+      <div v-if="spSum > 0 || timeSum > 0" class="hidden grid-cols-[var(--kl-cols)] items-center pr-[18px] text-[11.5px] tabular-nums text-muted sm:grid">
+        <span />
+        <span />
+        <span />
+        <span class="col-class" />
+        <span class="col-sp text-center"><b v-if="spSum > 0" class="font-semibold text-toned">{{ spSum }}</b></span>
+        <span class="col-sprint" />
+        <span class="col-clist" />
+        <span class="col-time text-center"><template v-if="timeSum > 0">{{ formatDuration(timeSum) }}</template></span>
+      </div>
     </template>
   </div>
 </template>

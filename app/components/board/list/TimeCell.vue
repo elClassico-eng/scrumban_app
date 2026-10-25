@@ -11,5 +11,4 @@ defineProps<{
     <UIcon name="i-hugeicons-clock-01" class="size-3 shrink-0" />
     {{ formatDuration(task.timeSpentSeconds) }}
   </span>
-  <span v-else class="text-dimmed text-xs">—</span>
 </template>

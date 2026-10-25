@@ -16,5 +16,5 @@ export function visibleColumns(tasks: Task[], sprintTaskIds: Set<string>): Set<O
 }
 
 export function listColumnsTemplate(visible: Set<OptionalListColumn>): string {
-  return ['minmax(0,1fr)', '96px', '132px', '138px', '52px', ...ORDER.filter(c => visible.has(c)).map(c => WIDTH[c])].join(' ')
+  return ['minmax(0,1fr)', '88px', '120px', '140px', '48px', ...ORDER.filter(c => visible.has(c)).map(c => WIDTH[c])].join(' ')
 }
