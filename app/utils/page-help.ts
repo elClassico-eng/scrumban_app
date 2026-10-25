@@ -3,6 +3,10 @@ export type PageHelp = { title: string, tips: string[], docs: DocLink[] }
 
 const DOC = {
   guide: { label: 'Руководство пользователя', path: '/docs/guide' },
+  navigation: { label: 'Навигация и горячие клавиши', path: '/docs/guide/navigation' },
+  inbox: { label: 'Входящие и мои задачи', path: '/docs/guide/inbox' },
+  tasks: { label: 'Задачи: номера, наблюдение, совместная правка', path: '/docs/guide/tasks' },
+  list: { label: 'Список и массовые действия', path: '/docs/guide/list' },
   scrumban: { label: 'Scrumban: ритм плюс поток', path: '/docs/methodology/scrumban' },
   kanban: { label: 'Kanban: поток и WIP-лимиты', path: '/docs/methodology/kanban' },
   scrum: { label: 'Scrum: спринты и ритм', path: '/docs/methodology/scrum' },
@@ -35,7 +39,7 @@ const HELP: Record<string, PageHelp> = {
       '«Отложить» прячет строку до выбранного времени, потом она вернётся непрочитанной.',
       'События по одной задаче собраны в одну строку, число справа – сколько их.',
     ],
-    docs: [DOC.guide],
+    docs: [DOC.inbox],
   },
   'workspaces-id-my-tasks': {
     title: 'Мои задачи',
@@ -45,7 +49,7 @@ const HELP: Record<string, PageHelp> = {
       'Группировку можно сменить: по сроку, по статусу или по доске.',
       'Задача открывается поверх страницы, крестик возвращает сюда же.',
     ],
-    docs: [DOC.guide],
+    docs: [DOC.inbox],
   },
   'workspaces-id-boards-boardId': {
     title: 'Доска',
@@ -54,7 +58,7 @@ const HELP: Record<string, PageHelp> = {
       'Цифры у колонки – сколько задач в ней и какой WIP-лимит.',
       'Фильтры «Срочные» и «С блокерами» помогают быстро найти, что мешает потоку.',
     ],
-    docs: [DOC.kanban, DOC.little, DOC.sle],
+    docs: [DOC.list, DOC.tasks, DOC.kanban, DOC.little, DOC.sle],
   },
   'workspaces-id-boards-boardId-analytics': {
     title: 'Аналитика доски',
@@ -104,7 +108,7 @@ const HELP: Record<string, PageHelp> = {
 const FALLBACK: PageHelp = {
   title: 'Такт',
   tips: ['Нажмите ⌘K, чтобы найти задачу, страницу или действие.'],
-  docs: [DOC.guide, DOC.scrumban],
+  docs: [DOC.navigation, DOC.guide, DOC.scrumban],
 }
 
 export function pageHelp(routeName: string | null | undefined): PageHelp {
