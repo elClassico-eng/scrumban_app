@@ -178,6 +178,7 @@ async function onSave() {
           </UButton>
         </div>
       </UForm>
+      <BoardPachcaFeedSection class="mt-5" :workspace-id="workspaceId" :board-id="boardId" />
     </template>
   </UModal>
 </template>
