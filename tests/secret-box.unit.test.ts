@@ -25,6 +25,13 @@ describe('secret-box', () => {
     expect(() => openSecret([v, iv, tag, flipped.toString('base64')].join(':'))).toThrow()
   })
 
+  it('rejects a truncated auth tag', () => {
+    process.env.INTEGRATIONS_SECRET = KEY
+    const [v, iv, tag, data] = sealSecret('secret').split(':')
+    const short = Buffer.from(tag!, 'base64').subarray(0, 4).toString('base64')
+    expect(() => openSecret([v, iv, short, data].join(':'))).toThrow()
+  })
+
   it('reports a missing or malformed key', () => {
     expect(secretsAvailable()).toBe(false)
     expect(() => sealSecret('x')).toThrow('INTEGRATIONS_SECRET')
