@@ -53,7 +53,18 @@ async function commitEdit() {
   }
 }
 
+const router = useRouter()
 const settingsOpen = ref(false)
+
+watch(() => route.query.settings, (value) => {
+  if (value === 'feed') settingsOpen.value = true
+}, { immediate: true })
+
+watch(settingsOpen, (open) => {
+  if (open || !route.query.settings) return
+  const { settings: _settings, ...query } = route.query
+  router.replace({ query })
+})
 
 type ViewEntry = {
   key: string

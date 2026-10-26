@@ -1,13 +1,19 @@
 <script setup lang="ts">
+import { pageRoutes } from '~/routing'
 import type { PachcaInviteResult } from '#shared/types/integrations'
+
+const BOARD_LINKS_LIMIT = 4
 
 const { current } = useCurrentWorkspace()
 const wsId = computed(() => current.value?.id ?? null)
 const { state, connect, disconnect, inviteAll } = usePachcaApi(wsId)
+const { list: boardsList } = useBoardsApi(computed(() => wsId.value ?? ''))
 const toast = useToast()
 
 const data = computed(() => state.data.value)
 const integration = computed(() => data.value?.integration ?? null)
+const boards = computed(() => (boardsList.data.value?.boards ?? []).slice(0, BOARD_LINKS_LIMIT))
+const advanced = ref(false)
 const token = ref('')
 const signingSecret = ref('')
 const confirmDisconnect = ref(false)
@@ -104,63 +110,147 @@ async function copy(text: string) {
         </UBadge>
       </div>
 
-      <div v-if="data?.canManage" class="mt-4 space-y-4">
-        <div class="space-y-2">
-          <p class="text-xs font-medium text-muted">Карточки ссылок</p>
-          <p class="text-xs text-muted">
-            В карточке бота в Пачке: «Исходящий вебхук» → «Включить», адрес ниже, группа «Ссылки» → unfurl, домен Такта. Затем вставьте Signing secret.
-          </p>
-          <div class="flex items-center gap-2">
-            <UInput :model-value="integration.webhookUrl" readonly class="flex-1" />
-            <UButton icon="i-hugeicons-copy-01" color="neutral" variant="ghost" aria-label="Скопировать адрес" @click="copy(integration.webhookUrl)" />
-          </div>
-          <div class="flex items-center gap-2">
-            <UInput
-              v-model="signingSecret"
-              type="password"
-              :placeholder="integration.linkPreviews ? 'Секрет сохранён – вставьте новый, чтобы заменить' : 'Signing secret'"
-              class="flex-1"
-            />
-            <UButton v-if="integration.linkPreviews" color="neutral" variant="ghost" @click="removeSecret">Убрать</UButton>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <p class="text-xs font-medium text-muted">Заменить токен</p>
-          <UInput v-model="token" type="password" placeholder="Новый токен бота" class="w-full" />
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <UButton :loading="connect.isPending.value" :disabled="!token.trim() && !signingSecret.trim()" @click="save">Сохранить</UButton>
-          <UButton color="error" variant="ghost" @click="confirmDisconnect = true">Отключить</UButton>
-        </div>
-
-        <div class="border-t border-default pt-4">
-          <p class="mb-1 text-sm font-medium text-default">Пригласить команду</p>
-          <p class="mb-3 text-xs text-muted">
-            Бот напишет каждому, чья почта совпала с участником пространства, и попросит подтвердить привязку в Такте.
-          </p>
-          <p v-if="!integration.emailsVisible" class="text-xs text-muted">
-            Включите показ персональных данных в настройках пространства Пачки, иначе бот не видит почты.
-          </p>
-          <template v-else>
-            <p v-if="invitePreview" class="mb-2 text-sm text-default">
-              Найдено совпадений: {{ invitePreview.matched }} из {{ invitePreview.members }}, уже привязаны: {{ invitePreview.alreadyLinked }}
+      <h3 class="mt-5 mb-3 text-sm font-semibold text-default">Что дальше</h3>
+      <ol class="space-y-3">
+        <li class="flex gap-3">
+          <UIcon
+            :name="data?.me ? 'i-hugeicons-checkmark-circle-02' : 'i-hugeicons-circle'"
+            class="mt-0.5 size-5 shrink-0"
+            :class="data?.me ? 'text-success' : 'text-muted'"
+          />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-default">Привяжите свою Пачку</p>
+            <p class="text-xs text-muted">
+              Упоминания, назначения и ответы будут приходить в личку от бота. Каждый участник привязывается сам.
             </p>
-            <UButton v-if="!invitePreview" color="neutral" variant="soft" :loading="inviteAll.isPending.value" @click="previewInvite">
-              Найти совпадения
+            <p v-if="data?.me" class="mt-1 text-xs text-success">Привязано: {{ data.me.displayName }}</p>
+            <UButton v-else class="mt-2" size="sm" :to="pageRoutes.settings('notifications')">Привязать себя</UButton>
+          </div>
+        </li>
+
+        <li v-if="data?.canManage" class="flex gap-3">
+          <UIcon name="i-hugeicons-circle" class="mt-0.5 size-5 shrink-0 text-muted" />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-default">Включите ленту доски в чат команды</p>
+            <p class="text-xs text-muted">
+              Добавьте бота «{{ integration.botName }}» в нужный чат в Пачке, затем выберите доску: откроются её настройки на разделе «Лента в Пачку».
+            </p>
+            <div v-if="boards.length" class="mt-2 flex flex-wrap gap-2">
+              <UButton
+                v-for="b in boards"
+                :key="b.id"
+                size="sm"
+                color="neutral"
+                variant="soft"
+                :to="{ path: pageRoutes.board(wsId!, b.id), query: { settings: 'feed' } }"
+              >
+                {{ b.name }}
+              </UButton>
+            </div>
+            <p v-else class="mt-1 text-xs text-muted">Сначала создайте доску.</p>
+          </div>
+        </li>
+
+        <li v-if="data?.canManage" class="flex gap-3">
+          <UIcon name="i-hugeicons-circle" class="mt-0.5 size-5 shrink-0 text-muted" />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-default">Пригласите команду</p>
+            <p class="text-xs text-muted">
+              Бот напишет каждому, чья почта в Пачке совпала с почтой участника пространства, и попросит подтвердить привязку в Такте.
+            </p>
+            <p v-if="!integration.emailsVisible" class="mt-1 text-xs text-muted">
+              Включите показ персональных данных в настройках пространства Пачки, иначе бот не видит почты.
+            </p>
+            <template v-else>
+              <p v-if="invitePreview" class="mt-1 text-xs text-default">
+                Совпало по почте: {{ invitePreview.matched }} из {{ invitePreview.members }}, уже привязаны: {{ invitePreview.alreadyLinked }}
+              </p>
+              <UButton
+                v-if="!invitePreview"
+                class="mt-2"
+                size="sm"
+                color="neutral"
+                variant="soft"
+                :loading="inviteAll.isPending.value"
+                @click="previewInvite"
+              >
+                Найти совпадения
+              </UButton>
+              <UButton
+                v-else
+                class="mt-2"
+                size="sm"
+                :disabled="invitePreview.matched - invitePreview.alreadyLinked === 0"
+                :loading="inviteAll.isPending.value"
+                @click="sendInvite"
+              >
+                Предложить привязаться
+              </UButton>
+            </template>
+          </div>
+        </li>
+
+        <li v-if="data?.canManage" class="flex gap-3">
+          <UIcon
+            :name="integration.linkPreviews ? 'i-hugeicons-checkmark-circle-02' : 'i-hugeicons-circle'"
+            class="mt-0.5 size-5 shrink-0"
+            :class="integration.linkPreviews ? 'text-success' : 'text-muted'"
+          />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-default">Карточки ссылок (по желанию)</p>
+            <p class="text-xs text-muted">
+              Ссылка на задачу в чате превратится в карточку со статусом и исполнителем. Работает, только когда Такт доступен из интернета.
+            </p>
+            <UButton v-if="!integration.linkPreviews" class="mt-2" size="sm" color="neutral" variant="soft" @click="advanced = true">
+              Как настроить
             </UButton>
-            <UButton
-              v-else
-              :disabled="invitePreview.matched - invitePreview.alreadyLinked === 0"
-              :loading="inviteAll.isPending.value"
-              @click="sendInvite"
-            >
-              Предложить привязаться
-            </UButton>
-          </template>
-        </div>
-      </div>
+          </div>
+        </li>
+      </ol>
+
+      <UCollapsible v-if="data?.canManage" v-model:open="advanced" class="mt-5 border-t border-default pt-4">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :trailing-icon="advanced ? 'i-hugeicons-arrow-up-01' : 'i-hugeicons-arrow-down-01'"
+        >
+          Дополнительно
+        </UButton>
+        <template #content>
+          <div class="mt-3 space-y-4">
+            <div class="space-y-2">
+              <p class="text-xs font-medium text-muted">Вебхук для карточек ссылок</p>
+              <p class="text-xs text-muted">
+                В карточке бота в Пачке: «Исходящий вебхук» → «Включить», адрес ниже, группа «Ссылки» → unfurl, домен Такта. Затем вставьте Signing secret.
+              </p>
+              <div class="flex items-center gap-2">
+                <UInput :model-value="integration.webhookUrl" readonly class="flex-1" />
+                <UButton icon="i-hugeicons-copy-01" color="neutral" variant="ghost" aria-label="Скопировать адрес" @click="copy(integration.webhookUrl)" />
+              </div>
+              <div class="flex items-center gap-2">
+                <UInput
+                  v-model="signingSecret"
+                  type="password"
+                  :placeholder="integration.linkPreviews ? 'Секрет сохранён – вставьте новый, чтобы заменить' : 'Signing secret'"
+                  class="flex-1"
+                />
+                <UButton v-if="integration.linkPreviews" color="neutral" variant="ghost" @click="removeSecret">Убрать</UButton>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-xs font-medium text-muted">Заменить токен</p>
+              <UInput v-model="token" type="password" placeholder="Новый токен бота" class="w-full" />
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <UButton :loading="connect.isPending.value" :disabled="!token.trim() && !signingSecret.trim()" @click="save">Сохранить</UButton>
+              <UButton color="error" variant="ghost" @click="confirmDisconnect = true">Отключить Пачку</UButton>
+            </div>
+          </div>
+        </template>
+      </UCollapsible>
     </template>
 
     <template v-else-if="data?.canManage">

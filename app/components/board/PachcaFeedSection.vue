@@ -3,6 +3,9 @@ import { DEFAULT_FEED_EVENTS, FEED_EVENTS, type BoardFeedView, type FeedEvent, t
 
 const props = defineProps<{ workspaceId: string, boardId: string }>()
 
+const route = useRoute()
+const section = useTemplateRef<HTMLElement>('section')
+
 const FEED_EVENT_LABEL: Record<FeedEvent, string> = {
   task_closed: 'Задача закрыта',
   task_reopened: 'Задача переоткрыта',
@@ -17,6 +20,10 @@ const { state, chats } = usePachcaApi(wsId)
 const ready = computed(() => !!state.data.value?.canManage && state.data.value?.integration?.status === 'active')
 const { list, create, update, remove, test } = useBoardFeedsApi(wsId, computed(() => props.boardId), ready)
 const toast = useToast()
+
+watch(section, (el) => {
+  if (el && route.query.settings === 'feed') el.scrollIntoView({ block: 'start', behavior: 'smooth' })
+})
 
 const chatList = ref<PachcaChat[]>([])
 const chatId = ref<string | undefined>()
@@ -69,7 +76,7 @@ async function sendTest(feedId: string) {
 </script>
 
 <template>
-  <div v-if="ready" class="border-t border-default pt-4">
+  <div v-if="ready" ref="section" class="border-t border-default pt-4">
     <p class="mb-1 text-xs uppercase tracking-wide text-muted">Лента в Пачку</p>
     <p class="mb-3 text-sm text-muted">События доски в чат команды. Бот видит только чаты, куда его добавили.</p>
 
