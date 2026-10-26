@@ -22,6 +22,7 @@ import {
   ValidationError,
 } from '../utils/errors'
 import { requireMinRole, roleAtLeast, strictlyOutranks } from '../utils/rbac'
+import { dropLinks } from './messenger-links.service'
 
 export interface MemberView {
   userId: string
@@ -202,6 +203,7 @@ export async function removeMember(input: {
         ),
       )
   })
+  await dropLinks(input.workspaceId, input.targetUserId)
 }
 
 async function findMemberRow(workspaceId: string, userId: string) {

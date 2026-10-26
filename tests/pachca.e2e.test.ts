@@ -54,6 +54,19 @@ async function connect(owner: UserCtx, wsId: string, body: Record<string, unknow
   return fetchWithJar<{ integration: { status: string, tokenHint: string } }>(owner.jar, `/api/workspaces/${wsId}/integrations/pachca`, { method: 'PUT', body })
 }
 
+async function waitFor<T>(fn: () => T | undefined, ms = 5000): Promise<T | undefined> {
+  for (let t = 0; t < ms; t += 100) {
+    const v = fn()
+    if (v) return v
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+}
+
+async function linkRequestToken(): Promise<string> {
+  const msg = await waitFor(() => fake.state.messages.find(m => m.buttons?.[0]?.[0]?.url.includes('/integrations/pachca/confirm/')))
+  return msg!.buttons![0]![0]!.url.split('/').pop()!
+}
+
 describe('pachca client via fake', () => {
   it('fake answers token info for a known token', async () => {
     const res = await fetch(`${fake.url}/oauth/token/info`, { headers: { authorization: `Bearer ${BOT_TOKEN}` } })
@@ -111,6 +124,103 @@ describe('connect', () => {
     const del = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/integrations/pachca`, { method: 'DELETE' })
     expect(del.status).toBe(200)
     const rows = await getTestSql()`SELECT count(*)::int AS n FROM workspace_integrations WHERE workspace_id = ${wsId}`
+    expect(rows[0]!.n).toBe(0)
+  })
+})
+
+describe('links', () => {
+  it('single link: DM with confirm link, only the requester can confirm, once', async () => {
+    const owner = await registerUser('lo')
+    const other = await registerUser('lx')
+    const wsId = await workspaceOf(owner)
+    await addMember(owner, wsId, other.email, 'member')
+    fake.state.users.push({ id: 11, first_name: 'Иван', last_name: 'Петров', nickname: 'ivan', email: null, bot: false, suspended: false })
+    await connect(owner, wsId)
+
+    const req = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/integrations/pachca/link`, { method: 'POST', body: { pachcaUserId: '11' } })
+    expect(req.status).toBe(200)
+    const token = await linkRequestToken()
+    expect(fake.state.messages.at(-1)).toMatchObject({ entity_type: 'user', entity_id: 11 })
+
+    const foreign = await fetchWithJar<{ valid: boolean, reason?: string }>(other.jar, `/api/integrations/pachca/link/${token}`)
+    expect(foreign.body).toMatchObject({ valid: false, reason: 'other_user' })
+    expect((await fetchWithJar(other.jar, `/api/integrations/pachca/link/${token}`, { method: 'POST' })).status).toBe(403)
+
+    const inspect = await fetchWithJar(owner.jar, `/api/integrations/pachca/link/${token}`)
+    expect(inspect.body).toMatchObject({ valid: true, pachcaName: 'Иван Петров' })
+    expect((await fetchWithJar(owner.jar, `/api/integrations/pachca/link/${token}`, { method: 'POST' })).status).toBe(200)
+    expect((await fetchWithJar(owner.jar, `/api/integrations/pachca/link/${token}`, { method: 'POST' })).status).toBe(410)
+
+    const state = await fetchWithJar<{ me: { displayName: string, instantTypes: string[] } }>(owner.jar, `/api/workspaces/${wsId}/integrations/pachca`)
+    expect(state.body.me).toMatchObject({ displayName: 'Иван Петров' })
+    expect(state.body.me.instantTypes).toContain('mention')
+    expect(fake.state.messages.at(-1)!.content).toContain('Готово')
+  })
+
+  it('expired requests are refused', async () => {
+    const owner = await registerUser('le')
+    const wsId = await workspaceOf(owner)
+    fake.state.users.push({ id: 12, first_name: 'А', last_name: 'Б', nickname: 'ab', email: null, bot: false, suspended: false })
+    await connect(owner, wsId)
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/integrations/pachca/link`, { method: 'POST', body: { pachcaUserId: '12' } })
+    const token = await linkRequestToken()
+    await getTestSql()`UPDATE messenger_link_requests SET expires_at = now() - interval '1 minute'`
+    expect((await fetchWithJar(owner.jar, `/api/integrations/pachca/link/${token}`, { method: 'POST' })).status).toBe(410)
+  })
+
+  it('a Pachca user re-linking to another Takt account replaces the old link', async () => {
+    const owner = await registerUser('ra')
+    const second = await registerUser('rb')
+    const wsId = await workspaceOf(owner)
+    await addMember(owner, wsId, second.email, 'member')
+    fake.state.users.push({ id: 13, first_name: 'Общий', last_name: 'Аккаунт', nickname: 'shared', email: null, bot: false, suspended: false })
+    await connect(owner, wsId)
+    for (const u of [owner, second]) {
+      fake.state.messages.length = 0
+      await fetchWithJar(u.jar, `/api/workspaces/${wsId}/integrations/pachca/link`, { method: 'POST', body: { pachcaUserId: '13' } })
+      await fetchWithJar(u.jar, `/api/integrations/pachca/link/${await linkRequestToken()}`, { method: 'POST' })
+    }
+    const rows = await getTestSql()`SELECT user_id FROM messenger_accounts WHERE workspace_id = ${wsId}`
+    expect(rows.map(r => r.user_id)).toEqual([second.id])
+  })
+
+  it('bulk invite matches by email, skips linked, survives 429', async () => {
+    const owner = await registerUser('bo')
+    const a = await registerUser('ba')
+    const b = await registerUser('bb')
+    const wsId = await workspaceOf(owner)
+    await addMember(owner, wsId, a.email, 'member')
+    await addMember(owner, wsId, b.email, 'member')
+    fake.state.users.push(
+      { id: 21, first_name: 'A', last_name: 'A', nickname: 'a', email: a.email, bot: false, suspended: false },
+      { id: 22, first_name: 'B', last_name: 'B', nickname: 'b', email: b.email.toUpperCase(), bot: false, suspended: false },
+      { id: 23, first_name: 'C', last_name: 'C', nickname: 'c', email: 'stranger@pachca.test', bot: false, suspended: false },
+    )
+    await connect(owner, wsId)
+    const preview = await fetchWithJar<{ matched: number, members: number }>(owner.jar, `/api/workspaces/${wsId}/integrations/pachca/invite-all`, { method: 'POST', body: { dryRun: true } })
+    expect(preview.body).toMatchObject({ matched: 2, members: 3 })
+    expect(fake.state.messages).toHaveLength(0)
+
+    fake.fail('/messages', 429, 2)
+    const sent = await fetchWithJar<{ sent: number }>(owner.jar, `/api/workspaces/${wsId}/integrations/pachca/invite-all`, { method: 'POST', body: { dryRun: false } })
+    expect(sent.status).toBe(200)
+    expect(sent.body.sent).toBe(1)
+
+    const again = await fetchWithJar<{ sent: number }>(owner.jar, `/api/workspaces/${wsId}/integrations/pachca/invite-all`, { method: 'POST', body: { dryRun: false } })
+    expect(again.body.sent).toBe(2)
+  })
+
+  it('removing a member drops their link', async () => {
+    const owner = await registerUser('mo')
+    const member = await registerUser('mm')
+    const wsId = await workspaceOf(owner)
+    await addMember(owner, wsId, member.email, 'member')
+    fake.state.users.push({ id: 31, first_name: 'M', last_name: 'M', nickname: 'm', email: null, bot: false, suspended: false })
+    await connect(owner, wsId)
+    await fetchWithJar(member.jar, `/api/workspaces/${wsId}/integrations/pachca/link`, { method: 'POST', body: { pachcaUserId: '31' } })
+    await fetchWithJar(member.jar, `/api/integrations/pachca/link/${await linkRequestToken()}`, { method: 'POST' })
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/members/${member.id}`, { method: 'DELETE' })
+    const rows = await getTestSql()`SELECT count(*)::int AS n FROM messenger_accounts WHERE user_id = ${member.id}`
     expect(rows[0]!.n).toBe(0)
   })
 })
