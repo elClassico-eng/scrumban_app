@@ -1,43 +1,61 @@
-// Delivery of in-app notifications to external channels (email now; MAX or
-// Telegram later as one more entry in CHANNELS). Runs outside the request
-// transaction and never fails it: the in-app notification is the source of
-// truth, an external copy is best effort.
-import { eq } from 'drizzle-orm'
-import { notifications, users, type Notification } from '../db/schema'
-import { useDB, withUser } from './db'
+import { and, eq } from 'drizzle-orm'
+import { messengerAccounts, notifications, users, type Notification } from '../db/schema'
+import { withPachca } from '../services/integrations.service'
+import { useDB, withTenant, withUser } from './db'
 import { sendEmail } from './email'
-import { notificationEmail, notificationLink } from './notification-emails'
+import { describeNotification, notificationEmail, notificationLink } from './notification-emails'
+import { pachca, PachcaError } from './pachca/client'
+import { notificationMarkdown } from './pachca/format'
 import { displayName } from '#shared/utils/display-name'
 
 type Recipient = typeof users.$inferSelect
 
 type ExternalChannel = {
   id: string
-  wants(recipient: Recipient, notification: Notification): boolean
   deliver(recipient: Recipient, notification: Notification, actorName: string | null): Promise<void>
 }
 
 const emailChannel: ExternalChannel = {
   id: 'email',
-  wants: (r, n) => !!r.emailVerifiedAt && (r.emailPrefs.instant as string[]).includes(n.type),
   async deliver(r, n, actorName) {
-    const mail = notificationEmail({
-      type: n.type,
-      payload: n.payload as Record<string, unknown>,
-      actorName,
-      link: notificationLink(n.workspaceId, n.payload as Record<string, unknown>),
-    })
-    await sendEmail({ to: r.email, ...mail })
+    if (!r.emailVerifiedAt || !(r.emailPrefs.instant as string[]).includes(n.type)) return
+    const payload = n.payload as Record<string, unknown>
+    await sendEmail({ to: r.email, ...notificationEmail({ type: n.type, payload, actorName, link: notificationLink(n.workspaceId, payload) }) })
   },
 }
 
-const CHANNELS: ExternalChannel[] = [emailChannel]
+const pachcaChannel: ExternalChannel = {
+  id: 'pachca',
+  async deliver(r, n, actorName) {
+    const link = await withTenant(n.workspaceId, tx =>
+      tx.select().from(messengerAccounts)
+        .where(and(eq(messengerAccounts.workspaceId, n.workspaceId), eq(messengerAccounts.userId, r.id), eq(messengerAccounts.provider, 'pachca')))
+        .then(rows => rows[0]),
+    )
+    if (!link || !(link.instantTypes as string[]).includes(n.type)) return
+    const payload = n.payload as Record<string, unknown>
+    try {
+      await withPachca(n.workspaceId, ctx => pachca.sendMessage(ctx.token, {
+        entityType: 'user',
+        entityId: Number(link.externalId),
+        content: notificationMarkdown(describeNotification(n.type, payload, actorName)),
+        buttons: [[{ text: 'Открыть в Такте', url: notificationLink(n.workspaceId, payload) }]],
+      }))
+    }
+    catch (err) {
+      if (err instanceof PachcaError && err.kind === 'not_found') {
+        await withTenant(n.workspaceId, tx => tx.delete(messengerAccounts).where(eq(messengerAccounts.id, link.id)))
+        return
+      }
+      throw err
+    }
+  },
+}
+
+const CHANNELS: ExternalChannel[] = [emailChannel, pachcaChannel]
 
 const RETRY_DELAYS_MS = [0, 500, 2000]
 
-// The caller's transaction may not have committed yet, so the row is re-read
-// on a fresh connection with a few short retries; a rolled-back notification
-// simply never shows up and nothing is sent.
 export function deliverExternally(input: { notificationId: string, userId: string }): void {
   void (async () => {
     for (const delay of RETRY_DELAYS_MS) {
@@ -55,14 +73,12 @@ export function deliverExternally(input: { notificationId: string, userId: strin
 async function sendToChannels(n: Notification): Promise<void> {
   const [recipient] = await useDB().select().from(users).where(eq(users.id, n.userId))
   if (!recipient) return
-  const channels = CHANNELS.filter(c => c.wants(recipient, n))
-  if (!channels.length) return
   const actorId = (n.payload as { actorId?: unknown }).actorId
   const [actor] = typeof actorId === 'string'
     ? await useDB().select().from(users).where(eq(users.id, actorId))
     : []
   const actorName = actor ? displayName(actor) : null
-  for (const channel of channels) {
+  for (const channel of CHANNELS) {
     try {
       await channel.deliver(recipient, n, actorName)
     }

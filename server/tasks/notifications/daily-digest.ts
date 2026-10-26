@@ -1,12 +1,13 @@
-import { sendDailyDigests } from '../../services/digest.service'
+import { sendDailyDigests, sendPachcaDigests } from '../../services/digest.service'
 
 export default defineTask({
   meta: {
     name: 'notifications:daily-digest',
-    description: 'Send the morning email digest to everyone who has it on',
+    description: 'Send the morning digest by email and to linked Pachca accounts',
   },
   async run() {
-    const result = await sendDailyDigests()
-    return { result: 'success', ...result }
+    const pachcaResult = await sendPachcaDigests()
+    const email = await sendDailyDigests()
+    return { result: 'success', ...email, pachca: pachcaResult.sent }
   },
 })

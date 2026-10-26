@@ -224,3 +224,81 @@ describe('links', () => {
     expect(rows[0]!.n).toBe(0)
   })
 })
+
+async function linkedPair() {
+  const owner = await registerUser('no')
+  const dev = await registerUser('nd')
+  const wsId = await workspaceOf(owner)
+  await addMember(owner, wsId, dev.email, 'member')
+  fake.state.users.push({ id: 41, first_name: 'Дев', last_name: 'Девов', nickname: 'dev', email: null, bot: false, suspended: false })
+  await connect(owner, wsId)
+  await fetchWithJar(dev.jar, `/api/workspaces/${wsId}/integrations/pachca/link`, { method: 'POST', body: { pachcaUserId: '41' } })
+  await fetchWithJar(dev.jar, `/api/integrations/pachca/link/${await linkRequestToken()}`, { method: 'POST' })
+  const board = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body: { name: 'Main', slug: 'main' } })
+  const cols = await fetchWithJar<{ columns: { id: string, columnRole: string }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${board.body.board.id}/columns`)
+  fake.state.messages.length = 0
+  return { owner, dev, wsId, boardId: board.body.board.id, backlog: cols.body.columns.find(c => c.columnRole === 'backlog')!.id }
+}
+
+describe('notifications', () => {
+  it('assignment reaches the linked DM with names and a button', async () => {
+    const { owner, dev, wsId, boardId, backlog } = await linkedPair()
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+      method: 'POST',
+      body: { columnId: backlog, title: 'Починить оплату', assigneeId: dev.id },
+    })
+    const msg = await waitFor(() => fake.state.messages.find(m => m.entity_id === 41))
+    expect(msg!.content).toContain('Починить оплату')
+    expect(msg!.buttons![0]![0]!.text).toBe('Открыть в Такте')
+  })
+
+  it('a disabled type is not sent', async () => {
+    const { owner, dev, wsId, boardId, backlog } = await linkedPair()
+    await fetchWithJar(dev.jar, `/api/workspaces/${wsId}/integrations/pachca/me`, { method: 'PATCH', body: { instantTypes: ['mention'] } })
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+      method: 'POST',
+      body: { columnId: backlog, title: 'Тихо', assigneeId: dev.id },
+    })
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    expect(fake.state.messages.filter(m => m.entity_id === 41)).toHaveLength(0)
+  })
+
+  it('a revoked token flips the integration to error once and stops sending', async () => {
+    const { owner, dev, wsId, boardId, backlog } = await linkedPair()
+    fake.state.tokens.delete(BOT_TOKEN)
+    for (const title of ['Раз', 'Два']) {
+      await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+        method: 'POST',
+        body: { columnId: backlog, title, assigneeId: dev.id },
+      })
+    }
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    const state = await fetchWithJar<{ integration: { status: string } }>(owner.jar, `/api/workspaces/${wsId}/integrations/pachca`)
+    expect(state.body.integration.status).toBe('error')
+    const notes = await getTestSql()`SELECT count(*)::int AS n FROM notifications WHERE type = 'integration_failed' AND user_id = ${owner.id}`
+    expect(notes[0]!.n).toBe(1)
+
+    fake.state.tokens.set(BOT_TOKEN, { userId: BOT_ID, scopes: ALL_SCOPES })
+    await connect(owner, wsId)
+    const restored = await fetchWithJar<{ integration: { status: string } }>(owner.jar, `/api/workspaces/${wsId}/integrations/pachca`)
+    expect(restored.body.integration.status).toBe('active')
+  })
+
+  it('digest goes to Pachca only when switched on', async () => {
+    const { owner, dev, wsId, boardId, backlog } = await linkedPair()
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+      method: 'POST',
+      body: { columnId: backlog, title: 'Горит', assigneeId: dev.id, dueDate: new Date(Date.now() - 2 * 86_400_000).toISOString() },
+    })
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    fake.state.messages.length = 0
+    await fetchWithJar(owner.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST' })
+    expect(fake.state.messages.filter(m => m.content.includes('Доброе утро'))).toHaveLength(0)
+
+    await fetchWithJar(dev.jar, `/api/workspaces/${wsId}/integrations/pachca/me`, { method: 'PATCH', body: { digest: true } })
+    await getTestSql()`UPDATE users SET digest_sent_at = NULL`
+    await fetchWithJar(owner.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST' })
+    const digest = fake.state.messages.find(m => m.entity_id === 41 && m.content.includes('Доброе утро'))
+    expect(digest!.content).toContain('Горит')
+  })
+})

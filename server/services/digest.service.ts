@@ -1,10 +1,9 @@
-// Morning email digest: what is burning for me and what changed in tasks I
-// watch, one letter across all my workspaces. Sent only to verified emails
-// with the digest switched on, and only when there is something to say.
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
-import { boards, notifications, taskAssignees, tasks, users } from '../db/schema'
+import { boards, messengerAccounts, notifications, taskAssignees, tasks, users, workspaces } from '../db/schema'
 import { useDB, withTenant, withUser } from '../utils/db'
 import { sendEmail } from '../utils/email'
+import { pachca } from '../utils/pachca/client'
+import { digestMarkdown } from '../utils/pachca/format'
 import {
   describeNotification,
   digestEmail,
@@ -13,6 +12,7 @@ import {
   type DigestSection,
   type DigestWorkspace,
 } from '../utils/notification-emails'
+import { withPachca } from './integrations.service'
 import { listWorkspacesForUser } from './workspaces.service'
 import { PRIMARY_TYPES } from '#shared/utils/notification-category'
 import { displayName } from '#shared/utils/display-name'
@@ -109,11 +109,11 @@ async function inboxSections(workspaceId: string, userId: string, since: Date, n
   ].filter((s): s is DigestSection => s !== null)
 }
 
-export async function buildDigest(recipient: Recipient, now: Date): Promise<DigestWorkspace[]> {
+export async function buildDigest(recipient: Recipient, now: Date, onlyWorkspaceId?: string): Promise<DigestWorkspace[]> {
   const since = recipient.digestSentAt ?? new Date(now.getTime() - DAY_MS)
-  const workspaces = await listWorkspacesForUser(recipient.id)
+  const memberships = (await listWorkspacesForUser(recipient.id)).filter(ws => !onlyWorkspaceId || ws.id === onlyWorkspaceId)
   const out: DigestWorkspace[] = []
-  for (const ws of workspaces) {
+  for (const ws of memberships) {
     const sections = [
       ...await taskSections(ws.id, recipient.id, now),
       ...await inboxSections(ws.id, recipient.id, since, now),
@@ -145,4 +145,31 @@ export async function sendDailyDigests(now = new Date()): Promise<{ sent: number
     }
   }
   return { sent, skipped }
+}
+
+export async function sendPachcaDigests(now = new Date()): Promise<{ sent: number }> {
+  let sent = 0
+  const wsList = await useDB().select({ id: workspaces.id }).from(workspaces)
+  for (const ws of wsList) {
+    const links = await withTenant(ws.id, tx =>
+      tx.select().from(messengerAccounts)
+        .where(and(eq(messengerAccounts.workspaceId, ws.id), eq(messengerAccounts.provider, 'pachca'), eq(messengerAccounts.digest, true))),
+    )
+    for (const link of links) {
+      try {
+        const [recipient] = await useDB().select().from(users).where(eq(users.id, link.userId))
+        if (!recipient) continue
+        const [part] = await buildDigest(recipient, now, ws.id)
+        if (!part) continue
+        const ok = await withPachca(ws.id, ctx =>
+          pachca.sendMessage(ctx.token, { entityType: 'user', entityId: Number(link.externalId), content: digestMarkdown(part) }),
+        )
+        if (ok) sent++
+      }
+      catch (err) {
+        console.warn('[digest] pachca failed for user', link.userId, err)
+      }
+    }
+  }
+  return { sent }
 }
