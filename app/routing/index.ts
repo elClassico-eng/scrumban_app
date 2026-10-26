@@ -205,6 +205,7 @@ export type SettingsTab =
   | 'appearance'
   | 'danger'
   | 'team'
+  | 'integrations'
 
 export const pageRoutes = {
   home: '/',

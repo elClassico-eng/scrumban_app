@@ -27,6 +27,7 @@ const TITLE: Record<NotificationType, string> = {
   replenishment_overdue: 'Пора пополнить бэклог',
   sprint_forecast_drop: 'Прогноз спринта упал',
   automation: 'Сработала автоматизация',
+  integration_failed: 'Интеграция перестала работать',
 }
 
 export function describeNotification(type: NotificationType, payload: Payload, actorName: string | null) {

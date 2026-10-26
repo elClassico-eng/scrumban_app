@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DEFAULT_EMAIL_PREFS, INSTANT_EMAIL_TYPES, type InstantEmailType } from '#shared/types/notification'
+import { DEFAULT_EMAIL_PREFS, INSTANT_NOTIFICATION_TYPES, type InstantNotificationType } from '#shared/types/notification'
 import type { UpdateUserProfileInput } from '#shared/types/auth'
 
 const { me, update } = useProfileApi()
@@ -16,7 +16,7 @@ function toggleDigest(enabled: boolean) {
   save({ emailPrefs: { ...emailPrefs.value, digest: enabled } })
 }
 
-function toggleInstant(type: InstantEmailType, enabled: boolean) {
+function toggleInstant(type: InstantNotificationType, enabled: boolean) {
   const instant = emailPrefs.value.instant.filter(t => t !== type)
   save({ emailPrefs: { ...emailPrefs.value, instant: enabled ? [...instant, type] : instant } })
 }
@@ -65,11 +65,11 @@ function save(patch: UpdateUserProfileInput) {
       </div>
       <p class="pt-4 pb-1 text-xs font-medium text-muted">Сразу письмом, не дожидаясь дайджеста</p>
       <div
-        v-for="type in INSTANT_EMAIL_TYPES"
+        v-for="type in INSTANT_NOTIFICATION_TYPES"
         :key="type"
         class="flex items-center justify-between gap-4 py-2.5"
       >
-        <span class="text-sm text-default">{{ INSTANT_EMAIL_LABEL[type] }}</span>
+        <span class="text-sm text-default">{{ INSTANT_NOTIFICATION_LABEL[type] }}</span>
         <USwitch
           :model-value="emailPrefs.instant.includes(type)"
           @update:model-value="toggleInstant(type, $event)"

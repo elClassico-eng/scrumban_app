@@ -14,6 +14,7 @@ export const notificationType = pgEnum('notification_type', [
   'comment_assigned',
   'watched_comment',
   'watched_status',
+  'integration_failed',
 ])
 
 export const notifications = pgTable(

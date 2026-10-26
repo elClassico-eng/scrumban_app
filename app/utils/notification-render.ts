@@ -190,6 +190,15 @@ export function renderNotification(n: Notification): RenderedNotification {
         icon: 'i-hugeicons-message-user-01',
         color: BLUE,
       }
+    case 'integration_failed':
+      return {
+        title: 'Пачка перестала принимать сообщения',
+        why: String(p.message ?? 'Проверьте токен бота'),
+        cta: 'Открыть интеграции',
+        target: pageRoutes.settings('integrations'),
+        icon: 'i-hugeicons-plug-socket',
+        color: ACCENT,
+      }
   }
 }
 
