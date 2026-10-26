@@ -3,9 +3,9 @@ import { boardColumns, boards, tasks, users } from '../db/schema'
 import { useDB, withTenant } from '../utils/db'
 import { UnauthorizedError } from '../utils/errors'
 import { appUrl } from '../utils/notification-emails'
-import { pachca } from '../utils/pachca/client'
+import { pachca, PachcaError } from '../utils/pachca/client'
 import { parseTaktLink, verifyPachcaSignature } from '../utils/pachca/webhook'
-import { loadPachca } from './integrations.service'
+import { loadPachca, markPachcaFailed } from './integrations.service'
 import { formatTaskKey } from '#shared/utils/board-key'
 import { displayName } from '#shared/utils/display-name'
 
@@ -71,5 +71,13 @@ export async function handlePachcaWebhook(input: { workspaceId: string, raw: str
       : await boardPreview(input.workspaceId, parsed.boardId)
     if (preview) previews[link.url] = preview
   }
-  if (Object.keys(previews).length) await pachca.linkPreviews(ctx.token, body.message_id, previews)
+  if (!Object.keys(previews).length) return
+  try {
+    await pachca.linkPreviews(ctx.token, body.message_id, previews)
+  }
+  catch (err) {
+    if (!(err instanceof PachcaError)) throw err
+    if (err.kind === 'unauthorized') await markPachcaFailed(input.workspaceId, 'Пачка не принимает токен бота: его отозвали или бота удалили')
+    console.warn('[pachca] link previews rejected', err.kind, err.message)
+  }
 }

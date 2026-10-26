@@ -84,8 +84,6 @@ export function pachcaUserName(u: PachcaUser): string {
 export const pachca = {
   tokenInfo: (token: string) =>
     call<{ data: { user_id: number, scopes: string[] } }>(token, 'GET', '/oauth/token/info').then(r => r.data),
-  profile: (token: string) =>
-    call<{ data: PachcaUser }>(token, 'GET', '/profile').then(r => r.data),
   user: (token: string, id: string) =>
     call<{ data: PachcaUser }>(token, 'GET', `/users/${id}`).then(r => r.data),
   users: (token: string, opts: { query?: string, limit?: number, cursor?: string }) =>

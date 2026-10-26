@@ -215,26 +215,24 @@ async function runFeed(feed: BoardFeed, boardName: string, now: Date): Promise<b
     return false
   }
   try {
-    const sent = await withPachca(feed.workspaceId, async (ctx) => {
-      if (items.length) {
-        await pachca.sendMessage(ctx.token, { entityType: 'discussion', entityId: Number(feed.chatId), content: feedMarkdown(boardName, items) })
-      }
-      if (standupDue) {
-        const digest = await computeDailyDigest({ workspaceId: feed.workspaceId, boardId: feed.boardId, actorRole: 'admin' })
-        await pachca.sendMessage(ctx.token, {
-          entityType: 'discussion',
-          entityId: Number(feed.chatId),
-          content: standupMarkdown(boardName, digest, boardLink(feed.workspaceId, feed.boardId)),
-        })
-      }
-      return true
+    if (items.length) {
+      const sent = await withPachca(feed.workspaceId, ctx =>
+        pachca.sendMessage(ctx.token, { entityType: 'discussion', entityId: Number(feed.chatId), content: feedMarkdown(boardName, items) }),
+      )
+      if (!sent) return false
+    }
+    await withTenant(feed.workspaceId, tx => tx.update(boardFeeds).set({ cursor, failingSince: null }).where(eq(boardFeeds.id, feed.id)))
+    if (!standupDue) return true
+    const standupSent = await withPachca(feed.workspaceId, async (ctx) => {
+      const digest = await computeDailyDigest({ workspaceId: feed.workspaceId, boardId: feed.boardId, actorRole: 'admin' })
+      return pachca.sendMessage(ctx.token, {
+        entityType: 'discussion',
+        entityId: Number(feed.chatId),
+        content: standupMarkdown(boardName, digest, boardLink(feed.workspaceId, feed.boardId)),
+      })
     })
-    if (!sent) return false
-    await withTenant(feed.workspaceId, tx => tx.update(boardFeeds).set({
-      cursor,
-      failingSince: null,
-      ...(standupDue ? { standupSentOn: msk.day } : {}),
-    }).where(eq(boardFeeds.id, feed.id)))
+    if (!standupSent) return items.length > 0
+    await withTenant(feed.workspaceId, tx => tx.update(boardFeeds).set({ standupSentOn: msk.day }).where(eq(boardFeeds.id, feed.id)))
     return true
   }
   catch (err) {

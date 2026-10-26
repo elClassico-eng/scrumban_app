@@ -58,6 +58,8 @@ services:
       SMTP_FROM: ${SMTP_FROM:-Такт <noreply@takt34.tech>}
       LEADS_NOTIFY_EMAIL: ${LEADS_NOTIFY_EMAIL:-}
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      INTEGRATIONS_SECRET: ${INTEGRATIONS_SECRET:-}
+      PACHCA_API_BASE: ${PACHCA_API_BASE:-https://api.pachca.com/api/shared/v1}
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s

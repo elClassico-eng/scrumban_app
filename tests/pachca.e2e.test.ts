@@ -27,6 +27,7 @@ beforeEach(async () => {
   await resetDb()
   fake.reset()
   fake.state.tokens.set(BOT_TOKEN, { userId: BOT_ID, scopes: ALL_SCOPES })
+  fake.state.users.push({ id: BOT_ID, first_name: 'Такт', last_name: '', nickname: 'takt_bot', email: null, bot: true, suspended: false })
 })
 
 type UserCtx = { email: string, jar: CookieJar, id: string }
@@ -77,6 +78,27 @@ describe('pachca client via fake', () => {
 })
 
 describe('connect', () => {
+  it('connects with exactly the documented scopes', async () => {
+    const owner = await registerUser('scope')
+    const wsId = await workspaceOf(owner)
+    fake.state.tokens.set('minimal-token-01', { userId: 902, scopes: ['messages:create', 'users:read', 'chats:read'] })
+    fake.state.users.push({ id: 902, first_name: 'Такт', last_name: '', nickname: 'takt_bot', email: null, bot: true, suspended: false })
+    const res = await connect(owner, wsId, { token: 'minimal-token-01' })
+    expect(res.status).toBe(200)
+    expect(res.body.integration).toMatchObject({ status: 'active' })
+  })
+
+  it('refuses a signing secret when the token cannot write link previews', async () => {
+    const owner = await registerUser('lp')
+    const wsId = await workspaceOf(owner)
+    fake.state.tokens.set('minimal-token-02', { userId: 903, scopes: ['messages:create', 'users:read', 'chats:read'] })
+    fake.state.users.push({ id: 903, first_name: 'Такт', last_name: '', nickname: 'takt_bot', email: null, bot: true, suspended: false })
+    await connect(owner, wsId, { token: 'minimal-token-02' })
+    const res = await connect(owner, wsId, { signingSecret: 'whsec-12345678' })
+    expect(res.status).toBe(422)
+    expect(JSON.stringify(res.body)).toContain('link_previews:write')
+  })
+
   it('saves an encrypted token and never returns it', async () => {
     const owner = await registerUser('owner')
     const wsId = await workspaceOf(owner)
@@ -331,6 +353,20 @@ async function runFeeds(owner: UserCtx) {
 }
 
 describe('feeds', () => {
+  it('a failed standup does not re-post the already sent batch', async () => {
+    const msk = new Date(Date.now() + 3 * 3_600_000).getUTCDay()
+    if (msk === 0 || msk === 6) return
+    const ctx = await feedSetup()
+    await fetchWithJar(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards/${ctx.boardId}/feeds/${ctx.feedId}`, { method: 'PATCH', body: { standupTime: '00:00' } })
+    await createAndClose(ctx, 'Однажды')
+    fake.state.messages.length = 0
+    fake.fail('/messages', 500, 1, 1)
+    await runFeeds(ctx.owner)
+    await runFeeds(ctx.owner)
+    expect(fake.state.messages.filter(m => m.content.includes('Однажды'))).toHaveLength(1)
+    expect(fake.state.messages.filter(m => m.content.includes('Сводка к стендапу'))).toHaveLength(1)
+  })
+
   it('rejects a chat the bot is not in, and members cannot create feeds', async () => {
     const ctx = await feedSetup()
     expect(ctx.feedStatus).toBe(200)
@@ -404,6 +440,17 @@ async function postWebhook(wsId: string, raw: string, signature: string | null) 
 }
 
 describe('link previews', () => {
+  it('answers 200 even when Pachca rejects the preview', async () => {
+    const owner = await registerUser('wf')
+    const wsId = await workspaceOf(owner)
+    await connect(owner, wsId, { token: BOT_TOKEN, signingSecret: 'whsec-12345678' })
+    const board = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body: { name: 'Поток', slug: 'potok' } })
+    const url = `${APP}/workspaces/${wsId}/boards/${board.body.board.id}`
+    fake.fail('/messages/', 422, 1)
+    const { raw, signature } = signedWebhook('whsec-12345678', { type: 'message', event: 'link_shared', message_id: 779, links: [{ url, domain: 'x', skip: false }] })
+    expect((await postWebhook(wsId, raw, signature)).status).toBe(200)
+  })
+
   it('creates a preview for a task link in the same workspace', async () => {
     const owner = await registerUser('wo')
     const wsId = await workspaceOf(owner)

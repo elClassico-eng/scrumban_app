@@ -12,13 +12,14 @@ import {
 import { useDB, withTenant } from '../utils/db'
 import { NotFoundError, ValidationError } from '../utils/errors'
 import { appUrl } from '../utils/notification-emails'
-import { pachca, PachcaError } from '../utils/pachca/client'
+import { pachca, pachcaUserName, PachcaError } from '../utils/pachca/client'
 import { roleAtLeast, requireMinRole } from '../utils/rbac'
 import { openSecret, sealSecret, secretsAvailable } from '../utils/secret-box'
 import { emitNotification } from './notifications.service'
 import type { PachcaIntegrationView, PachcaStateResponse } from '#shared/types/integrations'
 
 export const REQUIRED_SCOPES = ['messages:create', 'users:read', 'chats:read']
+export const LINK_PREVIEW_SCOPE = 'link_previews:write'
 
 export type PachcaCtx = {
   workspaceId: string
@@ -53,24 +54,48 @@ async function findRow(workspaceId: string): Promise<WorkspaceIntegration | unde
   )
 }
 
+function missingScopesError(missing: string[]): ValidationError {
+  return new ValidationError(`У токена бота нет прав: ${missing.join(', ')}. Включите их в настройках бота в Пачке`)
+}
+
+function tokenError(err: unknown): unknown {
+  if (!(err instanceof PachcaError)) return err
+  if (err.kind === 'unauthorized') return new ValidationError('Пачка не приняла токен. Проверьте, что скопировали токен бота целиком')
+  if (err.kind === 'forbidden') return new ValidationError(`Пачка запретила запрос этим токеном: ${err.message}. Проверьте права бота`)
+  return new ValidationError(`Не удалось проверить токен: ${err.message}`)
+}
+
+async function botName(token: string, botUserId: number): Promise<string> {
+  try {
+    return pachcaUserName(await pachca.user(token, String(botUserId)))
+  }
+  catch (err) {
+    if (err instanceof PachcaError && err.kind === 'not_found') return 'Бот Пачки'
+    throw err
+  }
+}
+
 async function verifyToken(token: string) {
   try {
     const info = await pachca.tokenInfo(token)
     const missing = REQUIRED_SCOPES.filter(s => !info.scopes.includes(s))
-    if (missing.length) {
-      throw new ValidationError(`У токена бота нет прав: ${missing.join(', ')}. Включите их в настройках бота в Пачке`)
-    }
-    const profile = await pachca.profile(token)
+    if (missing.length) throw missingScopesError(missing)
     const { users } = await pachca.users(token, { limit: 50 })
     const emailsVisible = users.some(u => !u.bot && u.id !== info.user_id && !!u.email)
-    return { botUserId: String(info.user_id), botName: profile.first_name || profile.nickname, emailsVisible }
+    return { botUserId: String(info.user_id), botName: await botName(token, info.user_id), emailsVisible }
   }
   catch (err) {
-    if (err instanceof PachcaError && (err.kind === 'unauthorized' || err.kind === 'forbidden')) {
-      throw new ValidationError('Пачка не приняла токен. Проверьте, что скопировали токен бота целиком')
-    }
-    if (err instanceof PachcaError) throw new ValidationError(`Не удалось проверить токен: ${err.message}`)
-    throw err
+    throw tokenError(err)
+  }
+}
+
+async function assertCanWritePreviews(token: string): Promise<void> {
+  try {
+    const info = await pachca.tokenInfo(token)
+    if (!info.scopes.includes(LINK_PREVIEW_SCOPE)) throw missingScopesError([LINK_PREVIEW_SCOPE])
+  }
+  catch (err) {
+    throw tokenError(err)
   }
 }
 
@@ -117,6 +142,10 @@ export async function connectPachca(input: {
         lastError: null,
       }))
     : null
+  if (typeof input.signingSecret === 'string') {
+    const activeToken = token ?? (existing ? openSecret(existing.botTokenEnc) : null)
+    if (activeToken) await assertCanWritePreviews(activeToken)
+  }
   const secretFields = input.signingSecret === undefined
     ? {}
     : { signingSecretEnc: input.signingSecret === null ? null : sealSecret(input.signingSecret) }

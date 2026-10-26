@@ -11,13 +11,13 @@ export type FakeState = {
   chats: { id: number, name: string }[]
   messages: FakeMessage[]
   previews: FakePreview[]
-  failures: { path: string, status: number, left: number }[]
+  failures: { path: string, status: number, left: number, skip: number }[]
 }
 
 export type FakePachca = {
   url: string
   state: FakeState
-  fail: (path: string, status: number, times?: number) => void
+  fail: (path: string, status: number, times?: number, after?: number) => void
   reset: () => void
   close: () => Promise<void>
 }
@@ -45,7 +45,8 @@ export async function startFakePachca(): Promise<FakePachca> {
       res.end(body === undefined ? '' : JSON.stringify(body))
     }
     const failure = state.failures.find(f => url.pathname.startsWith(f.path) && f.left > 0)
-    if (failure) {
+    if (failure && failure.skip > 0) failure.skip--
+    else if (failure) {
       failure.left--
       return send(failure.status, { errors: [{ message: 'fake failure' }] })
     }
@@ -57,6 +58,7 @@ export async function startFakePachca(): Promise<FakePachca> {
       return send(200, { data: { user_id: owner.userId, scopes: owner.scopes } })
     }
     if (req.method === 'GET' && url.pathname === '/profile') {
+      if (!owner.scopes.includes('profile:read')) return send(403, { errors: [{ message: 'scope profile:read required' }] })
       return send(200, { data: { id: owner.userId, first_name: 'Такт', last_name: '', nickname: 'takt_bot', email: null, bot: true, suspended: false } })
     }
     if (req.method === 'GET' && url.pathname.startsWith('/users/')) {
@@ -96,8 +98,8 @@ export async function startFakePachca(): Promise<FakePachca> {
     get state() {
       return state
     },
-    fail: (path, status, times = 1) => {
-      state.failures.push({ path, status, left: times })
+    fail: (path, status, times = 1, after = 0) => {
+      state.failures.push({ path, status, left: times, skip: after })
     },
     reset: () => {
       state = fresh()
