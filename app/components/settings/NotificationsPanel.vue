@@ -76,5 +76,6 @@ function save(patch: UpdateUserProfileInput) {
         />
       </div>
     </div>
+    <SettingsPachcaLinkBlock />
   </section>
 </template>
