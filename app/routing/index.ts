@@ -26,6 +26,9 @@ export const apiRoutes = {
 
   workspaces: '/api/workspaces',
   workspace: (id: string) => `/api/workspaces/${id}`,
+  pachca: (wsId: string) => `/api/workspaces/${wsId}/integrations/pachca`,
+  pachcaLinkToken: (token: string) => `/api/integrations/pachca/link/${token}`,
+  boardFeeds: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/feeds`,
   workspaceLabel: (wsId: string) => `/api/workspaces/${wsId}/label`,
 
   members: (wsId: string) => `/api/workspaces/${wsId}/members`,

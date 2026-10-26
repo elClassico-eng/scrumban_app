@@ -20,6 +20,7 @@ const accountItems: Item[] = [
 
 const teamItems: Item[] = [
   { key: 'team', label: 'Команда', icon: 'i-hugeicons-users' },
+  { key: 'integrations', label: 'Интеграции', icon: 'i-hugeicons-plug-socket' },
 ]
 
 const groups = computed(() => [

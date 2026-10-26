@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SettingsTab } from '~/routing'
 
-const TABS: SettingsTab[] = ['profile', 'security', 'notifications', 'appearance', 'danger', 'team']
+const TABS: SettingsTab[] = ['profile', 'security', 'notifications', 'appearance', 'danger', 'team', 'integrations']
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +39,7 @@ useHead({ title: 'Настройки – Такт' })
         <SettingsAppearancePanel v-else-if="tab === 'appearance'" />
         <SettingsDangerPanel v-else-if="tab === 'danger'" />
         <SettingsTeamPanel v-else-if="tab === 'team'" />
+        <SettingsIntegrationsPanel v-else-if="tab === 'integrations'" />
       </div>
     </div>
   </div>
