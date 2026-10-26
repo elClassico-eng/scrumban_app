@@ -1,7 +1,8 @@
+import { createHmac } from 'node:crypto'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { setup } from '@nuxt/test-utils/e2e'
 import { closeTestSql, getTestSql, resetDb } from './helpers/db'
-import { CookieJar, fetchWithJar } from './helpers/http'
+import { baseUrl, CookieJar, fetchWithJar } from './helpers/http'
 import { ALL_SCOPES, startFakePachca } from './helpers/fake-pachca'
 import { TEST_URL } from './setup.global'
 
@@ -386,5 +387,61 @@ describe('feeds', () => {
     const standups = fake.state.messages.filter(m => m.content.includes('Сводка к стендапу'))
     const msk = new Date(Date.now() + 3 * 3_600_000).getUTCDay()
     expect(standups).toHaveLength(msk === 0 || msk === 6 ? 0 : 1)
+  })
+})
+
+function signedWebhook(secret: string, body: Record<string, unknown>) {
+  const raw = JSON.stringify({ ...body, webhook_timestamp: Math.floor(Date.now() / 1000) })
+  return { raw, signature: createHmac('sha256', secret).update(raw).digest('hex') }
+}
+
+async function postWebhook(wsId: string, raw: string, signature: string | null) {
+  return fetch(`${baseUrl()}/api/integrations/pachca/${wsId}/webhook`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(signature ? { 'pachca-signature': signature } : {}) },
+    body: raw,
+  })
+}
+
+describe('link previews', () => {
+  it('creates a preview for a task link in the same workspace', async () => {
+    const owner = await registerUser('wo')
+    const wsId = await workspaceOf(owner)
+    await connect(owner, wsId, { token: BOT_TOKEN, signingSecret: 'whsec-12345678' })
+    const board = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body: { name: 'Поток', slug: 'potok' } })
+    const boardId = board.body.board.id
+    const cols = await fetchWithJar<{ columns: { id: string, columnRole: string }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/columns`)
+    const task = await fetchWithJar<{ task: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, {
+      method: 'POST',
+      body: { columnId: cols.body.columns.find(c => c.columnRole === 'backlog')!.id, title: 'Починить оплату', assigneeId: owner.id },
+    })
+    const taskUrl = `${APP}/workspaces/${wsId}/boards/${boardId}?task=${task.body.task.id}`
+    const foreignUrl = `${APP}/workspaces/${crypto.randomUUID()}/boards/${boardId}`
+    const { raw, signature } = signedWebhook('whsec-12345678', {
+      type: 'message',
+      event: 'link_shared',
+      message_id: 777,
+      links: [{ url: taskUrl, domain: 'x', skip: false }, { url: foreignUrl, domain: 'x', skip: false }],
+    })
+    expect((await postWebhook(wsId, raw, signature)).status).toBe(200)
+    const preview = fake.state.previews.find(p => p.messageId === 777)!
+    expect(Object.keys(preview.link_previews)).toEqual([taskUrl])
+    expect(preview.link_previews[taskUrl]!.title).toContain('Починить оплату')
+  })
+
+  it('rejects bad signatures and ignores unknown tasks', async () => {
+    const owner = await registerUser('wb')
+    const wsId = await workspaceOf(owner)
+    await connect(owner, wsId, { token: BOT_TOKEN, signingSecret: 'whsec-12345678' })
+    const ghost = `${APP}/workspaces/${wsId}/boards/${crypto.randomUUID()}?task=${crypto.randomUUID()}`
+    const body = { type: 'message', event: 'link_shared', message_id: 778, links: [{ url: ghost, domain: 'x', skip: false }] }
+
+    const wrong = signedWebhook('another-secret', body)
+    expect((await postWebhook(wsId, wrong.raw, wrong.signature)).status).toBe(401)
+    expect((await postWebhook(wsId, wrong.raw, null)).status).toBe(401)
+
+    const ok = signedWebhook('whsec-12345678', body)
+    expect((await postWebhook(wsId, ok.raw, ok.signature)).status).toBe(200)
+    expect(fake.state.previews).toHaveLength(0)
   })
 })
