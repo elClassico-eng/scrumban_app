@@ -79,6 +79,7 @@ export default defineNuxtConfig({
       ignore: ['/_ipx'],
     },
     scheduledTasks: {
+      '* * * * *': ['integrations:feeds'],
       '0 * * * *': ['automations:run'],
       '0 3 * * *': ['forecast:daily-snapshots'],
       '0 6 * * *': ['notifications:daily-digest'],

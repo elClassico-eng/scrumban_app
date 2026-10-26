@@ -302,3 +302,89 @@ describe('notifications', () => {
     expect(digest!.content).toContain('Горит')
   })
 })
+
+async function feedSetup() {
+  const owner = await registerUser('fo')
+  const wsId = await workspaceOf(owner)
+  fake.state.chats.push({ id: 501, name: 'Команда разработки' })
+  await connect(owner, wsId)
+  const board = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body: { name: 'Поток', slug: 'potok' } })
+  const boardId = board.body.board.id
+  const cols = await fetchWithJar<{ columns: { id: string, columnRole: string }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/columns`)
+  const feed = await fetchWithJar<{ feed: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/feeds`, {
+    method: 'POST',
+    body: { chatId: '501', events: ['task_closed', 'task_blocked'], standupTime: null },
+  })
+  const backlog = cols.body.columns.find(c => c.columnRole === 'backlog')!.id
+  const done = cols.body.columns.find(c => c.columnRole === 'done')!.id
+  return { owner, wsId, boardId, backlog, done, feedId: feed.body.feed?.id, feedStatus: feed.status }
+}
+
+async function createAndClose(ctx: Awaited<ReturnType<typeof feedSetup>>, title: string) {
+  const t = await fetchWithJar<{ task: { id: string } }>(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards/${ctx.boardId}/tasks`, { method: 'POST', body: { columnId: ctx.backlog, title } })
+  await fetchWithJar(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards/${ctx.boardId}/tasks/${t.body.task.id}/move`, { method: 'POST', body: { toColumnId: ctx.done, toPosition: 0 } })
+}
+
+async function runFeeds(owner: UserCtx) {
+  return fetchWithJar<{ result: { sent: number } }>(owner.jar, '/api/_dev/tasks/integrations:feeds/run', { method: 'POST' })
+}
+
+describe('feeds', () => {
+  it('rejects a chat the bot is not in, and members cannot create feeds', async () => {
+    const ctx = await feedSetup()
+    expect(ctx.feedStatus).toBe(200)
+    const foreign = await fetchWithJar(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards/${ctx.boardId}/feeds`, {
+      method: 'POST',
+      body: { chatId: '999', events: ['task_closed'], standupTime: null },
+    })
+    expect(foreign.status).toBe(422)
+    const member = await registerUser('fm')
+    await addMember(ctx.owner, ctx.wsId, member.email, 'member')
+    const denied = await fetchWithJar(member.jar, `/api/workspaces/${ctx.wsId}/boards/${ctx.boardId}/feeds`, {
+      method: 'POST',
+      body: { chatId: '501', events: ['task_closed'], standupTime: null },
+    })
+    expect(denied.status).toBe(403)
+  })
+
+  it('batches closures into one message and never repeats them', async () => {
+    const ctx = await feedSetup()
+    for (const t of ['Первая', 'Вторая', 'Третья']) await createAndClose(ctx, t)
+    fake.state.messages.length = 0
+    expect((await runFeeds(ctx.owner)).body.result.sent).toBe(1)
+    const msg = fake.state.messages.find(m => m.entity_id === 501)!
+    expect(msg.entity_type).toBe('discussion')
+    expect(msg.content).toContain('**Закрыто: 3**')
+    expect(msg.content).toContain('Вторая')
+
+    expect((await runFeeds(ctx.owner)).body.result.sent).toBe(0)
+    await createAndClose(ctx, 'Четвёртая')
+    await runFeeds(ctx.owner)
+    const last = fake.state.messages.at(-1)!
+    expect(last.content).toContain('Четвёртая')
+    expect(last.content).not.toContain('Первая')
+  })
+
+  it('keeps the cursor on failure and marks the feed failed after an hour', async () => {
+    const ctx = await feedSetup()
+    await createAndClose(ctx, 'Упадёт')
+    fake.fail('/messages', 500, 1)
+    expect((await runFeeds(ctx.owner)).body.result.sent).toBe(0)
+    await getTestSql()`UPDATE board_feeds SET failing_since = now() - interval '2 hours'`
+    fake.fail('/messages', 500, 1)
+    await runFeeds(ctx.owner)
+    const list = await fetchWithJar<{ feeds: { status: string }[] }>(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards/${ctx.boardId}/feeds`)
+    expect(list.body.feeds[0]!.status).toBe('error')
+  })
+
+  it('sends the standup once per Moscow day', async () => {
+    const ctx = await feedSetup()
+    await fetchWithJar(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards/${ctx.boardId}/feeds/${ctx.feedId}`, { method: 'PATCH', body: { standupTime: '00:00' } })
+    fake.state.messages.length = 0
+    await runFeeds(ctx.owner)
+    await runFeeds(ctx.owner)
+    const standups = fake.state.messages.filter(m => m.content.includes('Сводка к стендапу'))
+    const msk = new Date(Date.now() + 3 * 3_600_000).getUTCDay()
+    expect(standups).toHaveLength(msk === 0 || msk === 6 ? 0 : 1)
+  })
+})

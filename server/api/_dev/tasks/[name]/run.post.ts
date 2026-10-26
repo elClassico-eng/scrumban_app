@@ -3,7 +3,7 @@ import { requireAuth } from '../../../../utils/auth'
 import { ForbiddenError, NotFoundError, toHttpError } from '../../../../utils/errors'
 import { listWorkspacesForUser } from '../../../../services/workspaces.service'
 
-const ALLOWED_TASKS = ['automations:run', 'forecast:daily-snapshots', 'notifications:daily-digest'] as const
+const ALLOWED_TASKS = ['automations:run', 'forecast:daily-snapshots', 'notifications:daily-digest', 'integrations:feeds'] as const
 
 const ParamsSchema = z.object({ name: z.string().min(1) })
 
