@@ -260,3 +260,33 @@ describe('maintenance', () => {
     expect((await getTestSql()`SELECT count(*)::int AS n FROM storage_trash`)[0]!.n).toBe(0)
   })
 })
+
+describe('comment attachments', () => {
+  it('links own staged files to the comment and ignores foreign ones', async () => {
+    const owner = await registerUser('co')
+    const other = await registerUser('cx')
+    const wsId = await workspaceOf(owner)
+    await addMember(owner, wsId, other.email, 'member')
+    const { boardId, taskId } = await boardWithTask(owner, wsId)
+    const mine = await attach(owner, wsId, taskId, 'mine', { forComment: true })
+    const theirs = await attach(other, wsId, taskId, 'theirs', { forComment: true })
+    const list1 = await fetchWithJar<{ files: unknown[] }>(other.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/files`)
+    expect(list1.body.files).toHaveLength(1)
+    const res = await fetchWithJar<{ comment: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/comments`, {
+      method: 'POST',
+      body: { body: '', fileIds: [mine.ticket.file.id, theirs.ticket.file.id] },
+    })
+    expect(res.status).toBe(200)
+    const rows = await getTestSql()`SELECT id, status, comment_id FROM files ORDER BY created_at`
+    expect(rows.find(r => r.id === mine.ticket.file.id)).toMatchObject({ status: 'ready', comment_id: res.body.comment.id })
+    expect(rows.find(r => r.id === theirs.ticket.file.id)).toMatchObject({ status: 'staged', comment_id: null })
+  })
+
+  it('rejects an empty comment without files', async () => {
+    const owner = await registerUser('ce')
+    const wsId = await workspaceOf(owner)
+    const { boardId, taskId } = await boardWithTask(owner, wsId)
+    const res = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/comments`, { method: 'POST', body: { body: '   ' } })
+    expect([400, 422]).toContain(res.status)
+  })
+})

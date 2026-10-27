@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/vue-query'
 import type { MaybeRef } from 'vue'
 import type { TaskComment, TaskCommentListResponse } from '#shared/types/comment'
 import type { MemberView } from '#shared/types/workspace'
+import type { FileView } from '#shared/types/files'
 
 const props = defineProps<{
   workspaceId: MaybeRef<string>
@@ -26,6 +27,45 @@ const myRole = computed(() =>
 const isAdmin = computed(() => hasRole(myRole.value, 'admin'))
 const isLead = computed(() => hasRole(myRole.value, 'scrum_master'))
 const canWrite = computed(() => hasRole(myRole.value, 'member'))
+
+const taskFiles = useTaskFilesApi(props.workspaceId, props.boardId, props.taskId)
+const filesByComment = computed(() => {
+  const map: Record<string, FileView[]> = {}
+  for (const f of taskFiles.list.data.value ?? []) {
+    if (f.commentId) (map[f.commentId] ??= []).push(f)
+  }
+  return map
+})
+const { items: composerUploads, upload: uploadForComment, dismiss: dismissUpload } = useFileUploader()
+const stagedFiles = computed(() => composerUploads.value.filter(i => i.status === 'done' && i.file).map(i => i.file!))
+const composerUploading = computed(() => composerUploads.value.some(i => i.status === 'uploading'))
+const filePicker = ref<HTMLInputElement | null>(null)
+
+function attachToComposer(list: File[]) {
+  for (const f of list) {
+    void uploadForComment(f, { kind: 'attachment', workspaceId: unref(props.workspaceId), taskId: unref(props.taskId), forComment: true })
+  }
+}
+
+function onPickFiles(e: Event) {
+  const el = e.target as HTMLInputElement
+  attachToComposer([...(el.files ?? [])])
+  el.value = ''
+}
+
+async function removeComposerUpload(id: string) {
+  const item = composerUploads.value.find(i => i.id === id)
+  if (item?.file) {
+    await $fetch(`/api/workspaces/${unref(props.workspaceId)}/files/${item.file.id}`, { method: 'DELETE' }).catch(() => null)
+  }
+  dismissUpload(id)
+}
+
+function removeCommentFile(file: FileView) {
+  taskFiles.remove.mutate(file.id, {
+    onError: err => toast.add({ title: getErrorMessage(err, 'Не удалось удалить файл'), color: 'error', icon: 'i-hugeicons-alert-circle' }),
+  })
+}
 
 const threaded = computed(() => {
   const replies = new Map<string, TaskComment[]>()
@@ -175,13 +215,15 @@ function onMentionSelectForComposer(member: MemberView) {
 
 async function submitComment() {
   const visible = composerBody.value.trim()
-  if (!visible) return
-  const body = serializeMentions(visible, composerMentions.value)
+  if (!visible && !stagedFiles.value.length) return
+  const body = visible ? serializeMentions(visible, composerMentions.value) : ''
   try {
-    await create.mutateAsync({ body, parentId: replyTo.value?.id })
+    await create.mutateAsync({ body, parentId: replyTo.value?.id, fileIds: stagedFiles.value.map(f => f.id) })
     composerBody.value = ''
     composerMentions.value = {}
     replyTo.value = null
+    composerUploads.value = []
+    await taskFiles.invalidate()
   }
   catch (err) {
     toast.add({
@@ -289,7 +331,7 @@ function onDelete(c: TaskComment) {
   })
 }
 
-const composerHasContent = computed(() => composerBody.value.trim().length > 0)
+const composerHasContent = computed(() => (composerBody.value.trim().length > 0 || stagedFiles.value.length > 0) && !composerUploading.value)
 
 function formatTime(iso: string): string {
   return new Intl.DateTimeFormat('ru', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
@@ -405,7 +447,7 @@ function timeLabel(iso: string): string {
             v-else
             class="rounded-tl-[4px] rounded-[12px] bg-elevated px-3.5 py-2.5"
           >
-            <p class="m-0 text-[13.5px] text-default leading-[1.55] whitespace-pre-wrap break-words">
+            <p v-if="c.body" class="m-0 text-[13.5px] text-default leading-[1.55] whitespace-pre-wrap break-words">
               <template
                 v-for="(seg, idx) in parseMentionSegments(c.body)"
                 :key="idx"
@@ -417,6 +459,13 @@ function timeLabel(iso: string): string {
                 <template v-else>{{ seg.value }}</template>
               </template>
             </p>
+            <FilesAttachmentList
+              v-if="filesByComment[c.id]?.length"
+              :class="c.body ? 'mt-2' : ''"
+              compact
+              :files="filesByComment[c.id]!"
+              @remove="removeCommentFile"
+            />
           </div>
 
           <div v-if="editingId !== c.id" class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
@@ -453,8 +502,10 @@ function timeLabel(iso: string): string {
     </div>
 
     <div v-if="canWrite" class="sticky bottom-0 -mx-4 px-4 sm:-mx-7 sm:px-7 pt-3 pb-1 bg-gradient-to-t from-[var(--ui-bg)] via-[var(--ui-bg)]/95 to-transparent">
-      <div
+      <FilesAttachmentDropzone
+        paste-target="self"
         class="rounded-lg border border-default bg-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
+        @files="attachToComposer"
       >
         <div v-if="replyTo" class="flex items-center gap-2 border-b border-default px-3.5 py-1.5 text-[12px] text-muted">
           <UIcon name="i-hugeicons-message-square-reply" class="size-3.5 shrink-0" />
@@ -476,6 +527,7 @@ function timeLabel(iso: string): string {
           class="w-full bg-transparent border-0 outline-none px-3.5 py-2.5 text-[13.5px] text-default leading-relaxed resize-none"
           @keydown="onComposerKeydown"
         />
+        <FilesUploadTiles v-if="composerUploads.length" class="px-3.5 pb-2" :items="composerUploads" @dismiss="removeComposerUpload" />
         <div class="flex items-center gap-1 px-2 py-1.5 border-t border-default">
           <button
             type="button"
@@ -485,6 +537,15 @@ function timeLabel(iso: string): string {
             <UIcon name="i-hugeicons-at-sign" class="size-3.5" />
             Упомянуть
           </button>
+          <button
+            type="button"
+            class="h-7 px-2 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors inline-flex items-center gap-1 text-[12px]"
+            @click="filePicker?.click()"
+          >
+            <UIcon name="i-hugeicons-attachment-01" class="size-3.5" />
+            Файл
+          </button>
+          <input ref="filePicker" type="file" multiple class="hidden" @change="onPickFiles">
           <div class="flex-1" />
           <UButton
             icon="i-hugeicons-send"
@@ -496,7 +557,7 @@ function timeLabel(iso: string): string {
             Отправить
           </UButton>
         </div>
-      </div>
+      </FilesAttachmentDropzone>
     </div>
 
     <TaskMentionPicker

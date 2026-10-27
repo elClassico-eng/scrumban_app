@@ -10,9 +10,10 @@ const ParamsSchema = z.object({
   taskId: z.uuid(),
 })
 const BodySchema = z.object({
-  body: z.string().min(1).max(5000),
+  body: z.string().max(5000).default(''),
   parentId: z.uuid().optional(),
-})
+  fileIds: z.array(z.uuid()).max(10).default([]),
+}).refine(b => b.body.trim().length > 0 || b.fileIds.length > 0, { message: 'Комментарий не может быть пустым' })
 
 export default defineEventHandler(async (event) => {
   try {
@@ -27,6 +28,7 @@ export default defineEventHandler(async (event) => {
       authorId: user.id,
       body: body.body,
       parentId: body.parentId,
+      fileIds: body.fileIds,
       actorRole: workspace.role,
     })
     return { comment }

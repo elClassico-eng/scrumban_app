@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, isNull, or } from 'drizzle-orm'
 import {
+  files,
   taskComments,
   taskEvents,
   tasks,
@@ -88,11 +89,12 @@ export async function createComment(input: {
   authorId: string
   body: string
   parentId?: string
+  fileIds?: string[]
   actorRole: WorkspaceMemberRole
 }): Promise<CommentView> {
   requireMinRole(input.actorRole, 'member')
   const trimmed = input.body.trim()
-  if (!trimmed) throw new ValidationError('Комментарий не может быть пустым')
+  if (!trimmed && !input.fileIds?.length) throw new ValidationError('Комментарий не может быть пустым')
   if (trimmed.length > COMMENT_MAX_LENGTH) {
     throw new ValidationError(`Комментарий длиннее ${COMMENT_MAX_LENGTH} символов`)
   }
@@ -121,6 +123,18 @@ export async function createComment(input: {
         parentId: rootId,
       })
       .returning()
+
+    if (input.fileIds?.length) {
+      await tx.update(files)
+        .set({ commentId: inserted!.id, status: 'ready' })
+        .where(and(
+          inArray(files.id, input.fileIds),
+          eq(files.taskId, input.taskId),
+          eq(files.uploadedBy, input.authorId),
+          eq(files.status, 'staged'),
+          eq(files.kind, 'attachment'),
+        ))
+    }
 
     await tx.insert(taskEvents).values({
       workspaceId: input.workspaceId,
