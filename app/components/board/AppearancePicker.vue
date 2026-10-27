@@ -1,25 +1,46 @@
 <script setup lang="ts">
 import { BOARD_EMOJIS, BOARD_ICON_NAMES, isIconName } from '#shared/constants/board-icons'
+import { apiRoutes } from '~/routing'
 
-const props = defineProps<{ name: string }>()
+const props = defineProps<{
+  name: string
+  image?: { workspaceId: string, boardId: string, url: string | null } | null
+}>()
+const emit = defineEmits<{ imageChanged: [] }>()
 const color = defineModel<string>('color', { required: true })
 const icon = defineModel<string | null>('icon', { default: null })
 
-type Kind = 'letter' | 'emoji' | 'icon'
-const KINDS: { value: Kind, label: string }[] = [
+type Kind = 'letter' | 'emoji' | 'icon' | 'image'
+const KINDS = computed<{ value: Kind, label: string }[]>(() => [
   { value: 'letter', label: 'Буква' },
   { value: 'emoji', label: 'Эмодзи' },
   { value: 'icon', label: 'Иконка' },
-]
+  ...(props.image ? [{ value: 'image' as const, label: 'Картинка' }] : []),
+])
 
-const kind = ref<Kind>(icon.value ? (isIconName(icon.value) ? 'icon' : 'emoji') : 'letter')
+const kind = ref<Kind>(props.image?.url ? 'image' : icon.value ? (isIconName(icon.value) ? 'icon' : 'emoji') : 'letter')
 
-function pickKind(k: Kind) {
+async function removeImage() {
+  const fileId = fileIdFromUrl(props.image?.url)
+  if (!props.image || !fileId) return
+  await $fetch(`${apiRoutes.files(props.image.workspaceId)}/${fileId}`, { method: 'DELETE' })
+}
+
+async function pickKind(k: Kind) {
+  if (kind.value === 'image' && k !== 'image' && props.image?.url) {
+    await removeImage()
+    emit('imageChanged')
+  }
   kind.value = k
   if (k === 'letter') icon.value = null
 }
 
-const preview = computed(() => ({ name: props.name || 'Доска', color: color.value, icon: icon.value }))
+const preview = computed(() => ({
+  name: props.name || 'Доска',
+  color: color.value,
+  icon: icon.value,
+  imageUrl: kind.value === 'image' ? props.image?.url ?? null : null,
+}))
 </script>
 
 <template>
@@ -44,7 +65,17 @@ const preview = computed(() => ({ name: props.name || 'Доска', color: color
       </div>
     </div>
 
-    <div v-if="kind !== 'letter'" class="grid grid-cols-8 gap-1 rounded-xl border border-default p-1.5">
+    <FilesImageUploader
+      v-if="kind === 'image' && image"
+      :target="{ kind: 'board_image', workspaceId: image.workspaceId, boardId: image.boardId }"
+      :current-url="image.url"
+      :fallback="(name || 'Д').slice(0, 1).toUpperCase()"
+      shape="rounded"
+      :remove="removeImage"
+      @changed="emit('imageChanged')"
+    />
+
+    <div v-else-if="kind !== 'letter'" class="grid grid-cols-8 gap-1 rounded-xl border border-default p-1.5">
       <template v-if="kind === 'emoji'">
         <button
           v-for="e in BOARD_EMOJIS"

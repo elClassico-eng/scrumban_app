@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useQueryClient } from '@tanstack/vue-query'
 import { z } from 'zod'
-import { pageRoutes } from '~/routing'
+import { apiRoutes, pageRoutes } from '~/routing'
 
 const router = useRouter()
 const { current: workspace, isLoading } = useCurrentWorkspace()
@@ -24,13 +25,25 @@ const createdLabel = computed(() => {
 })
 
 const isOwner = computed(() => workspace.value?.role === 'owner')
+const qc = useQueryClient()
+const logoUrl = computed(() => workspace.value?.logoUrl ?? null)
+
+async function removeLogo() {
+  if (!workspace.value) return
+  const fileId = fileIdFromUrl(logoUrl.value)
+  if (fileId) await $fetch(`${apiRoutes.files(workspace.value.id)}/${fileId}`, { method: 'DELETE' })
+  else await update.mutateAsync({ workspaceId: workspace.value.id, logoUrl: null })
+}
+
+function onLogoChanged() {
+  void qc.invalidateQueries()
+}
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Введи название').max(255),
   description: z.string().max(2000),
   purpose: z.string().max(2000),
   industry: z.string().trim().max(100),
-  logoUrl: z.union([z.url().max(2000), z.literal('')]),
   cardStyle: z.enum(['cover', 'compact']),
 })
 
@@ -40,7 +53,6 @@ const state = reactive<State>({
   description: '',
   purpose: '',
   industry: '',
-  logoUrl: '',
   cardStyle: 'cover',
 })
 
@@ -57,7 +69,6 @@ watch(
     state.description = w.description ?? ''
     state.purpose = w.purpose ?? ''
     state.industry = w.industry ?? ''
-    state.logoUrl = w.logoUrl ?? ''
     state.cardStyle = w.cardStyle ?? 'cover'
   },
   { immediate: true },
@@ -83,7 +94,7 @@ async function save(fields: Partial<State>, okTitle: string) {
 }
 
 const saveGeneral = () => save(
-  { name: state.name, industry: state.industry, logoUrl: state.logoUrl },
+  { name: state.name, industry: state.industry },
   'Общая информация сохранена',
 )
 const saveAbout = () => save(
@@ -156,11 +167,10 @@ async function onLeave() {
         <div class="brand-gradient size-16 shrink-0 rounded-2xl p-[3px]">
           <div class="grid size-full place-items-center overflow-hidden rounded-2xl bg-default text-xl font-semibold text-default">
             <img
-              v-if="state.logoUrl"
-              :src="state.logoUrl"
+              v-if="logoUrl"
+              :src="logoUrl"
               alt=""
-              class="size-full object-cover"
-            >
+              class="size-full object-cover" loading="lazy" decoding="async">
             <span v-else>{{ state.name.slice(0, 1).toUpperCase() || '∗' }}</span>
           </div>
         </div>
@@ -211,12 +221,15 @@ async function onLeave() {
               placeholder="IT / агентство / промышленность"
             />
           </UFormField>
-          <UFormField
-            label="Логотип (URL)"
-            name="logoUrl"
-            description="Ссылка на изображение, которое будем показывать рядом с названием команды"
-          >
-            <UInput v-model="state.logoUrl" class="w-full" placeholder="https://..." />
+          <UFormField v-if="workspace" label="Логотип" description="Показываем рядом с названием команды">
+            <FilesImageUploader
+              :target="{ kind: 'workspace_logo', workspaceId: workspace.id }"
+              :current-url="logoUrl"
+              :fallback="state.name.slice(0, 1).toUpperCase() || '∗'"
+              shape="rounded"
+              :remove="removeLogo"
+              @changed="onLogoChanged"
+            />
           </UFormField>
         </div>
         <div class="mt-4 flex justify-end">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQueryClient } from '@tanstack/vue-query'
 import { z } from 'zod'
 import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
 import { BOARD_KEY_RE } from '#shared/utils/board-key'
@@ -23,7 +24,14 @@ const schema = z.object({
 type State = z.infer<typeof schema>
 const state = reactive<State>({ name: '', slug: '', color: '', key: '', icon: null })
 
-const { update } = useBoardsApi(computed(() => props.workspaceId))
+const { list, update } = useBoardsApi(computed(() => props.workspaceId))
+const qc = useQueryClient()
+
+async function onImageChanged() {
+  await qc.invalidateQueries({ queryKey: ['boards', props.workspaceId] })
+  const fresh = list.data.value?.boards.find(b => b.id === editTarget.value?.id)
+  if (fresh && editTarget.value) editTarget.value.imageUrl = fresh.imageUrl
+}
 
 const errorMessage = computed(() =>
   update.isError.value ? getErrorMessage(update.error.value, 'Не удалось сохранить') : null,
@@ -70,7 +78,14 @@ async function onSubmit() {
           Номера задач сменятся с {{ editTarget.key }}-12 на {{ state.key.trim().toUpperCase() || '…' }}-12. Старые номера в комментариях и коммитах перестанут находиться.
         </p>
         <UFormField label="Аватарка и цвет" name="color">
-          <BoardAppearancePicker v-model:color="state.color" v-model:icon="state.icon" :name="state.name" class="pt-1" />
+          <BoardAppearancePicker
+            v-model:color="state.color"
+            v-model:icon="state.icon"
+            :name="state.name"
+            :image="editTarget ? { workspaceId, boardId: editTarget.id, url: editTarget.imageUrl } : null"
+            class="pt-1"
+            @image-changed="onImageChanged"
+          />
         </UFormField>
         <UAlert
           v-if="errorMessage"

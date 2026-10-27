@@ -3,7 +3,7 @@ import { isIconName } from '#shared/constants/board-icons'
 import type { Board } from '#shared/types/board'
 
 const props = withDefaults(defineProps<{
-  board: Pick<Board, 'name' | 'color' | 'icon'> | null
+  board: (Pick<Board, 'name' | 'color' | 'icon'> & { imageUrl?: string | null }) | null
   size?: 'xs' | 'sm' | 'md' | 'lg'
 }>(), { size: 'xs' })
 
@@ -25,11 +25,12 @@ const letter = computed(() => props.board?.name.trim().charAt(0).toUpperCase() |
 
 <template>
   <span
-    :class="['grid shrink-0 place-items-center font-bold leading-none text-white', SIZE[size].box]"
+    :class="['grid shrink-0 place-items-center overflow-hidden font-bold leading-none text-white', SIZE[size].box]"
     :style="{ background }"
     :title="board?.name"
   >
-    <span v-if="isEmoji" :class="SIZE[size].emoji">{{ icon }}</span>
+    <img v-if="board?.imageUrl" :src="board.imageUrl" alt="" class="size-full object-cover" loading="lazy" decoding="async">
+    <span v-else-if="isEmoji" :class="SIZE[size].emoji">{{ icon }}</span>
     <UIcon v-else-if="icon" :name="icon" :class="SIZE[size].icon" />
     <template v-else>{{ letter }}</template>
   </span>

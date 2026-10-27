@@ -1,10 +1,18 @@
 <script setup lang="ts">
+import { useQueryClient } from '@tanstack/vue-query'
 import { z } from 'zod'
 import { apiRoutes } from '~/routing'
 
 const { me, update } = useProfileApi()
 const { list: workspacesList } = useWorkspacesApi()
 const toast = useToast()
+const qc = useQueryClient()
+const avatarUrl = computed(() => me.data.value?.user.avatarUrl ?? null)
+const removeAvatar = () => $fetch(apiRoutes.avatar, { method: 'DELETE' })
+
+function onAvatarChanged() {
+  void qc.invalidateQueries()
+}
 
 const verifiedAt = computed(() => me.data.value?.user.emailVerifiedAt ?? null)
 const isVerified = computed(() => verifiedAt.value !== null)
@@ -58,7 +66,6 @@ const schema = z.object({
   middleName: z.string().trim().max(100),
   jobTitle: z.string().trim().max(150),
   bio: z.string().max(5000),
-  avatarUrl: z.union([z.url().max(2000), z.literal('')]),
 })
 
 type State = z.infer<typeof schema>
@@ -68,7 +75,6 @@ const state = reactive<State>({
   middleName: '',
   jobTitle: '',
   bio: '',
-  avatarUrl: '',
 })
 
 watch(
@@ -80,7 +86,6 @@ watch(
     state.middleName = u.middleName ?? ''
     state.jobTitle = u.jobTitle ?? ''
     state.bio = u.bio ?? ''
-    state.avatarUrl = u.avatarUrl ?? ''
   },
   { immediate: true },
 )
@@ -107,7 +112,7 @@ const saveName = () => save(
   'Имя обновлено',
 )
 const saveAbout = () => save(
-  { jobTitle: state.jobTitle, bio: state.bio, avatarUrl: state.avatarUrl },
+  { jobTitle: state.jobTitle, bio: state.bio },
   'Профиль обновлён',
 )
 
@@ -132,11 +137,10 @@ const previewInitials = computed(() => initials({
     <template v-else-if="me.data.value">
       <div class="surface-elevated relative flex min-h-[140px] flex-col justify-end overflow-hidden rounded-2xl">
         <img
-          v-if="state.avatarUrl"
-          :src="state.avatarUrl"
+          v-if="avatarUrl"
+          :src="avatarUrl"
           alt=""
-          class="absolute inset-0 size-full object-cover"
-        >
+          class="absolute inset-0 size-full object-cover" loading="lazy" decoding="async">
         <div v-else class="brand-gradient absolute inset-0">
           <div class="absolute inset-0 grid place-items-center">
             <span class="text-6xl font-bold text-white/90">{{ previewInitials }}</span>
@@ -232,15 +236,14 @@ const previewInitials = computed(() => initials({
               placeholder="Например: Senior Frontend Developer"
             />
           </UFormField>
-          <UFormField
-            label="Аватар (URL)"
-            name="avatarUrl"
-            description="Ссылка на изображение — Gravatar, Telegram-аватарка или любой публичный URL"
-          >
-            <UInput
-              v-model="state.avatarUrl"
-              class="w-full"
-              placeholder="https://..."
+          <UFormField label="Аватар">
+            <FilesImageUploader
+              :target="{ kind: 'user_avatar' }"
+              :current-url="avatarUrl"
+              :fallback="previewInitials"
+              shape="circle"
+              :remove="removeAvatar"
+              @changed="onAvatarChanged"
             />
           </UFormField>
           <UFormField label="Краткое описание" name="bio">
