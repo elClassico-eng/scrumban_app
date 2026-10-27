@@ -27,6 +27,7 @@ const createdLabel = computed(() => {
 const isOwner = computed(() => workspace.value?.role === 'owner')
 const qc = useQueryClient()
 const logoUrl = computed(() => workspace.value?.logoUrl ?? null)
+const usage = useStorageUsageApi(computed(() => workspace.value?.id ?? null))
 
 async function removeLogo() {
   if (!workspace.value) return
@@ -195,6 +196,20 @@ async function onLeave() {
               создана {{ createdLabel }}
             </span>
           </div>
+        </div>
+      </div>
+
+      <div v-if="usage.data.value" class="surface-soft rounded-2xl p-5">
+        <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+          <span class="font-medium text-default">Файлы</span>
+          <span class="text-muted">Занято {{ formatBytes(usage.data.value.usedBytes) }} из {{ formatBytes(usage.data.value.limitBytes) }}</span>
+        </div>
+        <div class="h-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            class="h-full rounded-full"
+            :class="usage.data.value.usedBytes / usage.data.value.limitBytes > 0.9 ? 'bg-error' : 'bg-accent-500'"
+            :style="{ width: `${Math.min(100, usage.data.value.usedBytes / usage.data.value.limitBytes * 100)}%` }"
+          />
         </div>
       </div>
 

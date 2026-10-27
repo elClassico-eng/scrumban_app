@@ -7,7 +7,7 @@ export function formatBytes(n: number): string {
     value /= 1024
     unit++
   }
-  return `${unit === 0 ? value : value.toFixed(value < 10 ? 1 : 0)} ${UNITS[unit]}`
+  return `${value.toLocaleString('ru-RU', { maximumFractionDigits: unit > 0 && value < 10 ? 1 : 0 })} ${UNITS[unit]}`
 }
 
 export function isPreviewableImage(contentType: string): boolean {
