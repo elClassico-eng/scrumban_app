@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { setup } from '@nuxt/test-utils/e2e'
 import { closeTestSql, getTestSql, resetDb } from './helpers/db'
-import { CookieJar, fetchWithJar } from './helpers/http'
+import { baseUrl, CookieJar, fetchWithJar } from './helpers/http'
 import { ensureTestBucket, TEST_S3, uploadTo } from './helpers/storage'
 import { TEST_URL } from './setup.global'
 
@@ -140,6 +140,15 @@ describe('upload', () => {
     expect((await getTestSql()`SELECT count(*)::int AS n FROM storage_trash`)[0]!.n).toBe(1)
   })
 
+  it('keeps at most one pending avatar upload per user', async () => {
+    const user = await registerUser('pa')
+    for (let i = 0; i < 3; i++) {
+      await fetchWithJar(user.jar, '/api/users/me/avatar', { method: 'POST', body: { name: 'a.webp', contentType: 'image/webp', size: 4 } })
+    }
+    const rows = await getTestSql()`SELECT count(*)::int AS n FROM files WHERE kind = 'user_avatar' AND status = 'pending'`
+    expect(rows[0]!.n).toBe(1)
+  })
+
   it('logo upload sets workspace logo_url', async () => {
     const owner = await registerUser('logo')
     const wsId = await workspaceOf(owner)
@@ -148,5 +157,73 @@ describe('upload', () => {
     await complete(owner, wsId, ticket.body.file.id)
     const [w] = await getTestSql()`SELECT logo_url FROM workspaces WHERE id = ${wsId}`
     expect(w!.logo_url).toBe(`/api/files/w/${wsId}/${ticket.body.file.id}`)
+  })
+})
+
+async function follow(user: UserCtx, path: string) {
+  return fetch(`${baseUrl()}${path}`, { headers: { cookie: user.jar.header }, redirect: 'manual' })
+}
+
+describe('serving', () => {
+  it('redirects members to a signed url and hides files from outsiders', async () => {
+    const owner = await registerUser('s')
+    const outsider = await registerUser('out')
+    const wsId = await workspaceOf(owner)
+    const { taskId } = await boardWithTask(owner, wsId)
+    const { ticket } = await attach(owner, wsId, taskId, 'secret body')
+    const res = await follow(owner, ticket.file.url)
+    expect(res.status).toBe(302)
+    expect(res.headers.get('cache-control')).toMatch(/private, max-age=\d+/)
+    const location = res.headers.get('location')!
+    expect(location).toContain('X-Amz-Signature')
+    expect(await (await fetch(location)).text()).toBe('secret body')
+    expect((await follow(outsider, ticket.file.url)).status).toBe(404)
+  })
+
+  it('forces download for svg and html', async () => {
+    const owner = await registerUser('svg')
+    const wsId = await workspaceOf(owner)
+    const { taskId } = await boardWithTask(owner, wsId)
+    const body = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+    const ticket = await start(owner, wsId, { kind: 'attachment', taskId, name: 'x.svg', contentType: 'image/svg+xml', size: Buffer.byteLength(body) })
+    await uploadTo(ticket.body.uploadUrl, body, 'image/svg+xml')
+    await complete(owner, wsId, ticket.body.file.id)
+    const location = (await follow(owner, ticket.body.file.url)).headers.get('location')!
+    expect(decodeURIComponent(location)).toContain('response-content-disposition=attachment')
+  })
+
+  it('removed member loses access', async () => {
+    const owner = await registerUser('rm')
+    const member = await registerUser('rmm')
+    const wsId = await workspaceOf(owner)
+    await addMember(owner, wsId, member.email, 'member')
+    const { taskId } = await boardWithTask(owner, wsId)
+    const { ticket } = await attach(owner, wsId, taskId)
+    expect((await follow(member, ticket.file.url)).status).toBe(302)
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/members/${member.id}`, { method: 'DELETE' })
+    expect((await follow(member, ticket.file.url)).status).toBe(404)
+  })
+
+  it('avatars are visible to people sharing a workspace only', async () => {
+    const a = await registerUser('a')
+    const b = await registerUser('b')
+    const stranger = await registerUser('c')
+    const wsId = await workspaceOf(a)
+    await addMember(a, wsId, b.email, 'member')
+    const ticket = await fetchWithJar<Ticket>(b.jar, '/api/users/me/avatar', { method: 'POST', body: { name: 'a.webp', contentType: 'image/webp', size: 4 } })
+    await uploadTo(ticket.body.uploadUrl, 'webp', 'image/webp')
+    await fetchWithJar(b.jar, `/api/users/me/avatar/${ticket.body.file.id}/complete`, { method: 'POST' })
+    expect((await follow(a, ticket.body.file.url)).status).toBe(302)
+    expect((await follow(stranger, ticket.body.file.url)).status).toBe(404)
+  })
+
+  it('lists task files including comment files', async () => {
+    const owner = await registerUser('ls')
+    const wsId = await workspaceOf(owner)
+    const { boardId, taskId } = await boardWithTask(owner, wsId)
+    await attach(owner, wsId, taskId)
+    const list = await fetchWithJar<{ files: { id: string, canDelete: boolean }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/files`)
+    expect(list.body.files).toHaveLength(1)
+    expect(list.body.files[0]!.canDelete).toBe(true)
   })
 })

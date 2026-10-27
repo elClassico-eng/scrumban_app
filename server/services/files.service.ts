@@ -4,10 +4,11 @@ import { boards, files, taskEvents, tasks, users, workspaces, type FileRow, type
 import { useDB, withTenant, withUser, type DbTransaction } from '../utils/db'
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
-import { FILE_LIMITS, fileUrl, quotaBytes, sanitizeFileName, storageKeyFor, THUMB_MAX_BYTES, THUMB_TYPE, type FileKind } from '../utils/files'
+import { ATTACHMENT_WINDOW_SEC, dispositionFor, FILE_LIMITS, fileUrl, IMAGE_WINDOW_SEC, quotaBytes, sanitizeFileName, storageKeyFor, THUMB_MAX_BYTES, THUMB_TYPE, type FileKind } from '../utils/files'
 import { roleAtLeast, requireMinRole } from '../utils/rbac'
-import { headObjectSize, presignPut } from '../utils/storage'
+import { headObjectSize, presignGet, presignPut, secondsLeftInWindow } from '../utils/storage'
 import { getTask } from './tasks.service'
+import { findWorkspaceForUser, listWorkspacesForUser } from './workspaces.service'
 import type { FileView, StorageUsage, UploadTicket } from '#shared/types/files'
 import type { StartAvatarUploadSchema, StartUploadSchema } from '#shared/validation/files'
 import { displayName } from '#shared/utils/display-name'
@@ -130,19 +131,23 @@ export async function startUpload(input: {
 export async function startAvatarUpload(input: { userId: string, body: z.infer<typeof StartAvatarUploadSchema> }): Promise<UploadTicket> {
   checkLimits('user_avatar', input.body.contentType, input.body.size)
   const id = crypto.randomUUID()
-  const row = await withUser(input.userId, tx => tx.insert(files).values({
-    id,
-    workspaceId: null,
-    kind: 'user_avatar',
-    userId: input.userId,
-    storageKey: storageKeyFor({ fileId: id, workspaceId: null, userId: input.userId }),
-    name: sanitizeFileName(input.body.name),
-    contentType: input.body.contentType,
-    sizeBytes: input.body.size,
-    width: input.body.width ?? null,
-    height: input.body.height ?? null,
-    uploadedBy: input.userId,
-  }).returning().then(r => r[0]!))
+  const row = await withUser(input.userId, async (tx) => {
+    await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, input.userId), eq(files.status, 'pending')))
+    const [created] = await tx.insert(files).values({
+      id,
+      workspaceId: null,
+      kind: 'user_avatar',
+      userId: input.userId,
+      storageKey: storageKeyFor({ fileId: id, workspaceId: null, userId: input.userId }),
+      name: sanitizeFileName(input.body.name),
+      contentType: input.body.contentType,
+      sizeBytes: input.body.size,
+      width: input.body.width ?? null,
+      height: input.body.height ?? null,
+      uploadedBy: input.userId,
+    }).returning()
+    return created!
+  })
   return ticketFor(row, { userId: input.userId, role: null })
 }
 
@@ -223,4 +228,56 @@ export async function removeAvatar(userId: string): Promise<void> {
     await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, userId)))
     await tx.update(users).set({ avatarUrl: null }).where(eq(users.id, userId))
   })
+}
+
+async function sharesWorkspace(viewerId: string, ownerId: string): Promise<boolean> {
+  if (viewerId === ownerId) return true
+  const [mine, theirs] = await Promise.all([listWorkspacesForUser(viewerId), listWorkspacesForUser(ownerId)])
+  const ids = new Set(mine.map(w => w.id))
+  return theirs.some(w => ids.has(w.id))
+}
+
+export async function resolveFileRedirect(input: {
+  workspaceId: string | null
+  fileId: string
+  userId: string
+  thumb: boolean
+  download: boolean
+}): Promise<{ location: string, maxAge: number }> {
+  if (input.workspaceId && !(await findWorkspaceForUser(input.workspaceId, input.userId))) throw new NotFoundError('Файл не найден')
+  const row = await findFile(input.workspaceId, input.fileId)
+  if (!row || row.status === 'pending') throw new NotFoundError('Файл не найден')
+  if (row.status === 'staged' && row.uploadedBy !== input.userId) throw new NotFoundError('Файл не найден')
+  if (row.kind === 'user_avatar' && !(await sharesWorkspace(input.userId, row.userId!))) throw new NotFoundError('Файл не найден')
+  const useThumb = input.thumb && !!row.thumbKey
+  const contentType = useThumb ? THUMB_TYPE : row.contentType
+  const windowSec = row.kind !== 'attachment' || useThumb ? IMAGE_WINDOW_SEC : ATTACHMENT_WINDOW_SEC
+  const location = await presignGet({
+    key: useThumb ? row.thumbKey! : row.storageKey,
+    contentType,
+    fileName: row.name,
+    disposition: dispositionFor(contentType, input.download),
+    windowSec,
+  })
+  return { location, maxAge: secondsLeftInWindow(windowSec) }
+}
+
+export async function listTaskFiles(input: {
+  workspaceId: string
+  taskId: string
+  userId: string
+  actorRole: WorkspaceMemberRole
+}): Promise<FileView[]> {
+  requireMinRole(input.actorRole, 'viewer')
+  const rows = await withTenant(input.workspaceId, tx =>
+    tx.select().from(files)
+      .where(and(
+        eq(files.taskId, input.taskId),
+        eq(files.kind, 'attachment'),
+        sql`(${files.status} = 'ready' OR (${files.status} = 'staged' AND ${files.uploadedBy} = ${input.userId}))`,
+      ))
+      .orderBy(files.createdAt),
+  )
+  const names = await uploaderNames(rows.map(r => r.uploadedBy))
+  return rows.map(r => toFileView(r, { userId: input.userId, role: input.actorRole }, names))
 }
