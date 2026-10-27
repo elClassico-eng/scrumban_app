@@ -35,6 +35,8 @@ const EVENT_ICON: Record<TaskEventType, string> = {
   task_removed_from_sprint: 'i-hugeicons-circle-minus',
   task_blocked: 'i-hugeicons-octagon-x',
   task_unblocked: 'i-hugeicons-octagon',
+  task_attachment_added: 'i-hugeicons-attachment-01',
+  task_attachment_removed: 'i-hugeicons-attachment-01',
 }
 
 function actorMember(actorId: string | null) {
@@ -150,6 +152,16 @@ const sortedEvents = computed(() => {
 
             <template v-else-if="e.eventType === 'task_comment_deleted'">
               <span class="text-muted">удалил(а) комментарий</span>
+            </template>
+
+            <template v-else-if="e.eventType === 'task_attachment_added'">
+              <span class="text-muted">прикрепил(а) файл</span>
+              <span class="text-default"> {{ (e.payload as { name?: string }).name }}</span>
+            </template>
+
+            <template v-else-if="e.eventType === 'task_attachment_removed'">
+              <span class="text-muted">удалил(а) файл</span>
+              <span class="text-default"> {{ (e.payload as { name?: string }).name }}</span>
             </template>
 
             <template v-else>

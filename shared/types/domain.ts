@@ -18,3 +18,5 @@ export type TaskEventType =
   | 'task_removed_from_sprint'
   | 'task_blocked'
   | 'task_unblocked'
+  | 'task_attachment_added'
+  | 'task_attachment_removed'

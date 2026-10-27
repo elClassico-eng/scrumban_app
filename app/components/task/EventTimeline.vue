@@ -21,6 +21,8 @@ const EVENT_ICON: Record<TaskEventType, string> = {
   task_removed_from_sprint: 'i-hugeicons-circle-minus',
   task_blocked: 'i-hugeicons-octagon-x',
   task_unblocked: 'i-hugeicons-octagon',
+  task_attachment_added: 'i-hugeicons-attachment-01',
+  task_attachment_removed: 'i-hugeicons-attachment-01',
 }
 
 const EVENT_COLOR: Record<TaskEventType, string> = {
@@ -37,6 +39,8 @@ const EVENT_COLOR: Record<TaskEventType, string> = {
   task_removed_from_sprint: 'text-muted',
   task_blocked: 'text-red-500',
   task_unblocked: 'text-emerald-600',
+  task_attachment_added: 'text-muted',
+  task_attachment_removed: 'text-muted',
 }
 
 function formatDateTime(iso: string): string {
