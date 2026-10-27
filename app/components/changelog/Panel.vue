@@ -7,12 +7,13 @@ const workspaceStore = useWorkspaceStore()
 const workspaceId = computed(() => workspaceStore.currentId ?? null)
 const isMobile = useMediaQuery('(max-width: 767px)')
 
-const { entries, markSeen } = useChangelog()
+const { entries, loading, markSeen, retryIfFailed } = useChangelog()
 const activePath = ref<string | null>(null)
 const active = computed(() => entries.value.find(e => e.path === activePath.value) ?? entries.value[0] ?? null)
 
 watch(open, (isOpen) => {
   if (!isOpen) return
+  retryIfFailed()
   activePath.value = entries.value[0]?.path ?? null
   markSeen()
 })
@@ -61,8 +62,11 @@ function shortDate(iso: string) {
         </div>
       </div>
       <div v-else class="space-y-2 px-4 py-16 text-center">
-        <UIcon name="i-hugeicons-sparkles" class="mx-auto size-10 text-muted" />
-        <p class="text-sm text-muted">Пока нет записей</p>
+        <UIcon
+          :name="loading ? 'i-hugeicons-loading-03' : 'i-hugeicons-sparkles'"
+          :class="['mx-auto size-10 text-muted', loading && 'animate-spin']"
+        />
+        <p class="text-sm text-muted">{{ loading ? 'Загружаем обновления…' : 'Пока нет записей' }}</p>
       </div>
     </template>
   </UModal>
