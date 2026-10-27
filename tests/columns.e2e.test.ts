@@ -142,6 +142,22 @@ describe('POST /columns', () => {
     expect(res.body.column.wipLimit).toBe(5)
   })
 
+  it('places a new work column before done', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const boardId = await createBoard(owner, wsId)
+    const url = `/api/workspaces/${wsId}/boards/${boardId}/columns`
+
+    const res = await fetchWithJar<{ column: { id: string } }>(owner.jar, url, {
+      method: 'POST',
+      body: { name: 'Testing', columnRole: 'in_progress' },
+    })
+    expect(res.status).toBe(200)
+    const list = await fetchWithJar<{ columns: { id: string; columnRole: string }[] }>(owner.jar, url)
+    expect(list.body.columns.map((c) => c.columnRole)).toEqual(['backlog', 'in_progress', 'review', 'in_progress', 'done'])
+    expect(list.body.columns[3]!.id).toBe(res.body.column.id)
+  })
+
   it('member cannot create a column (403)', async () => {
     const owner = await registerUser('owner@example.com')
     const guest = await registerUser('guest@example.com')
@@ -327,8 +343,7 @@ describe('POST /columns/reorder', () => {
       list.body.columns.map((c) => [c.columnRole, c.id]),
     )
 
-    // Reverse the default order: done → review → in_progress → backlog
-    const desired = [byRole.done, byRole.review, byRole.in_progress, byRole.backlog]
+    const desired = [byRole.backlog, byRole.review, byRole.in_progress, byRole.done]
 
     const res = await fetchWithJar<{
       columns: { id: string; position: number }[]
@@ -339,6 +354,29 @@ describe('POST /columns/reorder', () => {
     expect(res.status).toBe(200)
     expect(res.body.columns.map((c) => c.id)).toEqual(desired)
     expect(res.body.columns.map((c) => c.position)).toEqual([0, 1, 2, 3])
+  })
+
+  it('keeps backlog first and done last', async () => {
+    const owner = await registerUser('owner@example.com')
+    const wsId = await createWorkspace(owner)
+    const boardId = await createBoard(owner, wsId)
+    const list = await fetchWithJar<{
+      columns: { id: string; columnRole: string }[]
+    }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/columns`)
+    const byRole = Object.fromEntries(list.body.columns.map((c) => [c.columnRole, c.id]))
+    const url = `/api/workspaces/${wsId}/boards/${boardId}/columns/reorder`
+
+    const doneFirst = await fetchWithJar(owner.jar, url, {
+      method: 'POST',
+      body: { orderedIds: [byRole.done, byRole.backlog, byRole.in_progress, byRole.review] },
+    })
+    expect([400, 422]).toContain(doneFirst.status)
+
+    const backlogMiddle = await fetchWithJar(owner.jar, url, {
+      method: 'POST',
+      body: { orderedIds: [byRole.in_progress, byRole.backlog, byRole.review, byRole.done] },
+    })
+    expect([400, 422]).toContain(backlogMiddle.status)
   })
 
   it('rejects partial id list (422)', async () => {

@@ -9,7 +9,8 @@
 //   create / update  → scrum_master+ (column layout & WIP limits are flow discipline)
 //   delete           → scrum_master+ (only when no tasks remain in the column)
 //   reorder          → scrum_master+
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, gte, sql } from 'drizzle-orm'
+import { FLOW_STAGE, isFlowOrdered } from '#shared/utils/column-flow'
 import {
   boardColumns,
   boards,
@@ -59,11 +60,21 @@ export async function createColumn(input: {
     // on the (board_id, position) unique index (an uncaught 23505 → 500).
     await tx.select({ id: boards.id }).from(boards).where(eq(boards.id, input.boardId)).for('update')
 
-    // Append at the end. COALESCE handles the empty-board case (no rows).
-    const [agg] = await tx
-      .select({ next: sql<number>`COALESCE(MAX(${boardColumns.position}), -1) + 1` })
+    // Append at the end of the column's flow stage, shifting later stages right.
+    const existing = await tx
+      .select({ role: boardColumns.columnRole, position: boardColumns.position })
       .from(boardColumns)
       .where(eq(boardColumns.boardId, input.boardId))
+    const stage = FLOW_STAGE[input.columnRole]
+    const position = Math.max(-1, ...existing.filter((c) => FLOW_STAGE[c.role] <= stage).map((c) => c.position)) + 1
+    await tx
+      .update(boardColumns)
+      .set({ position: sql`${boardColumns.position} + 10000` })
+      .where(and(eq(boardColumns.boardId, input.boardId), gte(boardColumns.position, position)))
+    await tx
+      .update(boardColumns)
+      .set({ position: sql`${boardColumns.position} - 9999` })
+      .where(and(eq(boardColumns.boardId, input.boardId), gte(boardColumns.position, position + 10000)))
 
     const [row] = await tx
       .insert(boardColumns)
@@ -73,7 +84,7 @@ export async function createColumn(input: {
         name: input.name,
         columnRole: input.columnRole,
         wipLimit: input.wipLimit,
-        position: Number(agg!.next),
+        position,
       })
       .returning()
     return row!
@@ -143,7 +154,7 @@ export async function reorderColumns(input: {
 
   return withTenant(input.workspaceId, async (tx) => {
     const existing = await tx
-      .select({ id: boardColumns.id })
+      .select({ id: boardColumns.id, role: boardColumns.columnRole })
       .from(boardColumns)
       .where(eq(boardColumns.boardId, input.boardId))
     const existingIds = new Set(existing.map((r) => r.id))
@@ -155,6 +166,12 @@ export async function reorderColumns(input: {
       if (!existingIds.has(id)) {
         throw new ValidationError(`Неизвестный id колонки: ${id}`)
       }
+    }
+
+    // Flow analytics read the board left to right: backlog, work, done, archive.
+    const roleById = new Map(existing.map((r) => [r.id, r.role]))
+    if (!isFlowOrdered(input.orderedIds.map((id) => roleById.get(id)!))) {
+      throw new ValidationError('Бэклог остаётся первым, «Готово» и архив – последними')
     }
 
     // Phase 1: park all positions in a high range so the unique index

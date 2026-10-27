@@ -2,6 +2,7 @@
 import draggable from 'vuedraggable'
 import type { Task } from '#shared/types/task'
 import type { BoardColumn as Column } from '#shared/types/column'
+import { isFlowOrdered } from '#shared/utils/column-flow'
 
 const route = useRoute()
 const router = useRouter()
@@ -34,6 +35,13 @@ const localColumns = ref<Column[]>([])
 watch(columns, (next) => {
   localColumns.value = [...next]
 }, { immediate: true })
+
+function canMoveColumn(evt: { draggedContext: { index: number, futureIndex: number } }) {
+  const next = [...localColumns.value]
+  const [moved] = next.splice(evt.draggedContext.index, 1)
+  next.splice(evt.draggedContext.futureIndex, 0, moved!)
+  return isFlowOrdered(next.map(c => c.columnRole))
+}
 
 function onColumnsReorder() {
   reorderColumns.mutate({ orderedIds: localColumns.value.map(c => c.id) })
@@ -163,7 +171,7 @@ const lanes = computed<Lane[]>(() => {
   return result
 })
 
-const canCreateColumns = computed(() => hasRole(workspace.value?.role, 'admin'))
+const canCreateColumns = computed(() => hasRole(workspace.value?.role, 'scrum_master'))
 const canCreateTasks = computed(() => hasRole(workspace.value?.role, 'member'))
 
 const collapsedLanes = reactive(new Set<string>())
@@ -298,6 +306,7 @@ const isLoading = computed(() =>
         item-key="id"
         handle=".column-drag-handle"
         :disabled="!canCreateColumns"
+        :move="canMoveColumn"
         class="flex gap-3 h-full"
         animation="150"
         @end="onColumnsReorder"
