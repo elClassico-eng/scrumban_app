@@ -271,7 +271,7 @@ describe('comment attachments', () => {
     const mine = await attach(owner, wsId, taskId, 'mine', { forComment: true })
     const theirs = await attach(other, wsId, taskId, 'theirs', { forComment: true })
     const list1 = await fetchWithJar<{ files: unknown[] }>(other.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/files`)
-    expect(list1.body.files).toHaveLength(1)
+    expect(list1.body.files).toHaveLength(0)
     const res = await fetchWithJar<{ comment: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/comments`, {
       method: 'POST',
       body: { body: '', fileIds: [mine.ticket.file.id, theirs.ticket.file.id] },

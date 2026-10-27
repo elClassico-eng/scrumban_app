@@ -274,7 +274,7 @@ export async function listTaskFiles(input: {
       .where(and(
         eq(files.taskId, input.taskId),
         eq(files.kind, 'attachment'),
-        sql`(${files.status} = 'ready' OR (${files.status} = 'staged' AND ${files.uploadedBy} = ${input.userId}))`,
+        eq(files.status, 'ready'),
       ))
       .orderBy(files.createdAt),
   )

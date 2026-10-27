@@ -9,6 +9,7 @@ const props = defineProps<{
 const emit = defineEmits<{ imageChanged: [] }>()
 const color = defineModel<string>('color', { required: true })
 const icon = defineModel<string | null>('icon', { default: null })
+const dropImage = defineModel<boolean>('dropImage', { default: false })
 
 type Kind = 'letter' | 'emoji' | 'icon' | 'image'
 const KINDS = computed<{ value: Kind, label: string }[]>(() => [
@@ -26,11 +27,8 @@ async function removeImage() {
   await $fetch(`${apiRoutes.files(props.image.workspaceId)}/${fileId}`, { method: 'DELETE' })
 }
 
-async function pickKind(k: Kind) {
-  if (kind.value === 'image' && k !== 'image' && props.image?.url) {
-    await removeImage()
-    emit('imageChanged')
-  }
+function pickKind(k: Kind) {
+  dropImage.value = k !== 'image' && !!props.image?.url
   kind.value = k
   if (k === 'letter') icon.value = null
 }

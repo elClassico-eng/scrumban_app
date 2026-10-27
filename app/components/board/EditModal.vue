@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/vue-query'
 import { z } from 'zod'
 import { BOARD_COLOR_RE } from '#shared/constants/board-colors'
 import { BOARD_KEY_RE } from '#shared/utils/board-key'
+import { apiRoutes } from '~/routing'
 
 const props = defineProps<{ workspaceId: string }>()
 
@@ -26,6 +27,8 @@ const state = reactive<State>({ name: '', slug: '', color: '', key: '', icon: nu
 
 const { list, update } = useBoardsApi(computed(() => props.workspaceId))
 const qc = useQueryClient()
+const dropImage = ref(false)
+const toast = useToast()
 
 async function onImageChanged() {
   await qc.invalidateQueries({ queryKey: ['boards', props.workspaceId] })
@@ -39,6 +42,7 @@ const errorMessage = computed(() =>
 
 watch(editTarget, (board) => {
   if (!board) return
+  dropImage.value = false
   Object.assign(state, { name: board.name, slug: board.slug, color: board.color, key: board.key, icon: board.icon })
   update.reset()
 }, { immediate: true })
@@ -48,10 +52,15 @@ async function onSubmit() {
   if (!board) return
   try {
     await update.mutateAsync({ boardId: board.id, name: state.name.trim(), slug: state.slug, color: state.color, key: state.key.trim().toUpperCase(), icon: state.icon })
+    const imageId = dropImage.value ? fileIdFromUrl(board.imageUrl) : null
+    if (imageId) {
+      await $fetch(`${apiRoutes.files(props.workspaceId)}/${imageId}`, { method: 'DELETE' })
+      await qc.invalidateQueries({ queryKey: ['boards', props.workspaceId] })
+    }
     open.value = false
   }
-  catch {
-    // mutation state captured the error
+  catch (err) {
+    if (!update.isError.value) toast.add({ title: getErrorMessage(err, 'Не удалось убрать картинку'), color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 </script>
@@ -81,6 +90,7 @@ async function onSubmit() {
           <BoardAppearancePicker
             v-model:color="state.color"
             v-model:icon="state.icon"
+            v-model:drop-image="dropImage"
             :name="state.name"
             :image="editTarget ? { workspaceId, boardId: editTarget.id, url: editTarget.imageUrl } : null"
             class="pt-1"

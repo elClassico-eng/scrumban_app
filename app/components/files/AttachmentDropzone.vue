@@ -10,7 +10,7 @@ function isTyping(el: EventTarget | null): boolean {
 
 function onPaste(e: Event) {
   const ev = e as ClipboardEvent
-  if (props.disabled) return
+  if (props.disabled || ev.defaultPrevented) return
   if (props.pasteTarget !== 'self' && isTyping(ev.target)) return
   const files = [...(ev.clipboardData?.files ?? [])]
   if (!files.length) return
@@ -21,6 +21,10 @@ function onPaste(e: Event) {
 function onDragOver(e: DragEvent) {
   if (props.disabled || !e.dataTransfer?.types.includes('Files')) return
   over.value = true
+}
+
+function onDragLeave(e: DragEvent) {
+  if (!root.value?.contains(e.relatedTarget as Node | null)) over.value = false
 }
 
 function onDrop(e: DragEvent) {
@@ -34,17 +38,29 @@ function pasteHost(): EventTarget | null {
   return props.pasteTarget === 'self' ? root.value : window
 }
 
-onMounted(() => pasteHost()?.addEventListener('paste', onPaste))
-onBeforeUnmount(() => pasteHost()?.removeEventListener('paste', onPaste))
+function reset() {
+  over.value = false
+}
+
+onMounted(() => {
+  pasteHost()?.addEventListener('paste', onPaste)
+  window.addEventListener('drop', reset)
+  window.addEventListener('dragend', reset)
+})
+onBeforeUnmount(() => {
+  pasteHost()?.removeEventListener('paste', onPaste)
+  window.removeEventListener('drop', reset)
+  window.removeEventListener('dragend', reset)
+})
 </script>
 
 <template>
   <div
     ref="root"
     class="relative"
-    @dragover.prevent="onDragOver"
-    @dragleave.self="over = false"
-    @drop.prevent="onDrop"
+    @dragover.prevent.stop="onDragOver"
+    @dragleave="onDragLeave"
+    @drop.prevent.stop="onDrop"
   >
     <slot />
     <div
