@@ -174,6 +174,14 @@ const classDotClass = computed(() => {
         </span>
 
         <span
+          v-if="task.attachmentCount > 0"
+          class="inline-flex items-center gap-1 h-[22px] px-2 rounded-[6px] bg-elevated text-[10px] text-dimmed font-mono tabular-nums"
+          :title="`Файлов: ${task.attachmentCount}`"
+        >
+          <UIcon name="i-hugeicons-attachment-01" class="size-3" />
+          {{ task.attachmentCount }}
+        </span>
+        <span
           v-if="task.checklistTotal > 0"
           class="inline-flex items-center gap-1.5 h-[22px] px-2 rounded-[6px] bg-elevated"
         >

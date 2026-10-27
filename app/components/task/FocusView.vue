@@ -3,6 +3,7 @@ import { watchDebounced } from '@vueuse/core'
 import { useQueryClient } from '@tanstack/vue-query'
 import type { ServiceClass } from '#shared/types/domain'
 import type { TasksListResponse } from '#shared/types/task'
+import type { FileView } from '#shared/types/files'
 import type { FocusTab } from './focus/types'
 import { pageRoutes } from '~/routing'
 
@@ -41,6 +42,10 @@ const board = computed(() =>
   boardsList.data.value?.boards.find(b => b.id === bId.value),
 )
 const canDelete = computed(() => hasRole(workspace.value?.role, 'admin'))
+const canUpload = computed(() => hasRole(workspace.value?.role, 'member'))
+const taskFiles = useTaskFilesApi(wsId, bId, tId)
+const files = computed(() => taskFiles.list.data.value ?? [])
+const { items: uploads, upload, dismiss: dismissUpload } = useFileUploader()
 
 const task = computed(() =>
   tasksList.data.value?.tasks.find(t => t.id === tId.value) ?? null,
@@ -256,8 +261,23 @@ const isMissing = computed(() => !tasksList.isLoading.value && !task.value)
 
 const tab = ref<FocusTab>('desc')
 
+async function addFiles(list: File[]) {
+  if (!canUpload.value || !list.length) return
+  tab.value = 'files'
+  await Promise.all(list.map(f => upload(f, { kind: 'attachment', workspaceId: wsId.value, taskId: tId.value })))
+  uploads.value.filter(i => i.status === 'done').forEach(i => dismissUpload(i.id))
+  await taskFiles.invalidate()
+}
+
+function removeFile(file: FileView) {
+  taskFiles.remove.mutate(file.id, {
+    onError: err => toast.add({ title: getErrorMessage(err, 'Не удалось удалить файл'), color: 'error', icon: 'i-hugeicons-alert-circle' }),
+  })
+}
+
 const tabCounts = computed(() => ({
   checks: checklistItems.value.length,
+  files: files.value.length,
   deps: dependencies.value.length + blockers.value.length,
   comments: comments.value.length,
   activity: events.value.length,
@@ -331,15 +351,22 @@ function toggleWatch() {
   })
 }
 
+const rootEl = ref<HTMLElement | null>(null)
+
 onMounted(() => {
-  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') emit('close') }
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape') return
+    const dialog = document.activeElement?.closest('[role="dialog"]')
+    if (dialog && rootEl.value && !dialog.contains(rootEl.value)) return
+    emit('close')
+  }
   window.addEventListener('keydown', onKey)
   onUnmounted(() => window.removeEventListener('keydown', onKey))
 })
 </script>
 
 <template>
-  <div class="grid grid-rows-[44px_1fr] grid-cols-[minmax(0,1fr)] h-dvh sm:h-[90vh] sm:max-h-[920px] bg-default text-default rounded-none sm:rounded-2xl overflow-hidden">
+  <div ref="rootEl" class="grid grid-rows-[44px_1fr] grid-cols-[minmax(0,1fr)] h-dvh sm:h-[90vh] sm:max-h-[920px] bg-default text-default rounded-none sm:rounded-2xl overflow-hidden">
     <div v-if="isLoading" class="row-span-2 grid place-items-center p-6">
       <UIcon name="i-hugeicons-loader" class="animate-spin size-6 text-muted" />
     </div>
@@ -372,7 +399,12 @@ onMounted(() => {
       />
 
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] min-w-0 min-h-0 overflow-y-auto overflow-x-hidden lg:overflow-hidden">
-        <main class="flex flex-col min-w-0 lg:min-h-0 border-b lg:border-b-0 lg:border-r border-default">
+        <FilesAttachmentDropzone
+          class="flex flex-col min-w-0 lg:min-h-0 border-b lg:border-b-0 lg:border-r border-default"
+          :disabled="!canUpload"
+          @files="addFiles"
+        >
+        <main class="contents">
           <TaskFocusHeader
             :task="task"
             :current-column="currentColumn"
@@ -415,6 +447,15 @@ onMounted(() => {
               :board-id="bId"
               :task-id="task.id"
             />
+            <TaskFocusFilesTab
+              v-else-if="tab === 'files'"
+              :files="files"
+              :uploads="uploads"
+              :can-upload="canUpload"
+              @add="addFiles"
+              @remove="removeFile"
+              @dismiss="dismissUpload"
+            />
             <TaskFocusActivityTab
               v-else-if="tab === 'activity'"
               :events="events"
@@ -423,6 +464,7 @@ onMounted(() => {
             />
           </div>
         </main>
+        </FilesAttachmentDropzone>
 
         <TaskFocusSidebar
           :task="task"

@@ -19,6 +19,7 @@ export function useBoardSse(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
     qc.invalidateQueries({ queryKey: ['board-dependency-counts', unref(workspaceId), unref(boardId)] })
     qc.invalidateQueries({ queryKey: ['board-sprint-memberships', unref(workspaceId), unref(boardId)] })
     qc.invalidateQueries({ queryKey: ['task-subtasks'] })
+    qc.invalidateQueries({ queryKey: ['task-files'] })
   }, 250)
 
   const { data, event, status, close } = useEventSource(
