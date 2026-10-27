@@ -301,16 +301,17 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
           </div>
 
           <div class="shrink-0 border-t border-default">
-            <div class="max-w-[640px] mx-auto w-full flex items-center gap-2 px-6 py-5">
+            <div class="@container max-w-[640px] mx-auto w-full flex flex-wrap items-center justify-end gap-2 px-6 py-5 [&_button]:whitespace-nowrap">
             <UButton
               v-if="step > 0"
               size="md"
               variant="ghost"
               color="neutral"
               icon="i-hugeicons-arrow-left-02"
+              aria-label="Назад"
               @click="back"
             >
-              Назад
+              <span class="hidden @min-[32rem]:inline">Назад</span>
             </UButton>
             <div class="flex-1" />
             <template v-if="step < 2">
@@ -330,10 +331,11 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
                   variant="ghost"
                   color="neutral"
                   icon="i-hugeicons-flask-conical"
+                  aria-label="В симулятор"
                   :loading="creating"
                   @click="createSprint('simulator')"
                 >
-                  В симулятор
+                  <span class="hidden @min-[36rem]:inline">В симулятор</span>
                 </UButton>
               </UTooltip>
               <UButton
@@ -348,6 +350,7 @@ async function createSprint(mode: 'plan' | 'simulator' | 'start') {
               <UButton
                 size="md"
                 icon="i-hugeicons-play"
+                class="@max-[26rem]:w-full @max-[26rem]:justify-center"
                 :loading="creating"
                 @click="createSprint('start')"
               >
