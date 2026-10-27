@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { setup } from '@nuxt/test-utils/e2e'
 import { closeTestSql, getTestSql, resetDb } from './helpers/db'
 import { baseUrl, CookieJar, fetchWithJar } from './helpers/http'
-import { ensureTestBucket, TEST_S3, uploadTo } from './helpers/storage'
+import { ensureTestBucket, objectExists, TEST_S3, uploadTo } from './helpers/storage'
 import { TEST_URL } from './setup.global'
 
 const QUOTA = 64 * 1024
@@ -225,5 +225,38 @@ describe('serving', () => {
     const list = await fetchWithJar<{ files: { id: string, canDelete: boolean }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/files`)
     expect(list.body.files).toHaveLength(1)
     expect(list.body.files[0]!.canDelete).toBe(true)
+  })
+})
+
+async function runTask(user: UserCtx, name: string) {
+  return fetchWithJar<{ result: Record<string, number> }>(user.jar, `/api/_dev/tasks/${name}/run`, { method: 'POST' })
+}
+
+describe('maintenance', () => {
+  it('removes stale pending uploads, including avatars', async () => {
+    const owner = await registerUser('cl')
+    const wsId = await workspaceOf(owner)
+    const { taskId } = await boardWithTask(owner, wsId)
+    await start(owner, wsId, { kind: 'attachment', taskId, name: 'a.txt', contentType: 'text/plain', size: 3 })
+    await fetchWithJar(owner.jar, '/api/users/me/avatar', { method: 'POST', body: { name: 'a.webp', contentType: 'image/webp', size: 4 } })
+    await getTestSql()`UPDATE files SET created_at = now() - interval '2 hours'`
+    await runTask(owner, 'files:cleanup')
+    expect((await getTestSql()`SELECT count(*)::int AS n FROM files`)[0]!.n).toBe(0)
+  })
+
+  it('deleting a task trashes its files; purge waits 7 days then deletes objects', async () => {
+    const owner = await registerUser('pg')
+    const wsId = await workspaceOf(owner)
+    const { boardId, taskId } = await boardWithTask(owner, wsId)
+    const { ticket } = await attach(owner, wsId, taskId)
+    const [row] = await getTestSql()`SELECT storage_key FROM files WHERE id = ${ticket.file.id}`
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}`, { method: 'DELETE' })
+    expect((await getTestSql()`SELECT count(*)::int AS n FROM storage_trash`)[0]!.n).toBe(1)
+    await runTask(owner, 'files:purge')
+    expect(await objectExists(row!.storage_key)).toBe(true)
+    await getTestSql()`UPDATE storage_trash SET created_at = now() - interval '8 days'`
+    await runTask(owner, 'files:purge')
+    expect(await objectExists(row!.storage_key)).toBe(false)
+    expect((await getTestSql()`SELECT count(*)::int AS n FROM storage_trash`)[0]!.n).toBe(0)
   })
 })
