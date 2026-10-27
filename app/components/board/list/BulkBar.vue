@@ -130,7 +130,7 @@ const classItems = computed<DropdownMenuItem[][]>(() => [
 const assigneeItems = computed<DropdownMenuItem[][]>(() => [
   props.members.map(m => ({
     label: displayName(m),
-    avatar: m.avatarUrl ? { src: m.avatarUrl } : { text: initials(m) },
+    avatar: m.avatarUrl ? { as: PLAIN_IMG, src: m.avatarUrl } : { text: initials(m) },
     onSelect: () => run({ type: 'assignee', userId: m.userId }, `Исполнитель: ${displayName(m)}`),
   })),
   [{ label: 'Снять исполнителей', icon: 'i-hugeicons-user-remove-01', onSelect: () => run({ type: 'assignee', userId: null }, 'Исполнители сняты') }],

@@ -74,6 +74,7 @@ const boards = computed(() => sortBoards(boardsList.data.value?.boards ?? []))
 const favoriteBoards = computed(() => boards.value.filter(b => favorites.value.has(b.id)))
 
 const inboxBadge = useInboxBadge(computed(() => current.value?.id ?? null))
+const { list: myInvitations } = useMyInvitationsApi()
 const { list: myTasksList } = useWorkspaceTasksApi(computed(() => current.value?.id ?? ''), { mine: true })
 
 const personalLinks = computed(() => {
@@ -81,7 +82,7 @@ const personalLinks = computed(() => {
   if (!ws) return []
   const openTasks = (myTasksList.data.value?.tasks ?? []).filter(t => !t.closedAt).length
   const links = [
-    { id: 'inbox' as const, to: pageRoutes.workspaceInbox(ws.id), badge: inboxBadge.value, badgeTone: 'accent' as const, combo: combos.value.go_inbox },
+    { id: 'inbox' as const, to: pageRoutes.workspaceInbox(ws.id), badge: inboxBadge.value + (myInvitations.data.value?.invitations.length ?? 0), badgeTone: 'accent' as const, combo: combos.value.go_inbox },
     { id: 'my_tasks' as const, to: pageRoutes.workspaceMyTasks(ws.id), badge: openTasks, badgeTone: 'muted' as const, combo: combos.value.go_my_tasks },
   ]
   return links.filter(l => isVisible(l.id)).map(l => ({ ...l, ...SIDEBAR_ITEM_META[l.id] }))

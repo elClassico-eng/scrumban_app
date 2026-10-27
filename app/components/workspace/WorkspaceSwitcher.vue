@@ -14,6 +14,7 @@ const router = useRouter()
 const createOpen = ref(false)
 const help = useHelpPanel()
 const canManage = computed(() => hasRole(current.value?.role, 'admin'))
+const { leave } = useLeaveWorkspace(current)
 
 function selectWorkspace(id: string) {
   workspaceStore.setCurrent(id)
@@ -28,7 +29,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
       label: w.name,
       description: ROLE_LABEL[w.role],
       avatar: w.logoUrl
-        ? { src: w.logoUrl, alt: w.name, size: 'sm' as const }
+        ? { as: PLAIN_IMG, src: w.logoUrl, alt: w.name, size: 'sm' as const }
         : { text: w.name.trim().charAt(0).toUpperCase(), size: 'sm' as const },
       current: w.id === ws?.id,
       onSelect: () => selectWorkspace(w.id),
@@ -45,6 +46,9 @@ const items = computed<DropdownMenuItem[][]>(() => {
               { label: 'Пригласить', icon: 'i-hugeicons-user-add-01', onSelect: () => emit('invite') },
               { label: 'Настройки воркспейса', icon: 'i-hugeicons-settings-01', to: pageRoutes.settings('team') },
             ]
+          : []),
+        ...(ws.role !== 'owner'
+          ? [{ label: 'Покинуть команду', icon: 'i-hugeicons-logout-03', color: 'error' as const, onSelect: () => leave() }]
           : []),
       ]
     : []

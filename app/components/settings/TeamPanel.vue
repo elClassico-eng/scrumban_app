@@ -8,9 +8,8 @@ const { current: workspace, isLoading } = useCurrentWorkspace()
 const wsId = computed(() => workspace.value?.id ?? '')
 
 const { update, remove: removeWorkspace } = useWorkspacesApi()
-const { list: membersList, remove: removeMember } = useMembersApi(wsId)
-const authStore = useAuthStore()
-const confirm = useConfirm()
+const { list: membersList } = useMembersApi(wsId)
+const { leave: onLeave, pending: leaving } = useLeaveWorkspace(workspace)
 const toast = useToast()
 
 const canEdit = computed(() => hasRole(workspace.value?.role, 'admin'))
@@ -126,28 +125,6 @@ async function onDeleteWorkspace() {
   }
 }
 
-async function onLeave() {
-  const me = authStore.user?.id
-  if (!workspace.value || !me) return
-  const ok = await confirm({
-    title: `Покинуть «${workspace.value.name}»?`,
-    description: 'Вы потеряете доступ ко всем доскам этой команды. Вернуться можно только по новому приглашению.',
-    confirmLabel: 'Покинуть',
-    confirmColor: 'error',
-  })
-  if (!ok) return
-  try {
-    await removeMember.mutateAsync(me)
-    await router.push(pageRoutes.workspaces)
-  }
-  catch (err) {
-    toast.add({
-      title: getErrorMessage(err, 'Не удалось покинуть команду'),
-      color: 'error',
-      icon: 'i-hugeicons-alert-circle',
-    })
-  }
-}
 </script>
 
 <template>
@@ -361,7 +338,7 @@ async function onLeave() {
           <UButton
             color="error"
             variant="outline"
-            :loading="removeMember.isPending.value"
+            :loading="leaving"
             @click="onLeave"
           >
             Покинуть команду

@@ -39,7 +39,7 @@ const assigneeOptions = computed(() => [
   ...(membersList.data.value?.members ?? []).map(m => ({
     label: displayName(m),
     value: m.userId,
-    avatar: m.avatarUrl ? { src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
+    avatar: m.avatarUrl ? { as: PLAIN_IMG, src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
   })),
 ])
 

@@ -20,6 +20,7 @@ const groups = computed(() => [
       label: displayName(m),
       suffix: m.email,
       avatar: {
+        as: PLAIN_IMG,
         src: m.avatarUrl ?? undefined,
         alt: displayName(m),
         text: initials(m),
