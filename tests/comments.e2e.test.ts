@@ -141,6 +141,20 @@ describe('POST /comments', () => {
     expect(res.status).toBe(403)
   })
 
+  it('stores markdown and sends a plain snippet in the mention notification', async () => {
+    const owner = await registerUser('owner@example.com')
+    const dev = await registerUser('dev@example.com')
+    const wsId = await createWorkspace(owner)
+    await addMember(owner, wsId, 'dev@example.com', 'member')
+    const { boardId, columns } = await createBoardWithColumns(owner, wsId)
+    const taskId = await createTask(owner, wsId, boardId, columns.backlog)
+    const body = `**Срочно**, @[Dev](${dev.id}): см. [доку](https://x.ru)`
+    const res = await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${taskId}/comments`, { method: 'POST', body: { body } })
+    expect(res.status).toBe(200)
+    const [n] = await getTestSql()`SELECT payload FROM notifications WHERE user_id = ${dev.id} AND type = 'mention'`
+    expect(n!.payload.snippet).toBe('Срочно, @Dev: см. доку')
+  })
+
   it('parses workspace-member mentions and drops outsiders', async () => {
     const owner = await registerUser('owner@example.com')
     const dev = await registerUser('dev@example.com')
