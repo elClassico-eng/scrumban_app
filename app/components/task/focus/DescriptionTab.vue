@@ -1,121 +1,126 @@
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core'
+import type { MemberView } from '#shared/types/workspace'
+
+type SaveResult = 'ok' | 'conflict' | 'error'
+
 const props = defineProps<{
   description: string
+  editable: boolean
+  members: MemberView[]
+  save: (next: string, base: string) => Promise<SaveResult>
+  uploadImage?: (file: File) => Promise<{ url: string, name: string } | null>
 }>()
+const emit = defineEmits<{ addFiles: [files: File[]] }>()
 
-const emit = defineEmits<{
-  save: [value: string, base: string]
-}>()
-
-const toast = useToast()
-const isEditing = ref(false)
 const draft = ref(props.description)
 const base = ref(props.description)
-const changedMeanwhile = computed(() => isEditing.value && props.description !== base.value)
-const textareaWrapper = ref<HTMLElement | null>(null)
+const dirty = ref(false)
+const focused = ref(false)
+const status = ref<'idle' | 'saving' | 'saved'>('idle')
+const filePicker = ref<HTMLInputElement | null>(null)
+let saving = false
 
-watch(() => props.description, (v) => {
-  if (!isEditing.value) draft.value = v
-})
-
-function startEdit() {
+function syncFromServer() {
+  if (dirty.value || focused.value) return
   draft.value = props.description
   base.value = props.description
-  isEditing.value = true
-  nextTick(() => {
-    textareaWrapper.value?.querySelector('textarea')?.focus()
-  })
 }
 
-function commitEdit() {
-  isEditing.value = false
+watch(() => props.description, syncFromServer)
+
+async function flush() {
+  if (!dirty.value || saving) return
+  saving = true
+  dirty.value = false
+  status.value = 'saving'
   const next = draft.value
-  if (next !== base.value) emit('save', next, base.value)
+  const result = await props.save(next, base.value)
+  saving = false
+  if (result === 'ok') {
+    base.value = next
+    status.value = 'saved'
+  }
+  else {
+    status.value = 'idle'
+    if (result === 'error') {
+      dirty.value = true
+      return
+    }
+  }
+  if (dirty.value) flushSoon()
 }
 
-function cancelEdit() {
-  draft.value = props.description
-  isEditing.value = false
+const flushSoon = useDebounceFn(flush, 1000)
+
+function onUserEdit() {
+  dirty.value = true
+  status.value = 'idle'
+  flushSoon()
 }
 
-function onComingSoon(feature: string) {
-  toast.add({
-    title: `${feature} скоро будет`,
-    icon: 'i-hugeicons-sparkles',
-    duration: 1500,
-  })
+function onBlur() {
+  focused.value = false
+  void flush()
+  syncFromServer()
 }
+
+function onPick(e: Event) {
+  const el = e.target as HTMLInputElement
+  const files = [...(el.files ?? [])]
+  el.value = ''
+  const upload = props.uploadImage
+  const images = upload ? files.filter(f => f.type.startsWith('image/')) : []
+  const rest = files.filter(f => !images.includes(f))
+  if (rest.length) emit('addFiles', rest)
+  for (const f of images) {
+    void upload!(f).then((img) => {
+      if (!img) return
+      draft.value = `${draft.value}${draft.value ? '\n\n' : ''}![${img.name}](${img.url})`
+      onUserEdit()
+    })
+  }
+}
+
+onBeforeUnmount(() => {
+  void flush()
+})
 </script>
 
 <template>
   <section>
-    <div class="flex items-center gap-2 mb-2.5">
-      <h4 class="text-[12px] font-semibold uppercase tracking-[0.06em] text-muted m-0">
+    <div class="mb-2.5 flex items-center gap-2">
+      <h4 class="m-0 text-[12px] font-semibold uppercase tracking-[0.06em] text-muted">
         Описание
       </h4>
+      <span v-if="status === 'saving'" class="text-[11px] text-dimmed">Сохраняется…</span>
+      <span v-else-if="status === 'saved'" class="text-[11px] text-dimmed">Сохранено</span>
       <div class="flex-1" />
       <button
+        v-if="editable"
         type="button"
-        class="h-6 px-2 rounded-md border border-dashed border-default text-[12px] text-muted inline-flex items-center gap-1 cursor-pointer transition-colors hover:border-accent-500 hover:text-accent-500 hover:border-solid"
-        @click="onComingSoon('Вложение')"
+        class="inline-flex h-6 cursor-pointer items-center gap-1 rounded-md border border-dashed border-default px-2 text-[12px] text-muted transition-colors hover:border-solid hover:border-accent-500 hover:text-accent-500"
+        @click="filePicker?.click()"
       >
         <UIcon name="i-hugeicons-plus" class="size-3" />
         Вложение
       </button>
+      <input ref="filePicker" type="file" multiple class="hidden" @change="onPick">
     </div>
-
-    <div v-if="isEditing" ref="textareaWrapper" class="w-full">
-      <p
-        v-if="changedMeanwhile"
-        class="mb-2 flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-[12.5px] text-warning"
-      >
-        <UIcon name="i-hugeicons-alert-02" class="mt-0.5 size-4 shrink-0" />
-        Описание только что изменил кто-то ещё. При сохранении покажем обе версии, чтобы ничего не потерялось.
-      </p>
-      <textarea
-        v-model="draft"
-        rows="8"
-        autofocus
-        placeholder="Напиши описание задачи…"
-        class="block w-full text-[14px] leading-[1.65] text-default bg-default border border-default rounded-md px-3 py-2.5 outline-none focus:border-accent-500 focus:ring-2 focus:ring-accent-50 transition-colors resize-y font-sans"
-        @keydown.esc="cancelEdit"
-      />
-      <div class="flex items-center gap-2 mt-2">
-        <UButton size="xs" @click="commitEdit">Сохранить</UButton>
-        <UButton size="xs" variant="ghost" color="neutral" @click="cancelEdit">
-          Отмена
-        </UButton>
-        <span class="text-[11px] text-muted ml-auto">Esc для отмены</span>
-      </div>
-    </div>
-
-    <template v-else>
-      <button
-        v-if="!description"
-        type="button"
-        class="w-full text-left text-[14px] text-muted italic py-1 px-0 bg-transparent border-0 cursor-pointer hover:text-default transition-colors"
-        @click="startEdit"
-      >
-        Добавьте описание
-      </button>
-
-      <div
-        v-else
-        class="text-[14px] text-default leading-[1.65] whitespace-pre-wrap break-words cursor-text"
-        @click="startEdit"
-      >
-        {{ description }}
-      </div>
-
-      <button
-        v-if="description"
-        type="button"
-        class="inline-flex items-center gap-1.5 text-[12px] text-muted bg-transparent border-0 p-0 mt-3 cursor-pointer hover:text-accent-500 transition-colors"
-        @click="startEdit"
-      >
-        <UIcon name="i-hugeicons-pencil" class="size-3" />
-        Редактировать описание
-      </button>
-    </template>
+    <p v-if="!editable && !description" class="m-0 text-[14px] italic text-muted">
+      Описания нет
+    </p>
+    <LazyCommonRichEditor
+      v-else
+      v-model="draft"
+      variant="document"
+      :editable="editable"
+      :members="members"
+      :upload-image="uploadImage"
+      placeholder="Опишите задачу: контекст, ссылки, критерии готовности. «/» – блоки, «@» – упомянуть"
+      @user-edit="onUserEdit"
+      @focus="focused = true"
+      @blur="onBlur"
+    />
   </section>
 </template>

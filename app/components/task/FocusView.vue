@@ -134,30 +134,47 @@ function saveDeferred(
 type TextField = 'title' | 'description'
 const conflict = ref<{ field: TextField, mine: string } | null>(null)
 
-async function saveText(field: TextField, next: string, base: string) {
-  if (!task.value) return
+type SaveResult = 'ok' | 'conflict' | 'error'
+
+async function saveText(field: TextField, next: string, base: string): Promise<SaveResult> {
+  if (!task.value) return 'error'
   try {
     await update.mutateAsync({ taskId: task.value.id, [field]: next, expected: { [field]: base } })
+    return 'ok'
   }
   catch (err) {
     if (getErrorStatus(err) !== 409) {
       toast.add({ title: getErrorMessage(err, 'Не удалось сохранить'), color: 'error', icon: 'i-hugeicons-alert-circle' })
-      return
+      return 'error'
     }
     await qc.refetchQueries({ queryKey: tasksKey.value })
     conflict.value = { field, mine: next }
+    return 'conflict'
   }
+}
+
+async function uploadDescriptionImage(file: File) {
+  const f = await upload(file, { kind: 'attachment', workspaceId: wsId.value, taskId: tId.value })
+  if (!f) {
+    const failed = uploads.value.findLast(i => i.status === 'error')
+    toast.add({ title: failed?.error ?? 'Не удалось загрузить картинку', color: 'error', icon: 'i-hugeicons-alert-circle' })
+    return null
+  }
+  const done = uploads.value.find(i => i.file?.id === f.id)
+  if (done) dismissUpload(done.id)
+  await taskFiles.invalidate()
+  return { url: f.url, name: f.name }
 }
 
 function keepMine() {
   const c = conflict.value
   conflict.value = null
-  if (c && task.value) saveText(c.field, c.mine, task.value[c.field])
+  if (c && task.value) void saveText(c.field, c.mine, task.value[c.field])
 }
 
 function onTitleChange(next: string, base: string) {
   if (!task.value || next === task.value.title) return
-  saveText('title', next, base)
+  void saveText('title', next, base)
 }
 
 function onServiceClassChange(v: ServiceClass) {
@@ -424,7 +441,11 @@ onMounted(() => {
             <TaskFocusDescriptionTab
               v-if="tab === 'desc'"
               :description="task.description"
-              @save="(v: string, base: string) => saveText('description', v, base)"
+              :editable="canUpload"
+              :members="members"
+              :save="(v: string, base: string) => saveText('description', v, base)"
+              :upload-image="canUpload ? uploadDescriptionImage : undefined"
+              @add-files="addFiles"
             />
             <TaskFocusChecklistTab
               v-else-if="tab === 'checks'"
