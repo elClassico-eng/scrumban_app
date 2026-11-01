@@ -16,6 +16,10 @@ const props = withDefaults(defineProps<{
 const model = defineModel<string>({ required: true })
 const emit = defineEmits<{ userEdit: [], blur: [], submit: [] }>()
 
+const editorUi = computed(() => ({
+  base: props.variant === 'comment' ? 'sm:px-0 *:my-1.5 [&_p]:leading-[1.55] [&_li]:my-0.5' : 'sm:px-0 *:my-3 [&_p]:leading-[1.65]',
+}))
+
 const editorRef = ref<{ editor: Editor | undefined } | null>(null)
 const picker = ref<HTMLInputElement | null>(null)
 const pendingImage = ref(0)
@@ -113,7 +117,13 @@ function onPick(e: Event) {
 
 defineExpose({
   focus: () => editorRef.value?.editor?.commands.focus('end'),
-  insertMention: () => editorRef.value?.editor?.chain().focus().insertContent(' @').run(),
+  insertMention: () => {
+    const editor = editorRef.value?.editor
+    if (!editor) return
+    const { from } = editor.state.selection
+    const prev = editor.state.doc.textBetween(Math.max(0, from - 1), from)
+    editor.chain().focus().insertContent(prev && !/\s/.test(prev) ? ' @' : '@').run()
+  },
 })
 </script>
 
@@ -132,6 +142,7 @@ defineExpose({
     :handlers="handlers"
     :editor-props="editorProps"
     :class="['rich-editor', `rich-editor--${variant}`]"
+    :ui="editorUi"
     @update:model-value="onUpdate"
     @blur="emit('blur')"
   >
@@ -152,13 +163,16 @@ defineExpose({
   color: var(--ui-text);
   outline: none;
 }
-.rich-editor--document :deep(.ProseMirror) {
+.rich-editor--document :deep(.ProseMirror[contenteditable="true"]) {
   min-height: 8rem;
 }
 .rich-editor--comment :deep(.ProseMirror) {
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.rich-editor--comment :deep(.ProseMirror[contenteditable="true"]) {
   min-height: 2.75rem;
   padding: 0.625rem 0.875rem;
-  font-size: 13.5px;
 }
 .rich-editor :deep(.ProseMirror img) {
   max-width: 100%;
