@@ -37,8 +37,9 @@ const filesByComment = computed(() => {
   return map
 })
 const { items: composerUploads, upload: uploadForComment, dismiss: dismissUpload } = useFileUploader()
+const { items: inlineUploads, upload: uploadInline } = useFileUploader()
 const stagedFiles = computed(() => composerUploads.value.filter(i => i.status === 'done' && i.file).map(i => i.file!))
-const composerUploading = computed(() => composerUploads.value.some(i => i.status === 'uploading'))
+const composerUploading = computed(() => [...composerUploads.value, ...inlineUploads.value].some(i => i.status === 'uploading'))
 const filePicker = ref<HTMLInputElement | null>(null)
 
 function attachToComposer(list: File[]) {
@@ -170,7 +171,6 @@ function commentRole(c: TaskComment): string {
 
 const composerBody = ref('')
 const composerRef = ref<{ focus: () => void, insertMention: () => void } | null>(null)
-const { upload: uploadInline } = useFileUploader()
 const inlineFileIds = ref<string[]>([])
 
 async function uploadCommentImage(file: File) {
@@ -184,8 +184,8 @@ async function uploadCommentImage(file: File) {
 }
 
 async function submitComment() {
+  if (create.isPending.value || !composerHasContent.value) return
   const body = composerBody.value.trim()
-  if (!body && !stagedFiles.value.length) return
   const fileIds = [...stagedFiles.value.map(f => f.id), ...inlineFileIds.value.filter(id => body.includes(id))]
   try {
     await create.mutateAsync({ body, parentId: replyTo.value?.id, fileIds })
@@ -207,6 +207,10 @@ async function submitComment() {
 const editingId = ref<string | null>(null)
 const editVisible = ref('')
 const editRef = ref<{ focus: () => void, insertMention: () => void } | null>(null)
+
+function setEditRef(el: unknown) {
+  editRef.value = el as typeof editRef.value
+}
 
 function startEdit(c: TaskComment) {
   editingId.value = c.id
@@ -360,7 +364,7 @@ function timeLabel(iso: string): string {
             class="rounded-lg bg-default border border-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
           >
             <LazyCommonRichEditor
-              ref="editRef"
+              :ref="setEditRef"
               v-model="editVisible"
               variant="comment"
               :members="members"

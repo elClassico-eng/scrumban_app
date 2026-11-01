@@ -13,6 +13,9 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ addFiles: [files: File[]] }>()
 
+const MAX_LENGTH = 20_000
+const toast = useToast()
+
 const draft = ref(props.description)
 const base = ref(props.description)
 const dirty = ref(false)
@@ -21,7 +24,7 @@ const filePicker = ref<HTMLInputElement | null>(null)
 let saving = false
 
 function syncFromServer() {
-  if (dirty.value) return
+  if (dirty.value || saving) return
   draft.value = props.description
   base.value = props.description
 }
@@ -30,6 +33,11 @@ watch(() => props.description, syncFromServer)
 
 async function flush() {
   if (!dirty.value || saving) return
+  if (draft.value.length > MAX_LENGTH) {
+    status.value = 'idle'
+    toast.add({ title: 'Описание длиннее 20 000 символов – сократите текст', color: 'error', icon: 'i-hugeicons-alert-circle' })
+    return
+  }
   saving = true
   dirty.value = false
   status.value = 'saving'
@@ -46,6 +54,9 @@ async function flush() {
       dirty.value = true
       return
     }
+    dirty.value = false
+    syncFromServer()
+    return
   }
   if (dirty.value) flushSoon()
 }
@@ -60,7 +71,6 @@ function onUserEdit() {
 
 function onBlur() {
   void flush()
-  syncFromServer()
 }
 
 function onPick(e: Event) {

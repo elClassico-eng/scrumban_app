@@ -20,6 +20,7 @@ describe('plain_to_markdown', () => {
     ['конец\n', 'конец\n'],
     ['win\r\nline', 'win\\\nline'],
     ['', ''],
+    ['```\nconst a = 1\nconst b = 2\n```', '```\nconst a = 1\nconst b = 2\n```'],
   ])('%j', async (input, expected) => {
     const [row] = await getTestSql()`SELECT plain_to_markdown(${input}) AS out`
     expect(row!.out).toBe(expected)

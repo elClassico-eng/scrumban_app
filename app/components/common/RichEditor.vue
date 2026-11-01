@@ -4,7 +4,7 @@ import type { EditorCustomHandlers, EditorSuggestionMenuItem, EditorToolbarItem 
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import type { MemberView } from '#shared/types/workspace'
 import { MentionToken } from '~/utils/editor-mention'
-import { IMAGE_OPTIONS } from '~/utils/editor-image'
+import { IMAGE_OPTIONS, ImageParagraph, textOnlyMarked } from '~/utils/editor-config'
 
 const props = withDefaults(defineProps<{
   editable?: boolean
@@ -61,9 +61,23 @@ const mentionItems = computed(() => props.members.map(m => ({
   avatar: m.avatarUrl ? { as: PLAIN_IMG, src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
 })))
 
+let lastEmitted = model.value
+let applyingExternal = false
+
+watch(model, (value) => {
+  if (value === lastEmitted) return
+  applyingExternal = true
+  void nextTick(() => {
+    applyingExternal = false
+  })
+})
+
+watch(() => props.editable, value => editorRef.value?.editor?.setEditable(value))
+
 function onUpdate(value: string) {
+  lastEmitted = value
   model.value = value
-  if (editorRef.value?.editor?.isFocused || pendingImage.value) emit('userEdit')
+  if (!applyingExternal) emit('userEdit')
 }
 
 function imageFiles(list: FileList | null | undefined): File[] {
@@ -136,8 +150,9 @@ defineExpose({
     :editable="editable"
     :mention="false"
     :image="IMAGE_OPTIONS"
-    :extensions="[MentionToken, TaskList, TaskItem.configure({ nested: true })]"
-    :starter-kit="variant === 'comment' ? { heading: false } : {}"
+    :extensions="[ImageParagraph, MentionToken, TaskList, TaskItem.configure({ nested: true })]"
+    :starter-kit="{ paragraph: false }"
+    :markdown="{ marked: textOnlyMarked }"
     :placeholder="editable ? placeholder : undefined"
     :handlers="handlers"
     :editor-props="editorProps"
