@@ -16,13 +16,12 @@ const emit = defineEmits<{ addFiles: [files: File[]] }>()
 const draft = ref(props.description)
 const base = ref(props.description)
 const dirty = ref(false)
-const focused = ref(false)
 const status = ref<'idle' | 'saving' | 'saved'>('idle')
 const filePicker = ref<HTMLInputElement | null>(null)
 let saving = false
 
 function syncFromServer() {
-  if (dirty.value || focused.value) return
+  if (dirty.value) return
   draft.value = props.description
   base.value = props.description
 }
@@ -60,7 +59,6 @@ function onUserEdit() {
 }
 
 function onBlur() {
-  focused.value = false
   void flush()
   syncFromServer()
 }
@@ -119,7 +117,6 @@ onBeforeUnmount(() => {
       :upload-image="uploadImage"
       placeholder="Опишите задачу: контекст, ссылки, критерии готовности. «/» – блоки, «@» – упомянуть"
       @user-edit="onUserEdit"
-      @focus="focused = true"
       @blur="onBlur"
     />
   </section>

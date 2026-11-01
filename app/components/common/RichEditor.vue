@@ -4,6 +4,7 @@ import type { EditorCustomHandlers, EditorSuggestionMenuItem, EditorToolbarItem 
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import type { MemberView } from '#shared/types/workspace'
 import { MentionToken } from '~/utils/editor-mention'
+import { IMAGE_OPTIONS } from '~/utils/editor-image'
 
 const props = withDefaults(defineProps<{
   editable?: boolean
@@ -13,7 +14,7 @@ const props = withDefaults(defineProps<{
   uploadImage?: (file: File) => Promise<{ url: string, name: string } | null>
 }>(), { editable: true, variant: 'document', members: () => [], placeholder: '', uploadImage: undefined })
 const model = defineModel<string>({ required: true })
-const emit = defineEmits<{ userEdit: [], focus: [], blur: [], submit: [] }>()
+const emit = defineEmits<{ userEdit: [], blur: [], submit: [] }>()
 
 const editorRef = ref<{ editor: Editor | undefined } | null>(null)
 const picker = ref<HTMLInputElement | null>(null)
@@ -124,6 +125,7 @@ defineExpose({
     content-type="markdown"
     :editable="editable"
     :mention="false"
+    :image="IMAGE_OPTIONS"
     :extensions="[MentionToken, TaskList, TaskItem.configure({ nested: true })]"
     :starter-kit="variant === 'comment' ? { heading: false } : {}"
     :placeholder="editable ? placeholder : undefined"
@@ -131,7 +133,6 @@ defineExpose({
     :editor-props="editorProps"
     :class="['rich-editor', `rich-editor--${variant}`]"
     @update:model-value="onUpdate"
-    @focus="emit('focus')"
     @blur="emit('blur')"
   >
     <template v-if="editable">
@@ -162,6 +163,27 @@ defineExpose({
 .rich-editor :deep(.ProseMirror img) {
   max-width: 100%;
   border-radius: 0.5rem;
+}
+.rich-editor :deep(ul[data-type="taskList"]) {
+  list-style: none;
+  padding-left: 0;
+}
+.rich-editor :deep(li[data-checked]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.rich-editor :deep(li[data-checked] > label) {
+  flex-shrink: 0;
+  margin-top: 0.25em;
+}
+.rich-editor :deep(li[data-checked] > div) {
+  flex: 1;
+  min-width: 0;
+}
+.rich-editor :deep(li[data-checked="true"] > div) {
+  color: var(--ui-text-muted);
+  text-decoration: line-through;
 }
 .rich-editor :deep(.mention) {
   color: var(--color-accent-600);

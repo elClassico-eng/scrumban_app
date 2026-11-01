@@ -98,6 +98,11 @@ export default defineNuxtConfig({
     },
   },
 
+  vite: {
+    // Nuxt UI loads Tiptap unbundled; pre-bundling our direct imports would give dev two ProseMirror copies.
+    optimizeDeps: { exclude: ['@tiptap/core', '@tiptap/extension-list', '@tiptap/extension-mention'] },
+  },
+
   typescript: {
     strict: true,
     typeCheck: false,
