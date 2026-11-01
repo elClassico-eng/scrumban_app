@@ -105,7 +105,7 @@ async function submit() {
               </span>
             </UTooltip>
           </template>
-          <UTextarea v-model="state.goal" :disabled="isActive" :rows="2" class="w-full" />
+          <UTextarea v-model="state.goal" :disabled="isActive" :rows="3" autoresize :maxrows="8" class="w-full" />
         </UFormField>
 
         <div class="grid grid-cols-2 gap-3">

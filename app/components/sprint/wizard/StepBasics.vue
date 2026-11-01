@@ -49,6 +49,8 @@ defineExpose({
         v-model="basics.goal"
         size="xl"
         :rows="3"
+        autoresize
+        :maxrows="8"
         class="w-full"
         placeholder="Довести обмен с 1С до боевого состояния"
         maxlength="10000"
