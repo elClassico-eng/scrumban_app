@@ -1,0 +1,38 @@
+import { describe, expect, it } from 'vitest'
+import { MarkdownManager } from '@tiptap/markdown'
+import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
+import { TaskItem, TaskList } from '@tiptap/extension-list'
+import { MentionToken, parseMentionToken } from '../app/utils/editor-mention'
+
+const ID = '0b6f3c1e-8a3d-4c2b-9f7a-1d2e3f4a5b6c'
+const md = new MarkdownManager({ extensions: [StarterKit, Image, TaskList, TaskItem, MentionToken] as never })
+const roundTrip = (src: string) => md.serialize(md.parse(src))
+
+describe('mention token', () => {
+  it('parses the stored format', () => {
+    expect(parseMentionToken(`@[Иван Петров](${ID}) привет`)).toEqual({ raw: `@[Иван Петров](${ID})`, label: 'Иван Петров', id: ID })
+    expect(parseMentionToken('@[x](not-a-uuid)')).toBeNull()
+  })
+
+  it('round-trips mentions next to text', () => {
+    const src = `Привет, @[Иван Петров](${ID}), глянь и @[Ann](${ID.toUpperCase()})`
+    const json = JSON.stringify(md.parse(src))
+    expect(json).toContain('"type":"mention"')
+    expect(roundTrip(src)).toBe(`Привет, @[Иван Петров](${ID}), глянь и @[Ann](${ID})`)
+  })
+
+  it('keeps ordinary links as links', () => {
+    expect(roundTrip('см. [доку](https://takt34.tech/docs)')).toBe('см. [доку](https://takt34.tech/docs)')
+  })
+
+  it('round-trips images and task lists', () => {
+    expect(roundTrip('![скрин](/api/files/w/a/b)')).toBe('![скрин](/api/files/w/a/b)')
+    expect(roundTrip('- [ ] сделать\n- [x] готово')).toBe('- [ ] сделать\n- [x] готово')
+  })
+
+  it('keeps raw html as literal text', () => {
+    const html = '<script>alert(1)</script> <img src=x onerror=alert(1)>'
+    expect(md.parse(html)).toEqual({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: html }] }] })
+  })
+})
