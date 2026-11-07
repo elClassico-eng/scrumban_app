@@ -60,7 +60,7 @@ withDefaults(defineProps<{ label?: string, phrases?: string[] }>(), { label: und
   position: relative;
   width: 100%;
   height: 1.3em;
-  font-size: clamp(26px, 4.2vw, 46px);
+  font-size: clamp(20px, 2.8vw, 32px);
   font-weight: 500;
   letter-spacing: -0.025em;
   line-height: 1.3;
