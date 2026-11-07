@@ -55,9 +55,12 @@ async function commitEdit() {
 
 const router = useRouter()
 const settingsOpen = ref(false)
+const settingsTab = ref('look')
 
 watch(() => route.query.settings, (value) => {
-  if (value === 'feed') settingsOpen.value = true
+  if (value !== 'feed') return
+  settingsTab.value = 'feed'
+  settingsOpen.value = true
 }, { immediate: true })
 
 watch(settingsOpen, (open) => {
@@ -293,6 +296,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
     <BoardSettingsModal
       v-if="canRename && board"
       v-model:open="settingsOpen"
+      v-model:tab="settingsTab"
       :workspace-id="workspaceId"
       :board-id="boardId"
       :board="board"

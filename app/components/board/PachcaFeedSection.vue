@@ -3,9 +3,6 @@ import { DEFAULT_FEED_EVENTS, FEED_EVENTS, type BoardFeedView, type FeedEvent, t
 
 const props = defineProps<{ workspaceId: string, boardId: string }>()
 
-const route = useRoute()
-const section = useTemplateRef<HTMLElement>('section')
-
 const FEED_EVENT_LABEL: Record<FeedEvent, string> = {
   task_closed: 'Задача закрыта',
   task_reopened: 'Задача переоткрыта',
@@ -16,18 +13,13 @@ const FEED_EVENT_LABEL: Record<FeedEvent, string> = {
 }
 
 const wsId = computed(() => props.workspaceId)
-const { state, chats } = usePachcaApi(wsId)
-const ready = computed(() => !!state.data.value?.canManage && state.data.value?.integration?.status === 'active')
-const { list, create, update, remove, test } = useBoardFeedsApi(wsId, computed(() => props.boardId), ready)
+const { list, create, update, remove, test } = useBoardFeedsApi(wsId, computed(() => props.boardId), ref(true))
 const toast = useToast()
-
-watch(section, (el) => {
-  if (el && route.query.settings === 'feed') el.scrollIntoView({ block: 'start', behavior: 'smooth' })
-})
 
 const chatList = ref<PachcaChat[]>([])
 const chatId = ref<string | undefined>()
 const adding = ref(false)
+const { chats } = usePachcaApi(wsId)
 
 function fail(err: unknown, fallback: string) {
   toast.add({ title: getErrorMessage(err, fallback), color: 'error', icon: 'i-hugeicons-alert-circle' })
@@ -76,12 +68,11 @@ async function sendTest(feedId: string) {
 </script>
 
 <template>
-  <div v-if="ready" ref="section" class="border-t border-default pt-4">
-    <p class="mb-1 text-xs uppercase tracking-wide text-muted">Лента в Пачку</p>
-    <p class="mb-3 text-sm text-muted">События доски в чат команды. Бот видит только чаты, куда его добавили.</p>
+  <div>
+    <p class="mb-4 text-sm text-muted">События доски уходят в чат команды. Бот видит только чаты, куда его добавили.</p>
 
-    <div v-for="feed in list.data.value ?? []" :key="feed.id" class="mb-3 rounded-xl bg-elevated/50 p-3">
-      <div class="mb-2 flex items-center justify-between gap-2">
+    <div v-for="feed in list.data.value ?? []" :key="feed.id" class="mb-3 rounded-xl bg-elevated/50 p-4">
+      <div class="mb-3 flex items-center justify-between gap-2">
         <span class="truncate text-sm font-medium text-default">{{ feed.chatName }}</span>
         <div class="flex shrink-0 items-center gap-1">
           <UBadge v-if="feed.status === 'error'" color="error" variant="soft" size="sm">Ошибка</UBadge>
@@ -89,7 +80,7 @@ async function sendTest(feedId: string) {
           <UButton size="xs" color="error" variant="ghost" icon="i-hugeicons-delete-02" aria-label="Удалить ленту" @click="remove.mutate(feed.id)" />
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-x-4 gap-y-1.5">
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
         <UCheckbox
           v-for="e in FEED_EVENTS"
           :key="e"
@@ -98,7 +89,7 @@ async function sendTest(feedId: string) {
           @update:model-value="toggleEvent(feed, e, $event === true)"
         />
       </div>
-      <div class="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
+      <div class="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted">
         Сводка к стендапу в
         <UInput
           type="time"
