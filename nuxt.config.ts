@@ -18,6 +18,10 @@ export default defineNuxtConfig({
       title: 'Такт',
       htmlAttrs: { lang: 'ru' },
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+      script: [{
+        tagPosition: 'head',
+        innerHTML: `try{if(localStorage.getItem('scrumban:last-path'))document.documentElement.classList.add('takt-returning')}catch(e){}`,
+      }],
     },
   },
 
