@@ -3,8 +3,9 @@ import { leads } from '../db/schema'
 
 export type CreateLeadInput = {
   email: string
-  team: string | null
-  intents: string
+  teamSize: string | null
+  currentTool: string | null
+  consentAt: Date
 }
 
 export async function createLead(input: CreateLeadInput) {
