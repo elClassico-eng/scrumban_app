@@ -362,10 +362,56 @@ html.takt-bg .app-canvas {
   isolation: isolate;
 }
 
+/* With a background, panels stop being solid: the theme surface tokens are
+   re-pointed to a translucent glass tinted by the image, so every bg-default /
+   bg-elevated block inside the app frame follows the picture. Teleported
+   overlays (modals, menus) live outside the frame and keep solid tokens. */
+html.takt-bg {
+  --takt-glass: color-mix(in srgb, var(--takt-tint) 16%, #ffffff);
+}
+
+html.dark.takt-bg,
+html.takt-bg aside.takt-surface.dark {
+  --takt-glass: color-mix(in srgb, var(--takt-tint) 24%, #0b0b0c);
+}
+
 html.takt-bg .takt-surface {
-  background: color-mix(in srgb, var(--ui-bg) 60%, transparent);
+  --ui-bg: color-mix(in srgb, var(--takt-glass) 58%, transparent);
+  --ui-bg-muted: color-mix(in srgb, var(--takt-glass) 46%, transparent);
+  --ui-bg-elevated: color-mix(in srgb, var(--takt-glass) 50%, transparent);
+  --ui-bg-accented: color-mix(in srgb, var(--takt-glass) 72%, transparent);
+  --ui-border: color-mix(in srgb, var(--ui-text) 12%, transparent);
+  --ui-border-muted: color-mix(in srgb, var(--ui-text) 8%, transparent);
+  --ui-border-accented: color-mix(in srgb, var(--ui-text) 20%, transparent);
+}
+
+html.takt-bg main.takt-surface {
+  background: transparent;
+  border-color: transparent;
+}
+
+html.takt-bg aside.takt-surface {
+  background: color-mix(in srgb, var(--takt-glass) 72%, transparent);
   backdrop-filter: blur(var(--takt-bg-blur)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--takt-bg-blur)) saturate(140%);
+}
+
+html.takt-bg .takt-surface .surface,
+html.takt-bg .takt-surface .surface-soft,
+html.takt-bg .takt-surface .surface-elevated,
+html.takt-bg .takt-surface .bg-elevated,
+html.takt-bg .takt-surface [class*='bg-elevated/'],
+html.takt-bg .takt-surface .column-tinted {
+  backdrop-filter: blur(var(--takt-bg-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--takt-bg-blur)) saturate(140%);
+}
+
+html.takt-bg .takt-surface .surface,
+html.takt-bg .takt-surface .surface-soft,
+html.takt-bg .takt-surface .surface-elevated {
+  background: var(--ui-bg);
+  border-color: var(--ui-border);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 
 html.takt-compact .task-card {

@@ -23,6 +23,8 @@ export type UploadTicket = {
   thumbUploadUrl: string | null
 }
 
+export type BackgroundView = { id: string, url: string, color: string | null, width: number | null, height: number | null }
+
 export type QuotaFileKind = 'attachment' | 'board_image' | 'workspace_logo'
 
 export type StorageUsage = {

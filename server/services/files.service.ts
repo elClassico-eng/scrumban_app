@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
 import type { z } from 'zod'
 import { boards, files, taskEvents, tasks, users, workspaces, type FileRow, type WorkspaceMemberRole } from '../db/schema'
 import { useDB, withTenant, withUser, type DbTransaction } from '../utils/db'
@@ -9,8 +9,8 @@ import { roleAtLeast, requireMinRole } from '../utils/rbac'
 import { headObjectSize, presignGet, presignPut, secondsLeftInWindow } from '../utils/storage'
 import { getTask } from './tasks.service'
 import { findWorkspaceForUser, listWorkspacesForUser } from './workspaces.service'
-import type { FileView, StorageUsage, UploadTicket } from '#shared/types/files'
-import type { StartAvatarUploadSchema, StartUploadSchema } from '#shared/validation/files'
+import type { BackgroundView, FileView, StorageUsage, UploadTicket } from '#shared/types/files'
+import type { StartBackgroundUploadSchema, StartUploadSchema } from '#shared/validation/files'
 import { displayName } from '#shared/utils/display-name'
 
 const MB = 1_048_576
@@ -133,7 +133,7 @@ export async function startUpload(input: {
   return ticketFor(row, { userId: input.userId, role: input.actorRole })
 }
 
-export async function startUserImageUpload(input: { userId: string, kind: 'user_avatar' | 'user_background', body: z.infer<typeof StartAvatarUploadSchema> }): Promise<UploadTicket> {
+export async function startUserImageUpload(input: { userId: string, kind: 'user_avatar' | 'user_background', body: z.infer<typeof StartBackgroundUploadSchema> }): Promise<UploadTicket> {
   checkLimits(input.kind, input.body.contentType, input.body.size)
   const id = crypto.randomUUID()
   const row = await withUser(input.userId, async (tx) => {
@@ -149,6 +149,7 @@ export async function startUserImageUpload(input: { userId: string, kind: 'user_
       sizeBytes: input.body.size,
       width: input.body.width ?? null,
       height: input.body.height ?? null,
+      color: input.kind === 'user_background' ? input.body.color?.toLowerCase() ?? null : null,
       uploadedBy: input.userId,
     }).returning()
     return created!
@@ -168,6 +169,43 @@ function inScope<T>(row: FileRow, fn: (tx: DbTransaction) => Promise<T>): Promis
   return row.workspaceId ? withTenant(row.workspaceId, fn) : withUser(row.userId!, fn)
 }
 
+const RECENT_BACKGROUNDS = 8
+
+function setBackground(tx: DbTransaction, row: FileRow) {
+  const background = { kind: 'file', url: fileUrl(row), ...(row.color ? { color: row.color } : {}) }
+  return tx.update(users)
+    .set({ appearancePrefs: sql`${users.appearancePrefs} || ${JSON.stringify({ background })}::jsonb` })
+    .where(eq(users.id, row.userId!))
+}
+
+async function ownBackground(tx: DbTransaction, userId: string, fileId: string): Promise<FileRow> {
+  const [row] = await tx.select().from(files)
+    .where(and(eq(files.id, fileId), eq(files.kind, 'user_background'), eq(files.userId, userId), eq(files.status, 'ready')))
+  if (!row) throw new NotFoundError('Фон не найден')
+  return row
+}
+
+export async function listBackgrounds(userId: string): Promise<BackgroundView[]> {
+  const rows = await withUser(userId, tx => tx.select().from(files)
+    .where(and(eq(files.kind, 'user_background'), eq(files.userId, userId), eq(files.status, 'ready')))
+    .orderBy(desc(files.createdAt)))
+  return rows.map(r => ({ id: r.id, url: fileUrl(r), color: r.color, width: r.width, height: r.height }))
+}
+
+export async function selectBackground(userId: string, fileId: string): Promise<void> {
+  await withUser(userId, async tx => setBackground(tx, await ownBackground(tx, userId, fileId)))
+}
+
+export async function deleteBackground(userId: string, fileId: string): Promise<void> {
+  await withUser(userId, async (tx) => {
+    const row = await ownBackground(tx, userId, fileId)
+    await tx.delete(files).where(eq(files.id, row.id))
+    await tx.update(users)
+      .set({ appearancePrefs: sql`${users.appearancePrefs} || '{"background":{"kind":"none"}}'::jsonb` })
+      .where(and(eq(users.id, userId), sql`${users.appearancePrefs}->'background'->>'url' = ${fileUrl(row)}`))
+  })
+}
+
 async function setOwnerImage(row: FileRow): Promise<void> {
   const url = fileUrl(row)
   await inScope(row, async (tx) => {
@@ -176,10 +214,12 @@ async function setOwnerImage(row: FileRow): Promise<void> {
       await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, row.userId!), ne(files.id, row.id)))
     }
     if (row.kind === 'user_background') {
-      await tx.update(users)
-        .set({ appearancePrefs: sql`${users.appearancePrefs} || ${JSON.stringify({ background: { kind: 'file', url } })}::jsonb` })
-        .where(eq(users.id, row.userId!))
-      await tx.delete(files).where(and(eq(files.kind, 'user_background'), eq(files.userId, row.userId!), ne(files.id, row.id)))
+      await setBackground(tx, row)
+      const stale = await tx.select({ id: files.id }).from(files)
+        .where(and(eq(files.kind, 'user_background'), eq(files.userId, row.userId!), eq(files.status, 'ready')))
+        .orderBy(desc(files.createdAt))
+        .offset(RECENT_BACKGROUNDS)
+      if (stale.length) await tx.delete(files).where(inArray(files.id, stale.map(f => f.id)))
     }
     if (row.kind === 'workspace_logo') {
       await tx.update(workspaces).set({ logoUrl: url }).where(eq(workspaces.id, row.workspaceId!))
@@ -238,15 +278,6 @@ export async function removeAvatar(userId: string): Promise<void> {
   await withUser(userId, async (tx) => {
     await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, userId)))
     await tx.update(users).set({ avatarUrl: null }).where(eq(users.id, userId))
-  })
-}
-
-export async function removeBackground(userId: string): Promise<void> {
-  await withUser(userId, async (tx) => {
-    await tx.delete(files).where(and(eq(files.kind, 'user_background'), eq(files.userId, userId)))
-    await tx.update(users)
-      .set({ appearancePrefs: sql`${users.appearancePrefs} || '{"background":{"kind":"none"}}'::jsonb` })
-      .where(eq(users.id, userId))
   })
 }
 

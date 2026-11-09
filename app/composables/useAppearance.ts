@@ -3,7 +3,7 @@ import { DEFAULT_APPEARANCE, type AppearancePrefs } from '#shared/types/appearan
 
 export const APPEARANCE_STORAGE_KEY = 'scrumban:appearance'
 const MANAGED_CLASSES = ['takt-bg', 'takt-compact', 'takt-reduce-motion']
-const MANAGED_VARS = ['--takt-bg-image', '--takt-bg-dim', '--takt-bg-blur']
+const MANAGED_VARS = ['--takt-bg-image', '--takt-bg-dim', '--takt-bg-blur', '--takt-tint']
 
 function applyToDocument(p: AppearancePrefs) {
   const css = appearanceVars(p)
@@ -42,7 +42,13 @@ export function useAppearance() {
     void persist(patch)
   }
 
-  return { prefs, known, set }
+  function forgetBackground() {
+    if (!local.value) return
+    const { background: _drop, ...rest } = local.value
+    local.value = Object.keys(rest).length ? rest : null
+  }
+
+  return { prefs, known, set, forgetBackground }
 }
 
 export function useAppearanceSync() {

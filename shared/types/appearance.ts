@@ -4,7 +4,7 @@ export type BackgroundPresetId = (typeof BACKGROUND_PRESET_IDS)[number]
 export type AppearanceBackground =
   | { kind: 'none' }
   | { kind: 'preset', presetId: BackgroundPresetId }
-  | { kind: 'file', url: string }
+  | { kind: 'file', url: string, color?: string }
 
 export type AppearancePrefs = {
   background?: AppearanceBackground

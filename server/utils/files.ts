@@ -9,7 +9,7 @@ export const FILE_LIMITS: Record<FileKind, { maxBytes: number, types: string[] |
   user_avatar: { maxBytes: 5 * MB, types: IMAGE_TYPES },
   workspace_logo: { maxBytes: 5 * MB, types: IMAGE_TYPES },
   board_image: { maxBytes: 5 * MB, types: IMAGE_TYPES },
-  user_background: { maxBytes: 5 * MB, types: IMAGE_TYPES },
+  user_background: { maxBytes: 10 * MB, types: IMAGE_TYPES },
 }
 export const THUMB_MAX_BYTES = MB
 export const THUMB_TYPE = 'image/webp'

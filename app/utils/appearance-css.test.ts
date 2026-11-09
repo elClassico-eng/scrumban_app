@@ -21,6 +21,11 @@ describe('appearanceVars', () => {
     expect(r.vars['--takt-bg-dim']).toBe('0.4')
   })
 
+  it('exposes the background tint for glass surfaces', () => {
+    expect(appearanceVars({ background: { kind: 'file', url: '/x', color: '#112233' } }).vars['--takt-tint']).toBe('#112233')
+    expect(appearanceVars({ background: { kind: 'preset', presetId: 'forest' } }).vars['--takt-tint']).toMatch(/^#[0-9a-f]{6}$/)
+  })
+
   it('interface toggles add their classes', () => {
     expect(appearanceVars({ reduceMotion: true, compactCards: true }).classes).toEqual(['takt-compact', 'takt-reduce-motion'])
   })

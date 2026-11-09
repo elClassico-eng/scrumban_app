@@ -57,20 +57,21 @@ export function useFileUploader() {
     items.value = [...items.value, { id, name: file.name, progress: 0, status: 'uploading', error: null, file: null }]
     const release = await slot()
     try {
-      const plan = uploadImagePlan(target.kind)
-      const isFace = plan !== null
+      const plan = uploadImagePlan(target.kind, file.size)
       const face = plan ? await resizeImage(file, plan) : null
-      const thumb = !isFace && isPreviewableImage(file.type)
+      const body = face?.blob ?? file
+      const background = target.kind === 'user_background' ? await imageInfo(body) : null
+      const thumb = target.kind === 'attachment' && isPreviewableImage(file.type)
         ? await resizeImage(file, { maxSide: THUMB_SIDE, square: false }).catch(() => null)
         : null
-      const body = face?.blob ?? file
       const contentType = face ? 'image/webp' : file.type || 'application/octet-stream'
       const meta = {
         name: file.name,
         contentType,
         size: body.size,
-        width: face?.width ?? thumb?.width,
-        height: face?.height ?? thumb?.height,
+        width: face?.width ?? background?.width ?? thumb?.width,
+        height: face?.height ?? background?.height ?? thumb?.height,
+        ...(background ? { color: background.color } : {}),
       }
       const base = 'workspaceId' in target
         ? apiRoutes.files(target.workspaceId)

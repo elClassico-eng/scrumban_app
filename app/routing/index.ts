@@ -33,6 +33,7 @@ export const apiRoutes = {
   files: (wsId: string) => `/api/workspaces/${wsId}/files`,
   avatar: '/api/users/me/avatar',
   background: '/api/users/me/background',
+  backgrounds: '/api/users/me/backgrounds',
   taskFiles: (wsId: string, boardId: string, taskId: string) => `${boardBase(wsId, boardId)}/tasks/${taskId}/files`,
   storageUsage: (wsId: string) => `/api/workspaces/${wsId}/files/usage`,
   pachcaLinkToken: (token: string) => `/api/integrations/pachca/link/${token}`,
