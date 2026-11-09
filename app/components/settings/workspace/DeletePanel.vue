@@ -38,16 +38,16 @@ async function onDelete() {
 </script>
 
 <template>
-  <SettingsTile v-if="workspace" tone="danger" :title="`Удалить «${workspace.name}»`" description="Это навсегда: восстановить воркспейс не получится">
+  <SettingsTile v-if="workspace" :title="`Удалить «${workspace.name}»`" description="Восстановить его потом не получится. Вот что пропадёт у всей команды">
     <ul class="grid gap-2 sm:grid-cols-2">
-      <li v-for="line in losses" :key="line" class="flex items-center gap-2 rounded-xl border border-default bg-default/60 px-3 py-2.5 text-sm text-toned">
-        <UIcon name="i-hugeicons-delete-02" class="size-4 shrink-0 text-error" />
+      <li v-for="line in losses" :key="line" class="flex items-center gap-2.5 rounded-xl bg-elevated/60 px-3 py-2.5 text-sm text-default">
+        <UIcon name="i-hugeicons-delete-02" class="size-4 shrink-0 text-muted" />
         {{ line }}
       </li>
     </ul>
     <div class="mt-4 grid gap-2 sm:grid-cols-2">
       <UInput v-model="confirmName" :placeholder="`Введи «${workspace.name}»`" autocomplete="off" />
-      <UiHoldToConfirm label="Удерживай, чтобы удалить" :disabled="!armed" :loading="remove.isPending.value" @confirm="onDelete" />
+      <UiHoldToConfirm label="Удерживай, чтобы удалить" :disabled="!armed" disabled-hint="Введи название воркспейса" :loading="remove.isPending.value" @confirm="onDelete" />
     </div>
   </SettingsTile>
 </template>
