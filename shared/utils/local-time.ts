@@ -13,3 +13,15 @@ export function isDigestDue(input: { now: Date, timeZone: string, digestHour: nu
   if (localParts(input.now, input.timeZone).hour !== input.digestHour) return false
   return !input.lastSentAt || input.now.getTime() - input.lastSentAt.getTime() > RESEND_GAP_MS
 }
+
+const DAY_MS = 86_400_000
+
+// Due dates are calendar days stored as YYYY-MM-DDT23:59:59Z, so the day comes
+// from the UTC parts; only "today" depends on the reader's zone.
+export function dueBucket(dueDate: Date, now: Date, timeZone: string): { kind: 'today' } | { kind: 'overdue', days: number } | null {
+  const dueDay = dueDate.toISOString().slice(0, 10)
+  const today = localParts(now, timeZone).day
+  if (dueDay === today) return { kind: 'today' }
+  if (dueDay < today) return { kind: 'overdue', days: (Date.parse(today) - Date.parse(dueDay)) / DAY_MS }
+  return null
+}

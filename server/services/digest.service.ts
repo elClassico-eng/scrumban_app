@@ -17,7 +17,7 @@ import { listWorkspacesForUser } from './workspaces.service'
 import { PRIMARY_TYPES } from '#shared/utils/notification-category'
 import { displayName } from '#shared/utils/display-name'
 import { formatTaskKey } from '#shared/utils/board-key'
-import { isDigestDue, localParts } from '#shared/utils/local-time'
+import { dueBucket, isDigestDue, localParts } from '#shared/utils/local-time'
 import { DEFAULT_DIGEST_HOUR } from '#shared/types/notification'
 
 const DAY_MS = 86_400_000
@@ -36,7 +36,6 @@ function section(heading: string, items: DigestItem[]): DigestSection | null {
 }
 
 async function taskSections(workspaceId: string, userId: string, now: Date, timeZone: string): Promise<DigestSection[]> {
-  const localDay = (d: Date) => localParts(d, timeZone).day
   const rows = await withTenant(workspaceId, tx =>
     tx
       .selectDistinct({
@@ -63,11 +62,12 @@ async function taskSections(workspaceId: string, userId: string, now: Date, time
     detail,
     link: notificationLink(workspaceId, { taskId: t.id, boardId: t.boardId }),
   })
-  const today = localDay(now)
-  const overdue = rows.filter(t => t.dueDate && t.dueDate < now && localDay(t.dueDate) !== today)
+  const dated = rows
+    .filter(t => t.dueDate)
     .sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime())
-    .map(t => item(t, `просрочено на ${(Date.parse(today) - Date.parse(localDay(t.dueDate!))) / DAY_MS} дн`))
-  const dueToday = rows.filter(t => t.dueDate && localDay(t.dueDate) === today).map(t => item(t, 'срок сегодня'))
+    .map(t => ({ t, bucket: dueBucket(t.dueDate!, now, timeZone) }))
+  const overdue = dated.flatMap(({ t, bucket }) => bucket?.kind === 'overdue' ? [item(t, `просрочено на ${bucket.days} дн`)] : [])
+  const dueToday = dated.flatMap(({ t, bucket }) => bucket?.kind === 'today' ? [item(t, 'срок сегодня')] : [])
   const blocked = rows.filter(t => t.blockedReason).map(t => item(t, `блокер: ${t.blockedReason}`))
   return [
     section('Просрочено', overdue),

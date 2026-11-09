@@ -101,12 +101,12 @@ describe('email digest', () => {
     const a = await setupBoard(msk)
     await fetchWithJar(msk.jar, `/api/workspaces/${a.wsId}/boards/${a.boardId}/tasks`, {
       method: 'POST',
-      body: { columnId: a.backlog, title: 'Ночной срок', assigneeId: msk.id, dueDate: '2026-11-09T22:00:00Z' },
+      body: { columnId: a.backlog, title: 'Срок сегодня', assigneeId: msk.id, dueDate: '2026-11-10T23:59:59Z' },
     })
     const b = await setupBoard(hnl)
     await fetchWithJar(hnl.jar, `/api/workspaces/${b.wsId}/boards/${b.boardId}/tasks`, {
       method: 'POST',
-      body: { columnId: b.backlog, title: 'Гавайский срок', assigneeId: hnl.id, dueDate: '2026-11-09T23:00:00Z' },
+      body: { columnId: b.backlog, title: 'Гавайский срок', assigneeId: hnl.id, dueDate: '2026-11-09T23:59:59Z' },
     })
 
     expect(await runDigest(msk, '2026-11-10T06:05:00Z')).toMatchObject({ sent: 1 })
