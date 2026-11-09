@@ -139,9 +139,7 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
   border-radius: 22px;
   background: #fff;
   overflow: hidden;
-  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
 }
-.sec__card:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -26px rgba(17, 17, 16, 0.35); }
 .sec__card--wide { grid-column: span 2; }
 .sec__card--dark { background: var(--ink); border-color: transparent; color: #fff; }
 .sec__card--soft { background: var(--soft); border-color: transparent; }

@@ -51,7 +51,7 @@ function formatDate(iso: string): string {
 .tl::before {
   content: "";
   position: absolute;
-  left: 0;
+  left: -0.75px;
   top: 0;
   bottom: 0;
   width: 1.5px;
@@ -66,7 +66,7 @@ function formatDate(iso: string): string {
 .tl li.now::after {
   content: "";
   position: absolute;
-  left: -30px;
+  left: -29px;
   top: 6px;
   width: 10px;
   height: 10px;
@@ -78,7 +78,7 @@ function formatDate(iso: string): string {
 .tl li::before {
   content: "";
   position: absolute;
-  left: -30px;
+  left: -29px;
   top: 6px;
   width: 10px;
   height: 10px;
