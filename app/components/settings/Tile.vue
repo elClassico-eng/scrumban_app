@@ -8,8 +8,8 @@ withDefaults(defineProps<{
 
 <template>
   <section
-    class="rounded-2xl border p-5"
-    :class="tone === 'danger' ? 'border-error/40 bg-error/5' : 'border-zinc-200 bg-white dark:border-default dark:bg-elevated/40'"
+    class="rounded-2xl p-5"
+    :class="tone === 'danger' ? 'bg-error/5' : 'surface-soft'"
   >
     <header v-if="title || $slots.actions" class="mb-4 flex items-start justify-between gap-3">
       <div class="min-w-0">

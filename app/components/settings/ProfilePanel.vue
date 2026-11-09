@@ -181,7 +181,7 @@ const avatarFallback = computed(() => initials({ firstName: state.firstName, las
         :remove-loading="false"
         class="pointer-events-none"
       />
-      <div class="pointer-events-none rounded-xl border border-zinc-200 dark:border-default bg-zinc-50 dark:bg-elevated/60 p-3">
+      <div class="pointer-events-none rounded-xl p-3 surface-soft">
         <span class="rounded-md bg-accent-500/15 px-1.5 py-0.5 font-mono text-[11px] text-accent-600">TKT-42</span>
         <p class="mt-2 text-sm text-default">Разобрать входящие баги</p>
         <div class="mt-2 flex justify-end">

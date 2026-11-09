@@ -99,8 +99,8 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
           v-for="m in MODES"
           :key="m.value"
           type="button"
-          class="rounded-xl border px-3 py-3 text-left transition-colors"
-          :class="mode === m.value ? 'border-accent-500 bg-accent-500/10' : 'border-zinc-200 dark:border-default hover:bg-zinc-50 dark:hover:bg-elevated'"
+          class="rounded-xl px-3 py-3 text-left transition-colors"
+          :class="mode === m.value ? 'bg-accent-500/10 ring-1 ring-accent-500' : 'bg-zinc-100 hover:bg-zinc-200/70 dark:bg-elevated/60 dark:hover:bg-elevated'"
           :aria-pressed="mode === m.value"
           @click="applyMode(m.value)"
         >

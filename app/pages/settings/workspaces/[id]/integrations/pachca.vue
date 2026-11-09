@@ -41,7 +41,7 @@ const tab = computed<Tab>({
       <UIcon name="i-hugeicons-arrow-left-01" class="size-4" /> Интеграции
     </NuxtLink>
 
-    <div class="flex items-center gap-4 rounded-2xl border border-default bg-gradient-to-r from-violet-500/10 via-transparent to-accent-500/10 p-5">
+    <div class="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-violet-500/10 via-transparent to-accent-500/10 p-5">
       <SettingsPachcaLogo size="lg" />
       <div class="min-w-0 flex-1">
         <h2 class="text-lg font-semibold text-default">Пачка</h2>

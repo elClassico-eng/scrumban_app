@@ -53,8 +53,8 @@ onBeforeUnmount(stop)
     type="button"
     class="relative w-full select-none overflow-hidden rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
     :class="disabled
-      ? 'cursor-not-allowed border border-dashed border-accented bg-zinc-50 dark:bg-elevated/60 text-muted'
-      : 'border border-error bg-error text-white shadow-sm hover:brightness-110 active:scale-[0.99]'"
+      ? 'cursor-not-allowed bg-zinc-100 text-muted dark:bg-elevated/60'
+      : 'bg-error text-white shadow-sm hover:brightness-110 active:scale-[0.99]'"
     :disabled="disabled || loading"
     :aria-label="`${label}. Удерживайте ${duration / 1000} с`"
     @pointerdown="start"

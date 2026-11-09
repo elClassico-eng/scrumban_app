@@ -127,10 +127,10 @@ async function onRevokeOthers() {
         <div
           v-for="s in sessions.data.value.sessions"
           :key="s.id"
-          class="flex items-center gap-3 rounded-xl border p-3"
-          :class="s.current ? 'border-success/40 bg-success/5' : 'border-zinc-200 dark:border-default bg-white dark:bg-default/50'"
+          class="flex items-center gap-3 rounded-xl p-3"
+          :class="s.current ? 'bg-success/10' : 'bg-zinc-50 dark:bg-elevated/60'"
         >
-          <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-zinc-100 dark:bg-elevated">
+          <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-white dark:bg-elevated">
             <UIcon :name="deviceIcon(s.userAgent)" class="size-5 text-toned" />
           </span>
           <div class="min-w-0 flex-1">

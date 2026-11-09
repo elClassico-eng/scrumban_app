@@ -10,8 +10,8 @@ const openId = computed(() => route.params.id as string | undefined)
 
 function chipClass(active: boolean) {
   return active
-    ? 'border-accent-500 bg-accent-500/10 text-default'
-    : 'border-zinc-200 dark:border-default bg-white dark:bg-default/70 text-muted hover:text-default hover:bg-zinc-50 dark:hover:bg-elevated'
+    ? 'bg-accent-500/10 text-default ring-1 ring-accent-500'
+    : 'bg-zinc-100 text-muted hover:bg-zinc-200/70 hover:text-default dark:bg-elevated/60 dark:hover:bg-elevated'
 }
 </script>
 
@@ -19,7 +19,7 @@ function chipClass(active: boolean) {
   <nav class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" aria-label="Что настраиваем">
     <NuxtLink
       :to="pageRoutes.settings()"
-      class="flex shrink-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3.5 text-sm font-medium transition-colors"
+      class="flex shrink-0 items-center gap-2 rounded-full py-1 pl-1 pr-3.5 text-sm font-medium transition-colors"
       :class="chipClass(!openId)"
       :aria-current="!openId ? 'page' : undefined"
     >
@@ -30,7 +30,7 @@ function chipClass(active: boolean) {
       v-for="ws in workspaces"
       :key="ws.id"
       :to="pageRoutes.workspaceSettings(ws.id)"
-      class="flex shrink-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3.5 text-sm font-medium transition-colors"
+      class="flex shrink-0 items-center gap-2 rounded-full py-1 pl-1 pr-3.5 text-sm font-medium transition-colors"
       :class="chipClass(openId === ws.id)"
       :aria-current="openId === ws.id ? 'page' : undefined"
     >

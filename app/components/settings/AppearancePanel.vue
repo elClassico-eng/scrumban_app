@@ -17,8 +17,8 @@ const { prefs, set } = useAppearance()
           v-for="t in THEMES"
           :key="t.value"
           type="button"
-          class="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
-          :class="colorMode.preference === t.value ? 'border-accent-500 bg-accent-500/10 text-default' : 'border-zinc-200 dark:border-default text-muted hover:text-default'"
+          class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+          :class="colorMode.preference === t.value ? 'bg-accent-500/10 text-default ring-1 ring-accent-500' : 'bg-zinc-100 text-muted hover:text-default dark:bg-elevated/60'"
           :aria-pressed="colorMode.preference === t.value"
           @click="colorMode.preference = t.value"
         >

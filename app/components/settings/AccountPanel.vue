@@ -107,7 +107,7 @@ async function onDelete() {
           <div
             v-for="ws in blockers"
             :key="ws.id"
-            class="flex flex-col gap-4 rounded-xl border border-zinc-200 dark:border-default bg-default p-4 transition-shadow hover:shadow-sm"
+            class="flex flex-col gap-4 rounded-xl bg-zinc-50 p-4 dark:bg-elevated/60"
           >
             <div class="flex items-center gap-3">
               <WorkspaceAvatar :name="ws.name" :logo-url="ws.details?.logoUrl" size="md" />
