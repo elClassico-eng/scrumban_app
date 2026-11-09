@@ -38,18 +38,22 @@ function play(index: number) {
     else v.pause()
   })
   if (reduced.value) return
-  if (videos.value[index]) stopTimer()
+  if (videos.value[index]) runVideoTimer(videos.value[index]!)
   else runPosterTimer()
+}
+
+// timeupdate fires only ~4 times a second, so the bar is driven per frame instead.
+function runVideoTimer(v: HTMLVideoElement) {
+  stopTimer()
+  const tick = () => {
+    if (v.duration) progress.value = v.currentTime / v.duration
+    raf = requestAnimationFrame(tick)
+  }
+  raf = requestAnimationFrame(tick)
 }
 
 function next() {
   play((active.value + 1) % DEMO_SCENES.length)
-}
-
-function onTime(i: number, e: Event) {
-  if (i !== active.value) return
-  const v = e.target as HTMLVideoElement
-  if (v.duration) progress.value = v.currentTime / v.duration
 }
 
 onMounted(() => {
@@ -76,7 +80,6 @@ onBeforeUnmount(stopTimer)
           muted
           playsinline
           :preload="i === 0 ? 'auto' : 'none'"
-          @timeupdate="onTime(i, $event)"
           @ended="i === active && next()"
         >
           <source :src="`${s.video}.webm`" type="video/webm">
@@ -96,7 +99,7 @@ onBeforeUnmount(stopTimer)
         :aria-selected="i === active"
         @click="play(i)"
       >
-        <span class="demo__bar"><span :style="{ width: i === active ? `${progress * 100}%` : i < active ? '100%' : '0%' }" /></span>
+        <span class="demo__bar"><span :style="{ transform: `scaleX(${i === active ? progress : i < active ? 1 : 0})` }" /></span>
         <b>{{ s.title }}</b>
       </button>
     </div>
@@ -123,7 +126,7 @@ onBeforeUnmount(stopTimer)
 .demo__tab:hover, .demo__tab.on { color: var(--ink); }
 .demo__tab b { display: block; margin-top: 10px; font: 500 15px/1.3 var(--font-display); }
 .demo__bar { display: block; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; }
-.demo__bar span { display: block; height: 100%; background: var(--ink); }
+.demo__bar span { display: block; height: 100%; background: var(--ink); transform-origin: left; will-change: transform; }
 
 @media (max-width: 760px) {
   .demo { margin-top: 40px; border-radius: 20px; }
