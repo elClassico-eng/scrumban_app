@@ -30,6 +30,7 @@ export const users = pgTable('users', {
   shortcutPrefs: jsonb('shortcut_prefs').$type<ShortcutPrefs>().notNull().default({}),
   emailPrefs: jsonb('email_prefs').$type<EmailPrefs>().notNull().default({ digest: true, instant: [] }),
   appearancePrefs: jsonb('appearance_prefs').$type<AppearancePrefs>().notNull().default({}),
+  startPage: text('start_page'),
   timeZone: varchar('time_zone', { length: 64 }).notNull().default('Europe/Moscow'),
   digestSentAt: timestamp('digest_sent_at', { withTimezone: true }),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),

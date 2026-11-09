@@ -63,6 +63,7 @@ export interface UserProfile {
   emailPrefs: EmailPrefs
   timeZone: string
   appearancePrefs: AppearancePrefs
+  startPage: string | null
   changelogSeenAt: string | null
   emailVerifiedAt: string | null
   createdAt: string
@@ -81,6 +82,7 @@ export interface UpdateUserProfileInput {
   emailPrefs?: EmailPrefs
   timeZone?: string
   appearancePrefs?: AppearancePrefs
+  startPage?: string | null
   dismissedHints?: string[]
   firstName?: string | null
   lastName?: string | null

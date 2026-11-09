@@ -79,6 +79,7 @@ export async function updateUserProfile(input: {
     emailPrefs?: EmailPrefs
     timeZone?: string
     appearancePrefs?: AppearancePrefs
+    startPage?: string | null
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -97,6 +98,7 @@ export async function updateUserProfile(input: {
   if (input.patch.shortcutPrefs) set.shortcutPrefs = input.patch.shortcutPrefs
   if (input.patch.emailPrefs) set.emailPrefs = input.patch.emailPrefs
   if (input.patch.timeZone) set.timeZone = input.patch.timeZone
+  if ('startPage' in input.patch) set.startPage = input.patch.startPage ?? null
   if (input.patch.appearancePrefs) {
     set.appearancePrefs = sql`${users.appearancePrefs} || ${JSON.stringify(input.patch.appearancePrefs)}::jsonb` as unknown as AppearancePrefs
   }

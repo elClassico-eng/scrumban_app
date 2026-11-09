@@ -1,5 +1,5 @@
 import { pageRoutes } from '~/routing'
-import { homeRedirect, LAST_PATH_KEY } from '~/utils/home-redirect'
+import { homeRedirect, LAST_PATH_KEY, START_PAGE_KEY } from '~/utils/home-redirect'
 
 const AUTH_ROUTES: ReadonlyArray<string> = [
   pageRoutes.login,
@@ -39,7 +39,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Home is the public landing for guests; authenticated users go straight
   // to their workspaces unless they explicitly asked for the landing (?about).
   if (to.path === pageRoutes.home) {
-    const target = homeRedirect({ authenticated, about: to.query.about !== undefined, lastPath: localStorage.getItem(LAST_PATH_KEY) })
+    const target = homeRedirect({ authenticated, about: to.query.about !== undefined, lastPath: localStorage.getItem(LAST_PATH_KEY), startPage: localStorage.getItem(START_PAGE_KEY) })
     if (target) return navigateTo(target)
     if (!authenticated) localStorage.removeItem(LAST_PATH_KEY)
     return

@@ -33,6 +33,7 @@ const BodySchema = z
     shortcutPrefs: ShortcutPrefsSchema.optional(),
     emailPrefs: EmailPrefsSchema.optional(),
     appearancePrefs: AppearancePrefsSchema.optional(),
+    startPage: z.string().regex(/^\/workspaces\/[0-9a-f-]{36}\/boards\/[0-9a-f-]{36}$/).nullable().optional(),
     timeZone: z.string().max(64).refine(isTimeZone, 'Неизвестный часовой пояс').optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
@@ -67,6 +68,7 @@ export default defineEventHandler(async (event) => {
         emailPrefs: user.emailPrefs,
         timeZone: user.timeZone,
         appearancePrefs: user.appearancePrefs ?? {},
+        startPage: user.startPage,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
