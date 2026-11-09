@@ -58,9 +58,9 @@ async function copy(text: string) {
   <div class="space-y-4">
     <SettingsTile title="Карточки ссылок" description="Ссылка на задачу в чате превратится в карточку со статусом и исполнителем. Работает, только когда Такт доступен из интернета">
       <ol class="mb-4 list-decimal space-y-1 pl-5 text-sm text-toned">
-        <li>В карточке бота в Пачке: «Исходящий вебхук» → «Включить», вставь адрес ниже.</li>
+        <li>В карточке бота в Пачке: «Исходящий вебхук» → «Включить», вставьте адрес ниже.</li>
         <li>Группа «Ссылки» → unfurl, домен Такта.</li>
-        <li>Скопируй Signing secret и вставь сюда.</li>
+        <li>Скопируйте Signing secret и вставьте сюда.</li>
       </ol>
       <div class="space-y-2">
         <div class="flex items-center gap-2">
@@ -71,7 +71,7 @@ async function copy(text: string) {
           <UInput
             v-model="signingSecret"
             type="password"
-            :placeholder="integration.linkPreviews ? 'Секрет сохранён – вставь новый, чтобы заменить' : 'Signing secret'"
+            :placeholder="integration.linkPreviews ? 'Секрет сохранён – вставьте новый, чтобы заменить' : 'Signing secret'"
             class="flex-1"
           />
           <UButton v-if="integration.linkPreviews" color="neutral" variant="ghost" @click="removeSecret">Убрать</UButton>

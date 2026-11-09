@@ -16,7 +16,7 @@ const toast = useToast()
 const canEdit = computed(() => hasRole(workspace.value?.role, 'admin'))
 
 const schema = z.object({
-  name: z.string().trim().min(1, 'Введи название').max(255),
+  name: z.string().trim().min(1, 'Введите название').max(255),
   description: z.string().max(2000),
   cardStyle: z.enum(['cover', 'compact']),
 })

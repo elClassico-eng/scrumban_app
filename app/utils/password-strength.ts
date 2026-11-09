@@ -2,8 +2,8 @@ import { passwordRules } from '#shared/validation/password'
 
 const MISSING_HINT: Record<string, string> = {
   length: 'Нужно минимум 10 символов',
-  letter: 'Добавь букву',
-  digit: 'Добавь цифру',
+  letter: 'Добавьте букву',
+  digit: 'Добавьте цифру',
 }
 
 export type PasswordStrength = { score: 0 | 1 | 2 | 3 | 4, valid: boolean, hint: string }

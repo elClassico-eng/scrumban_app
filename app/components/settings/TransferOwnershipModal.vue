@@ -32,7 +32,7 @@ async function transfer() {
 </script>
 
 <template>
-  <UModal v-model:open="open" :title="`Передать «${workspace?.name ?? ''}»`" description="Выбранный участник станет владельцем. Твоя роль не изменится, пока ты не удалишь аккаунт.">
+  <UModal v-model:open="open" :title="`Передать «${workspace?.name ?? ''}»`" description="Выбранный участник станет владельцем. Ваша роль не изменится, пока вы не удалите аккаунт.">
     <template #body>
       <USelectMenu
         v-if="candidates.length"
@@ -43,7 +43,7 @@ async function transfer() {
         class="w-full"
       />
       <p v-else class="text-sm text-muted">
-        В воркспейсе нет других участников. Пригласи кого-нибудь или удали воркспейс.
+        В воркспейсе нет других участников. Пригласите кого-нибудь или удалите воркспейс.
       </p>
     </template>
     <template #footer>

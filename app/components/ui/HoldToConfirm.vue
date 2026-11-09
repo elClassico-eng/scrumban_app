@@ -56,7 +56,7 @@ onBeforeUnmount(stop)
       ? 'cursor-not-allowed border border-dashed border-accented bg-elevated/60 text-muted'
       : 'border border-error bg-error text-white shadow-sm hover:brightness-110 active:scale-[0.99]'"
     :disabled="disabled || loading"
-    :aria-label="`${label}. Удерживай ${duration / 1000} с`"
+    :aria-label="`${label}. Удерживайте ${duration / 1000} с`"
     @pointerdown="start"
     @pointerup="cancel"
     @pointerleave="cancel"

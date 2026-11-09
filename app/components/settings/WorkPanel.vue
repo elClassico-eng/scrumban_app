@@ -84,12 +84,12 @@ async function onResetHints() {
         :items="boardItems"
         value-key="value"
         class="mt-3 w-full sm:w-80"
-        placeholder="Выбери доску"
+        placeholder="Выберите доску"
         @update:model-value="(v: string) => setStartPage(v)"
       />
     </SettingsTile>
 
-    <SettingsTile title="Горячие клавиши" description="Нажми на сочетание, чтобы назначить своё">
+    <SettingsTile title="Горячие клавиши" description="Нажмите на сочетание, чтобы назначить своё">
       <template #actions>
         <UButton v-if="hasCustomShortcuts" size="xs" variant="ghost" color="neutral" @click="resetAll">Сбросить всё</UButton>
       </template>
@@ -98,7 +98,7 @@ async function onResetHints() {
       </ul>
     </SettingsTile>
 
-    <SettingsTile title="Подсказки" description="Вернуть обучающие блоки, которые ты закрыл: в симуляторе, на доске и в отчётах">
+    <SettingsTile title="Подсказки" description="Вернуть обучающие блоки, которые вы закрыли: в симуляторе, на доске и в отчётах">
       <UButton variant="soft" color="neutral" :loading="resetHints.isPending.value" @click="onResetHints">
         Показать подсказки заново
       </UButton>

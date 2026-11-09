@@ -7,7 +7,7 @@ const emit = defineEmits<{ go: [tab: 'feeds' | 'people' | 'advanced'] }>()
 
 const STEP_INFO: Record<PachcaSetupStep, { title: string, hint: string, tab?: 'feeds' | 'people' | 'advanced', action?: string }> = {
   connect: { title: 'Бот подключён', hint: 'Такт пишет в Пачку от имени бота' },
-  link: { title: 'Ты привязан', hint: 'Упоминания и назначения приходят тебе в личку', tab: 'people', action: 'Привязать себя' },
+  link: { title: 'Вы привязаны', hint: 'Упоминания и назначения приходят вам в личку', tab: 'people', action: 'Привязать себя' },
   feed: { title: 'Лента доски в чат', hint: 'Закрытые задачи и блокеры прилетают в чат команды', tab: 'feeds', action: 'Добавить ленту' },
   invite: { title: 'Команда позвана', hint: 'Бот предложит привязаться тем, чья почта совпала', tab: 'people', action: 'Позвать команду' },
   previews: { title: 'Карточки ссылок', hint: 'Ссылка на задачу разворачивается в карточку. По желанию', tab: 'advanced', action: 'Настроить' },

@@ -56,7 +56,7 @@ watchDebounced(query, () => {
 
 <template>
   <div v-if="integration?.status === 'active'">
-    <SettingsTile title="Твоя Пачка" :description="`Уведомления из «${current?.name ?? ''}» в личку от бота`">
+    <SettingsTile title="Ваша Пачка" :description="`Уведомления из «${current?.name ?? ''}» в личку от бота`">
       <div v-if="!me" class="flex items-center justify-between gap-4">
         <span class="text-sm text-muted">Пачка пока не привязана</span>
         <UButton @click="open">Привязать</UButton>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{ workspaceId: string }>()
 
-const STEPS = ['Создай бота', 'Вставь токен', 'Готово']
+const STEPS = ['Создайте бота', 'Вставьте токен', 'Готово']
 const { connect } = usePachcaApi(computed(() => props.workspaceId))
 const toast = useToast()
 const step = ref(0)
@@ -36,11 +36,11 @@ async function submit() {
     </ol>
 
     <div v-if="step === 0" class="space-y-4">
-      <p class="font-semibold text-default">Создай бота в Пачке</p>
+      <p class="font-semibold text-default">Создайте бота в Пачке</p>
       <ol class="list-decimal space-y-2 pl-5 text-sm text-toned">
-        <li>В Пачке открой «Автоматизации» → «Интеграции» → «Чат-боты» и создай бота, например «Такт».</li>
-        <li>На вкладке «API» включи права: <code class="text-xs">messages:create</code>, <code class="text-xs">users:read</code>, <code class="text-xs">chats:read</code>, а для карточек ссылок ещё <code class="text-xs">link_previews:write</code>.</li>
-        <li>Скопируй токен бота – он понадобится на следующем шаге.</li>
+        <li>В Пачке откройте «Автоматизации» → «Интеграции» → «Чат-боты» и создайте бота, например «Такт».</li>
+        <li>На вкладке «API» включите права: <code class="text-xs">messages:create</code>, <code class="text-xs">users:read</code>, <code class="text-xs">chats:read</code>, а для карточек ссылок ещё <code class="text-xs">link_previews:write</code>.</li>
+        <li>Скопируйте токен бота – он понадобится на следующем шаге.</li>
       </ol>
       <div class="flex justify-end">
         <UButton trailing-icon="i-hugeicons-arrow-right-01" @click="step = 1">Токен у меня</UButton>
@@ -48,7 +48,7 @@ async function submit() {
     </div>
 
     <form v-else class="space-y-4" @submit.prevent="submit">
-      <p class="font-semibold text-default">Вставь токен бота</p>
+      <p class="font-semibold text-default">Вставьте токен бота</p>
       <p class="text-sm text-muted">Токен хранится зашифрованным и больше нигде не показывается. Проверим его прямо в Пачке.</p>
       <UInput v-model="token" type="password" placeholder="Токен бота" class="w-full" autofocus />
       <div class="flex justify-between gap-2">

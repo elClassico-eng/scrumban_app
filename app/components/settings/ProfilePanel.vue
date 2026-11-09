@@ -114,7 +114,7 @@ const avatarFallback = computed(() => initials({ firstName: state.firstName, las
         </UFormField>
 
         <UFormField label="О себе" name="bio" :hint="`${state.bio.length} / ${BIO_MAX}`">
-          <UTextarea v-model="state.bio" :rows="3" :maxlength="BIO_MAX" autoresize class="w-full" placeholder="Чем занимаешься и как с тобой лучше связаться" />
+          <UTextarea v-model="state.bio" :rows="3" :maxlength="BIO_MAX" autoresize class="w-full" placeholder="Чем вы занимаетесь и как с вами лучше связаться" />
         </UFormField>
 
         <div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-default/60 px-3 py-2 text-sm">
@@ -146,7 +146,7 @@ const avatarFallback = computed(() => initials({ firstName: state.firstName, las
     </SettingsTile>
 
     <div class="space-y-3">
-      <p class="px-1 text-sm text-muted">Так тебя видят коллеги</p>
+      <p class="px-1 text-sm text-muted">Так вас видят коллеги</p>
       <WorkspaceMembersMemberCard
         :member="preview"
         is-you

@@ -109,7 +109,7 @@ async function onRevokeOthers() {
       </UForm>
     </SettingsTile>
 
-    <SettingsTile title="Где ты вошёл">
+    <SettingsTile title="Где вы вошли">
       <template #actions>
         <UButton
           v-if="otherSessionsCount > 0"

@@ -3,8 +3,8 @@ import type { MeSection, WorkspaceSection } from '~/routing'
 export type SectionMeta = { label: string, icon: string, description: string }
 
 export const ME_SECTION_META: Record<MeSection, SectionMeta> = {
-  profile: { label: 'Профиль', icon: 'i-hugeicons-user', description: 'Как тебя видят коллеги: имя, фото и пара слов о себе в карточках и задачах.' },
-  security: { label: 'Безопасность', icon: 'i-hugeicons-lock-password', description: 'Пароль и устройства, с которых ты входил. Выйди там, где больше не работаешь.' },
+  profile: { label: 'Профиль', icon: 'i-hugeicons-user', description: 'Как вас видят коллеги: имя, фото и пара слов о себе в карточках и задачах.' },
+  security: { label: 'Безопасность', icon: 'i-hugeicons-lock-password', description: 'Пароль и устройства, с которых вы входили. Выйдите там, где больше не работаете.' },
   notifications: { label: 'Уведомления', icon: 'i-hugeicons-notification-02', description: 'Что и куда присылать: колокольчик, почта, Пачка и утренний дайджест.' },
   appearance: { label: 'Внешний вид', icon: 'i-hugeicons-paint-board', description: 'Тема и плотность интерфейса. Всё применяется сразу.' },
   work: { label: 'Работа', icon: 'i-hugeicons-keyboard', description: 'С какой страницы начинать день, горячие клавиши и обучающие подсказки.' },

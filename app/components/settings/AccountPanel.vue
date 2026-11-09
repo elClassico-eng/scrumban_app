@@ -76,7 +76,7 @@ async function onDelete() {
       </div>
     </SettingsTile>
 
-    <SettingsTile title="Удалить аккаунт" description="Восстановить его потом не получится, поэтому сначала посмотри, что изменится">
+    <SettingsTile title="Удалить аккаунт" description="Восстановить его потом не получится, поэтому сначала посмотрите, что изменится">
       <div class="grid gap-3 sm:grid-cols-2">
         <div class="rounded-xl bg-elevated/60 p-4">
           <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-error">Исчезнет</p>
@@ -100,8 +100,8 @@ async function onDelete() {
 
       <div v-if="blockers.length" class="mt-6">
         <div class="mb-3 flex items-baseline justify-between gap-3">
-          <p class="text-sm font-semibold text-default">Сначала передай воркспейсы</p>
-          <p class="text-xs text-muted">ты в них единственный владелец</p>
+          <p class="text-sm font-semibold text-default">Сначала передайте воркспейсы</p>
+          <p class="text-xs text-muted">вы в них единственный владелец</p>
         </div>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div
@@ -119,7 +119,7 @@ async function onDelete() {
               </div>
             </div>
             <div class="mt-auto flex items-center gap-2">
-              <UTooltip :text="ws.details?.memberCount === 1 ? 'Ты тут один – пригласи коллегу или удали воркспейс' : undefined" :disabled="ws.details?.memberCount !== 1" class="flex-1">
+              <UTooltip :text="ws.details?.memberCount === 1 ? 'Вы тут один – пригласите коллегу или удалите воркспейс' : undefined" :disabled="ws.details?.memberCount !== 1" class="flex-1">
                 <UButton
                   size="sm"
                   color="neutral"
@@ -147,7 +147,7 @@ async function onDelete() {
       </div>
 
       <div class="mt-6 border-t border-default pt-5">
-        <p class="mb-3 text-sm font-semibold text-default">Подтверди удаление</p>
+        <p class="mb-3 text-sm font-semibold text-default">Подтвердите удаление</p>
         <div class="grid gap-2 sm:grid-cols-2">
           <UInput
             v-model="password"
@@ -158,9 +158,9 @@ async function onDelete() {
             :disabled="!ready"
           />
           <UiHoldToConfirm
-            label="Удерживай, чтобы удалить"
+            label="Удерживайте, чтобы удалить"
             :disabled="!canDelete"
-            :disabled-hint="ready ? 'Введи пароль' : 'Сначала передай воркспейсы'"
+            :disabled-hint="ready ? 'Введите пароль' : 'Сначала передайте воркспейсы'"
             :loading="deleteAccount.isPending.value"
             @confirm="onDelete"
           />

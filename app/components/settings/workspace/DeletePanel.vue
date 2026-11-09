@@ -46,8 +46,8 @@ async function onDelete() {
       </li>
     </ul>
     <div class="mt-4 grid gap-2 sm:grid-cols-2">
-      <UInput v-model="confirmName" :placeholder="`Введи «${workspace.name}»`" autocomplete="off" />
-      <UiHoldToConfirm label="Удерживай, чтобы удалить" :disabled="!armed" disabled-hint="Введи название воркспейса" :loading="remove.isPending.value" @confirm="onDelete" />
+      <UInput v-model="confirmName" :placeholder="`Введите «${workspace.name}»`" autocomplete="off" />
+      <UiHoldToConfirm label="Удерживайте, чтобы удалить" :disabled="!armed" disabled-hint="Введите название воркспейса" :loading="remove.isPending.value" @confirm="onDelete" />
     </div>
   </SettingsTile>
 </template>

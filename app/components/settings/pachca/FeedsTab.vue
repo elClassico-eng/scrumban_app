@@ -8,13 +8,13 @@ const boards = computed(() => list.data.value?.boards ?? [])
 <template>
   <div class="space-y-4">
     <p class="px-1 text-sm text-muted">
-      Сначала добавь бота «{{ botName }}» в нужный чат в Пачке – бот видит только чаты, где он состоит.
+      Сначала добавьте бота «{{ botName }}» в нужный чат в Пачке – бот видит только чаты, где он состоит.
     </p>
     <SettingsTile v-for="b in boards" :key="b.id" :title="b.name">
       <BoardPachcaFeedSection :workspace-id="workspaceId" :board-id="b.id" />
     </SettingsTile>
     <SettingsTile v-if="!boards.length && !list.isLoading.value">
-      <p class="text-sm text-muted">Сначала создай доску – ленты привязываются к доскам.</p>
+      <p class="text-sm text-muted">Сначала создайте доску – ленты привязываются к доскам.</p>
     </SettingsTile>
   </div>
 </template>

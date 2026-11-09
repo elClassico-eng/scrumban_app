@@ -93,7 +93,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
 
 <template>
   <div class="space-y-4">
-    <SettingsTile title="Сколько шума ты готов терпеть?" description="Режим настраивает всё разом, тонкая настройка – ниже">
+    <SettingsTile title="Сколько уведомлений вам нужно?" description="Режим настраивает всё разом, тонкая настройка – ниже">
       <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <button
           v-for="m in MODES"
@@ -147,7 +147,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
                   </td>
                   <td class="text-center">
                     <template v-if="isInstant(row.type)">
-                      <UTooltip :text="cellEnabled(matrix, row.type, 'email') ? undefined : 'Сначала включи в Такте'" :disabled="cellEnabled(matrix, row.type, 'email')">
+                      <UTooltip :text="cellEnabled(matrix, row.type, 'email') ? undefined : 'Сначала включите в Такте'" :disabled="cellEnabled(matrix, row.type, 'email')">
                         <UCheckbox
                           class="inline-flex"
                           :model-value="matrix.email.includes(row.type)"
@@ -161,7 +161,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
                   </td>
                   <td v-if="hasPachca" class="text-center">
                     <template v-if="isInstant(row.type)">
-                      <UTooltip :text="cellEnabled(matrix, row.type, 'pachca') ? undefined : 'Сначала включи в Такте'" :disabled="cellEnabled(matrix, row.type, 'pachca')">
+                      <UTooltip :text="cellEnabled(matrix, row.type, 'pachca') ? undefined : 'Сначала включите в Такте'" :disabled="cellEnabled(matrix, row.type, 'pachca')">
                         <UCheckbox
                           class="inline-flex"
                           :model-value="pachcaValue(row.type)"
@@ -181,7 +181,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
             Письма приходят на {{ me.data.value?.user.email }}, только если почта подтверждена.
             <template v-if="!hasPachca && workspace">
               Чтобы получать сообщения в Пачку,
-              <NuxtLink :to="pageRoutes.workspaceSettings(workspace.id, 'integrations')" class="underline hover:text-default">привяжи себя в интеграциях</NuxtLink>.
+              <NuxtLink :to="pageRoutes.workspaceSettings(workspace.id, 'integrations')" class="underline hover:text-default">привяжите себя в интеграциях</NuxtLink>.
             </template>
           </p>
         </template>
