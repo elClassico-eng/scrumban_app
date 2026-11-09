@@ -36,7 +36,8 @@ const matrix = computed<ChannelMatrix>(() => ({
   email: emailPrefs.value.instant,
   pachca: INSTANT_NOTIFICATION_TYPES.filter(t => pachcaCellState(links.value, t) === 'on'),
 }))
-const mode = computed(() => detectMode(matrix.value, { ignorePachca: !hasPachca.value }))
+const pachcaMixed = computed(() => INSTANT_NOTIFICATION_TYPES.some(t => pachcaCellState(links.value, t) === 'mixed'))
+const mode = computed(() => detectMode(matrix.value, { ignorePachca: !hasPachca.value, pachcaMixed: pachcaMixed.value }))
 const manualOpen = ref(false)
 
 function fail(err: unknown) {

@@ -28,6 +28,12 @@ describe('notification modes', () => {
     expect(detectMode({ ...matrixForMode('important', base), pachca: [] }, { ignorePachca: true })).toBe('important')
   })
 
+  it('mixed Pachca links are always custom', () => {
+    const quiet = matrixForMode('quiet', base)
+    expect(detectMode(quiet, { pachcaMixed: true })).toBe('custom')
+    expect(detectMode(matrixForMode('all', base), { pachcaMixed: true })).toBe('custom')
+  })
+
   it('a hand edit turns the mode into custom', () => {
     const m = matrixForMode('important', base)
     expect(detectMode({ ...m, email: [...m.email, 'reply'] })).toBe('custom')

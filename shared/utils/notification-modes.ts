@@ -56,7 +56,8 @@ function sameMatrix(a: ChannelMatrix, b: ChannelMatrix, ignorePachca: boolean): 
   return key(a) === key(b)
 }
 
-export function detectMode(m: ChannelMatrix, opts: { ignorePachca?: boolean } = {}): NotificationMode | 'custom' {
+export function detectMode(m: ChannelMatrix, opts: { ignorePachca?: boolean, pachcaMixed?: boolean } = {}): NotificationMode | 'custom' {
+  if (opts.pachcaMixed) return 'custom'
   const exact = (['all', 'important', 'mine'] as const).find(mode => sameMatrix(m, matrixForMode(mode, m), !!opts.ignorePachca))
   if (exact) return exact
   return !m.email.length && (opts.ignorePachca || !m.pachca.length) ? 'quiet' : 'custom'
