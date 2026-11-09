@@ -13,8 +13,10 @@ useHead({
 
 const shown = ref(true)
 
+const FONTS_WAIT_MS = 1500
+
 onMounted(async () => {
-  await document.fonts?.ready
+  await Promise.race([document.fonts?.ready, new Promise(r => setTimeout(r, FONTS_WAIT_MS))])
   shown.value = false
   try {
     sessionStorage.setItem(SEEN_KEY, '1')
@@ -34,6 +36,16 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* The opacity animation makes this a stacking context, so it must carry the z-index itself.
+   Safety net: if hydration fails, the overlay still fades out on its own. */
+.lloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  animation: lloader-auto-out 0.4s ease 2.5s forwards;
+}
+@keyframes lloader-auto-out { to { opacity: 0; visibility: hidden; } }
+
 .lloader-leave-active { transition: opacity 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
 .lloader-leave-to { opacity: 0; }
 

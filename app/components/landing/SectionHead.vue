@@ -1,13 +1,13 @@
 <script setup lang="ts">
-defineProps<{ n: number, label: string, title: string, lead?: string }>()
+defineProps<{ n: number, label: string, title?: string, lead?: string }>()
 </script>
 
 <template>
   <div class="shead reveal">
     <div class="shead__rail" aria-hidden="true" />
     <span class="shead__n"><i>такт {{ String(n).padStart(2, '0') }}</i> · {{ label }}</span>
-    <div class="shead__row">
-      <h2>{{ title }}</h2>
+    <div v-if="title || lead || $slots.default" class="shead__row">
+      <h2 v-if="title">{{ title }}</h2>
       <p v-if="lead" class="shead__lead muted">{{ lead }}</p>
       <slot />
     </div>

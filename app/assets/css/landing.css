@@ -73,7 +73,7 @@
   & .card--dark { background: var(--ink); color: #fff; border-color: transparent; }
   & .card--dark .muted { color: rgba(255, 255, 255, 0.66); }
 
-  & .section { padding: 40px 0 24px; }
+  & .section { padding: 40px 0 24px; scroll-margin-top: 64px; }
 
   & .reveal { opacity: 1; transform: none; }
   &.is-js .reveal {
