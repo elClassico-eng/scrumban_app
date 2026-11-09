@@ -36,7 +36,7 @@ const tab = computed<Tab>({
 </script>
 
 <template>
-  <div v-if="workspace" class="space-y-4">
+  <SettingsWorkspaceShell v-if="workspace" active="integrations">
     <NuxtLink :to="pageRoutes.workspaceSettings(workspace.id, 'integrations')" class="inline-flex items-center gap-1 px-1 text-sm text-muted hover:text-default">
       <UIcon name="i-hugeicons-arrow-left-01" class="size-4" /> Интеграции
     </NuxtLink>
@@ -69,5 +69,5 @@ const tab = computed<Tab>({
       <SettingsPachcaPeopleTab v-else-if="tab === 'people'" :workspace-id="workspace.id" :state="data" />
       <SettingsPachcaAdvancedTab v-else-if="tab === 'advanced'" :workspace-id="workspace.id" :integration="integration" />
     </template>
-  </div>
+  </SettingsWorkspaceShell>
 </template>

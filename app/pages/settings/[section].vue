@@ -14,10 +14,13 @@ const section = computed(() => route.params.section as MeSection)
 </script>
 
 <template>
-  <SettingsProfilePanel v-if="section === 'profile'" />
-  <SettingsSecurityPanel v-else-if="section === 'security'" />
-  <SettingsNotificationsPanel v-else-if="section === 'notifications'" />
-  <SettingsAppearancePanel v-else-if="section === 'appearance'" />
-  <SettingsWorkPanel v-else-if="section === 'work'" />
-  <SettingsAccountPanel v-else-if="section === 'account'" />
+  <div>
+    <SettingsPageHeader :meta="ME_SECTION_META[section]" />
+    <SettingsProfilePanel v-if="section === 'profile'" />
+    <SettingsSecurityPanel v-else-if="section === 'security'" />
+    <SettingsNotificationsPanel v-else-if="section === 'notifications'" />
+    <SettingsAppearancePanel v-else-if="section === 'appearance'" />
+    <SettingsWorkPanel v-else-if="section === 'work'" />
+    <SettingsAccountPanel v-else-if="section === 'account'" />
+  </div>
 </template>

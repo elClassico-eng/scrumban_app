@@ -89,7 +89,7 @@ const avatarFallback = computed(() => initials({ firstName: state.firstName, las
   </div>
 
   <div v-else-if="user" class="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-    <SettingsTile title="Профиль">
+    <SettingsTile>
       <UForm :schema="schema" :state="state" class="space-y-4" @submit="save">
         <FilesImageUploader
           :target="{ kind: 'user_avatar' }"
