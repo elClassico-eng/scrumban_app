@@ -234,66 +234,14 @@ describe('serving', () => {
     expect((await follow(stranger, ticket.body.file.url)).status).toBe(404)
   })
 
-  async function uploadBackground(user: UserCtx, name: string, color = '#335577') {
-    const ticket = await fetchWithJar<Ticket>(user.jar, '/api/users/me/background', { method: 'POST', body: { name, contentType: 'image/webp', size: 4, width: 1920, height: 1080, color } })
-    expect(ticket.status).toBe(200)
-    await uploadTo(ticket.body.uploadUrl, 'webp', 'image/webp')
-    expect((await fetchWithJar(user.jar, `/api/users/me/background/${ticket.body.file.id}/complete`, { method: 'POST' })).status).toBe(200)
-    return ticket.body.file
-  }
-
-  type Bg = { kind: string, url?: string, color?: string }
-  const currentBg = async (user: UserCtx) =>
-    (await fetchWithJar<{ user: { appearancePrefs: { background?: Bg } } }>(user.jar, '/api/users/me')).body.user.appearancePrefs.background
-  const recent = async (user: UserCtx) =>
-    (await fetchWithJar<{ backgrounds: { id: string, url: string, color: string | null }[] }>(user.jar, '/api/users/me/backgrounds')).body.backgrounds
-
-  it('a background is private to its owner and lands in appearance prefs with its color', async () => {
-    const a = await registerUser('bg')
-    const b = await registerUser('bgm')
-    const wsId = await workspaceOf(a)
-    await addMember(a, wsId, b.email, 'member')
-    const file = await uploadBackground(a, 'bg.webp', '#112233')
-
-    expect(await currentBg(a)).toEqual({ kind: 'file', url: file.url, color: '#112233' })
-    expect((await follow(a, file.url)).status).toBe(302)
-    expect((await follow(b, file.url)).status).toBe(404)
-    expect((await fetchWithJar(b.jar, `/api/users/me/background/${file.id}/select`, { method: 'POST' })).status).toBe(404)
-  })
-
-  it('keeps recent backgrounds to switch between and drops the oldest past eight', async () => {
-    const a = await registerUser('bgr')
-    const first = await uploadBackground(a, 'first.webp', '#aa0000')
-    const second = await uploadBackground(a, 'second.webp', '#00aa00')
-    expect((await recent(a)).map(f => f.id)).toEqual([second.id, first.id])
-
-    expect((await fetchWithJar(a.jar, `/api/users/me/background/${first.id}/select`, { method: 'POST' })).status).toBe(200)
-    expect(await currentBg(a)).toEqual({ kind: 'file', url: first.url, color: '#aa0000' })
-
-    expect((await fetchWithJar(a.jar, `/api/users/me/background/${first.id}`, { method: 'DELETE' })).status).toBe(200)
-    expect(await currentBg(a)).toEqual({ kind: 'none' })
-    expect((await recent(a)).map(f => f.id)).toEqual([second.id])
-
-    for (let i = 0; i < 8; i++) await uploadBackground(a, `n${i}.webp`)
-    const list = await recent(a)
-    expect(list).toHaveLength(8)
-    expect(list.map(f => f.id)).not.toContain(second.id)
-  })
-
-  it('accepts a 10 MB background and refuses a bigger one', async () => {
-    const a = await registerUser('bgs')
-    const ok = await fetchWithJar(a.jar, '/api/users/me/background', { method: 'POST', body: { name: 'big.jpg', contentType: 'image/jpeg', size: 10 * 1_048_576 } })
-    expect(ok.status).toBe(200)
-    const tooBig = await fetchWithJar(a.jar, '/api/users/me/background', { method: 'POST', body: { name: 'huge.jpg', contentType: 'image/jpeg', size: 10 * 1_048_576 + 1 } })
-    expect(tooBig.status).toBe(422)
-  })
-
-  it('rejects out-of-range appearance values', async () => {
+  it('stores interface appearance toggles and rejects unknown values', async () => {
     const a = await registerUser('ap')
-    const res = await fetchWithJar(a.jar, '/api/users/me', { method: 'PATCH', body: { appearancePrefs: { dim: 0.95 } } })
-    expect(res.status).toBe(400)
-    const ok = await fetchWithJar<{ user: { appearancePrefs: { dim: number } } }>(a.jar, '/api/users/me', { method: 'PATCH', body: { appearancePrefs: { dim: 0.5, blur: 4 } } })
-    expect(ok.body.user.appearancePrefs).toMatchObject({ dim: 0.5, blur: 4 })
+    const bad = await fetchWithJar(a.jar, '/api/users/me', { method: 'PATCH', body: { appearancePrefs: { compactCards: 'yes' } } })
+    expect(bad.status).toBe(400)
+    const ok = await fetchWithJar<{ user: { appearancePrefs: Record<string, boolean> } }>(a.jar, '/api/users/me', { method: 'PATCH', body: { appearancePrefs: { compactCards: true } } })
+    expect(ok.body.user.appearancePrefs).toMatchObject({ compactCards: true })
+    const more = await fetchWithJar<{ user: { appearancePrefs: Record<string, boolean> } }>(a.jar, '/api/users/me', { method: 'PATCH', body: { appearancePrefs: { reduceMotion: true } } })
+    expect(more.body.user.appearancePrefs).toEqual({ compactCards: true, reduceMotion: true })
   })
 
   it('lists task files including comment files', async () => {

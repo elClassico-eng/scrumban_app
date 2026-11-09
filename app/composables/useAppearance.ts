@@ -2,21 +2,18 @@ import { useDebounceFn } from '@vueuse/core'
 import { DEFAULT_APPEARANCE, type AppearancePrefs } from '#shared/types/appearance'
 
 export const APPEARANCE_STORAGE_KEY = 'scrumban:appearance'
-const MANAGED_CLASSES = ['takt-bg', 'takt-compact', 'takt-reduce-motion']
-const MANAGED_VARS = ['--takt-bg-image', '--takt-bg-dim', '--takt-bg-blur', '--takt-tint']
+const MANAGED_CLASSES = ['takt-compact', 'takt-reduce-motion']
 
 function applyToDocument(p: AppearancePrefs) {
-  const css = appearanceVars(p)
+  const classes = appearanceClasses(p)
   const root = document.documentElement
   root.classList.remove(...MANAGED_CLASSES)
-  root.classList.add(...css.classes)
-  for (const name of MANAGED_VARS) root.style.removeProperty(name)
-  for (const [name, value] of Object.entries(css.vars)) root.style.setProperty(name, value)
+  root.classList.add(...classes)
   try {
-    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(css))
+    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(classes))
   }
   catch {
-    // Storage blocked: the early script just won't pre-paint the background next time.
+    // Storage blocked: the early script just won't pre-apply the classes next time.
   }
 }
 
@@ -32,23 +29,14 @@ export function useAppearance() {
     pending.value = {}
     update.mutate({ appearancePrefs: patch }, { onSuccess: () => { if (!Object.keys(pending.value).length) local.value = null } })
   }, 400)
-  function persist(patch: AppearancePrefs) {
-    pending.value = { ...pending.value, ...patch }
-    return flush()
-  }
 
   function set(patch: AppearancePrefs) {
     local.value = { ...local.value, ...patch }
-    void persist(patch)
+    pending.value = { ...pending.value, ...patch }
+    void flush()
   }
 
-  function forgetBackground() {
-    if (!local.value) return
-    const { background: _drop, ...rest } = local.value
-    local.value = Object.keys(rest).length ? rest : null
-  }
-
-  return { prefs, known, set, forgetBackground }
+  return { prefs, known, set }
 }
 
 export function useAppearanceSync() {

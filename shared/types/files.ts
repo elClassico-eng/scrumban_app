@@ -1,4 +1,4 @@
-export type FileKind = 'attachment' | 'user_avatar' | 'workspace_logo' | 'board_image' | 'user_background'
+export type FileKind = 'attachment' | 'user_avatar' | 'workspace_logo' | 'board_image'
 
 export type FileView = {
   id: string
@@ -22,8 +22,6 @@ export type UploadTicket = {
   uploadUrl: string
   thumbUploadUrl: string | null
 }
-
-export type BackgroundView = { id: string, url: string, color: string | null, width: number | null, height: number | null }
 
 export type QuotaFileKind = 'attachment' | 'board_image' | 'workspace_logo'
 

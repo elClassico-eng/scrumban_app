@@ -6,7 +6,6 @@ export type UploadTarget =
   | { kind: 'workspace_logo', workspaceId: string }
   | { kind: 'board_image', workspaceId: string, boardId: string }
   | { kind: 'user_avatar' }
-  | { kind: 'user_background' }
 
 export type UploadItem = {
   id: string
@@ -57,10 +56,9 @@ export function useFileUploader() {
     items.value = [...items.value, { id, name: file.name, progress: 0, status: 'uploading', error: null, file: null }]
     const release = await slot()
     try {
-      const plan = uploadImagePlan(target.kind, file.size)
+      const plan = uploadImagePlan(target.kind)
       const face = plan ? await resizeImage(file, plan) : null
       const body = face?.blob ?? file
-      const background = target.kind === 'user_background' ? await imageInfo(body) : null
       const thumb = target.kind === 'attachment' && isPreviewableImage(file.type)
         ? await resizeImage(file, { maxSide: THUMB_SIDE, square: false }).catch(() => null)
         : null
@@ -69,13 +67,12 @@ export function useFileUploader() {
         name: file.name,
         contentType,
         size: body.size,
-        width: face?.width ?? background?.width ?? thumb?.width,
-        height: face?.height ?? background?.height ?? thumb?.height,
-        ...(background ? { color: background.color } : {}),
+        width: face?.width ?? thumb?.width,
+        height: face?.height ?? thumb?.height,
       }
       const base = 'workspaceId' in target
         ? apiRoutes.files(target.workspaceId)
-        : target.kind === 'user_avatar' ? apiRoutes.avatar : apiRoutes.background
+        : apiRoutes.avatar
       const ticket = !('workspaceId' in target)
         ? await $fetch<UploadTicket>(base, { method: 'POST', body: meta })
         : await $fetch<UploadTicket>(base, {

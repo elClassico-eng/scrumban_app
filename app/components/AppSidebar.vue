@@ -116,7 +116,7 @@ const customizeOpen = ref(false)
   <aside
     ref="asideRef"
     :class="[
-      'takt-surface flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
+      'flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
       { dark: frame === 'dark' },
       'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 ease-out',
       uiStore.mobileNavOpen ? 'translate-x-0' : '-translate-x-[110%]',

@@ -20,7 +20,7 @@ export default defineNuxtConfig({
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
       script: [{
         tagPosition: 'head',
-        innerHTML: `try{var d=document.documentElement;if(localStorage.getItem('scrumban:last-path'))d.classList.add('takt-returning');var a=JSON.parse(localStorage.getItem('scrumban:appearance')||'null');if(a){d.classList.add.apply(d.classList,a.classes);for(var k in a.vars)d.style.setProperty(k,a.vars[k])}}catch(e){}`,
+        innerHTML: `try{var d=document.documentElement;if(localStorage.getItem('scrumban:last-path'))d.classList.add('takt-returning');var a=JSON.parse(localStorage.getItem('scrumban:appearance')||'null');if(Array.isArray(a))d.classList.add.apply(d.classList,a)}catch(e){}`,
       }],
     },
   },

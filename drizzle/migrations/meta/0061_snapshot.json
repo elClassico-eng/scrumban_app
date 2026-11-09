@@ -5402,8 +5402,7 @@
         "attachment",
         "user_avatar",
         "workspace_logo",
-        "board_image",
-        "user_background"
+        "board_image"
       ]
     },
     "public.file_status": {

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm'
+import { and, eq, inArray, ne, sql } from 'drizzle-orm'
 import type { z } from 'zod'
 import { boards, files, taskEvents, tasks, users, workspaces, type FileRow, type WorkspaceMemberRole } from '../db/schema'
 import { useDB, withTenant, withUser, type DbTransaction } from '../utils/db'
@@ -9,8 +9,8 @@ import { roleAtLeast, requireMinRole } from '../utils/rbac'
 import { headObjectSize, presignGet, presignPut, secondsLeftInWindow } from '../utils/storage'
 import { getTask } from './tasks.service'
 import { findWorkspaceForUser, listWorkspacesForUser } from './workspaces.service'
-import type { BackgroundView, FileView, StorageUsage, UploadTicket } from '#shared/types/files'
-import type { StartBackgroundUploadSchema, StartUploadSchema } from '#shared/validation/files'
+import type { FileView, StorageUsage, UploadTicket } from '#shared/types/files'
+import type { StartAvatarUploadSchema, StartUploadSchema } from '#shared/validation/files'
 import { displayName } from '#shared/utils/display-name'
 
 const MB = 1_048_576
@@ -133,15 +133,15 @@ export async function startUpload(input: {
   return ticketFor(row, { userId: input.userId, role: input.actorRole })
 }
 
-export async function startUserImageUpload(input: { userId: string, kind: 'user_avatar' | 'user_background', body: z.infer<typeof StartBackgroundUploadSchema> }): Promise<UploadTicket> {
-  checkLimits(input.kind, input.body.contentType, input.body.size)
+export async function startAvatarUpload(input: { userId: string, body: z.infer<typeof StartAvatarUploadSchema> }): Promise<UploadTicket> {
+  checkLimits('user_avatar', input.body.contentType, input.body.size)
   const id = crypto.randomUUID()
   const row = await withUser(input.userId, async (tx) => {
-    await tx.delete(files).where(and(eq(files.kind, input.kind), eq(files.userId, input.userId), eq(files.status, 'pending')))
+    await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, input.userId), eq(files.status, 'pending')))
     const [created] = await tx.insert(files).values({
       id,
       workspaceId: null,
-      kind: input.kind,
+      kind: 'user_avatar',
       userId: input.userId,
       storageKey: storageKeyFor({ fileId: id, workspaceId: null, userId: input.userId }),
       name: sanitizeFileName(input.body.name),
@@ -149,7 +149,6 @@ export async function startUserImageUpload(input: { userId: string, kind: 'user_
       sizeBytes: input.body.size,
       width: input.body.width ?? null,
       height: input.body.height ?? null,
-      color: input.kind === 'user_background' ? input.body.color?.toLowerCase() ?? null : null,
       uploadedBy: input.userId,
     }).returning()
     return created!
@@ -162,48 +161,11 @@ export async function findFile(workspaceId: string | null, fileId: string): Prom
     return withTenant(workspaceId, tx =>
       tx.select().from(files).where(and(eq(files.id, fileId), eq(files.workspaceId, workspaceId))).then(r => r[0]))
   }
-  return useDB().select().from(files).where(and(eq(files.id, fileId), inArray(files.kind, ['user_avatar', 'user_background']))).then(r => r[0])
+  return useDB().select().from(files).where(and(eq(files.id, fileId), eq(files.kind, 'user_avatar'))).then(r => r[0])
 }
 
 function inScope<T>(row: FileRow, fn: (tx: DbTransaction) => Promise<T>): Promise<T> {
   return row.workspaceId ? withTenant(row.workspaceId, fn) : withUser(row.userId!, fn)
-}
-
-const RECENT_BACKGROUNDS = 8
-
-function setBackground(tx: DbTransaction, row: FileRow) {
-  const background = { kind: 'file', url: fileUrl(row), ...(row.color ? { color: row.color } : {}) }
-  return tx.update(users)
-    .set({ appearancePrefs: sql`${users.appearancePrefs} || ${JSON.stringify({ background })}::jsonb` })
-    .where(eq(users.id, row.userId!))
-}
-
-async function ownBackground(tx: DbTransaction, userId: string, fileId: string): Promise<FileRow> {
-  const [row] = await tx.select().from(files)
-    .where(and(eq(files.id, fileId), eq(files.kind, 'user_background'), eq(files.userId, userId), eq(files.status, 'ready')))
-  if (!row) throw new NotFoundError('Фон не найден')
-  return row
-}
-
-export async function listBackgrounds(userId: string): Promise<BackgroundView[]> {
-  const rows = await withUser(userId, tx => tx.select().from(files)
-    .where(and(eq(files.kind, 'user_background'), eq(files.userId, userId), eq(files.status, 'ready')))
-    .orderBy(desc(files.createdAt)))
-  return rows.map(r => ({ id: r.id, url: fileUrl(r), color: r.color, width: r.width, height: r.height }))
-}
-
-export async function selectBackground(userId: string, fileId: string): Promise<void> {
-  await withUser(userId, async tx => setBackground(tx, await ownBackground(tx, userId, fileId)))
-}
-
-export async function deleteBackground(userId: string, fileId: string): Promise<void> {
-  await withUser(userId, async (tx) => {
-    const row = await ownBackground(tx, userId, fileId)
-    await tx.delete(files).where(eq(files.id, row.id))
-    await tx.update(users)
-      .set({ appearancePrefs: sql`${users.appearancePrefs} || '{"background":{"kind":"none"}}'::jsonb` })
-      .where(and(eq(users.id, userId), sql`${users.appearancePrefs}->'background'->>'url' = ${fileUrl(row)}`))
-  })
 }
 
 async function setOwnerImage(row: FileRow): Promise<void> {
@@ -212,14 +174,6 @@ async function setOwnerImage(row: FileRow): Promise<void> {
     if (row.kind === 'user_avatar') {
       await tx.update(users).set({ avatarUrl: url }).where(eq(users.id, row.userId!))
       await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, row.userId!), ne(files.id, row.id)))
-    }
-    if (row.kind === 'user_background') {
-      await setBackground(tx, row)
-      const stale = await tx.select({ id: files.id }).from(files)
-        .where(and(eq(files.kind, 'user_background'), eq(files.userId, row.userId!), eq(files.status, 'ready')))
-        .orderBy(desc(files.createdAt))
-        .offset(RECENT_BACKGROUNDS)
-      if (stale.length) await tx.delete(files).where(inArray(files.id, stale.map(f => f.id)))
     }
     if (row.kind === 'workspace_logo') {
       await tx.update(workspaces).set({ logoUrl: url }).where(eq(workspaces.id, row.workspaceId!))
@@ -300,7 +254,6 @@ export async function resolveFileRedirect(input: {
   if (!row || row.status === 'pending') throw new NotFoundError('Файл не найден')
   if (row.status === 'staged' && row.uploadedBy !== input.userId) throw new NotFoundError('Файл не найден')
   if (row.kind === 'user_avatar' && !(await sharesWorkspace(input.userId, row.userId!))) throw new NotFoundError('Файл не найден')
-  if (row.kind === 'user_background' && row.userId !== input.userId) throw new NotFoundError('Файл не найден')
   const useThumb = input.thumb && !!row.thumbKey
   const contentType = useThumb ? THUMB_TYPE : row.contentType
   const windowSec = row.kind !== 'attachment' || useThumb ? IMAGE_WINDOW_SEC : ATTACHMENT_WINDOW_SEC

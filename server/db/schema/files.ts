@@ -5,7 +5,7 @@ import { tasks } from './tasks'
 import { users } from './users'
 import { workspaces } from './workspaces'
 
-export const fileKind = pgEnum('file_kind', ['attachment', 'user_avatar', 'workspace_logo', 'board_image', 'user_background'])
+export const fileKind = pgEnum('file_kind', ['attachment', 'user_avatar', 'workspace_logo', 'board_image'])
 export const fileStatus = pgEnum('file_status', ['pending', 'staged', 'ready'])
 
 export const files = pgTable(
@@ -28,7 +28,6 @@ export const files = pgTable(
     thumbBytes: integer('thumb_bytes').notNull().default(0),
     width: integer('width'),
     height: integer('height'),
-    color: varchar('color', { length: 7 }),
     uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

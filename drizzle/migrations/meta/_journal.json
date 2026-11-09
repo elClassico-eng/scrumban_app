@@ -433,7 +433,7 @@
       "idx": 61,
       "version": "7",
       "when": 1794197412879,
-      "tag": "0061_user_background",
+      "tag": "0061_user_appearance_prefs",
       "breakpoints": true
     },
     {
@@ -448,13 +448,6 @@
       "version": "7",
       "when": 1794200463595,
       "tag": "0063_workspace_board_defaults",
-      "breakpoints": true
-    },
-    {
-      "idx": 64,
-      "version": "7",
-      "when": 1794205138819,
-      "tag": "0064_file_color",
       "breakpoints": true
     }
   ]

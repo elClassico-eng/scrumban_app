@@ -28,7 +28,3 @@ export const StartAvatarUploadSchema = z.object({
   width: Dim,
   height: Dim,
 })
-
-export const StartBackgroundUploadSchema = StartAvatarUploadSchema.extend({
-  color: z.string().regex(/^#[0-9a-f]{6}$/i).optional(),
-})

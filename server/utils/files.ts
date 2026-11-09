@@ -1,4 +1,4 @@
-export type FileKind = 'attachment' | 'user_avatar' | 'workspace_logo' | 'board_image' | 'user_background'
+export type FileKind = 'attachment' | 'user_avatar' | 'workspace_logo' | 'board_image'
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const INLINE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'])
@@ -9,7 +9,6 @@ export const FILE_LIMITS: Record<FileKind, { maxBytes: number, types: string[] |
   user_avatar: { maxBytes: 5 * MB, types: IMAGE_TYPES },
   workspace_logo: { maxBytes: 5 * MB, types: IMAGE_TYPES },
   board_image: { maxBytes: 5 * MB, types: IMAGE_TYPES },
-  user_background: { maxBytes: 10 * MB, types: IMAGE_TYPES },
 }
 export const THUMB_MAX_BYTES = MB
 export const THUMB_TYPE = 'image/webp'
