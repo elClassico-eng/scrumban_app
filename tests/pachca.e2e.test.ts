@@ -376,6 +376,25 @@ async function runFeeds(owner: UserCtx) {
   return fetchWithJar<{ result: { sent: number } }>(owner.jar, '/api/_dev/tasks/integrations:feeds/run', { method: 'POST' })
 }
 
+describe('workspace feeds overview', () => {
+  it('lists feeds of every board with board names; members are refused', async () => {
+    const ctx = await feedSetup()
+    const second = await fetchWithJar<{ board: { id: string } }>(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards`, { method: 'POST', body: { name: 'Релизы', slug: 'releases' } })
+    await fetchWithJar(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/boards/${second.body.board.id}/feeds`, { method: 'POST', body: { chatId: '501', events: ['task_closed'], standupTime: null } })
+
+    const res = await fetchWithJar<{ feeds: { boardId: string, boardName: string, chatName: string }[] }>(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/integrations/pachca/feeds`)
+    expect(res.status).toBe(200)
+    expect(res.body.feeds.map(f => f.boardName).sort()).toEqual(['Поток', 'Релизы'])
+
+    const member = await registerUser('fm')
+    await addMember(ctx.owner, ctx.wsId, member.email, 'member')
+    expect((await fetchWithJar(member.jar, `/api/workspaces/${ctx.wsId}/integrations/pachca/feeds`)).status).toBe(403)
+
+    const state = await fetchWithJar<{ linkedMembers: number, members: number }>(ctx.owner.jar, `/api/workspaces/${ctx.wsId}/integrations/pachca`)
+    expect(state.body).toMatchObject({ linkedMembers: 0, members: 2 })
+  })
+})
+
 describe('feeds', () => {
   it('a failed standup does not re-post the already sent batch', async () => {
     const msk = new Date(Date.now() + 3 * 3_600_000).getUTCDay()

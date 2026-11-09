@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { INSTANT_NOTIFICATION_TYPES, type InstantNotificationType } from '#shared/types/notification'
+import { pageRoutes } from '~/routing'
 import type { PachcaCandidate } from '#shared/types/integrations'
 
 const { current } = useSettingsWorkspace()
 const wsId = computed(() => current.value?.id ?? null)
-const { state, candidates, requestLink, updateMe, unlinkMe } = usePachcaApi(wsId)
+const { state, candidates, requestLink, unlinkMe } = usePachcaApi(wsId)
 const toast = useToast()
 
 const integration = computed(() => state.data.value?.integration ?? null)
@@ -49,16 +49,6 @@ async function pick(c: PachcaCandidate) {
   }
 }
 
-function toggle(type: InstantNotificationType, enabled: boolean) {
-  const types = me.value?.instantTypes ?? []
-  const next = enabled ? [...new Set([...types, type])] : types.filter(t => t !== type)
-  updateMe.mutate({ instantTypes: next }, { onError: err => fail(err, 'Не удалось сохранить') })
-}
-
-function toggleDigest(enabled: boolean) {
-  updateMe.mutate({ digest: enabled }, { onError: err => fail(err, 'Не удалось сохранить') })
-}
-
 watchDebounced(query, () => {
   if (picking.value && !sentTo.value) search()
 }, { debounce: 300 })
@@ -66,30 +56,25 @@ watchDebounced(query, () => {
 
 <template>
   <div v-if="integration?.status === 'active'">
-    <h2 class="mt-6 mb-1 font-semibold text-default">Пачка</h2>
-    <p class="mb-4 text-xs text-muted">Уведомления из пространства «{{ current?.name }}» в личку от бота</p>
-
-    <div v-if="!me" class="flex items-center justify-between gap-4 py-2.5">
-      <span class="text-sm text-default">Пачка не привязана</span>
-      <UButton size="sm" @click="open">Привязать Пачку</UButton>
-    </div>
-
-    <template v-else>
-      <div class="flex items-center justify-between gap-4 py-2.5">
-        <span class="text-sm text-default">Привязано: {{ me.displayName }}</span>
-        <UButton size="sm" color="neutral" variant="ghost" :loading="unlinkMe.isPending.value" @click="unlinkMe.mutate()">Отвязать</UButton>
+    <SettingsTile title="Твоя Пачка" :description="`Уведомления из «${current?.name ?? ''}» в личку от бота`">
+      <div v-if="!me" class="flex items-center justify-between gap-4">
+        <span class="text-sm text-muted">Пачка пока не привязана</span>
+        <UButton @click="open">Привязать</UButton>
       </div>
-      <div class="divide-y divide-default">
-        <div class="flex items-center justify-between gap-4 py-2.5">
-          <span class="text-sm text-default">Утренний дайджест в Пачку</span>
-          <USwitch :model-value="me.digest" @update:model-value="toggleDigest" />
+      <template v-else>
+        <div class="flex items-center justify-between gap-4">
+          <span class="flex items-center gap-2 text-sm text-default">
+            <UIcon name="i-hugeicons-checkmark-circle-02" class="size-4 text-success" />
+            Привязано: {{ me.displayName }}
+          </span>
+          <UButton size="sm" color="neutral" variant="ghost" :loading="unlinkMe.isPending.value" @click="unlinkMe.mutate()">Отвязать</UButton>
         </div>
-        <div v-for="type in INSTANT_NOTIFICATION_TYPES" :key="type" class="flex items-center justify-between gap-4 py-2.5">
-          <span class="text-sm text-default">{{ INSTANT_NOTIFICATION_LABEL[type] }}</span>
-          <USwitch :model-value="me.instantTypes.includes(type)" @update:model-value="toggle(type, $event)" />
-        </div>
-      </div>
-    </template>
+        <p class="mt-3 text-sm text-muted">
+          Что присылать в Пачку, выбирается в
+          <NuxtLink :to="pageRoutes.settings('notifications')" class="underline hover:text-default">уведомлениях</NuxtLink>.
+        </p>
+      </template>
+    </SettingsTile>
 
     <UModal v-model:open="picking" title="Кто вы в Пачке?">
       <template #body>

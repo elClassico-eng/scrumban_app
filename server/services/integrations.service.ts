@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, count, eq, inArray } from 'drizzle-orm'
 import {
   boardFeeds,
   messengerAccounts,
@@ -111,11 +111,18 @@ export async function getPachcaState(input: { workspaceId: string, userId: strin
           ))
           .then(r => r[0]))
     : undefined
+  const [linked, members] = await withTenant(input.workspaceId, tx => Promise.all([
+    tx.select({ n: count() }).from(messengerAccounts)
+      .where(and(eq(messengerAccounts.workspaceId, input.workspaceId), eq(messengerAccounts.provider, 'pachca'))),
+    tx.select({ n: count() }).from(workspaceMembers).where(eq(workspaceMembers.workspaceId, input.workspaceId)),
+  ]))
   return {
     available: secretsAvailable(),
     canManage: roleAtLeast(input.actorRole, 'admin'),
     integration: row ? toView(row) : null,
     me: me ? { displayName: me.displayName, instantTypes: me.instantTypes, digest: me.digest } : null,
+    linkedMembers: linked[0]?.n ?? 0,
+    members: members[0]?.n ?? 0,
   }
 }
 

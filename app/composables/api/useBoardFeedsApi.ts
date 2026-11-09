@@ -7,7 +7,10 @@ export function useBoardFeedsApi(workspaceId: MaybeRef<string>, boardId: MaybeRe
   const qc = useQueryClient()
   const url = computed(() => apiRoutes.boardFeeds(unref(workspaceId), unref(boardId)))
   const queryKey = computed(() => ['board-feeds', unref(workspaceId), unref(boardId)])
-  const invalidate = () => qc.invalidateQueries({ queryKey: queryKey.value })
+  const invalidate = () => Promise.all([
+    qc.invalidateQueries({ queryKey: queryKey.value }),
+    qc.invalidateQueries({ queryKey: ['pachca', unref(workspaceId), 'feeds'] }),
+  ])
 
   const list = useQuery({
     queryKey,

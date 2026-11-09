@@ -9,7 +9,7 @@ import { requireMinRole } from '../utils/rbac'
 import { computeDailyDigest } from './daily-digest.service'
 import { withPachca } from './integrations.service'
 import { formatTaskKey } from '#shared/utils/board-key'
-import type { BoardFeedView, FeedEvent, PachcaChat } from '#shared/types/integrations'
+import type { BoardFeedView, FeedEvent, PachcaChat, WorkspaceFeedView } from '#shared/types/integrations'
 
 const FAILING_LIMIT_MS = 3_600_000
 const MSK_OFFSET_MS = 3 * 3_600_000
@@ -67,6 +67,17 @@ export async function listFeeds(input: { workspaceId: string, boardId: string, a
     tx.select().from(boardFeeds).where(and(eq(boardFeeds.workspaceId, input.workspaceId), eq(boardFeeds.boardId, input.boardId))),
   )
   return rows.map(toView)
+}
+
+export async function listWorkspaceFeeds(input: { workspaceId: string, actorRole: WorkspaceMemberRole }): Promise<WorkspaceFeedView[]> {
+  requireMinRole(input.actorRole, 'admin')
+  const rows = await withTenant(input.workspaceId, tx =>
+    tx.select({ feed: boardFeeds, boardName: boards.name })
+      .from(boardFeeds)
+      .innerJoin(boards, eq(boards.id, boardFeeds.boardId))
+      .where(and(eq(boardFeeds.workspaceId, input.workspaceId), isNull(boards.archivedAt))),
+  )
+  return rows.map(r => ({ ...toView(r.feed), boardId: r.feed.boardId, boardName: r.boardName }))
 }
 
 export async function createFeed(input: {

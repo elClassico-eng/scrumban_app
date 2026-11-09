@@ -34,6 +34,8 @@ export type PachcaStateResponse = {
   canManage: boolean
   integration: PachcaIntegrationView | null
   me: PachcaLinkView | null
+  linkedMembers: number
+  members: number
 }
 
 export type PachcaCandidate = {
@@ -55,6 +57,8 @@ export type PachcaInviteResult = {
 export type PachcaLinkInspect =
   | { valid: true, workspaceName: string, pachcaName: string }
   | { valid: false, reason: 'not_found' | 'expired' | 'used' | 'other_user' }
+
+export type WorkspaceFeedView = BoardFeedView & { boardId: string, boardName: string }
 
 export type BoardFeedView = {
   id: string
