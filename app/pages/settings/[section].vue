@@ -10,11 +10,17 @@ definePageMeta({
 })
 
 const route = useRoute()
-const section = computed(() => route.params.section as MeSection)
+const router = useRouter()
+const section = computed({
+  get: () => route.params.section as MeSection,
+  set: (s: MeSection) => void router.push(pageRoutes.settings(s)),
+})
+const tabs = ME_SECTIONS.map(s => ({ value: s, label: ME_SECTION_META[s].label, icon: ME_SECTION_META[s].icon }))
 </script>
 
 <template>
-  <div>
+  <div class="space-y-5">
+    <UiUnderlineTabs v-model="section" :items="tabs" label="Личные настройки" indicator-id="settings-me-tab" />
     <SettingsPageHeader :meta="ME_SECTION_META[section]" />
     <SettingsProfilePanel v-if="section === 'profile'" />
     <SettingsSecurityPanel v-else-if="section === 'security'" />

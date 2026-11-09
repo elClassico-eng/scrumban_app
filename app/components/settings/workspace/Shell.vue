@@ -23,16 +23,9 @@ const tab = computed({
 </script>
 
 <template>
-  <div v-if="workspace" class="space-y-4">
-    <div class="flex items-center gap-3">
-      <WorkspaceAvatar :name="workspace.name" :logo-url="workspace.logoUrl" size="md" />
-      <div class="min-w-0">
-        <h2 class="truncate text-lg font-semibold text-default">{{ workspace.name }}</h2>
-        <WorkspaceMemberRoleBadge :role="workspace.role" />
-      </div>
-    </div>
-    <UTabs v-model="tab" :items="tabs" color="neutral" variant="link" :content="false" class="overflow-x-auto" />
-    <p class="text-sm text-muted">{{ WORKSPACE_SECTION_META[active].description }}</p>
+  <div v-if="workspace" class="space-y-5">
+    <UiUnderlineTabs v-model="tab" :items="tabs" :label="`Настройки ${workspace.name}`" indicator-id="settings-ws-tab" />
+    <SettingsPageHeader :meta="WORKSPACE_SECTION_META[active]" :tone="active === 'delete' ? 'danger' : 'default'" />
     <slot />
   </div>
 </template>

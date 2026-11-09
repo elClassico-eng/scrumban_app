@@ -12,13 +12,13 @@ const model = defineModel<T>({ required: true })
 </script>
 
 <template>
-  <nav class="grid grid-cols-2 border-b border-default sm:auto-cols-fr sm:grid-flow-col sm:grid-cols-none" :aria-label="label">
+  <nav class="-mx-1 flex overflow-x-auto border-b border-default px-1 sm:mx-0 sm:grid sm:auto-cols-fr sm:grid-flow-col sm:overflow-visible sm:px-0" :aria-label="label">
     <button
       v-for="t in items"
       :key="t.value"
       type="button"
       :class="[
-        'relative flex cursor-pointer items-center gap-2.5 px-3 py-3 text-left transition-colors',
+        'relative flex shrink-0 cursor-pointer items-center gap-2.5 px-3 py-3 text-left transition-colors',
         model === t.value ? 'text-highlighted' : 'text-muted hover:text-default',
       ]"
       :aria-current="model === t.value ? 'page' : undefined"
