@@ -339,12 +339,12 @@ describe('notifications', () => {
     })
     await new Promise(resolve => setTimeout(resolve, 3000))
     fake.state.messages.length = 0
-    await fetchWithJar(owner.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST' })
+    await fetchWithJar(owner.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST', body: { payload: { now: `${new Date().toISOString().slice(0, 10)}T06:05:00Z` } } })
     expect(fake.state.messages.filter(m => m.content.includes('Доброе утро'))).toHaveLength(0)
 
     await fetchWithJar(dev.jar, `/api/workspaces/${wsId}/integrations/pachca/me`, { method: 'PATCH', body: { digest: true } })
     await getTestSql()`UPDATE users SET digest_sent_at = NULL`
-    await fetchWithJar(owner.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST' })
+    await fetchWithJar(owner.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST', body: { payload: { now: `${new Date().toISOString().slice(0, 10)}T06:05:00Z` } } })
     const digest = fake.state.messages.find(m => m.entity_id === 41 && m.content.includes('Доброе утро'))
     expect(digest!.content).toContain('Горит')
   })

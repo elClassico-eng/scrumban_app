@@ -23,7 +23,8 @@ export default defineEventHandler(async (event) => {
       throw new NotFoundError('Неизвестный таск')
     }
 
-    const result = await runTask(name)
+    const body = await readBody<{ payload?: Record<string, unknown> } | undefined>(event).catch(() => undefined)
+    const result = await runTask(name, { payload: body?.payload ?? {} })
     return { result }
   }
   catch (err) {

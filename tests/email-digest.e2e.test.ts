@@ -63,8 +63,11 @@ async function setupBoard(owner: UserCtx) {
   return { wsId, boardId, backlog: cols.body.columns.find(c => c.columnRole === 'backlog')!.id }
 }
 
-async function runDigest(actor: UserCtx) {
-  const res = await fetchWithJar<{ result: { sent: number, skipped: number } }>(actor.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST' })
+const nineMoscowToday = () => `${new Date().toISOString().slice(0, 10)}T06:05:00Z`
+
+async function runDigest(actor: UserCtx, now = nineMoscowToday(), keepAnchor = false) {
+  if (!keepAnchor) await getTestSql()`UPDATE users SET digest_sent_at = NULL`
+  const res = await fetchWithJar<{ result: { sent: number, skipped: number } }>(actor.jar, '/api/_dev/tasks/notifications:daily-digest/run', { method: 'POST', body: { payload: { now } } })
   expect(res.status).toBe(200)
   return res.body.result
 }
@@ -89,6 +92,38 @@ describe('email digest', () => {
     expect(text).toContain('Починить оплату')
     expect(text).toContain('просрочено на 3 дн')
     expect(text).toContain('блокер: ждём доступ')
+  })
+
+  it('уходит в выбранный час по поясу пользователя и один раз в сутки', async () => {
+    const msk = await registerUser('msk')
+    const hnl = await registerUser('hnl')
+    await fetchWithJar(hnl.jar, '/api/users/me', { method: 'PATCH', body: { timeZone: 'Pacific/Honolulu' } })
+    const a = await setupBoard(msk)
+    await fetchWithJar(msk.jar, `/api/workspaces/${a.wsId}/boards/${a.boardId}/tasks`, {
+      method: 'POST',
+      body: { columnId: a.backlog, title: 'Ночной срок', assigneeId: msk.id, dueDate: '2026-11-09T22:00:00Z' },
+    })
+    const b = await setupBoard(hnl)
+    await fetchWithJar(hnl.jar, `/api/workspaces/${b.wsId}/boards/${b.boardId}/tasks`, {
+      method: 'POST',
+      body: { columnId: b.backlog, title: 'Гавайский срок', assigneeId: hnl.id, dueDate: '2026-11-09T23:00:00Z' },
+    })
+
+    expect(await runDigest(msk, '2026-11-10T06:05:00Z')).toMatchObject({ sent: 1 })
+    const mail = await waitForMail(msk.email, 'на сегодня')
+    const text = await mailText(mail!.ID)
+    expect(text).toContain('Срок сегодня')
+    expect(text).not.toContain('Просрочено')
+    expect(await runDigest(msk, '2026-11-10T06:40:00Z', true)).toMatchObject({ sent: 0 })
+
+    expect(await runDigest(hnl, '2026-11-09T19:05:00Z')).toMatchObject({ sent: 1 })
+    expect((await mailsTo(hnl.email)).filter(m => m.Subject.includes('на сегодня'))).toHaveLength(1)
+  })
+
+  it('отклоняет неизвестный часовой пояс', async () => {
+    const owner = await registerUser('tz')
+    const res = await fetchWithJar(owner.jar, '/api/users/me', { method: 'PATCH', body: { timeZone: 'Mars/Olympus' } })
+    expect(res.status).toBe(400)
   })
 
   it('выключенный дайджест и неподтверждённая почта не получают писем', async () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DEFAULT_EMAIL_PREFS, INSTANT_NOTIFICATION_TYPES, type InstantNotificationType, type NotificationType } from '#shared/types/notification'
+import { DEFAULT_DIGEST_HOUR, DEFAULT_EMAIL_PREFS, INSTANT_NOTIFICATION_TYPES, type InstantNotificationType, type NotificationType } from '#shared/types/notification'
 import type { UpdateUserProfileInput } from '#shared/types/auth'
 import {
   cellEnabled,
@@ -76,6 +76,26 @@ function setEmail(type: InstantNotificationType, on: boolean) {
 function setPachca(type: InstantNotificationType, on: boolean) {
   savePachca(toggled(matrix.value.pachca, type, on))
 }
+
+const TZ_SYNCED_KEY = 'scrumban:tz-synced'
+const HOURS = Array.from({ length: 24 }, (_, h) => ({ label: `${String(h).padStart(2, '0')}:00`, value: h }))
+const timeZones = Intl.supportedValuesOf('timeZone').map(tz => ({ label: tz.replaceAll('_', ' '), value: tz }))
+const timeZone = computed(() => me.data.value?.user.timeZone ?? 'Europe/Moscow')
+const digestHour = computed(() => emailPrefs.value.digestHour ?? DEFAULT_DIGEST_HOUR)
+const pachcaDigest = computed(() => links.value.some(l => l.digest))
+
+watch(() => me.data.value?.user.timeZone, (tz) => {
+  if (!tz) return
+  try {
+    if (localStorage.getItem(TZ_SYNCED_KEY)) return
+    localStorage.setItem(TZ_SYNCED_KEY, '1')
+    const browser = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (tz === 'Europe/Moscow' && browser && browser !== tz) saveProfile({ timeZone: browser })
+  }
+  catch {
+    // Storage blocked: skip the one-off sync, the user can pick the zone by hand.
+  }
+}, { immediate: true })
 
 function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
   const state = pachcaCellState(links.value, type)
@@ -181,9 +201,34 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
     </SettingsTile>
 
     <SettingsTile title="Утренний дайджест" description="Просрочки, сроки на сегодня, блокеры и непрочитанное. Без новостей письма не будет">
-      <div class="flex items-center justify-between gap-4">
-        <span class="text-sm text-default">Присылать на почту</span>
-        <USwitch :model-value="emailPrefs.digest" @update:model-value="saveProfile({ emailPrefs: { ...emailPrefs, digest: $event } })" />
+      <div class="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
+        <UFormField label="Время">
+          <USelect
+            :model-value="digestHour"
+            :items="HOURS"
+            class="w-full"
+            @update:model-value="saveProfile({ emailPrefs: { ...emailPrefs, digestHour: $event } })"
+          />
+        </UFormField>
+        <UFormField label="Часовой пояс">
+          <USelectMenu
+            :model-value="timeZone"
+            :items="timeZones"
+            value-key="value"
+            class="w-full"
+            @update:model-value="(tz: string) => saveProfile({ timeZone: tz })"
+          />
+        </UFormField>
+      </div>
+      <div class="mt-4 space-y-3 border-t border-default pt-4">
+        <div class="flex items-center justify-between gap-4">
+          <span class="text-sm text-default">На почту</span>
+          <USwitch :model-value="emailPrefs.digest" @update:model-value="saveProfile({ emailPrefs: { ...emailPrefs, digest: $event } })" />
+        </div>
+        <div v-if="hasPachca" class="flex items-center justify-between gap-4">
+          <span class="text-sm text-default">В Пачку</span>
+          <USwitch :model-value="pachcaDigest" @update:model-value="updateLinks.mutate({ digest: $event }, { onError: fail })" />
+        </div>
       </div>
     </SettingsTile>
   </div>

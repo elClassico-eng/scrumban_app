@@ -7,6 +7,16 @@ import { updateUserProfile } from '../../services/users.service'
 import { requireAuth } from '../../utils/auth'
 import { toHttpError } from '../../utils/errors'
 
+function isTimeZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: tz })
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
 const BodySchema = z
   .object({
     firstName: z.string().trim().max(100).nullable().optional(),
@@ -21,6 +31,7 @@ const BodySchema = z
     sidebarPrefs: SidebarPrefsSchema.optional(),
     shortcutPrefs: ShortcutPrefsSchema.optional(),
     emailPrefs: EmailPrefsSchema.optional(),
+    timeZone: z.string().max(64).refine(isTimeZone, 'Неизвестный часовой пояс').optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
     message: 'Provide at least one field to update',
@@ -52,6 +63,7 @@ export default defineEventHandler(async (event) => {
         sidebarPrefs: user.sidebarPrefs ?? {},
         shortcutPrefs: user.shortcutPrefs ?? {},
         emailPrefs: user.emailPrefs,
+        timeZone: user.timeZone,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

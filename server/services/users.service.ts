@@ -76,6 +76,7 @@ export async function updateUserProfile(input: {
     sidebarPrefs?: SidebarPrefs
     shortcutPrefs?: ShortcutPrefs
     emailPrefs?: EmailPrefs
+    timeZone?: string
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -93,6 +94,7 @@ export async function updateUserProfile(input: {
   if (input.patch.sidebarPrefs) set.sidebarPrefs = input.patch.sidebarPrefs
   if (input.patch.shortcutPrefs) set.shortcutPrefs = input.patch.shortcutPrefs
   if (input.patch.emailPrefs) set.emailPrefs = input.patch.emailPrefs
+  if (input.patch.timeZone) set.timeZone = input.patch.timeZone
 
   const [row] = await useDB()
     .update(users)

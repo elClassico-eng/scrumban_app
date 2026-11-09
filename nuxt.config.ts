@@ -84,10 +84,9 @@ export default defineNuxtConfig({
     },
     scheduledTasks: {
       '* * * * *': ['integrations:feeds'],
-      '0 * * * *': ['automations:run', 'files:cleanup'],
+      '0 * * * *': ['automations:run', 'files:cleanup', 'notifications:daily-digest'],
       '*/10 * * * *': ['files:purge'],
       '0 3 * * *': ['forecast:daily-snapshots'],
-      '0 6 * * *': ['notifications:daily-digest'],
     },
     externals: {
       inline: ['zod'],

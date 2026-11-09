@@ -59,6 +59,8 @@ export type InstantNotificationType = (typeof INSTANT_NOTIFICATION_TYPES)[number
 export type EmailPrefs = {
   digest: boolean
   instant: InstantNotificationType[]
+  digestHour?: number
 }
 
-export const DEFAULT_EMAIL_PREFS: EmailPrefs = { digest: true, instant: [] }
+export const DEFAULT_DIGEST_HOUR = 9
+export const DEFAULT_EMAIL_PREFS: EmailPrefs = { digest: true, instant: [], digestHour: DEFAULT_DIGEST_HOUR }

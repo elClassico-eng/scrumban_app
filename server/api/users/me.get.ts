@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
         sidebarPrefs: user.sidebarPrefs ?? {},
         shortcutPrefs: user.shortcutPrefs ?? {},
         emailPrefs: user.emailPrefs,
+        timeZone: user.timeZone,
         changelogSeenAt: user.changelogSeenAt ? user.changelogSeenAt.toISOString() : null,
         emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
         createdAt: user.createdAt,

@@ -421,6 +421,13 @@
       "when": 1793550401712,
       "tag": "0059_rich_text_markdown",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1794196951230,
+      "tag": "0060_user_time_zone",
+      "breakpoints": true
     }
   ]
 }

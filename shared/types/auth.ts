@@ -60,6 +60,7 @@ export interface UserProfile {
   sidebarPrefs: SidebarPrefs
   shortcutPrefs: ShortcutPrefs
   emailPrefs: EmailPrefs
+  timeZone: string
   changelogSeenAt: string | null
   emailVerifiedAt: string | null
   createdAt: string
@@ -76,6 +77,7 @@ export interface UpdateUserProfileInput {
   sidebarPrefs?: SidebarPrefs
   shortcutPrefs?: ShortcutPrefs
   emailPrefs?: EmailPrefs
+  timeZone?: string
   dismissedHints?: string[]
   firstName?: string | null
   lastName?: string | null

@@ -17,6 +17,8 @@ import { listWorkspacesForUser } from './workspaces.service'
 import { PRIMARY_TYPES } from '#shared/utils/notification-category'
 import { displayName } from '#shared/utils/display-name'
 import { formatTaskKey } from '#shared/utils/board-key'
+import { isDigestDue, localParts } from '#shared/utils/local-time'
+import { DEFAULT_DIGEST_HOUR } from '#shared/types/notification'
 
 const DAY_MS = 86_400_000
 const ITEMS_PER_SECTION = 5
@@ -24,16 +26,17 @@ const WATCHED_TYPES = ['watched_comment', 'watched_status'] as const
 
 type Recipient = typeof users.$inferSelect
 
+function digestHourOf(recipient: Recipient): number {
+  return recipient.emailPrefs.digestHour ?? DEFAULT_DIGEST_HOUR
+}
+
 function section(heading: string, items: DigestItem[]): DigestSection | null {
   if (!items.length) return null
   return { heading, items: items.slice(0, ITEMS_PER_SECTION), more: Math.max(0, items.length - ITEMS_PER_SECTION) }
 }
 
-function utcDay(d: Date): string {
-  return d.toISOString().slice(0, 10)
-}
-
-async function taskSections(workspaceId: string, userId: string, now: Date): Promise<DigestSection[]> {
+async function taskSections(workspaceId: string, userId: string, now: Date, timeZone: string): Promise<DigestSection[]> {
+  const localDay = (d: Date) => localParts(d, timeZone).day
   const rows = await withTenant(workspaceId, tx =>
     tx
       .selectDistinct({
@@ -60,11 +63,11 @@ async function taskSections(workspaceId: string, userId: string, now: Date): Pro
     detail,
     link: notificationLink(workspaceId, { taskId: t.id, boardId: t.boardId }),
   })
-  const today = utcDay(now)
-  const overdue = rows.filter(t => t.dueDate && t.dueDate < now && utcDay(t.dueDate) !== today)
+  const today = localDay(now)
+  const overdue = rows.filter(t => t.dueDate && t.dueDate < now && localDay(t.dueDate) !== today)
     .sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime())
-    .map(t => item(t, `просрочено на ${(Date.parse(today) - Date.parse(utcDay(t.dueDate!))) / DAY_MS} дн`))
-  const dueToday = rows.filter(t => t.dueDate && utcDay(t.dueDate) === today).map(t => item(t, 'срок сегодня'))
+    .map(t => item(t, `просрочено на ${(Date.parse(today) - Date.parse(localDay(t.dueDate!))) / DAY_MS} дн`))
+  const dueToday = rows.filter(t => t.dueDate && localDay(t.dueDate) === today).map(t => item(t, 'срок сегодня'))
   const blocked = rows.filter(t => t.blockedReason).map(t => item(t, `блокер: ${t.blockedReason}`))
   return [
     section('Просрочено', overdue),
@@ -115,7 +118,7 @@ export async function buildDigest(recipient: Recipient, now: Date, onlyWorkspace
   const out: DigestWorkspace[] = []
   for (const ws of memberships) {
     const sections = [
-      ...await taskSections(ws.id, recipient.id, now),
+      ...await taskSections(ws.id, recipient.id, now, recipient.timeZone),
       ...await inboxSections(ws.id, recipient.id, since, now),
     ]
     if (sections.length) out.push({ id: ws.id, name: ws.name, sections })
@@ -131,6 +134,7 @@ export async function sendDailyDigests(now = new Date()): Promise<{ sent: number
   let sent = 0
   let skipped = 0
   for (const recipient of recipients) {
+    if (!isDigestDue({ now, timeZone: recipient.timeZone, digestHour: digestHourOf(recipient), lastSentAt: recipient.digestSentAt })) continue
     try {
       const workspaces = await buildDigest(recipient, now)
       if (workspaces.length) {
@@ -158,7 +162,7 @@ export async function sendPachcaDigests(now = new Date()): Promise<{ sent: numbe
     for (const link of links) {
       try {
         const [recipient] = await useDB().select().from(users).where(eq(users.id, link.userId))
-        if (!recipient) continue
+        if (!recipient || localParts(now, recipient.timeZone).hour !== digestHourOf(recipient)) continue
         const [part] = await buildDigest(recipient, now, ws.id)
         if (!part) continue
         const ok = await withPachca(ws.id, ctx =>
