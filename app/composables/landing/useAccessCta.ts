@@ -11,8 +11,9 @@ export function useAccessCta() {
 
   return {
     authenticated,
-    label: computed(() => (authenticated.value ? 'Открыть Такт' : 'Ранний доступ')),
-    heroLabel: computed(() => (authenticated.value ? 'Открыть Такт' : 'Получить доступ')),
+    startLabel: computed(() => (authenticated.value ? 'Открыть Такт' : 'Начать бесплатно')),
+    start: () =>
+      navigateTo(authenticated.value ? pageRoutes.workspaces : pageRoutes.register, { external: true }),
     go: () =>
       navigateTo(authenticated.value ? pageRoutes.workspaces : pageRoutes.login, { external: true }),
   }
