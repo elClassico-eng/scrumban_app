@@ -70,6 +70,7 @@ const archivedCount = computed(() => archivedBoards.data.value?.boards.length ??
 const { isVisible, favorites, frame, toggleFavorite, sortBoards, setBoardOrder } = useSidebarPrefs()
 const { combos } = useShortcutPrefs()
 const help = useHelpPanel()
+const { prefs: appearance } = useAppearance()
 const boards = computed(() => sortBoards(boardsList.data.value?.boards ?? []))
 const favoriteBoards = computed(() => boards.value.filter(b => favorites.value.has(b.id)))
 
@@ -115,7 +116,7 @@ const customizeOpen = ref(false)
   <aside
     ref="asideRef"
     :class="[
-      'flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
+      'takt-surface flex flex-col overflow-hidden border border-default bg-default text-default shadow-xl',
       { dark: frame === 'dark' },
       'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] transition-transform duration-300 ease-out',
       uiStore.mobileNavOpen ? 'translate-x-0' : '-translate-x-[110%]',
@@ -145,7 +146,7 @@ const customizeOpen = ref(false)
       @invite="inviteOpen = true"
     />
 
-    <MotionConfig reduced-motion="user">
+    <MotionConfig :reduced-motion="appearance.reduceMotion ? 'always' : 'user'">
     <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-2 py-2">
       <template v-if="current">
         <div v-if="personalLinks.length" class="flex flex-col gap-0.5 pt-1">

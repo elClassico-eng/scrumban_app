@@ -56,7 +56,7 @@ const activeCount = computed(() =>
 </script>
 
 <template>
-  <div class="bg-default border-b border-default sticky top-0 lg:top-[60px] z-10">
+  <div class="takt-surface bg-default border-b border-default sticky top-0 lg:top-[60px] z-10">
     <div class="lg:hidden flex items-center gap-2 px-4 py-2.5">
       <button
         type="button"

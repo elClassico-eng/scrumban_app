@@ -174,7 +174,7 @@ const isViewActive = computed(() => displayViews.value.some(v => v.isActive))
 
 <template>
   <div
-    class="bg-default border-b border-default relative lg:sticky lg:top-0 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
+    class="takt-surface bg-default border-b border-default relative lg:sticky lg:top-0 z-20 -mx-4 sm:-mx-6 transition-all duration-200"
     :class="compact ? 'py-2' : 'py-3'"
   >
     <div class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-4 px-4 sm:px-6 min-h-[44px]">

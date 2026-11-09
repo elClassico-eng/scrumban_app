@@ -1,0 +1,27 @@
+import { describe, expect, it } from 'vitest'
+import { DEFAULT_APPEARANCE } from '#shared/types/appearance'
+import { appearanceVars } from './appearance-css'
+
+describe('appearanceVars', () => {
+  it('no background means no classes', () => {
+    expect(appearanceVars(DEFAULT_APPEARANCE).classes).toEqual([])
+  })
+
+  it('a preset sets the image and readability vars', () => {
+    const r = appearanceVars({ background: { kind: 'preset', presetId: 'dusk' }, dim: 0.5, blur: 10 })
+    expect(r.classes).toContain('takt-bg')
+    expect(r.vars['--takt-bg-dim']).toBe('0.5')
+    expect(r.vars['--takt-bg-blur']).toBe('10px')
+    expect(r.vars['--takt-bg-image']).toBeTruthy()
+  })
+
+  it('a file uses its url', () => {
+    const r = appearanceVars({ background: { kind: 'file', url: '/api/files/u/x' } })
+    expect(r.vars['--takt-bg-image']).toBe('url("/api/files/u/x")')
+    expect(r.vars['--takt-bg-dim']).toBe('0.4')
+  })
+
+  it('interface toggles add their classes', () => {
+    expect(appearanceVars({ reduceMotion: true, compactCards: true }).classes).toEqual(['takt-compact', 'takt-reduce-motion'])
+  })
+})

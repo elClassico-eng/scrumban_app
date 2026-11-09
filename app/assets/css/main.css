@@ -331,3 +331,54 @@ body {
     animation-delay: calc(var(--i, 0) * 18ms);
   }
 }
+
+.takt-backdrop {
+  display: none;
+}
+
+html.takt-bg .takt-backdrop {
+  --takt-veil: 255 255 255;
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--takt-bg-image) center / cover no-repeat;
+}
+
+html.takt-bg .takt-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--takt-veil) / var(--takt-bg-dim));
+}
+
+html.dark.takt-bg .takt-backdrop {
+  --takt-veil: 0 0 0;
+}
+
+html.takt-bg .app-canvas {
+  background: transparent;
+  isolation: isolate;
+}
+
+html.takt-bg .takt-surface {
+  background: color-mix(in srgb, var(--ui-bg) 60%, transparent);
+  backdrop-filter: blur(var(--takt-bg-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--takt-bg-blur)) saturate(140%);
+}
+
+html.takt-compact .task-card {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+html.takt-reduce-motion *,
+html.takt-reduce-motion *::before,
+html.takt-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
