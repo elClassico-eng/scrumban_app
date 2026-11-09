@@ -5,7 +5,9 @@ useHead({ title: 'Настройки – Такт' })
 <template>
   <div class="space-y-5 py-2">
     <UiPageHeader title="Настройки" subtitle="Ваш профиль и ваши воркспейсы" />
-    <SettingsScopeBar />
+    <div class="pb-2">
+      <SettingsScopeBar />
+    </div>
     <NuxtPage />
   </div>
 </template>
