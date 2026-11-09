@@ -19,5 +19,5 @@ const section = computed(() => route.params.section as MeSection)
   <SettingsNotificationsPanel v-else-if="section === 'notifications'" />
   <SettingsAppearancePanel v-else-if="section === 'appearance'" />
   <SettingsWorkPanel v-else-if="section === 'work'" />
-  <SettingsDangerPanel v-else-if="section === 'account'" />
+  <SettingsAccountPanel v-else-if="section === 'account'" />
 </template>

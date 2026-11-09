@@ -16,6 +16,7 @@ export const apiRoutes = {
   usersMePassword: '/api/users/me/password',
   usersMeSessions: '/api/users/me/sessions',
   usersMePachca: '/api/users/me/pachca',
+  usersMeDeletionPreview: '/api/users/me/deletion-preview',
   usersMeSession: (sid: string) => `/api/users/me/sessions/${sid}`,
   usersDismissHint: '/api/users/me/dismiss-hint',
   usersChangelogSeen: '/api/users/me/changelog-seen',

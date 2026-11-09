@@ -7,8 +7,10 @@ import type { AppearancePrefs } from '#shared/types/appearance'
 // Normalises email to lowercase for predictable lookups, and translates
 // PostgreSQL unique-violation errors into a domain ConflictError so the
 // HTTP layer can map it to 409 without sniffing pg error codes itself.
-import { eq, sql } from 'drizzle-orm'
-import { users, type User } from '../db/schema'
+import { and, count, eq, sql } from 'drizzle-orm'
+import { taskComments, taskEvents, users, type User } from '../db/schema'
+import { withTenant } from '../utils/db'
+import { findSoleOwnedWorkspaces, listWorkspacesForUser } from './workspaces.service'
 import { ConflictError, NotFoundError } from '../utils/errors'
 
 const PG_UNIQUE_VIOLATION = '23505'
@@ -157,4 +159,26 @@ export async function markChangelogSeen(userId: string): Promise<string> {
 
 export async function deleteUser(userId: string): Promise<void> {
   await useDB().delete(users).where(eq(users.id, userId))
+}
+
+export type DeletionPreview = {
+  memberships: number
+  tasksCreated: number
+  comments: number
+  soleOwned: { id: string, name: string }[]
+}
+
+export async function deletionPreview(userId: string): Promise<DeletionPreview> {
+  const memberships = await listWorkspacesForUser(userId)
+  let tasksCreated = 0
+  let commentCount = 0
+  for (const ws of memberships) {
+    const [t, c] = await withTenant(ws.id, tx => Promise.all([
+      tx.select({ n: count() }).from(taskEvents).where(and(eq(taskEvents.eventType, 'task_created'), eq(taskEvents.actorId, userId))),
+      tx.select({ n: count() }).from(taskComments).where(eq(taskComments.authorId, userId)),
+    ]))
+    tasksCreated += t[0]?.n ?? 0
+    commentCount += c[0]?.n ?? 0
+  }
+  return { memberships: memberships.length, tasksCreated, comments: commentCount, soleOwned: await findSoleOwnedWorkspaces(userId) }
 }
