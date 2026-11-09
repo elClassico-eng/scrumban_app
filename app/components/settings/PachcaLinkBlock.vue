@@ -88,7 +88,7 @@ watchDebounced(query, () => {
             <li v-for="c in list" :key="c.id">
               <button
                 type="button"
-                class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left hover:bg-elevated"
+                class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left hover:bg-zinc-50 dark:hover:bg-elevated"
                 :disabled="requestLink.isPending.value"
                 @click="pick(c)"
               >

@@ -47,8 +47,15 @@ function fromUser(): State {
   return { firstName: u?.firstName ?? '', lastName: u?.lastName ?? '', jobTitle: u?.jobTitle ?? '', bio: u?.bio ?? '' }
 }
 
+const editing = ref(false)
+
 function reset() {
   Object.assign(state, fromUser())
+}
+
+function cancel() {
+  reset()
+  editing.value = false
 }
 
 watch(user, reset, { immediate: true })
@@ -60,6 +67,7 @@ async function save() {
     await update.mutateAsync(Object.fromEntries(
       Object.entries(state).map(([k, v]) => [k, v.trim() || null]),
     ))
+    editing.value = false
     toast.add({ title: 'Профиль сохранён', color: 'success', icon: 'i-hugeicons-checkmark-circle-02', duration: 1500 })
   }
   catch (err) {
@@ -89,8 +97,25 @@ const avatarFallback = computed(() => initials({ firstName: state.firstName, las
   </div>
 
   <div v-else-if="user" class="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-    <SettingsTile>
-      <UForm :schema="schema" :state="state" class="space-y-4" @submit="save">
+    <SettingsTile title="О вас">
+      <template v-if="!editing" #actions>
+        <SettingsEditButton @click="editing = true" />
+      </template>
+
+      <div v-if="!editing" class="space-y-5">
+        <div class="flex items-center gap-4">
+          <UserAvatar :user="preview" size="xl" />
+          <div class="min-w-0">
+            <p class="truncate text-lg font-semibold text-default">{{ displayName(preview) }}</p>
+            <p class="truncate text-sm text-muted">{{ preview.jobTitle || 'Должность не указана' }}</p>
+          </div>
+        </div>
+        <dl>
+          <SettingsReadField label="О себе" :value="user.bio" empty="Пара слов о себе поможет коллегам" />
+        </dl>
+      </div>
+
+      <UForm v-else :schema="schema" :state="state" class="space-y-4" @submit="save">
         <FilesImageUploader
           :target="{ kind: 'user_avatar' }"
           :current-url="avatarUrl"
@@ -117,32 +142,32 @@ const avatarFallback = computed(() => initials({ firstName: state.firstName, las
           <UTextarea v-model="state.bio" :rows="3" :maxlength="BIO_MAX" autoresize class="w-full" placeholder="Чем вы занимаетесь и как с вами лучше связаться" />
         </UFormField>
 
-        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-default/60 px-3 py-2 text-sm">
-          <UIcon
-            :name="isVerified ? 'i-hugeicons-checkmark-circle-02' : 'i-hugeicons-alert-circle'"
-            class="size-4 shrink-0"
-            :class="isVerified ? 'text-success' : 'text-warning'"
-          />
-          <span class="min-w-0 truncate text-default">{{ user.email }}</span>
-          <span v-if="!isVerified" class="text-muted">· не подтверждена</span>
-          <UButton
-            v-if="!isVerified"
-            size="xs"
-            variant="link"
-            color="neutral"
-            :loading="resending"
-            :disabled="resendSent"
-            @click="resendVerification"
-          >
-            {{ resendSent ? 'Письмо отправлено' : 'Отправить письмо' }}
-          </UButton>
-        </div>
-
         <div class="flex justify-end gap-2">
-          <UButton variant="ghost" color="neutral" :disabled="!dirty" @click="reset">Отмена</UButton>
+          <UButton variant="ghost" color="neutral" @click="cancel">Отмена</UButton>
           <UButton type="submit" :disabled="!dirty" :loading="update.isPending.value">Сохранить</UButton>
         </div>
       </UForm>
+
+      <div class="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-zinc-50 px-3 py-2 text-sm dark:bg-elevated/60">
+        <UIcon
+          :name="isVerified ? 'i-hugeicons-checkmark-circle-02' : 'i-hugeicons-alert-circle'"
+          class="size-4 shrink-0"
+          :class="isVerified ? 'text-success' : 'text-warning'"
+        />
+        <span class="min-w-0 truncate text-default">{{ user.email }}</span>
+        <span v-if="!isVerified" class="text-muted">· не подтверждена</span>
+        <UButton
+          v-if="!isVerified"
+          size="xs"
+          variant="link"
+          color="neutral"
+          :loading="resending"
+          :disabled="resendSent"
+          @click="resendVerification"
+        >
+          {{ resendSent ? 'Письмо отправлено' : 'Отправить письмо' }}
+        </UButton>
+      </div>
     </SettingsTile>
 
     <div class="space-y-3">
@@ -156,7 +181,7 @@ const avatarFallback = computed(() => initials({ firstName: state.firstName, las
         :remove-loading="false"
         class="pointer-events-none"
       />
-      <div class="pointer-events-none rounded-xl border border-default bg-elevated/60 p-3">
+      <div class="pointer-events-none rounded-xl border border-zinc-200 dark:border-default bg-zinc-50 dark:bg-elevated/60 p-3">
         <span class="rounded-md bg-accent-500/15 px-1.5 py-0.5 font-mono text-[11px] text-accent-600">TKT-42</span>
         <p class="mt-2 text-sm text-default">Разобрать входящие баги</p>
         <div class="mt-2 flex justify-end">

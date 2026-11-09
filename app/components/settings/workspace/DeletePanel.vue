@@ -40,7 +40,7 @@ async function onDelete() {
 <template>
   <SettingsTile v-if="workspace" :title="`Удалить «${workspace.name}»`" description="Восстановить его потом не получится. Вот что пропадёт у всей команды">
     <ul class="grid gap-2 sm:grid-cols-2">
-      <li v-for="line in losses" :key="line" class="flex items-center gap-2.5 rounded-xl bg-elevated/60 px-3 py-2.5 text-sm text-default">
+      <li v-for="line in losses" :key="line" class="flex items-center gap-2.5 rounded-xl bg-zinc-50 dark:bg-elevated/60 px-3 py-2.5 text-sm text-default">
         <UIcon name="i-hugeicons-delete-02" class="size-4 shrink-0 text-muted" />
         {{ line }}
       </li>

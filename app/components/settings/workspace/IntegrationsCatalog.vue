@@ -12,7 +12,7 @@ const integration = computed(() => state.data.value?.integration ?? null)
     <div class="grid gap-3 sm:grid-cols-2">
       <NuxtLink
         :to="pageRoutes.pachcaSettings(workspace.id)"
-        class="group flex flex-col gap-4 rounded-2xl border border-default bg-elevated/40 p-5 transition-colors hover:border-accented hover:bg-elevated/70"
+        class="group flex flex-col gap-4 rounded-2xl border border-zinc-200 dark:border-default bg-white dark:bg-elevated/40 p-5 transition-colors hover:border-accented hover:bg-zinc-50 dark:hover:bg-elevated/70"
       >
         <div class="flex items-center gap-3">
           <SettingsPachcaLogo />

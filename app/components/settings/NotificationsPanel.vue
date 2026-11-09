@@ -100,7 +100,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
           :key="m.value"
           type="button"
           class="rounded-xl border px-3 py-3 text-left transition-colors"
-          :class="mode === m.value ? 'border-accent-500 bg-accent-500/10' : 'border-default hover:bg-elevated'"
+          :class="mode === m.value ? 'border-accent-500 bg-accent-500/10' : 'border-zinc-200 dark:border-default hover:bg-zinc-50 dark:hover:bg-elevated'"
           :aria-pressed="mode === m.value"
           @click="applyMode(m.value)"
         >
@@ -110,7 +110,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
       </div>
       <p v-if="mode === 'custom'" class="mt-3 text-xs text-muted">Сейчас свой набор – собран вручную в таблице ниже.</p>
 
-      <UCollapsible v-model:open="manualOpen" class="mt-4 border-t border-default pt-3">
+      <UCollapsible v-model:open="manualOpen" class="mt-4 border-t border-zinc-200 dark:border-default pt-3">
         <UButton
           variant="link"
           color="neutral"
@@ -135,7 +135,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
                 <tr>
                   <td colspan="4" class="pb-1 pt-4 text-[11px] font-medium uppercase tracking-wide text-muted">{{ group }}</td>
                 </tr>
-                <tr v-for="row in MATRIX_ROWS.filter(r => r.group === group)" :key="row.type" class="border-t border-default">
+                <tr v-for="row in MATRIX_ROWS.filter(r => r.group === group)" :key="row.type" class="border-t border-zinc-200 dark:border-default">
                   <td class="py-2 pr-3 text-default">{{ row.label }}</td>
                   <td class="text-center">
                     <UCheckbox
@@ -208,7 +208,7 @@ function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
           />
         </UFormField>
       </div>
-      <div class="mt-4 space-y-3 border-t border-default pt-4">
+      <div class="mt-4 space-y-3 border-t border-zinc-200 dark:border-default pt-4">
         <div class="flex items-center justify-between gap-4">
           <span class="text-sm text-default">На почту</span>
           <USwitch :model-value="emailPrefs.digest" @update:model-value="saveProfile({ emailPrefs: { ...emailPrefs, digest: $event } })" />

@@ -13,6 +13,13 @@ const state = reactive<Required<BoardDefaults>>({ ...DEFAULTS })
 function fromWorkspace(): Required<BoardDefaults> {
   return { ...DEFAULTS, ...workspace.value?.boardDefaults }
 }
+const editing = ref(false)
+
+function cancel() {
+  reset()
+  editing.value = false
+}
+
 function reset() {
   Object.assign(state, fromWorkspace())
 }
@@ -22,6 +29,7 @@ const dirty = computed(() => JSON.stringify(state) !== JSON.stringify(fromWorksp
 const save = useMutation({
   mutationFn: () => $fetch(apiRoutes.boardDefaults(workspace.value!.id), { method: 'PUT', body: { ...state } }),
   onSuccess: async () => {
+    editing.value = false
     await qc.invalidateQueries({ queryKey: ['workspaces'] })
     toast.add({ title: 'Сохранено', color: 'success', icon: 'i-hugeicons-checkmark-circle-02', duration: 1500 })
   },
@@ -33,7 +41,17 @@ const probabilityItems = SLE_PROBABILITIES.map(p => ({ label: p === 0.85 ? '85% 
 
 <template>
   <SettingsTile v-if="workspace" title="Настройки новых досок" description="Подставятся в каждую новую доску. Старые доски не трогаем">
-    <div class="space-y-5">
+    <template v-if="!editing" #actions>
+      <SettingsEditButton @click="editing = true" />
+    </template>
+
+    <dl v-if="!editing" class="grid gap-4 sm:grid-cols-3">
+      <SettingsReadField label="Вероятность SLE" :value="probabilityItems.find(p => p.value === state.sleProbability)?.label" />
+      <SettingsReadField label="Период планирования" :value="`${state.replenishmentPeriodDays} ${plural(state.replenishmentPeriodDays, ['день', 'дня', 'дней'])}`" />
+      <SettingsReadField label="Фон колонок" :value="state.columnTint ? 'В цвет колонки' : 'Нейтральный'" />
+    </dl>
+
+    <div v-else class="space-y-5">
       <div class="grid gap-4 sm:grid-cols-2">
         <UFormField label="Вероятность SLE" hint="N% задач закрываются в срок">
           <USelect v-model="state.sleProbability" :items="probabilityItems" class="w-full" />
@@ -50,7 +68,7 @@ const probabilityItems = SLE_PROBABILITIES.map(p => ({ label: p === 0.85 ? '85% 
         />
       </UFormField>
       <div class="flex justify-end gap-2">
-        <UButton variant="ghost" color="neutral" :disabled="!dirty" @click="reset">Отмена</UButton>
+        <UButton variant="ghost" color="neutral" @click="cancel">Отмена</UButton>
         <UButton :disabled="!dirty" :loading="save.isPending.value" @click="save.mutate()">Сохранить</UButton>
       </div>
     </div>

@@ -18,7 +18,7 @@ const { prefs, set } = useAppearance()
           :key="t.value"
           type="button"
           class="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
-          :class="colorMode.preference === t.value ? 'border-accent-500 bg-accent-500/10 text-default' : 'border-default text-muted hover:text-default'"
+          :class="colorMode.preference === t.value ? 'border-accent-500 bg-accent-500/10 text-default' : 'border-zinc-200 dark:border-default text-muted hover:text-default'"
           :aria-pressed="colorMode.preference === t.value"
           @click="colorMode.preference = t.value"
         >

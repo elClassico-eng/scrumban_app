@@ -78,7 +78,7 @@ async function onDelete() {
 
     <SettingsTile title="Удалить аккаунт" description="Восстановить его потом не получится, поэтому сначала посмотрите, что изменится">
       <div class="grid gap-3 sm:grid-cols-2">
-        <div class="rounded-xl bg-elevated/60 p-4">
+        <div class="rounded-xl bg-zinc-50 dark:bg-elevated/60 p-4">
           <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-error">Исчезнет</p>
           <ul class="space-y-2.5">
             <li v-for="line in gone" :key="line.text" class="flex items-center gap-2.5 text-sm text-default">
@@ -87,7 +87,7 @@ async function onDelete() {
             </li>
           </ul>
         </div>
-        <div class="rounded-xl bg-elevated/60 p-4">
+        <div class="rounded-xl bg-zinc-50 dark:bg-elevated/60 p-4">
           <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-success">Останется у команды</p>
           <ul class="space-y-2.5">
             <li v-for="line in kept" :key="line.text" class="flex items-center gap-2.5 text-sm text-default">
@@ -107,7 +107,7 @@ async function onDelete() {
           <div
             v-for="ws in blockers"
             :key="ws.id"
-            class="flex flex-col gap-4 rounded-xl border border-default bg-default p-4 transition-shadow hover:shadow-sm"
+            class="flex flex-col gap-4 rounded-xl border border-zinc-200 dark:border-default bg-default p-4 transition-shadow hover:shadow-sm"
           >
             <div class="flex items-center gap-3">
               <WorkspaceAvatar :name="ws.name" :logo-url="ws.details?.logoUrl" size="md" />
@@ -146,7 +146,7 @@ async function onDelete() {
         </div>
       </div>
 
-      <div class="mt-6 border-t border-default pt-5">
+      <div class="mt-6 border-t border-zinc-200 dark:border-default pt-5">
         <p class="mb-3 text-sm font-semibold text-default">Подтвердите удаление</p>
         <div class="grid gap-2 sm:grid-cols-2">
           <UInput

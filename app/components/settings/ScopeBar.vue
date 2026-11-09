@@ -11,7 +11,7 @@ const openId = computed(() => route.params.id as string | undefined)
 function chipClass(active: boolean) {
   return active
     ? 'border-accent-500 bg-accent-500/10 text-default'
-    : 'border-default bg-default/70 text-muted hover:text-default hover:bg-elevated'
+    : 'border-zinc-200 dark:border-default bg-white dark:bg-default/70 text-muted hover:text-default hover:bg-zinc-50 dark:hover:bg-elevated'
 }
 </script>
 
