@@ -126,7 +126,7 @@ async function onMarkReplenishment(e: Event) {
   if (!canManageBoard.value || !contextBoardId.value) return
   const ok = await confirm({
     title: 'Отметить replenishment сейчас?',
-    description: 'Сбросит счётчик периода. Используй после реальной встречи планирования backlog\'а.',
+    description: 'Сбросит счётчик периода. Используйте после реальной встречи планирования backlog\'а.',
     confirmLabel: 'Отметить',
   })
   if (!ok) return

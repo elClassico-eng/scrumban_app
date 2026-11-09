@@ -563,7 +563,7 @@ export async function moveTask(input: {
         .where(eq(tasks.columnId, input.toColumnId))
       if ((agg!.n ?? 0) >= toCol.wipLimit) {
         throw new ValidationError(
-          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси Scrum Master принудительно переместить её с указанием причины.`,
+          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведите задачу в Expedite или попросите Scrum Master принудительно переместить её с указанием причины.`,
         )
       }
     }

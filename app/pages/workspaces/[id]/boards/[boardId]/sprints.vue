@@ -368,7 +368,7 @@ const isFilteredEmpty = computed(() =>
         v-else-if="isEmpty"
         icon="i-hugeicons-calendar-check-in-01"
         title="Спринтов пока нет"
-        :text="canManage ? 'Создай первый, чтобы запустить итерацию команды.' : 'Попроси scrum-мастера создать первый спринт.'"
+        :text="canManage ? 'Создайте первый, чтобы запустить итерацию команды.' : 'Попросите scrum-мастера создать первый спринт.'"
       >
         <template v-if="canManage" #actions>
           <UButton icon="i-hugeicons-plus" @click="createOpen = true">
@@ -382,7 +382,7 @@ const isFilteredEmpty = computed(() =>
             v-if="isFilteredEmpty"
             icon="i-hugeicons-search-x"
             title="Ничего не нашлось"
-            text="Попробуй сбросить фильтр или поиск."
+            text="Попробуйте сбросить фильтр или поиск."
           />
 
           <template v-else>

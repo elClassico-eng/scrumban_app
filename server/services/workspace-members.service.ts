@@ -244,7 +244,7 @@ async function assertNotLastOwner(
   // owners includes the candidate; if it's the only one they are the last.
   if (owners.length <= 1) {
     throw new ValidationError(
-      `Это последний владелец workspace — сначала назначь другого владельца (user ${candidateUserId})`,
+      `Это последний владелец workspace – сначала назначьте другого владельца (user ${candidateUserId})`,
     )
   }
 }

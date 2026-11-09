@@ -275,7 +275,7 @@ const isLoading = computed(() =>
         <div>
           <p class="font-medium">В доске пока нет колонок</p>
           <p class="text-sm text-muted mt-1">
-            {{ canCreateColumns ? 'Создай первую, чтобы добавлять задачи.' : 'Попроси админа настроить колонки.' }}
+            {{ canCreateColumns ? 'Создайте первую, чтобы добавлять задачи.' : 'Попросите администратора настроить колонки.' }}
           </p>
         </div>
         <UButton v-if="canCreateColumns" icon="i-hugeicons-plus" @click="createColumnOpen = true">

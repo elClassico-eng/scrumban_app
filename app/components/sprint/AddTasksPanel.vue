@@ -183,7 +183,7 @@ function onClose() {
             class="text-center py-16 px-5 text-muted"
           >
             <div class="text-[13.5px] text-default mb-1">Ничего не нашлось</div>
-            <div class="text-[12px]">Попробуй другой запрос</div>
+            <div class="text-[12px]">Попробуйте другой запрос</div>
           </div>
 
           <div v-else class="divide-y divide-default">

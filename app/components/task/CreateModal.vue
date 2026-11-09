@@ -13,7 +13,7 @@ const props = defineProps<{
 const open = defineModel<boolean>('open', { default: false })
 
 const schema = z.object({
-  title: z.string().trim().min(1, 'Введи название').max(255),
+  title: z.string().trim().min(1, 'Введите название').max(255),
   description: z.string().max(20_000).optional(),
   serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']),
   dueDate: z.string().optional(),

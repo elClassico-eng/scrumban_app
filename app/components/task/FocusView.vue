@@ -392,7 +392,7 @@ onMounted(() => {
       <div class="text-center space-y-3">
         <UIcon name="i-hugeicons-alert-circle" class="size-12 text-muted mx-auto" />
         <p class="font-medium">Задача не найдена</p>
-        <p class="text-sm text-muted">Возможно, её удалили или у тебя нет доступа.</p>
+        <p class="text-sm text-muted">Возможно, её удалили или у вас нет доступа.</p>
         <UButton @click="emit('close')">К доске</UButton>
       </div>
     </div>

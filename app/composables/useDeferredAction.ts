@@ -51,7 +51,7 @@ export function useDeferredAction() {
         else {
           toast.add({
             title: 'Не удалось сохранить',
-            description: getErrorMessage(err, 'Попробуй ещё раз'),
+            description: getErrorMessage(err, 'Попробуйте ещё раз'),
             color: 'error',
             icon: 'i-hugeicons-alert-circle',
           })

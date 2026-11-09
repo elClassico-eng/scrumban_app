@@ -5,7 +5,7 @@ const props = defineProps<{ workspaceId: string; boardId: string }>()
 const open = defineModel<boolean>('open', { default: false })
 
 const schema = z.object({
-  name: z.string().trim().min(1, 'Введи название').max(255),
+  name: z.string().trim().min(1, 'Введите название').max(255),
   columnRole: z.enum(['backlog', 'in_progress', 'review', 'done', 'archived']),
   wipLimit: z.number().int().positive().nullable(),
 })
@@ -20,7 +20,7 @@ const { create } = useColumnsApi(wsId, bId)
 const errorMessage = computed(() => {
   if (!create.isError.value) return null
   const err = create.error.value as { statusCode?: number; data?: { message?: string } } | null
-  if (err?.statusCode === 403) return 'У тебя нет прав создавать колонки в этой доске'
+  if (err?.statusCode === 403) return 'У вас нет прав создавать колонки в этой доске'
   return err?.data?.message ?? 'Не удалось создать колонку'
 })
 

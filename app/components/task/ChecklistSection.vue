@@ -198,7 +198,7 @@ function cancelEdit() {
     </div>
 
     <p v-if="items.length === 0 && !adding" class="text-xs text-muted px-2 py-1.5">
-      Пока нет пунктов. Добавь первый — например, «Подготовить макет».
+      Пока нет пунктов. Добавьте первый – например, «Подготовить макет».
     </p>
   </div>
 </template>
