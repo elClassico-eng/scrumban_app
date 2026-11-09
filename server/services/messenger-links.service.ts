@@ -8,8 +8,8 @@ import { pachca, pachcaUserName, PachcaError, type PachcaUser } from '../utils/p
 import { linkDoneMarkdown, linkRequestMarkdown } from '../utils/pachca/format'
 import { requireMinRole } from '../utils/rbac'
 import { withPachca, type PachcaCtx } from './integrations.service'
-import { getWorkspaceForUserOrThrow } from './workspaces.service'
-import type { PachcaCandidate, PachcaInviteResult, PachcaLinkInspect, PachcaLinkView } from '#shared/types/integrations'
+import { getWorkspaceForUserOrThrow, listWorkspacesForUser } from './workspaces.service'
+import type { MyPachcaLink, PachcaCandidate, PachcaInviteResult, PachcaLinkInspect, PachcaLinkView } from '#shared/types/integrations'
 import type { InstantNotificationType } from '#shared/types/notification'
 
 const SINGLE_TTL_MS = 15 * 60_000
@@ -194,6 +194,22 @@ export async function updateMyLink(input: { workspaceId: string, userId: string,
   )
   if (!row) throw new NotFoundError('Пачка не привязана')
   return { displayName: row.displayName, instantTypes: row.instantTypes, digest: row.digest }
+}
+
+export async function listMyLinks(userId: string): Promise<MyPachcaLink[]> {
+  const out: MyPachcaLink[] = []
+  for (const ws of await listWorkspacesForUser(userId)) {
+    const link = await myLink(ws.id, userId)
+    if (link) out.push({ workspaceId: ws.id, workspaceName: ws.name, instantTypes: link.instantTypes, digest: link.digest })
+  }
+  return out
+}
+
+export async function updateAllMyLinks(input: { userId: string, instantTypes?: InstantNotificationType[], digest?: boolean }): Promise<MyPachcaLink[]> {
+  for (const link of await listMyLinks(input.userId)) {
+    await updateMyLink({ workspaceId: link.workspaceId, userId: input.userId, instantTypes: input.instantTypes, digest: input.digest })
+  }
+  return listMyLinks(input.userId)
 }
 
 export async function dropLinks(workspaceId: string, userId: string): Promise<void> {

@@ -263,6 +263,30 @@ async function linkedPair() {
   return { owner, dev, wsId, boardId: board.body.board.id, backlog: cols.body.columns.find(c => c.columnRole === 'backlog')!.id }
 }
 
+describe('my links across workspaces', () => {
+  it('one PATCH updates every link, an unlinked user sees none', async () => {
+    const { dev, wsId } = await linkedPair()
+    const other = await registerUser('nx')
+    expect((await fetchWithJar<{ links: unknown[] }>(other.jar, '/api/users/me/pachca')).body.links).toEqual([])
+
+    const second = await fetchWithJar<{ workspace: { id: string } }>(dev.jar, '/api/workspaces', { method: 'POST', body: { name: 'Второй', slug: 'second-ws' } })
+    const ws2 = second.body.workspace.id
+    await connect(dev, ws2)
+    await fetchWithJar(dev.jar, `/api/workspaces/${ws2}/integrations/pachca/link`, { method: 'POST', body: { pachcaUserId: '41' } })
+    await fetchWithJar(dev.jar, `/api/integrations/pachca/link/${await linkRequestToken()}`, { method: 'POST' })
+
+    const res = await fetchWithJar<{ links: { workspaceId: string, workspaceName: string, instantTypes: string[], digest: boolean }[] }>(
+      dev.jar, '/api/users/me/pachca', { method: 'PATCH', body: { instantTypes: ['mention'] } },
+    )
+    expect(res.status).toBe(200)
+    expect(res.body.links.map(l => l.workspaceId).sort()).toEqual([wsId, ws2].sort())
+    expect(res.body.links.every(l => l.instantTypes.join() === 'mention')).toBe(true)
+    const again = await fetchWithJar<{ links: { workspaceName: string, instantTypes: string[] }[] }>(dev.jar, '/api/users/me/pachca')
+    expect(again.body.links.every(l => l.instantTypes.join() === 'mention')).toBe(true)
+    expect(again.body.links.map(l => l.workspaceName)).toContain('Второй')
+  })
+})
+
 describe('notifications', () => {
   it('assignment reaches the linked DM with names and a button', async () => {
     const { owner, dev, wsId, boardId, backlog } = await linkedPair()

@@ -16,6 +16,13 @@ export type PachcaIntegrationView = {
   lastError: string | null
 }
 
+export type MyPachcaLink = {
+  workspaceId: string
+  workspaceName: string
+  instantTypes: InstantNotificationType[]
+  digest: boolean
+}
+
 export type PachcaLinkView = {
   displayName: string
   instantTypes: InstantNotificationType[]
