@@ -16,7 +16,7 @@ function chipClass(active: boolean) {
 </script>
 
 <template>
-  <nav class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" aria-label="Что настраиваем">
+  <nav class="-m-1 flex gap-2 overflow-x-auto p-1" aria-label="Что настраиваем">
     <NuxtLink
       :to="pageRoutes.settings()"
       class="flex shrink-0 items-center gap-2 rounded-full py-1 pl-1 pr-3.5 text-sm font-medium transition-colors"
