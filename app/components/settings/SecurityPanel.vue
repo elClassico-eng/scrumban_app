@@ -41,6 +41,13 @@ function deviceLabel(ua: string | null): string {
   return os ? `${browser} · ${os}` : browser
 }
 
+function deviceIcon(ua: string | null): string {
+  return ua && /iphone|ipad|android|mobile/i.test(ua) ? 'i-hugeicons-smart-phone-01' : 'i-hugeicons-computer'
+}
+
+const strength = computed(() => passwordStrength(pwState.newPassword))
+const STRENGTH_TONE = ['bg-accented', 'bg-red-500', 'bg-amber-500', 'bg-emerald-400', 'bg-emerald-500'] as const
+
 async function onRevokeSession(id: string) {
   try {
     await revokeSession.mutateAsync(id)
@@ -80,71 +87,73 @@ async function onRevokeOthers() {
 </script>
 
 <template>
-  <div class="space-y-4">
-    <UForm :schema="pwSchema" :state="pwState" class="surface-soft rounded-2xl p-5" @submit="onChangePassword">
-      <h2 class="mb-4 font-semibold text-default">Смена пароля</h2>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <UFormField label="Текущий пароль" name="currentPassword">
+  <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+    <SettingsTile title="Пароль">
+      <UForm :schema="pwSchema" :state="pwState" class="space-y-4" @submit="onChangePassword">
+        <UFormField label="Текущий" name="currentPassword">
           <UInput v-model="pwState.currentPassword" type="password" autocomplete="current-password" class="w-full" />
         </UFormField>
-        <UFormField label="Новый пароль" name="newPassword" description="Минимум 10 символов, буква и цифра">
+        <UFormField label="Новый" name="newPassword">
           <UInput v-model="pwState.newPassword" type="password" autocomplete="new-password" class="w-full" />
+          <div class="mt-2 flex gap-1" aria-hidden="true">
+            <span
+              v-for="i in 4"
+              :key="i"
+              class="h-1 flex-1 rounded-full transition-colors"
+              :class="i <= strength.score ? STRENGTH_TONE[strength.score] : 'bg-accented'"
+            />
+          </div>
+          <p class="mt-1.5 text-xs text-muted">{{ strength.hint }}</p>
         </UFormField>
-      </div>
-      <div class="mt-4 flex justify-end">
-        <UButton type="submit" size="sm" :loading="changePassword.isPending.value">Сменить пароль</UButton>
-      </div>
-    </UForm>
+        <UButton type="submit" :loading="changePassword.isPending.value">Сменить пароль</UButton>
+      </UForm>
+    </SettingsTile>
 
-    <section class="surface-soft rounded-2xl p-5">
-      <h2 class="mb-1 font-semibold text-default">Активные сессии</h2>
-      <p class="mb-4 text-xs text-muted">Устройства, с которых выполнен вход в аккаунт</p>
-      <div v-if="sessions.data.value?.sessions.length" class="divide-y divide-default">
+    <SettingsTile title="Где ты вошёл">
+      <template #actions>
+        <UButton
+          v-if="otherSessionsCount > 0"
+          size="xs"
+          variant="ghost"
+          color="error"
+          :loading="revokeOtherSessions.isPending.value"
+          @click="onRevokeOthers"
+        >
+          Выйти на остальных
+        </UButton>
+      </template>
+
+      <div v-if="sessions.data.value?.sessions.length" class="space-y-2">
         <div
           v-for="s in sessions.data.value.sessions"
           :key="s.id"
-          class="flex items-center justify-between gap-4 py-2.5"
+          class="flex items-center gap-3 rounded-xl border p-3"
+          :class="s.current ? 'border-success/40 bg-success/5' : 'border-default bg-default/50'"
         >
-          <div class="min-w-0">
-            <p class="flex items-center gap-2 text-sm text-default">
-              <UIcon name="i-hugeicons-monitor-smartphone" class="size-4 shrink-0 text-muted" />
-              <span class="truncate">{{ deviceLabel(s.userAgent) }}</span>
-              <span
-                v-if="s.current"
-                class="shrink-0 rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-medium text-success-600 dark:bg-success-950/40"
-              >текущая</span>
-            </p>
-            <p class="mt-0.5 text-xs text-muted">
-              {{ s.ip ?? '—' }} · активна {{ formatRelativeDate(s.lastSeenAt) }}
+          <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-elevated">
+            <UIcon :name="deviceIcon(s.userAgent)" class="size-5 text-toned" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-medium text-default">{{ deviceLabel(s.userAgent) }}</p>
+            <p class="truncate text-xs text-muted">
+              <span v-if="s.current" class="text-success">● это устройство</span>
+              <template v-else>активна {{ formatRelativeDate(s.lastSeenAt) }}</template>
+              <template v-if="s.ip"> · {{ s.ip }}</template>
             </p>
           </div>
           <UButton
             v-if="!s.current"
             size="xs"
-            variant="ghost"
-            color="error"
+            variant="soft"
+            color="neutral"
             :loading="revokeSession.isPending.value"
             @click="onRevokeSession(s.id)"
           >
-            Завершить
+            Выйти
           </UButton>
         </div>
       </div>
-      <p v-else class="text-sm text-muted">
-        Список пуст: сессии записываются начиная со следующего входа в аккаунт.
-      </p>
-
-      <div v-if="otherSessionsCount > 0" class="mt-4 border-t border-default pt-4">
-        <UButton
-          size="sm"
-          variant="outline"
-          color="neutral"
-          :loading="revokeOtherSessions.isPending.value"
-          @click="onRevokeOthers"
-        >
-          Завершить все остальные сеансы
-        </UButton>
-      </div>
-    </section>
+      <p v-else class="text-sm text-muted">Список пуст: сессии записываются со следующего входа.</p>
+    </SettingsTile>
   </div>
 </template>
