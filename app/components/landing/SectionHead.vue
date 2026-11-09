@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { glueShortWords } from '~/utils/typograph'
+
 defineProps<{ n: number, label: string, title?: string, lead?: string }>()
 </script>
 
@@ -7,8 +9,8 @@ defineProps<{ n: number, label: string, title?: string, lead?: string }>()
     <div class="shead__rail" aria-hidden="true" />
     <span class="shead__n"><i>такт {{ String(n).padStart(2, '0') }}</i> · {{ label }}</span>
     <div v-if="title || lead || $slots.default" class="shead__row">
-      <h2 v-if="title">{{ title }}</h2>
-      <p v-if="lead" class="shead__lead muted">{{ lead }}</p>
+      <h2 v-if="title">{{ glueShortWords(title) }}</h2>
+      <p v-if="lead" class="shead__lead muted">{{ glueShortWords(lead) }}</p>
       <slot />
     </div>
   </div>

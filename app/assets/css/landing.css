@@ -41,7 +41,8 @@
 
   & h1, & h2, & h3 { font-family: var(--font-display); font-weight: 500; margin: 0; letter-spacing: -0.02em; }
   & h2 { font-size: clamp(32px, 4vw, 44px); line-height: 1.08; letter-spacing: -0.025em; }
-  & p { margin: 0; }
+  & p { margin: 0; text-wrap: pretty; }
+  & :is(h1, h2, h3) { text-wrap: balance; }
 
   & .muted { color: var(--ink-2); }
   & .mono { font-family: var(--font-mono); }
