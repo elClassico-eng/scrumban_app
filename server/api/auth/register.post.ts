@@ -20,6 +20,7 @@ const RegisterSchema = z.object({
   firstName: z.string().trim().min(1).max(100).optional(),
   lastName: z.string().trim().min(1).max(100).optional(),
   middleName: z.string().trim().max(100).optional(),
+  consent: z.literal(true).optional(),
   workspace: z.object({
     name: z.string().trim().min(1).max(255),
     slug: z.string().trim().toLowerCase().min(3).max(64).regex(SLUG_RE, {
@@ -44,6 +45,7 @@ export default defineEventHandler(async (event) => {
         firstName: body.firstName,
         lastName: body.lastName,
         middleName: body.middleName,
+        personalDataConsentAt: body.consent ? new Date() : null,
       })
       const ws = body.workspace
         ? await createWorkspaceInTx(tx, {

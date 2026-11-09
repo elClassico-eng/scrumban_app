@@ -27,6 +27,7 @@ export interface SessionUser {
   bio: string | null
   dismissedHints: string[]
   emailVerifiedAt: string | null
+  personalDataConsentAt: string | null
 }
 
 export interface SessionResponse {

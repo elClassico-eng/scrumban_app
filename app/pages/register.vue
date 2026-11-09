@@ -43,6 +43,7 @@ const credentialsState = reactive<CredentialsState>({
   confirmPassword: '',
 })
 
+const consent = ref(false)
 const submitting = ref(false)
 const submitError = ref<string | null>(null)
 
@@ -76,6 +77,10 @@ async function createAccount() {
     submitError.value = parsed.error.issues[0]?.message ?? 'Заполните все поля'
     return
   }
+  if (!consent.value) {
+    submitError.value = 'Подтвердите согласие на обработку персональных данных'
+    return
+  }
 
   submitting.value = true
   submitError.value = null
@@ -88,6 +93,7 @@ async function createAccount() {
         firstName: personalState.firstName,
         lastName: personalState.lastName,
         middleName: personalState.middleName || undefined,
+        consent: true,
       },
     })
     const nextParam = (route.query.next as string | undefined) ?? ''
@@ -186,6 +192,20 @@ async function createAccount() {
         <UFormField label="Повторите пароль" name="confirmPassword" required>
           <UInput v-model="credentialsState.confirmPassword" type="password" autocomplete="new-password" size="lg" class="w-full" />
         </UFormField>
+        <div class="space-y-2 pt-1">
+          <UCheckbox v-model="consent" required>
+            <template #label>
+              Даю
+              <a :href="pageRoutes.consent" target="_blank" rel="noopener" class="text-primary hover:underline" @click.stop>согласие на обработку персональных данных</a>
+            </template>
+          </UCheckbox>
+          <p class="text-xs text-muted leading-relaxed">
+            Регистрируясь, вы принимаете
+            <a :href="pageRoutes.terms" target="_blank" rel="noopener" class="hover:underline">Пользовательское соглашение</a>
+            и
+            <a :href="pageRoutes.privacy" target="_blank" rel="noopener" class="hover:underline">Политику обработки персональных данных</a>.
+          </p>
+        </div>
       </div>
       <UAlert
         v-if="submitError"
@@ -198,7 +218,7 @@ async function createAccount() {
         <UButton type="button" variant="ghost" color="neutral" size="xl" @click="back">
           Назад
         </UButton>
-        <UButton type="submit" :loading="submitting" block size="xl" class="font-semibold">
+        <UButton type="submit" :loading="submitting" :disabled="!consent" block size="xl" class="font-semibold">
           Создать аккаунт
         </UButton>
       </div>

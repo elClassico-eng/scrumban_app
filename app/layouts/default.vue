@@ -17,6 +17,7 @@ useTimeZoneSync()
       </main>
     </div>
     <IntroduceModal />
+    <ConsentGate />
     <HelpPanel />
     <ShortcutLeaderHint :hint="hint" />
   </div>

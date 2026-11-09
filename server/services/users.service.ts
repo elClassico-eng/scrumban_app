@@ -35,6 +35,7 @@ export interface CreateUserInput {
   firstName?: string | null
   lastName?: string | null
   middleName?: string | null
+  personalDataConsentAt?: Date | null
 }
 
 type UsersTx = Parameters<Parameters<ReturnType<typeof useDB>['transaction']>[0]>[0]
@@ -49,6 +50,7 @@ export async function createUserInTx(tx: UsersTx, input: CreateUserInput): Promi
         firstName: input.firstName ?? null,
         lastName: input.lastName ?? null,
         middleName: input.middleName ?? null,
+        personalDataConsentAt: input.personalDataConsentAt ?? null,
       })
       .returning()
     return row!
@@ -155,6 +157,16 @@ export async function markChangelogSeen(userId: string): Promise<string> {
     .returning({ changelogSeenAt: users.changelogSeenAt })
   if (!row?.changelogSeenAt) throw new NotFoundError('Пользователь не найден')
   return row.changelogSeenAt.toISOString()
+}
+
+export async function recordPersonalDataConsent(userId: string): Promise<void> {
+  const now = new Date()
+  const [row] = await useDB()
+    .update(users)
+    .set({ personalDataConsentAt: now, updatedAt: now })
+    .where(eq(users.id, userId))
+    .returning({ id: users.id })
+  if (!row) throw new NotFoundError('Пользователь не найден')
 }
 
 export async function deleteUser(userId: string): Promise<void> {

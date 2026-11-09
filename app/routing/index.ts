@@ -206,6 +206,7 @@ export const apiRoutes = {
   notificationsStream: '/api/notifications/stream',
 
   adminLeads: '/api/admin/leads',
+  meConsent: '/api/users/me/consent',
 } as const
 
 export const ME_SECTIONS = ['profile', 'security', 'notifications', 'appearance', 'work', 'account'] as const
@@ -218,6 +219,9 @@ export const pageRoutes = {
   home: '/',
   landing: '/?about=1',
   privacy: '/privacy',
+  consent: '/consent',
+  terms: '/terms',
+  feedback: '/feedback',
   login: '/login',
   register: '/register',
   verifyEmail: (token: string) => `/verify-email/${token}`,

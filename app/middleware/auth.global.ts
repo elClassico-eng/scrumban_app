@@ -1,28 +1,6 @@
 import { pageRoutes } from '~/routing'
 import { homeRedirect, LAST_PATH_KEY, START_PAGE_KEY } from '~/utils/home-redirect'
-
-const AUTH_ROUTES: ReadonlyArray<string> = [
-  pageRoutes.login,
-  pageRoutes.register,
-  pageRoutes.forgotPassword,
-]
-// Public pages reachable by guests and authenticated users alike — unlike
-// AUTH_ROUTES, signed-in users are not bounced away from these.
-const PUBLIC_ROUTES: ReadonlyArray<string> = [
-  pageRoutes.privacy,
-]
-const PUBLIC_PREFIXES: ReadonlyArray<string> = [
-  '/verify-email/',
-  '/reset-password/',
-  '/invite/',
-  '/docs',
-]
-
-function isPublicRoute(path: string): boolean {
-  return AUTH_ROUTES.includes(path)
-    || PUBLIC_ROUTES.includes(path)
-    || PUBLIC_PREFIXES.some(p => path.startsWith(p))
-}
+import { AUTH_ROUTES, isPublicPath } from '~/utils/public-routes'
 
 export default defineNuxtRouteMiddleware(async (to) => {
   // During prerender/SSR there is no session cookie, so the prerendered '/'
@@ -49,7 +27,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo(pageRoutes.workspaces)
   }
 
-  if (isPublicRoute(to.path)) return
+  if (isPublicPath(to.path)) return
   if (authenticated) {
     localStorage.setItem(LAST_PATH_KEY, to.fullPath)
     return
