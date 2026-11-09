@@ -25,3 +25,8 @@ export function appearanceVars(p: AppearancePrefs): AppearanceCss {
       : {},
   }
 }
+
+export function resolveAppearance(server: AppearancePrefs | undefined, local: AppearancePrefs | null): Required<AppearancePrefs> | null {
+  if (!server && !local) return null
+  return { ...DEFAULT_APPEARANCE, ...server, ...local }
+}

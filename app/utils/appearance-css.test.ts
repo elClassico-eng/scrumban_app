@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_APPEARANCE } from '#shared/types/appearance'
-import { appearanceVars } from './appearance-css'
+import { appearanceVars, resolveAppearance } from './appearance-css'
 
 describe('appearanceVars', () => {
   it('no background means no classes', () => {
@@ -23,5 +23,19 @@ describe('appearanceVars', () => {
 
   it('interface toggles add their classes', () => {
     expect(appearanceVars({ reduceMotion: true, compactCards: true }).classes).toEqual(['takt-compact', 'takt-reduce-motion'])
+  })
+})
+
+describe('resolveAppearance', () => {
+  it('knows nothing before the profile loads and nothing was changed locally', () => {
+    expect(resolveAppearance(undefined, null)).toBeNull()
+  })
+
+  it('local changes win over the server copy', () => {
+    expect(resolveAppearance({ dim: 0.2, blur: 4 }, { dim: 0.6 })).toMatchObject({ dim: 0.6, blur: 4 })
+  })
+
+  it('fills defaults once the profile is known', () => {
+    expect(resolveAppearance({}, null)).toEqual(DEFAULT_APPEARANCE)
   })
 })

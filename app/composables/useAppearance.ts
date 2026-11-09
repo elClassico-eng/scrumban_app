@@ -23,11 +23,8 @@ function applyToDocument(p: AppearancePrefs) {
 export function useAppearance() {
   const { me, update } = useProfileApi()
   const local = useState<AppearancePrefs | null>('appearance-local', () => null)
-  const prefs = computed<Required<AppearancePrefs>>(() => ({
-    ...DEFAULT_APPEARANCE,
-    ...me.data.value?.user.appearancePrefs,
-    ...local.value,
-  }))
+  const known = computed(() => resolveAppearance(me.data.value?.user.appearancePrefs, local.value))
+  const prefs = computed<Required<AppearancePrefs>>(() => known.value ?? DEFAULT_APPEARANCE)
 
   const pending = useState<AppearancePrefs>('appearance-pending', () => ({}))
   const flush = useDebounceFn(() => {
@@ -45,13 +42,13 @@ export function useAppearance() {
     void persist(patch)
   }
 
-  return { prefs, set, apply: () => applyToDocument(prefs.value) }
+  return { prefs, known, set }
 }
 
 export function useAppearanceSync() {
-  const { prefs } = useAppearance()
+  const { known } = useAppearance()
   const mounted = useMounted()
-  watch([prefs, mounted], ([p, m]) => {
-    if (m) applyToDocument(p)
+  watch([known, mounted], ([p, m]) => {
+    if (m && p) applyToDocument(p)
   }, { immediate: true, deep: true })
 }
