@@ -15,14 +15,15 @@ export const OPERATOR_NAME = 'Черкесов Даниил Романович'
 
 export const LEGAL_UPDATED = '9 ноября 2026'
 
+// `video` is a path without extension: components serve .webm and an .mp4 fallback for Safari.
 export type DemoScene = { id: string, title: string, poster: string, video?: string }
 
 export const DEMO_SCENES: DemoScene[] = [
-  { id: 'workspace', title: 'Создайте workspace за минуту', poster: '/landing/board.webp' },
-  { id: 'board', title: 'Ведите задачи на доске', poster: '/landing/board.webp' },
-  { id: 'sprint', title: 'Планируйте спринт', poster: '/landing/board.webp' },
-  { id: 'flow', title: 'Видите, где застревает работа', poster: '/landing/analytics.webp' },
-  { id: 'forecast', title: 'Узнайте, когда закончите', poster: '/landing/forecast.webp' },
+  { id: 'workspace', video: '/landing/demo/workspace', title: 'Создайте workspace за минуту', poster: '/landing/demo/workspace.jpg' },
+  { id: 'board', video: '/landing/demo/board', title: 'Ведите задачи на доске', poster: '/landing/demo/board.jpg' },
+  { id: 'sprint', video: '/landing/demo/sprint', title: 'Планируйте спринт', poster: '/landing/demo/sprint.jpg' },
+  { id: 'flow', video: '/landing/demo/flow', title: 'Видите, где застревает работа', poster: '/landing/demo/flow.jpg' },
+  { id: 'forecast', video: '/landing/demo/forecast', title: 'Узнайте, когда закончите', poster: '/landing/demo/forecast.jpg' },
 ]
 
 export type Step = { title: string, text: string }
@@ -36,8 +37,8 @@ export const STEPS: Step[] = [
 export type Feature = { title: string, text: string, icon?: string, poster?: string, video?: string }
 
 export const FEATURES_BIG: Feature[] = [
-  { title: 'Доска и спринты', text: 'Ритм спринтов из Scrum и непрерывный поток из Kanban на одной доске. Цель спринта, WIP-лимиты, номера задач вида ПОТ-42.', poster: '/landing/board.webp' },
-  { title: 'Прогноз сроков', text: 'Monte Carlo по реальной пропускной способности команды: P50, P85 и P95 вместо одной даты «на глаз».', poster: '/landing/forecast.webp' },
+  { title: 'Доска и спринты', text: 'Ритм спринтов из Scrum и непрерывный поток из Kanban на одной доске. Цель спринта, WIP-лимиты, номера задач вида ПОТ-42.', poster: '/landing/demo/board.jpg', video: '/landing/demo/board' },
+  { title: 'Прогноз сроков', text: 'Monte Carlo по реальной пропускной способности команды: P50, P85 и P95 вместо одной даты «на глаз».', poster: '/landing/demo/forecast.jpg', video: '/landing/demo/forecast' },
 ]
 
 export const FEATURES_SMALL: Feature[] = [

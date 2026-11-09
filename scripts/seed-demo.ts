@@ -32,11 +32,11 @@ const HISTORY_WEEKS = 12
 type Stage = 'backlog' | 'ready' | 'progress' | 'review' | 'testing' | 'done'
 const STAGES: Stage[] = ['backlog', 'ready', 'progress', 'review', 'testing', 'done']
 
-const COLUMNS: { stage: Stage, name: string, role: 'backlog' | 'in_progress' | 'review' | 'done', wip: number | null }[] = [
+const COLUMNS: { stage: Stage, name: string, role: 'backlog' | 'in_progress' | 'review' | 'done', wip: number | null, queue?: boolean }[] = [
   { stage: 'backlog', name: 'Бэклог', role: 'backlog', wip: null },
-  { stage: 'ready', name: 'Готово к работе', role: 'backlog', wip: null },
+  { stage: 'ready', name: 'Готово к работе', role: 'backlog', wip: null, queue: true },
   { stage: 'progress', name: 'В работе', role: 'in_progress', wip: 5 },
-  { stage: 'review', name: 'Ревью', role: 'review', wip: 3 },
+  { stage: 'review', name: 'Ревью', role: 'review', wip: 3, queue: true },
   { stage: 'testing', name: 'Тестирование', role: 'review', wip: 3 },
   { stage: 'done', name: 'Готово', role: 'done', wip: null },
 ]
@@ -84,7 +84,7 @@ const CLOSED_TITLES = [
 ]
 
 const OPEN_TASKS: { title: string, stage: Stage, points: number, estimateDays: number, inSprint: boolean, serviceClass?: 'expedite' | 'fixed_date', dueInDays?: number }[] = [
-  { title: 'Оплата: рассрочка через банк-партнёр', stage: 'progress', points: 8, estimateDays: 4, inSprint: true },
+  { title: 'Оплата: рассрочка через банк-партнёр', stage: 'progress', points: 8, estimateDays: 4.5, inSprint: true },
   { title: 'Курьер: оценка времени прибытия по пробкам', stage: 'progress', points: 5, estimateDays: 3, inSprint: true },
   { title: 'Корзина: совместный заказ по ссылке', stage: 'progress', points: 8, estimateDays: 5, inSprint: true },
   { title: 'Уведомления: статус заказа в Live Activity', stage: 'progress', points: 3, estimateDays: 2, inSprint: false },
@@ -166,7 +166,7 @@ async function main() {
     const passwordHash = await new Hash(new Scrypt({})).make(OWNER_PASSWORD)
     let [owner] = await db.select({ id: users.id }).from(users).where(eq(users.email, OWNER_EMAIL))
     if (owner) {
-      await db.update(users).set({ passwordHash, personalDataConsentAt: new Date(), emailVerifiedAt: new Date() }).where(eq(users.id, owner.id))
+      await db.update(users).set({ passwordHash, firstName: 'Даниил', lastName: 'Черкесов', jobTitle: 'Тимлид', personalDataConsentAt: new Date(), emailVerifiedAt: new Date() }).where(eq(users.id, owner.id))
     }
     else {
       ;[owner] = await db.insert(users).values({
@@ -219,6 +219,7 @@ async function main() {
       position: i,
       wipLimit: c.wip,
       columnRole: c.role,
+      isQueue: c.queue ?? false,
     }))).returning({ id: boardColumns.id })
     const colId = Object.fromEntries(COLUMNS.map((c, i) => [c.stage, cols[i]!.id])) as Record<Stage, string>
     const roleOf = Object.fromEntries(COLUMNS.map(c => [c.stage, c.role])) as Record<Stage, string>
@@ -232,7 +233,7 @@ async function main() {
       const closedAt = workHour(historyStart + Math.pow(progress, 0.85) * (NOW - historyStart - 2 * DAY))
       const cycleDays = pick([1.5, 2, 2.5, 3, 3, 3.5, 4, 4, 5, 5, 6, 7, 9, 12])
       const startedAt = workHour(closedAt - cycleDays * DAY)
-      const createdAt = workHour(startedAt - between(1, 10) * DAY)
+      const createdAt = workHour(startedAt - between(0.3, 2) * DAY)
       const span = closedAt - startedAt
       const serviceClass = i % 17 === 5 ? 'expedite' : i % 23 === 9 ? 'fixed_date' : 'standard'
       planned.push({
@@ -259,8 +260,8 @@ async function main() {
 
     OPEN_TASKS.forEach((t, i) => {
       const stageIdx = STAGES.indexOf(t.stage)
-      const startedAt = workHour(NOW - between(0.5, 4.5) * DAY)
-      const createdAt = workHour(startedAt - between(2, 14) * DAY)
+      const startedAt = workHour(NOW - between(0.4, 2.5) * DAY)
+      const createdAt = workHour(startedAt - between(0.5, 3) * DAY)
       const stageTimes: number[] = []
       for (let s = 1; s <= stageIdx; s++) {
         const ts = s === 2 ? startedAt : workHour(s < 2 ? createdAt + (startedAt - createdAt) * 0.5 : startedAt + (NOW - startedAt) * (s - 2) / (stageIdx - 1 || 1) * 0.9)
@@ -364,7 +365,9 @@ async function main() {
     const sprintLinks: (typeof sprintTasks.$inferInsert)[] = []
     for (const t of planned) {
       if (t.closedAt) {
-        const sp = sprintRows.find(s => t.closedAt! >= s.start && t.closedAt! < s.end)
+        const sp = t.closedAt >= activeStart
+          ? { id: active!.id, start: activeStart }
+          : sprintRows.find(s => t.closedAt! >= s.start && t.closedAt! < s.end)
         if (sp) sprintLinks.push({ sprintId: sp.id, taskId: t.id, workspaceId, addedAt: new Date(sp.start) })
       }
       else if (OPEN_TASKS.find(o => o.title === t.title)?.inSprint) {

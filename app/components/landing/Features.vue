@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { FEATURES_BIG, FEATURES_SMALL } from '~/utils/landing-content'
+
+const bento = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  bento.value?.querySelectorAll('video').forEach(v => v.play().catch(() => {}))
+})
 </script>
 
 <template>
@@ -8,10 +15,13 @@ import { FEATURES_BIG, FEATURES_SMALL } from '~/utils/landing-content'
       <LandingSectionHead :n="3" label="возможности" title="Всё, что нужно потоку. И ничего лишнего">
         <a class="btn btn--dark" href="/docs">Все возможности</a>
       </LandingSectionHead>
-      <div class="bento">
+      <div ref="bento" class="bento">
         <article v-for="f in FEATURES_BIG" :key="f.title" class="bento__big reveal">
           <div class="bento__media">
-            <video v-if="f.video" :src="f.video" :poster="f.poster" muted loop playsinline autoplay preload="none" />
+            <video v-if="f.video" :poster="f.poster" muted loop playsinline preload="none">
+              <source :src="`${f.video}.webm`" type="video/webm">
+              <source :src="`${f.video}.mp4`" type="video/mp4">
+            </video>
             <img v-else :src="f.poster" :alt="f.title" loading="lazy">
           </div>
           <div class="bento__text">

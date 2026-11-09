@@ -30,3 +30,4 @@ coverage/
 
 # Documentation lives locally for thesis writing; not published to the repo.
 /docs/
+.landing-demos/

@@ -72,14 +72,16 @@ onBeforeUnmount(stopTimer)
         <video
           v-if="s.video"
           :ref="el => (videos[i] = el as HTMLVideoElement | null)"
-          :src="s.video"
           :poster="s.poster"
           muted
           playsinline
           :preload="i === 0 ? 'auto' : 'none'"
           @timeupdate="onTime(i, $event)"
           @ended="i === active && next()"
-        />
+        >
+          <source :src="`${s.video}.webm`" type="video/webm">
+          <source :src="`${s.video}.mp4`" type="video/mp4">
+        </video>
         <img v-else :src="s.poster" :alt="s.title" :loading="i === 0 ? 'eager' : 'lazy'">
       </div>
     </div>
@@ -103,7 +105,7 @@ onBeforeUnmount(stopTimer)
 
 <style scoped>
 .demo { margin-top: 64px; border-radius: 28px; background: var(--soft); overflow: hidden; }
-.demo__stage { position: relative; aspect-ratio: 2000 / 1082; margin: 28px 28px 0; }
+.demo__stage { position: relative; aspect-ratio: 1440 / 900; margin: 28px 28px 0; }
 .demo__scene {
   position: absolute;
   inset: 0;
