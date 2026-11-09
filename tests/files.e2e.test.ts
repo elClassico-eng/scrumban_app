@@ -81,7 +81,24 @@ describe('upload', () => {
     const { done } = await attach(owner, wsId, taskId)
     expect(done.status).toBe(200)
     const usage = await fetchWithJar<{ usedBytes: number, limitBytes: number }>(owner.jar, `/api/workspaces/${wsId}/files/usage`)
-    expect(usage.body).toEqual({ usedBytes: 10, limitBytes: QUOTA })
+    expect(usage.body).toEqual({ usedBytes: 10, limitBytes: QUOTA, byKind: { attachment: 10 } })
+  })
+
+  it('splits usage by kind and leaves avatars out', async () => {
+    const owner = await registerUser('uk')
+    const wsId = await workspaceOf(owner)
+    const { taskId } = await boardWithTask(owner, wsId)
+    await attach(owner, wsId, taskId)
+    const logo = await start(owner, wsId, { kind: 'workspace_logo', name: 'l.webp', contentType: 'image/webp', size: 4 })
+    await uploadTo(logo.body.uploadUrl, 'webp', 'image/webp')
+    await complete(owner, wsId, logo.body.file.id)
+    const avatar = await fetchWithJar<Ticket>(owner.jar, '/api/users/me/avatar', { method: 'POST', body: { name: 'a.webp', contentType: 'image/webp', size: 4 } })
+    await uploadTo(avatar.body.uploadUrl, 'webp', 'image/webp')
+    await fetchWithJar(owner.jar, `/api/users/me/avatar/${avatar.body.file.id}/complete`, { method: 'POST' })
+
+    const usage = await fetchWithJar<{ usedBytes: number, byKind: Record<string, number> }>(owner.jar, `/api/workspaces/${wsId}/files/usage`)
+    expect(usage.body.byKind).toEqual({ attachment: 10, workspace_logo: 4 })
+    expect(usage.body.usedBytes).toBe(14)
   })
 
   it('rejects completion when the stored size differs', async () => {

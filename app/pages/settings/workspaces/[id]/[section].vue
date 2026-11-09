@@ -18,6 +18,7 @@ watchEffect(() => {
 <template>
   <div v-if="current">
     <SettingsWorkspaceGeneralPanel v-if="section === 'general'" />
+    <SettingsWorkspaceStoragePanel v-else-if="section === 'storage'" />
     <SettingsIntegrationsPanel v-else-if="section === 'integrations'" />
   </div>
 </template>

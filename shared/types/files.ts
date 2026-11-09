@@ -23,7 +23,10 @@ export type UploadTicket = {
   thumbUploadUrl: string | null
 }
 
+export type QuotaFileKind = 'attachment' | 'board_image' | 'workspace_logo'
+
 export type StorageUsage = {
   usedBytes: number
   limitBytes: number
+  byKind: Partial<Record<QuotaFileKind, number>>
 }

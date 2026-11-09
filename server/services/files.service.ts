@@ -69,8 +69,13 @@ async function usedBytes(tx: DbTransaction, workspaceId: string): Promise<number
 }
 
 export async function storageUsage(workspaceId: string): Promise<StorageUsage> {
-  const used = await withTenant(workspaceId, tx => usedBytes(tx, workspaceId))
-  return { usedBytes: used, limitBytes: quotaBytes() }
+  const rows = await withTenant(workspaceId, tx => tx
+    .select({ kind: files.kind, used: sql<string>`SUM(${files.sizeBytes} + ${files.thumbBytes})` })
+    .from(files)
+    .where(eq(files.workspaceId, workspaceId))
+    .groupBy(files.kind))
+  const byKind = Object.fromEntries(rows.map(r => [r.kind, Number(r.used)])) as StorageUsage['byKind']
+  return { usedBytes: rows.reduce((sum, r) => sum + Number(r.used), 0), limitBytes: quotaBytes(), byKind }
 }
 
 async function ticketFor(row: FileRow, viewer: Viewer): Promise<UploadTicket> {
