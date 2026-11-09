@@ -32,6 +32,7 @@ export interface MemberView {
   middleName: string | null
   avatarUrl: string | null
   jobTitle: string | null
+  bio: string | null
   role: WorkspaceMemberRole
   createdAt: Date
 }
@@ -47,6 +48,7 @@ const memberSelect = {
   middleName: users.middleName,
   avatarUrl: users.avatarUrl,
   jobTitle: users.jobTitle,
+  bio: users.bio,
   role: workspaceMembers.role,
   createdAt: workspaceMembers.createdAt,
 } as const

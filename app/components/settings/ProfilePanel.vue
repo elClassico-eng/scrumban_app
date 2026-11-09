@@ -3,57 +3,29 @@ import { useQueryClient } from '@tanstack/vue-query'
 import { z } from 'zod'
 import { apiRoutes } from '~/routing'
 
+const BIO_MAX = 280
+
 const { me, update } = useProfileApi()
-const { list: workspacesList } = useWorkspacesApi()
+const { current: workspace } = useCurrentWorkspace()
 const toast = useToast()
 const qc = useQueryClient()
-const avatarUrl = computed(() => me.data.value?.user.avatarUrl ?? null)
+
+const user = computed(() => me.data.value?.user ?? null)
+const avatarUrl = computed(() => user.value?.avatarUrl ?? null)
 const removeAvatar = () => $fetch(apiRoutes.avatar, { method: 'DELETE' })
-
-function onAvatarChanged() {
-  void qc.invalidateQueries()
-}
-
-const verifiedAt = computed(() => me.data.value?.user.emailVerifiedAt ?? null)
-const isVerified = computed(() => verifiedAt.value !== null)
-const verifiedDateLabel = computed(() => {
-  if (!verifiedAt.value) return null
-  return new Date(verifiedAt.value).toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-})
-
-const memberSince = computed(() => {
-  const at = me.data.value?.user.createdAt
-  if (!at) return null
-  return new Date(at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
-})
-
-const workspacesCount = computed(() => workspacesList.data.value?.workspaces.length ?? 0)
-const workspacesWord = computed(() => plural(workspacesCount.value, ['команда', 'команды', 'команд']))
+const isVerified = computed(() => !!user.value?.emailVerifiedAt)
 
 const resending = ref(false)
 const resendSent = ref(false)
-const resendError = ref<string | null>(null)
 
 async function resendVerification() {
-  if (resending.value) return
   resending.value = true
-  resendError.value = null
   try {
     await $fetch(apiRoutes.authResendVerification, { method: 'POST' })
     resendSent.value = true
-    toast.add({
-      title: 'Письмо отправлено',
-      color: 'success',
-      icon: 'i-hugeicons-check',
-      duration: 2000,
-    })
   }
   catch (err) {
-    resendError.value = getErrorMessage(err, 'Не удалось отправить письмо')
+    toast.add({ title: getErrorMessage(err, 'Не удалось отправить письмо'), color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
   finally {
     resending.value = false
@@ -63,202 +35,134 @@ async function resendVerification() {
 const schema = z.object({
   firstName: z.string().trim().max(100),
   lastName: z.string().trim().max(100),
-  middleName: z.string().trim().max(100),
   jobTitle: z.string().trim().max(150),
-  bio: z.string().max(5000),
+  bio: z.string().max(BIO_MAX),
 })
-
 type State = z.infer<typeof schema>
-const state = reactive<State>({
-  firstName: '',
-  lastName: '',
-  middleName: '',
-  jobTitle: '',
-  bio: '',
-})
 
-watch(
-  () => me.data.value?.user,
-  (u) => {
-    if (!u) return
-    state.firstName = u.firstName ?? ''
-    state.lastName = u.lastName ?? ''
-    state.middleName = u.middleName ?? ''
-    state.jobTitle = u.jobTitle ?? ''
-    state.bio = u.bio ?? ''
-  },
-  { immediate: true },
-)
+const state = reactive<State>({ firstName: '', lastName: '', jobTitle: '', bio: '' })
 
-async function save(fields: Partial<State>, okTitle: string) {
-  const body = Object.fromEntries(
-    Object.entries(fields).map(([k, v]) => [k, typeof v === 'string' ? v.trim() || null : v]),
-  )
+function fromUser(): State {
+  const u = user.value
+  return { firstName: u?.firstName ?? '', lastName: u?.lastName ?? '', jobTitle: u?.jobTitle ?? '', bio: u?.bio ?? '' }
+}
+
+function reset() {
+  Object.assign(state, fromUser())
+}
+
+watch(user, reset, { immediate: true })
+
+const dirty = computed(() => JSON.stringify(state) !== JSON.stringify(fromUser()))
+
+async function save() {
   try {
-    await update.mutateAsync(body)
-    toast.add({ title: okTitle, color: 'success', icon: 'i-hugeicons-check', duration: 1500 })
+    await update.mutateAsync(Object.fromEntries(
+      Object.entries(state).map(([k, v]) => [k, v.trim() || null]),
+    ))
+    toast.add({ title: 'Профиль сохранён', color: 'success', icon: 'i-hugeicons-checkmark-circle-02', duration: 1500 })
   }
   catch (err) {
-    toast.add({
-      title: getErrorMessage(err, 'Не удалось сохранить'),
-      color: 'error',
-      icon: 'i-hugeicons-alert-circle',
-    })
+    toast.add({ title: getErrorMessage(err, 'Не удалось сохранить'), color: 'error', icon: 'i-hugeicons-alert-circle' })
   }
 }
 
-const saveName = () => save(
-  { firstName: state.firstName, lastName: state.lastName, middleName: state.middleName },
-  'Имя обновлено',
-)
-const saveAbout = () => save(
-  { jobTitle: state.jobTitle, bio: state.bio },
-  'Профиль обновлён',
-)
+const preview = computed(() => ({
+  userId: user.value?.id ?? '',
+  email: user.value?.email ?? '',
+  firstName: state.firstName.trim() || null,
+  lastName: state.lastName.trim() || null,
+  middleName: null,
+  avatarUrl: avatarUrl.value,
+  jobTitle: state.jobTitle.trim() || null,
+  bio: state.bio.trim() || null,
+  role: workspace.value?.role ?? 'member',
+  createdAt: user.value?.createdAt ?? new Date(),
+}))
 
-const previewName = computed(() => displayName({
-  firstName: state.firstName,
-  lastName: state.lastName,
-  email: me.data.value?.user.email ?? '',
-}))
-const previewInitials = computed(() => initials({
-  firstName: state.firstName,
-  lastName: state.lastName,
-  email: me.data.value?.user.email ?? '',
-}))
+const avatarFallback = computed(() => initials({ firstName: state.firstName, lastName: state.lastName, email: user.value?.email ?? '' }))
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div v-if="me.isLoading.value" class="py-12 text-center text-muted">
-      <UIcon name="i-hugeicons-loader" class="size-6 animate-spin" />
-    </div>
+  <div v-if="me.isLoading.value" class="py-12 text-center text-muted">
+    <UIcon name="i-hugeicons-loading-03" class="size-6 animate-spin" />
+  </div>
 
-    <template v-else-if="me.data.value">
-      <div class="surface-elevated relative flex min-h-[140px] flex-col justify-end overflow-hidden rounded-2xl">
-        <img
-          v-if="avatarUrl"
-          :src="avatarUrl"
-          alt=""
-          class="absolute inset-0 size-full object-cover" loading="lazy" decoding="async">
-        <div v-else class="brand-gradient absolute inset-0">
-          <div class="absolute inset-0 grid place-items-center">
-            <span class="text-6xl font-bold text-white/90">{{ previewInitials }}</span>
-          </div>
-        </div>
+  <div v-else-if="user" class="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+    <SettingsTile title="Профиль">
+      <UForm :schema="schema" :state="state" class="space-y-4" @submit="save">
+        <FilesImageUploader
+          :target="{ kind: 'user_avatar' }"
+          :current-url="avatarUrl"
+          :fallback="avatarFallback"
+          shape="circle"
+          :remove="removeAvatar"
+          @changed="qc.invalidateQueries()"
+        />
 
-        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/5" />
-
-        <div class="relative p-6 text-white">
-          <p class="truncate text-xl font-bold drop-shadow">{{ previewName }}</p>
-          <p v-if="state.jobTitle" class="truncate text-sm text-white/85">{{ state.jobTitle }}</p>
-          <p class="truncate text-sm text-white/70">{{ me.data.value.user.email }}</p>
-
-          <div class="mt-4 flex flex-wrap items-center gap-2">
-            <div
-              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur-md"
-              :class="isVerified
-                ? 'bg-emerald-500/85 text-white'
-                : 'bg-white/15 text-white/90'"
-            >
-              <UIcon
-                :name="isVerified ? 'i-hugeicons-badge-check' : 'i-hugeicons-circle-dashed'"
-                class="size-3.5"
-              />
-              {{ isVerified ? 'Email подтверждён' : 'Email не подтверждён' }}
-            </div>
-            <div class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/12 px-2.5 py-1 text-xs backdrop-blur-md">
-              <span class="font-semibold">{{ workspacesCount }}</span>
-              <span class="text-white/70">{{ workspacesWord }}</span>
-            </div>
-            <div class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/12 px-2.5 py-1 text-xs backdrop-blur-md">
-              <span class="text-white/70">на платформе с</span>
-              <span class="font-semibold">{{ memberSince ?? '—' }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        v-if="!isVerified"
-        class="surface-soft rounded-2xl p-4"
-        style="border-color: var(--island-orange-tint-border)"
-      >
-        <div class="flex items-start gap-2.5">
-          <UIcon name="i-hugeicons-mail-warning" class="mt-0.5 size-4 shrink-0 text-accent-600" />
-          <div class="min-w-0 space-y-2">
-            <p class="text-xs leading-relaxed text-muted">
-              Подтвердите email, чтобы принимать приглашения в чужие workspace'ы. Ссылка действительна 24 часа.
-            </p>
-            <UButton
-              size="xs"
-              variant="outline"
-              color="neutral"
-              :loading="resending"
-              :disabled="resendSent"
-              @click="resendVerification"
-            >
-              {{ resendSent ? 'Письмо отправлено' : 'Отправить письмо' }}
-            </UButton>
-            <p v-if="resendError" class="text-xs text-error-600">{{ resendError }}</p>
-          </div>
-        </div>
-      </div>
-      <p v-else-if="verifiedDateLabel" class="px-1 text-xs text-muted">
-        Email подтверждён {{ verifiedDateLabel }}
-      </p>
-
-      <UForm :schema="schema" :state="state" class="surface-soft rounded-2xl p-5" @submit="saveName">
-        <h2 class="mb-4 font-semibold text-default">Имя</h2>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <UFormField label="Фамилия" name="lastName">
-            <UInput v-model="state.lastName" class="w-full" />
-          </UFormField>
+        <div class="grid gap-3 sm:grid-cols-2">
           <UFormField label="Имя" name="firstName">
             <UInput v-model="state.firstName" class="w-full" />
           </UFormField>
-          <UFormField label="Отчество" name="middleName">
-            <UInput v-model="state.middleName" class="w-full" />
+          <UFormField label="Фамилия" name="lastName">
+            <UInput v-model="state.lastName" class="w-full" />
           </UFormField>
         </div>
-        <div class="mt-4 flex justify-end">
-          <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
-        </div>
-      </UForm>
 
-      <UForm :schema="schema" :state="state" class="surface-soft rounded-2xl p-5" @submit="saveAbout">
-        <h2 class="mb-4 font-semibold text-default">О себе</h2>
-        <div class="space-y-4">
-          <UFormField label="Должность" name="jobTitle">
-            <UInput
-              v-model="state.jobTitle"
-              class="w-full"
-              placeholder="Например: Senior Frontend Developer"
-            />
-          </UFormField>
-          <UFormField label="Аватар">
-            <FilesImageUploader
-              :target="{ kind: 'user_avatar' }"
-              :current-url="avatarUrl"
-              :fallback="previewInitials"
-              shape="circle"
-              :remove="removeAvatar"
-              @changed="onAvatarChanged"
-            />
-          </UFormField>
-          <UFormField label="Краткое описание" name="bio">
-            <UTextarea
-              v-model="state.bio"
-              :rows="4"
-              class="w-full"
-              placeholder="Чем занимаетесь, на чём специализируетесь"
-            />
-          </UFormField>
+        <UFormField label="Должность" name="jobTitle" hint="видна коллегам">
+          <UInput v-model="state.jobTitle" class="w-full" placeholder="Например, Frontend-разработчик" />
+        </UFormField>
+
+        <UFormField label="О себе" name="bio" :hint="`${state.bio.length} / ${BIO_MAX}`">
+          <UTextarea v-model="state.bio" :rows="3" :maxlength="BIO_MAX" autoresize class="w-full" placeholder="Чем занимаешься и как с тобой лучше связаться" />
+        </UFormField>
+
+        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-default/60 px-3 py-2 text-sm">
+          <UIcon
+            :name="isVerified ? 'i-hugeicons-checkmark-circle-02' : 'i-hugeicons-alert-circle'"
+            class="size-4 shrink-0"
+            :class="isVerified ? 'text-success' : 'text-warning'"
+          />
+          <span class="min-w-0 truncate text-default">{{ user.email }}</span>
+          <span v-if="!isVerified" class="text-muted">· не подтверждена</span>
+          <UButton
+            v-if="!isVerified"
+            size="xs"
+            variant="link"
+            color="neutral"
+            :loading="resending"
+            :disabled="resendSent"
+            @click="resendVerification"
+          >
+            {{ resendSent ? 'Письмо отправлено' : 'Отправить письмо' }}
+          </UButton>
         </div>
-        <div class="mt-4 flex justify-end">
-          <UButton type="submit" size="sm" :loading="update.isPending.value">Сохранить</UButton>
+
+        <div class="flex justify-end gap-2">
+          <UButton variant="ghost" color="neutral" :disabled="!dirty" @click="reset">Отмена</UButton>
+          <UButton type="submit" :disabled="!dirty" :loading="update.isPending.value">Сохранить</UButton>
         </div>
       </UForm>
-    </template>
+    </SettingsTile>
+
+    <div class="space-y-3">
+      <p class="px-1 text-sm text-muted">Так тебя видят коллеги</p>
+      <WorkspaceMembersMemberCard
+        :member="preview"
+        is-you
+        :can-edit="false"
+        :is-editing="false"
+        :my-role="preview.role"
+        :remove-loading="false"
+        class="pointer-events-none"
+      />
+      <div class="pointer-events-none rounded-xl border border-default bg-elevated/60 p-3">
+        <span class="rounded-md bg-accent-500/15 px-1.5 py-0.5 font-mono text-[11px] text-accent-600">TKT-42</span>
+        <p class="mt-2 text-sm text-default">Разобрать входящие баги</p>
+        <div class="mt-2 flex justify-end">
+          <UserAvatar :user="preview" size="xs" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>

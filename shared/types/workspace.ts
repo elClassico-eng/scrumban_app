@@ -59,6 +59,7 @@ export interface MemberView {
   middleName: string | null
   avatarUrl: string | null
   jobTitle: string | null
+  bio: string | null
   role: Role
   createdAt: string
 }

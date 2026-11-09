@@ -66,6 +66,15 @@ describe('GET /api/workspaces/:id/members', () => {
     expect(res.body.members[0]!.role).toBe('owner')
   })
 
+  it('roster carries the member bio', async () => {
+    const owner = await registerUser('bio@example.com')
+    const wsId = await createWorkspace(owner)
+    await fetchWithJar(owner.jar, '/api/users/me', { method: 'PATCH', body: { bio: 'Пишите в Пачку' } })
+
+    const res = await fetchWithJar<{ members: { bio: string | null }[] }>(owner.jar, `/api/workspaces/${wsId}/members`)
+    expect(res.body.members[0]!.bio).toBe('Пишите в Пачку')
+  })
+
   it('non-member gets 404 (no leak)', async () => {
     const owner = await registerUser('owner@example.com')
     const stranger = await registerUser('stranger@example.com')
