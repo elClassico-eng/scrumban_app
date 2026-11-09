@@ -1,0 +1,70 @@
+<script setup lang="ts">
+const props = withDefaults(defineProps<{
+  label: string
+  duration?: number
+  disabled?: boolean
+  loading?: boolean
+}>(), { duration: 2000, disabled: false, loading: false })
+
+const emit = defineEmits<{ confirm: [] }>()
+
+const progress = ref(0)
+let startedAt = 0
+let frame = 0
+
+function tick(now: number) {
+  progress.value = holdProgress(now - startedAt, props.duration)
+  if (progress.value >= 1) {
+    stop()
+    emit('confirm')
+    return
+  }
+  frame = requestAnimationFrame(tick)
+}
+
+function start() {
+  if (props.disabled || props.loading || frame) return
+  startedAt = performance.now()
+  frame = requestAnimationFrame(tick)
+}
+
+function stop() {
+  cancelAnimationFrame(frame)
+  frame = 0
+}
+
+function cancel() {
+  stop()
+  progress.value = 0
+}
+
+function onKey(e: KeyboardEvent) {
+  if (e.repeat || (e.key !== 'Enter' && e.key !== ' ')) return
+  e.preventDefault()
+  start()
+}
+
+onBeforeUnmount(stop)
+</script>
+
+<template>
+  <button
+    type="button"
+    class="relative w-full select-none overflow-hidden rounded-xl border border-error/60 px-4 py-2.5 text-sm font-semibold text-error transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+    :disabled="disabled || loading"
+    :aria-label="`${label}. Удерживай ${duration / 1000} с`"
+    @pointerdown="start"
+    @pointerup="cancel"
+    @pointerleave="cancel"
+    @pointercancel="cancel"
+    @keydown="onKey"
+    @keyup="cancel"
+    @blur="cancel"
+  >
+    <span class="absolute inset-y-0 left-0 bg-error/30" :style="{ width: `${progress * 100}%` }" />
+    <span class="relative inline-flex items-center gap-2">
+      <UIcon v-if="loading" name="i-hugeicons-loading-03" class="size-4 animate-spin" />
+      {{ label }}
+    </span>
+  </button>
+</template>
