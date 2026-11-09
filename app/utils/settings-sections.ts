@@ -6,7 +6,7 @@ export const ME_SECTION_META: Record<MeSection, SectionMeta> = {
   profile: { label: 'Профиль', icon: 'i-hugeicons-user', description: 'Как тебя видят коллеги: имя, фото и пара слов о себе в карточках и задачах.' },
   security: { label: 'Безопасность', icon: 'i-hugeicons-lock-password', description: 'Пароль и устройства, с которых ты входил. Выйди там, где больше не работаешь.' },
   notifications: { label: 'Уведомления', icon: 'i-hugeicons-notification-02', description: 'Что и куда присылать: колокольчик, почта, Пачка и утренний дайджест.' },
-  appearance: { label: 'Внешний вид', icon: 'i-hugeicons-paint-board', description: 'Тема, фон и плотность интерфейса. Всё применяется сразу.' },
+  appearance: { label: 'Внешний вид', icon: 'i-hugeicons-paint-board', description: 'Тема и плотность интерфейса. Всё применяется сразу.' },
   work: { label: 'Работа', icon: 'i-hugeicons-keyboard', description: 'С какой страницы начинать день, горячие клавиши и обучающие подсказки.' },
   account: { label: 'Аккаунт', icon: 'i-hugeicons-user-circle', description: 'Выход и удаление аккаунта со всем, что к нему привязано.' },
 }
