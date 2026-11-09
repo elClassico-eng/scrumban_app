@@ -2,6 +2,7 @@
 import { MotionConfig } from 'motion-v'
 import { SHORTCUT_IDS } from '#shared/types/shortcuts'
 import { pageHelp } from '~/utils/page-help'
+import { pageRoutes } from '~/routing'
 import type { HelpTab } from '~/composables/useHelpPanel'
 
 const { open, tab } = useHelpPanel()
@@ -105,11 +106,18 @@ const tabs: { value: HelpTab, label: string, icon: string }[] = [
       </MotionConfig>
     </template>
     <template #footer>
-      <a href="/docs" target="_blank" rel="noopener" class="flex w-full items-center gap-2 text-sm text-muted transition-colors hover:text-default">
-        <UIcon name="i-hugeicons-book-open-01" class="size-4" />
-        Вся документация
-        <UIcon name="i-hugeicons-arrow-up-right-01" class="ml-auto size-3.5" />
-      </a>
+      <div class="grid w-full gap-2">
+        <a href="/docs" target="_blank" rel="noopener" class="flex w-full items-center gap-2 text-sm text-muted transition-colors hover:text-default">
+          <UIcon name="i-hugeicons-book-open-01" class="size-4" />
+          Вся документация
+          <UIcon name="i-hugeicons-arrow-up-right-01" class="ml-auto size-3.5" />
+        </a>
+        <a :href="pageRoutes.feedback" target="_blank" rel="noopener" class="flex w-full items-center gap-2 text-sm text-muted transition-colors hover:text-default">
+          <UIcon name="i-hugeicons-message-edit-01" class="size-4" />
+          Оставить отзыв
+          <UIcon name="i-hugeicons-arrow-up-right-01" class="ml-auto size-3.5" />
+        </a>
+      </div>
     </template>
   </USlideover>
 </template>

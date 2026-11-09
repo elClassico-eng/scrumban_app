@@ -207,6 +207,7 @@ export const apiRoutes = {
 
   adminLeads: '/api/admin/leads',
   meConsent: '/api/users/me/consent',
+  feedback: '/api/feedback',
 } as const
 
 export const ME_SECTIONS = ['profile', 'security', 'notifications', 'appearance', 'work', 'account'] as const
