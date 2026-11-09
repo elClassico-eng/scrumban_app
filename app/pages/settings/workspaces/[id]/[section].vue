@@ -21,5 +21,6 @@ watchEffect(() => {
     <SettingsWorkspaceStoragePanel v-else-if="section === 'storage'" />
     <SettingsWorkspaceIntegrationsCatalog v-else-if="section === 'integrations'" />
     <SettingsWorkspaceBoardsPanel v-else-if="section === 'boards'" />
+    <SettingsWorkspaceDeletePanel v-else-if="section === 'delete'" />
   </div>
 </template>
