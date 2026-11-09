@@ -204,7 +204,7 @@ const registerWithNext = computed(() => ({
         </p>
       </div>
       <div class="flex flex-col gap-3 pt-2">
-        <UButton :to="pageRoutes.me" block size="xl" class="font-semibold">
+        <UButton :to="pageRoutes.settings()" block size="xl" class="font-semibold">
           В личный кабинет
         </UButton>
       </div>

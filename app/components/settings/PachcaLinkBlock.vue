@@ -2,7 +2,7 @@
 import { INSTANT_NOTIFICATION_TYPES, type InstantNotificationType } from '#shared/types/notification'
 import type { PachcaCandidate } from '#shared/types/integrations'
 
-const { current } = useCurrentWorkspace()
+const { current } = useSettingsWorkspace()
 const wsId = computed(() => current.value?.id ?? null)
 const { state, candidates, requestLink, updateMe, unlinkMe } = usePachcaApi(wsId)
 const toast = useToast()

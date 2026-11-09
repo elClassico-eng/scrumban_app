@@ -205,14 +205,11 @@ export const apiRoutes = {
   adminLeads: '/api/admin/leads',
 } as const
 
-export type SettingsTab =
-  | 'profile'
-  | 'security'
-  | 'notifications'
-  | 'appearance'
-  | 'danger'
-  | 'team'
-  | 'integrations'
+export const ME_SECTIONS = ['profile', 'security', 'notifications', 'appearance', 'work', 'account'] as const
+export type MeSection = (typeof ME_SECTIONS)[number]
+
+export const WORKSPACE_SECTIONS = ['general', 'storage', 'integrations', 'boards', 'delete'] as const
+export type WorkspaceSection = (typeof WORKSPACE_SECTIONS)[number]
 
 export const pageRoutes = {
   home: '/',
@@ -225,8 +222,9 @@ export const pageRoutes = {
   resetPassword: (token: string) => `/reset-password/${token}`,
   invite: (token: string) => `/invite/${token}`,
 
-  settings: (tab?: SettingsTab) => (tab && tab !== 'profile' ? `/settings?tab=${tab}` : '/settings'),
-  me: '/settings',
+  settings: (section: MeSection = 'profile') => `/settings/${section}`,
+  workspaceSettings: (id: string, section: WorkspaceSection = 'general') => `/settings/workspaces/${id}/${section}`,
+  pachcaSettings: (id: string) => `/settings/workspaces/${id}/integrations/pachca`,
 
   adminLeads: '/admin/leads',
 

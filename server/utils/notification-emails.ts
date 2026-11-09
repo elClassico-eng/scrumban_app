@@ -48,7 +48,7 @@ export function notificationEmail(opts: {
 }) {
   const { title, detail, snippet } = describeNotification(opts.type, opts.payload, opts.actorName)
   const subject = `${title}${typeof opts.payload.taskTitle === 'string' ? `: ${opts.payload.taskTitle}` : ''} – Такт`
-  const text = [title, detail, snippet, '', opts.link, '', `Настроить письма: ${appUrl()}/settings?tab=notifications`].filter(l => l !== null).join('\n')
+  const text = [title, detail, snippet, '', opts.link, '', `Настроить письма: ${appUrl()}/settings/notifications`].filter(l => l !== null).join('\n')
   const html = baseTemplate({
     preheader: detail || title,
     body: `
@@ -82,7 +82,7 @@ export function digestEmail(opts: { recipientName: string, workspaces: DigestWor
       ]),
     ]),
     '',
-    `Настроить письма: ${appUrl()}/settings?tab=notifications`,
+    `Настроить письма: ${appUrl()}/settings/notifications`,
   ].join('\n')
   const html = baseTemplate({
     preheader: subject,
@@ -112,7 +112,7 @@ export function digestEmail(opts: { recipientName: string, workspaces: DigestWor
 
 function settingsFooter(): string {
   return `<p style="margin:28px 0 0;font-size:12px;color:#9ca3af;">
-    Какие письма присылать, можно выбрать в <a href="${escapeHtml(`${appUrl()}/settings?tab=notifications`)}" style="color:#6b7280;">настройках уведомлений</a>.
+    Какие письма присылать, можно выбрать в <a href="${escapeHtml(`${appUrl()}/settings/notifications`)}" style="color:#6b7280;">настройках уведомлений</a>.
   </p>`
 }
 

@@ -13,7 +13,7 @@ const userInitials = computed(() => authStore.user ? initials(authStore.user) : 
   <div v-if="authStore.user" class="px-2 pb-3 pt-2">
     <UTooltip :text="`${userName} – личный кабинет`" :disabled="!collapsed" :content="{ side: 'right' }">
       <NuxtLink
-        :to="pageRoutes.me"
+        :to="pageRoutes.settings()"
         :class="[
           'flex items-center gap-3 overflow-hidden rounded-2xl border py-1.5 pl-[5px] pr-2.5 transition-colors',
           collapsed ? 'border-transparent duration-75 hover:bg-elevated' : 'border-default bg-elevated duration-200 hover:border-[var(--ui-border-accented)]',

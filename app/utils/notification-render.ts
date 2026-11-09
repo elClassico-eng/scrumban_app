@@ -195,7 +195,7 @@ export function renderNotification(n: Notification): RenderedNotification {
         title: 'Пачка перестала принимать сообщения',
         why: String(p.message ?? 'Проверьте токен бота'),
         cta: 'Открыть интеграции',
-        target: pageRoutes.settings('integrations'),
+        target: pageRoutes.workspaceSettings(n.workspaceId, 'integrations'),
         icon: 'i-hugeicons-plug-socket',
         color: ACCENT,
       }

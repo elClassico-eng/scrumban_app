@@ -4,7 +4,7 @@ import type { PachcaInviteResult } from '#shared/types/integrations'
 
 const BOARD_LINKS_LIMIT = 4
 
-const { current } = useCurrentWorkspace()
+const { current } = useSettingsWorkspace()
 const wsId = computed(() => current.value?.id ?? null)
 const { state, connect, disconnect, inviteAll } = usePachcaApi(wsId)
 const { list: boardsList } = useBoardsApi(computed(() => wsId.value ?? ''))
@@ -124,7 +124,7 @@ async function copy(text: string) {
               Упоминания, назначения и ответы будут приходить в личку от бота. Каждый участник привязывается сам.
             </p>
             <p v-if="data?.me" class="mt-1 text-xs text-success">Привязано: {{ data.me.displayName }}</p>
-            <UButton v-else class="mt-2" size="sm" :to="pageRoutes.settings('notifications')">Привязать себя</UButton>
+            <p v-else class="mt-1 text-xs text-muted">Привяжите себя в блоке ниже.</p>
           </div>
         </li>
 
@@ -280,5 +280,6 @@ async function copy(text: string) {
         </div>
       </template>
     </UModal>
+    <SettingsPachcaLinkBlock v-if="integration" />
   </section>
 </template>

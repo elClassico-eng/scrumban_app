@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { apiRoutes, pageRoutes } from '~/routing'
 
 const router = useRouter()
-const { current: workspace, isLoading } = useCurrentWorkspace()
+const { current: workspace, isLoading } = useSettingsWorkspace()
 const wsId = computed(() => workspace.value?.id ?? '')
 
 const { update, remove: removeWorkspace } = useWorkspacesApi()

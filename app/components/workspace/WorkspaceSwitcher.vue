@@ -44,7 +44,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
         ...(canManage.value
           ? [
               { label: 'Пригласить', icon: 'i-hugeicons-user-add-01', onSelect: () => emit('invite') },
-              { label: 'Настройки воркспейса', icon: 'i-hugeicons-settings-01', to: pageRoutes.settings('team') },
+              { label: 'Настройки воркспейса', icon: 'i-hugeicons-settings-01', to: pageRoutes.workspaceSettings(ws.id) },
             ]
           : []),
         ...(ws.role !== 'owner'

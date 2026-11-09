@@ -245,6 +245,13 @@ const customizeOpen = ref(false)
           :collapsed="collapsed"
           external
         />
+        <SidebarNavItem
+          v-if="isVisible('settings')"
+          to="/settings"
+          :icon="SIDEBAR_ITEM_META.settings.icon"
+          :label="SIDEBAR_ITEM_META.settings.label"
+          :collapsed="collapsed"
+        />
       </div>
     </nav>
     </MotionConfig>
