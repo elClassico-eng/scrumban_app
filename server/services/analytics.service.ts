@@ -143,7 +143,7 @@ export async function computeCycleTime(input: {
   }>).map((r) => ({
     taskId: r.taskId,
     cycleHours: Number(r.cycleHours),
-    closedAt: typeof r.closedAt === 'string' ? r.closedAt : r.closedAt.toISOString(),
+    closedAt: new Date(r.closedAt).toISOString(),
   }))
 
   const stats = computeCycleTimeStats(sampleArray.map((s) => s.cycleHours))

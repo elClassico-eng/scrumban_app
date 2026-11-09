@@ -178,6 +178,8 @@ describe('GET /analytics/cycle-time', () => {
     expect(res.body.stats.p95Hours).toBeNull()
     // Mean is well-defined for any non-empty set.
     expect(res.body.stats.meanHours).not.toBeNull()
+    // The scatter chart's time axis (ECharts) only parses ISO 8601, not Postgres text timestamps.
+    expect((res.body.samples[0] as unknown as { closedAt: string }).closedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/)
   })
 
   it('percentiles populate once at least 5 samples are in window', async () => {
