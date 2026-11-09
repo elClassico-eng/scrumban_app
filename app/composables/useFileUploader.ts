@@ -19,7 +19,6 @@ export type UploadItem = {
 
 const MAX_PARALLEL = 3
 const THUMB_SIDE = 480
-const FACE_SIDE = 256
 
 function put(url: string, body: Blob, contentType: string, onProgress: (p: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -58,8 +57,9 @@ export function useFileUploader() {
     items.value = [...items.value, { id, name: file.name, progress: 0, status: 'uploading', error: null, file: null }]
     const release = await slot()
     try {
-      const isFace = target.kind !== 'attachment'
-      const face = isFace ? await resizeImage(file, { maxSide: FACE_SIDE, square: true }) : null
+      const plan = uploadImagePlan(target.kind)
+      const isFace = plan !== null
+      const face = plan ? await resizeImage(file, plan) : null
       const thumb = !isFace && isPreviewableImage(file.type)
         ? await resizeImage(file, { maxSide: THUMB_SIDE, square: false }).catch(() => null)
         : null
