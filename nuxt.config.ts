@@ -7,6 +7,9 @@ export default defineNuxtConfig({
     '/**': { ssr: false },
     '/': { prerender: true, ssr: true },
     '/docs/**': { prerender: true, ssr: true },
+    '/privacy': { prerender: true, ssr: true },
+    '/consent': { prerender: true, ssr: true },
+    '/terms': { prerender: true, ssr: true },
   },
 
   // SPA shells otherwise point at a prerendered _payload.json with `data: undefined`,
@@ -78,7 +81,7 @@ export default defineNuxtConfig({
     experimental: { tasks: true },
     prerender: {
       crawlLinks: true,
-      routes: ['/', '/docs'],
+      routes: ['/', '/docs', '/privacy', '/consent', '/terms'],
       // A not-yet-added docs screenshot (IPX 404) must not fail the whole build.
       ignore: ['/_ipx'],
     },

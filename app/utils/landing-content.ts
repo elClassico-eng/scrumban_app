@@ -10,3 +10,7 @@ export const LANDING_NAV: NavLink[] = [
 export const LANDING_CHANNEL_LINKS: { vk?: string, telegram?: string } = {}
 
 export const AUTHOR_EMAIL = 'daniilerkesov122@gmail.com'
+
+export const OPERATOR_NAME = 'Черкесов Даниил Романович'
+
+export const LEGAL_UPDATED = '9 ноября 2026'
