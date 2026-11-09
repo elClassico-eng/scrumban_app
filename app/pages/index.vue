@@ -6,7 +6,6 @@ definePageMeta({ layout: false })
 const root = ref<HTMLElement | null>(null)
 useReveal(root)
 
-const { start, startLabel } = useAccessCta()
 
 useHead({
   link: [{ rel: 'canonical', href: 'https://takt34.tech/' }],
@@ -32,16 +31,11 @@ useSeoMeta({
     <LandingHeader />
 
     <main>
-      <section class="wrap" style="padding: 96px 0 48px; text-align: center">
-        <h1 style="font-size: clamp(36px, 7vw, 64px); line-height: 1.04">Сроки спринта – с вероятностью, а не на глаз</h1>
-        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 32px" data-cta-start>
-          <button type="button" class="btn btn--dark btn--lg" @click="start">{{ startLabel }}</button>
-          <a class="btn btn--ghost btn--lg" href="#pilot">Стать пилотной командой →</a>
-        </div>
-      </section>
+      <LandingHero :release="null" />
+      <LandingHowItWorks />
+      <LandingFeatures />
+      <LandingDifference />
 
-      <div id="features" />
-      <div id="forecast" />
       <div id="integrations" />
       <div id="updates" />
       <div id="plans" />
