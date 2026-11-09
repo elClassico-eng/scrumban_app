@@ -49,7 +49,6 @@ onMounted(async () => {
 .lloader-leave-active { transition: opacity 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
 .lloader-leave-to { opacity: 0; }
 
-:global(html.takt-seen) .lloader { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .lloader { display: none; }

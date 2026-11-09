@@ -7,7 +7,7 @@
   --line: rgba(17, 17, 16, 0.09);
   --orange: #e85002;
   --orange-soft: #fff3ec;
-  --maxw: 1180px;
+  --maxw: 1320px;
   --gut: 32px;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --font-display: "Onest", ui-sans-serif, system-ui, sans-serif;
@@ -73,7 +73,8 @@
   & .card--dark { background: var(--ink); color: #fff; border-color: transparent; }
   & .card--dark .muted { color: rgba(255, 255, 255, 0.66); }
 
-  & .section { padding: 40px 0 24px; scroll-margin-top: 64px; }
+  & .section, & [id] { scroll-margin-top: 112px; }
+  & .section { padding: 40px 0 24px; }
 
   & .reveal { opacity: 1; transform: none; }
   &.is-js .reveal {
@@ -88,7 +89,18 @@
   }
 }
 
+html:has(.landing) { scroll-behavior: smooth; }
+
+/* Rules that need an ancestor outside a component live here: in <style scoped>
+   Vue compiles `:global(.a) .b` down to `.a` and drops the rest. */
+html.takt-seen .lloader { display: none; }
+.landing.is-js .tl::before { transform: scaleY(0); }
+.landing.is-js .tl li { opacity: 0; transform: translateX(-8px); }
+
 @media (prefers-reduced-motion: reduce) {
+  html:has(.landing) { scroll-behavior: auto; }
+  .landing.is-js .tl::before { transform: none; }
+  .landing.is-js .tl li { opacity: 1; transform: none; }
   .landing .reveal, .landing.is-js .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
   .landing *, .landing *::before, .landing *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
 }

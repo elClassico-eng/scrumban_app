@@ -8,7 +8,7 @@ const { start, startLabel } = useAccessCta()
   <section class="hero">
     <div class="wrap">
       <a v-if="release" class="hero__chip reveal" href="#updates">✦ {{ release.title }} →</a>
-      <h1 class="hero__h1 reveal">Сроки спринта – <em>с вероятностью</em>, а не на глаз</h1>
+      <h1 class="hero__h1 reveal">Сроки спринта – <em>с&nbsp;вероятностью</em>,<br class="hero__br"> а&nbsp;не&nbsp;на&nbsp;глаз</h1>
       <p class="hero__sub muted reveal">
         Scrumban-доска, которая по истории вашей команды считает, когда работа будет готова. Бесплатно, пока идёт бета.
       </p>
@@ -34,8 +34,7 @@ const { start, startLabel } = useAccessCta()
 }
 .hero__h1 {
   margin: 26px auto 0;
-  max-width: 21ch;
-  font-size: clamp(40px, 6.2vw, 74px);
+  font-size: clamp(40px, 5.6vw, 76px);
   line-height: 1.03;
   letter-spacing: -0.035em;
 }
@@ -43,6 +42,9 @@ const { start, startLabel } = useAccessCta()
 .hero__sub { margin: 22px auto 0; max-width: 46ch; font-size: 19px; }
 .hero__cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 34px; }
 
+@media (max-width: 900px) {
+  .hero__br { display: none; }
+}
 @media (max-width: 640px) {
   .hero { padding-top: 48px; }
   .hero__sub { font-size: 17px; }

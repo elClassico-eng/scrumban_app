@@ -43,7 +43,6 @@ useSeoMeta({
 <template>
   <div id="top" ref="root" class="landing">
     <LandingPageLoader />
-    <LandingAnnounceBar />
     <LandingHeader />
 
     <main>

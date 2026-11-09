@@ -118,8 +118,8 @@ onBeforeUnmount(stopTimer)
 }
 .demo__scene.on { opacity: 1; }
 .demo__scene :is(img, video) { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
-.demo__tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 22px 28px 26px; text-align: left; }
-.demo__tab { border: 0; padding: 0; background: none; text-align: left; cursor: pointer; color: var(--ink-3); transition: color 0.2s; }
+.demo__tabs { display: grid; grid-template-columns: repeat(5, 1fr); align-items: start; gap: 12px; padding: 22px 28px 26px; text-align: left; }
+.demo__tab { display: flex; flex-direction: column; justify-content: flex-start; height: 100%; border: 0; padding: 0; background: none; text-align: left; cursor: pointer; color: var(--ink-3); transition: color 0.2s; }
 .demo__tab:hover, .demo__tab.on { color: var(--ink); }
 .demo__tab b { display: block; margin-top: 10px; font: 500 15px/1.3 var(--font-display); }
 .demo__bar { display: block; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; }

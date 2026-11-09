@@ -42,7 +42,7 @@ onBeforeUnmount(() => {
 <template>
   <Transition name="lfloat">
     <button v-if="visible" type="button" class="btn btn--dark btn--lg lfloat" @click="start">
-      <span class="lfloat__dot" aria-hidden="true" />
+      <TaktMark animated class="lfloat__mark" aria-hidden="true" />
       {{ authenticated ? 'Открыть Такт' : 'Попробовать Такт' }}
     </button>
   </Transition>
@@ -56,7 +56,7 @@ onBeforeUnmount(() => {
   z-index: 45;
   box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.45);
 }
-.lfloat__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+.lfloat__mark { width: 20px; height: 20px; color: var(--orange); }
 .lfloat-enter-active, .lfloat-leave-active { transition: opacity 0.3s var(--ease), transform 0.3s var(--ease); }
 .lfloat-enter-from, .lfloat-leave-to { opacity: 0; transform: translateY(12px); }
 

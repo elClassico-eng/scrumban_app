@@ -14,7 +14,6 @@ useHead({
       <LandingSectionHead :n="10" label="вопросы" title="Частые вопросы" />
       <UAccordion
         :items="items"
-        :default-value="['0']"
         type="multiple"
         class="faq reveal"
         :ui="{

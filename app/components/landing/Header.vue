@@ -8,6 +8,7 @@ const open = ref(false)
 
 <template>
   <header class="lhdr">
+    <LandingAnnounceBar />
     <div class="lhdr__in">
       <a class="lhdr__logo" href="/#top" aria-label="Такт – на главную">
         <TaktMark animated class="lhdr__mark" />

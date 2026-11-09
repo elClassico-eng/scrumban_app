@@ -47,7 +47,33 @@ function formatDate(iso: string): string {
 <style scoped>
 .rel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .rel h3 { font-size: 20px; }
-.tl { list-style: none; display: grid; gap: 22px; margin: 24px 0 0; padding: 0 0 0 24px; border-left: 1.5px solid var(--ink); }
+.tl { position: relative; list-style: none; display: grid; gap: 22px; margin: 24px 0 0; padding: 0 0 0 24px; }
+.tl::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: var(--ink);
+  transform-origin: top;
+}
+.reveal.in .tl::before { animation: tl-draw 1.2s var(--ease) forwards; }
+.reveal.in .tl li { animation: tl-in 0.5s var(--ease) forwards; }
+.reveal.in .tl li:nth-child(2) { animation-delay: 0.25s; }
+.reveal.in .tl li:nth-child(3) { animation-delay: 0.5s; }
+.reveal.in .tl li:nth-child(4) { animation-delay: 0.75s; }
+.tl li.now::after {
+  content: "";
+  position: absolute;
+  left: -30px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--orange);
+  animation: tl-ring 2.2s ease-out 1.2s infinite;
+}
 .tl li { position: relative; }
 .tl li::before {
   content: "";
@@ -64,9 +90,13 @@ function formatDate(iso: string): string {
 .tl small { display: block; font-size: 11px; color: var(--ink-3); }
 .tl b { display: block; font: 500 17px/1.35 var(--font-display); }
 .tl span { display: block; margin-top: 2px; font-size: 14px; }
-.tl--dark { border-color: #fff; }
+.tl--dark::before { background: #fff; }
 .tl--dark li::before { border-color: #fff; background: var(--ink); }
 .tl--dark small { color: var(--orange); }
+
+@keyframes tl-draw { to { transform: scaleY(1); } }
+@keyframes tl-in { to { opacity: 1; transform: none; } }
+@keyframes tl-ring { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.4); opacity: 0; } }
 
 @media (max-width: 900px) {
   .rel { grid-template-columns: 1fr; }
