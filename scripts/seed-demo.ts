@@ -1,4 +1,6 @@
-import { eq, like } from 'drizzle-orm'
+import { Hash } from '@adonisjs/hash'
+import { Scrypt } from '@adonisjs/hash/drivers/scrypt'
+import { eq, inArray, like, or } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import {
@@ -15,366 +17,379 @@ import {
   workspaces,
 } from '../server/db/schema'
 
-type ColRole = 'backlog' | 'in_progress' | 'review' | 'done'
-type ServiceClassValue = 'expedite' | 'fixed_date' | 'standard' | 'intangible'
-
-type Cols = Record<ColRole, string>
-
-type SeedTask = {
-  id: string
-  title: string
-  storyPoints: number
-  serviceClass: ServiceClassValue
-  assigneeId: string
-  createdAt: Date
-  closedAt: Date | null
-  currentRole: ColRole
-  dueDate: Date | null
-  expeditedAt: Date | null
-}
+// Local demo data for screenshots and the landing videos. Never run against prod:
+// it deletes and recreates the demo workspace and every *@demo.seed user.
+const OWNER_EMAIL = (process.env.SEED_OWNER_EMAIL ?? 'demo@takt.local').trim().toLowerCase()
+const OWNER_PASSWORD = process.env.SEED_OWNER_PASSWORD ?? 'takt-demo-local-2026'
+const WORKSPACE_SLUG = 'dostavka'
+const LEGACY_SLUGS = ['demo-flow']
 
 const DAY = 86_400_000
 const HOUR = 3_600_000
-const NOW = new Date()
+const NOW = Date.now()
+const HISTORY_WEEKS = 12
+
+type Stage = 'backlog' | 'ready' | 'progress' | 'review' | 'testing' | 'done'
+const STAGES: Stage[] = ['backlog', 'ready', 'progress', 'review', 'testing', 'done']
+
+const COLUMNS: { stage: Stage, name: string, role: 'backlog' | 'in_progress' | 'review' | 'done', wip: number | null }[] = [
+  { stage: 'backlog', name: 'Бэклог', role: 'backlog', wip: null },
+  { stage: 'ready', name: 'Готово к работе', role: 'backlog', wip: null },
+  { stage: 'progress', name: 'В работе', role: 'in_progress', wip: 5 },
+  { stage: 'review', name: 'Ревью', role: 'review', wip: 3 },
+  { stage: 'testing', name: 'Тестирование', role: 'review', wip: 3 },
+  { stage: 'done', name: 'Готово', role: 'done', wip: null },
+]
+
+const MEMBERS = [
+  { email: 'anna@demo.seed', firstName: 'Анна', lastName: 'Соколова', jobTitle: 'Frontend-разработчик' },
+  { email: 'igor@demo.seed', firstName: 'Игорь', lastName: 'Лебедев', jobTitle: 'Backend-разработчик' },
+  { email: 'maria@demo.seed', firstName: 'Мария', lastName: 'Орлова', jobTitle: 'QA-инженер' },
+  { email: 'dmitry@demo.seed', firstName: 'Дмитрий', lastName: 'Ковалёв', jobTitle: 'Мобильный разработчик' },
+  { email: 'elena@demo.seed', firstName: 'Елена', lastName: 'Морозова', jobTitle: 'Дизайнер' },
+  { email: 'pavel@demo.seed', firstName: 'Павел', lastName: 'Никитин', jobTitle: 'DevOps-инженер' },
+]
+
+const CLOSED_TITLES = [
+  'Каталог: фильтр по времени доставки', 'Каталог: карточка ресторана с рейтингом', 'Каталог: ленивая загрузка фото блюд',
+  'Каталог: пустое состояние поиска', 'Каталог: сортировка по расстоянию', 'Каталог: бейдж «Новинка»', 'Каталог: кэш меню на 5 минут',
+  'Корзина: изменение количества без перезагрузки', 'Корзина: промокоды', 'Корзина: минимальная сумма заказа',
+  'Корзина: предупреждение о закрытии ресторана', 'Корзина: перенос в новую сессию', 'Корзина: подсказка о бесплатной доставке', 'Корзина: удаление недоступных позиций',
+  'Оплата: СБП на экране заказа', 'Оплата: сохранение карты', 'Оплата: повтор при таймауте эквайринга',
+  'Оплата: чек на почту', 'Оплата: возврат при отмене', 'Оплата: 3-D Secure в webview', 'Оплата: логирование отказов банка',
+  'Курьер: трекинг на карте', 'Курьер: смена статуса одним свайпом', 'Курьер: офлайн-режим заказов',
+  'Курьер: маршрут с несколькими точками', 'Курьер: фото при вручении', 'Курьер: смены и перерывы', 'Курьер: push о новом заказе',
+  'Профиль: адреса с подъездом и этажом', 'Профиль: история заказов', 'Профиль: удаление аккаунта',
+  'Профиль: аллергены в настройках', 'Профиль: вход по номеру телефона', 'Профиль: тёмная тема', 'Профиль: повтор прошлого заказа',
+  'Админка: управление стоп-листом', 'Админка: отчёт по выручке за день', 'Админка: роли менеджеров',
+  'Админка: массовое редактирование цен', 'Админка: журнал изменений меню', 'Админка: импорт меню из Excel', 'Админка: зоны доставки на карте',
+  'Уведомления: заказ принят', 'Уведомления: курьер рядом', 'Уведомления: отзыв после доставки',
+  'Уведомления: тихие часы', 'Уведомления: SMS-резерв при отказе push', 'Уведомления: шаблоны на двух языках', 'Уведомления: группировка в Android',
+  'Поиск: опечатки в названиях блюд', 'Поиск: подсказки по мере ввода', 'Поиск: история запросов',
+  'Поиск: поиск по кухне', 'Поиск: индекс в Postgres', 'Поиск: аналитика пустых выдач', 'Поиск: синонимы «шаурма/шаверма»',
+  'Партнёры: API статусов заказа', 'Партнёры: вебхуки о готовности', 'Партнёры: ключи доступа в кабинете',
+  'Партнёры: лимиты запросов', 'Партнёры: песочница для интеграции', 'Партнёры: документация OpenAPI', 'Партнёры: ретраи вебхуков',
+  'Инфраструктура: алерты по 5xx', 'Инфраструктура: бэкап базы каждую ночь', 'Инфраструктура: canary-деплой',
+  'Инфраструктура: дашборд латентности', 'Инфраструктура: ротация логов', 'Инфраструктура: обновление Node до 22', 'Инфраструктура: rate-limit на API',
+  'Каталог: скелетоны при загрузке', 'Каталог: счётчик калорий', 'Каталог: фото в WebP', 'Каталог: время приготовления на карточке', 'Каталог: избранные рестораны',
+  'Корзина: комментарий для кухни', 'Корзина: столовые приборы по запросу', 'Корзина: выбор времени доставки', 'Корзина: пересчёт при смене адреса',
+  'Оплата: Apple Pay и Google Pay', 'Оплата: разделение счёта', 'Оплата: бонусные баллы', 'Оплата: квитанция для юрлиц', 'Оплата: защита от двойного списания',
+  'Курьер: навигация в один тап', 'Курьер: экономия батареи в фоне', 'Курьер: отметка «клиент не отвечает»', 'Курьер: статистика за смену', 'Курьер: экран сдачи наличных',
+  'Профиль: экспорт данных', 'Профиль: смена номера телефона', 'Профиль: приглашение друга', 'Профиль: язык интерфейса',
+  'Админка: заказы в реальном времени', 'Админка: блокировка курьера', 'Админка: шаблоны акций', 'Админка: поиск по заказам', 'Админка: выгрузка в CSV',
+  'Уведомления: задержка заказа', 'Уведомления: акции по геолокации', 'Уведомления: управление подписками', 'Уведомления: deeplink в заказ',
+  'Поиск: рекомендации «с этим берут»', 'Поиск: фильтр по цене', 'Поиск: популярное рядом', 'Поиск: исправление раскладки',
+  'Партнёры: статус «готовится»', 'Партнёры: тестовые заказы', 'Партнёры: SLA-отчёт', 'Партнёры: подпись вебхуков',
+  'Инфраструктура: трейсинг запросов', 'Инфраструктура: автоскейлинг воркеров', 'Инфраструктура: чистка старых логов', 'Инфраструктура: секреты в vault', 'Инфраструктура: нагрузочный тест оплаты',
+]
+
+const OPEN_TASKS: { title: string, stage: Stage, points: number, estimateDays: number, inSprint: boolean, serviceClass?: 'expedite' | 'fixed_date', dueInDays?: number }[] = [
+  { title: 'Оплата: рассрочка через банк-партнёр', stage: 'progress', points: 8, estimateDays: 4, inSprint: true },
+  { title: 'Курьер: оценка времени прибытия по пробкам', stage: 'progress', points: 5, estimateDays: 3, inSprint: true },
+  { title: 'Корзина: совместный заказ по ссылке', stage: 'progress', points: 8, estimateDays: 5, inSprint: true },
+  { title: 'Уведомления: статус заказа в Live Activity', stage: 'progress', points: 3, estimateDays: 2, inSprint: false },
+  { title: 'Падение оплаты СБП на Android 14', stage: 'progress', points: 2, estimateDays: 1, inSprint: true, serviceClass: 'expedite' },
+  { title: 'Каталог: персональные подборки', stage: 'review', points: 5, estimateDays: 3, inSprint: true },
+  { title: 'Админка: акции по расписанию', stage: 'review', points: 3, estimateDays: 2, inSprint: true },
+  { title: 'Профиль: семейный аккаунт', stage: 'testing', points: 5, estimateDays: 3, inSprint: true },
+  { title: 'Партнёры: выгрузка заказов для 1С', stage: 'testing', points: 3, estimateDays: 2, inSprint: true, serviceClass: 'fixed_date', dueInDays: 6 },
+  { title: 'Поиск: голосовой ввод', stage: 'ready', points: 3, estimateDays: 2, inSprint: true },
+  { title: 'Курьер: чат с клиентом', stage: 'ready', points: 5, estimateDays: 3, inSprint: true },
+  { title: 'Отчёты: время доставки по районам', stage: 'ready', points: 5, estimateDays: 3, inSprint: false },
+  { title: 'Каталог: блюда дня', stage: 'backlog', points: 2, estimateDays: 1, inSprint: false },
+  { title: 'Оплата: чаевые курьеру', stage: 'backlog', points: 3, estimateDays: 2, inSprint: false },
+  { title: 'Профиль: подписка на бесплатную доставку', stage: 'backlog', points: 8, estimateDays: 5, inSprint: false },
+  { title: 'Админка: прогноз загрузки кухни', stage: 'backlog', points: 8, estimateDays: 5, inSprint: false },
+  { title: 'Уведомления: дайджест акций раз в неделю', stage: 'backlog', points: 2, estimateDays: 1, inSprint: false },
+  { title: 'Партнёры: интеграция с POS-системами', stage: 'backlog', points: 13, estimateDays: 8, inSprint: false },
+  { title: 'Инфраструктура: второй регион', stage: 'backlog', points: 13, estimateDays: 8, inSprint: false },
+  { title: 'Поиск: фильтр «без глютена»', stage: 'backlog', points: 2, estimateDays: 1, inSprint: false },
+  { title: 'Курьер: рейтинг и бонусы', stage: 'backlog', points: 5, estimateDays: 3, inSprint: false },
+  { title: 'Корзина: напоминание о брошенном заказе', stage: 'backlog', points: 3, estimateDays: 2, inSprint: false },
+]
+
+const DEPENDENCIES: [string, string][] = [
+  ['Поиск: голосовой ввод', 'Каталог: персональные подборки'],
+  ['Оплата: рассрочка через банк-партнёр', 'Партнёры: выгрузка заказов для 1С'],
+  ['Курьер: оценка времени прибытия по пробкам', 'Курьер: чат с клиентом'],
+]
 
 function mulberry32(seed: number): () => number {
   let a = seed
   return () => {
-    a |= 0
-    a = (a + 0x6d2b79f5) | 0
+    a = (a + 0x6D2B79F5) | 0
     let t = Math.imul(a ^ (a >>> 15), 1 | a)
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
-const rnd = mulberry32(20260614)
+const rnd = mulberry32(20261109)
+const pick = <T>(arr: T[]): T => arr[Math.floor(rnd() * arr.length)]!
+const between = (min: number, max: number) => min + rnd() * (max - min)
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(rnd() * arr.length)]!
+// Working hours only, so cycle-time charts don't show tasks moving at 3am.
+function workHour(ts: number): number {
+  const d = new Date(ts)
+  const h = d.getUTCHours()
+  if (h < 6) d.setUTCHours(6 + Math.floor(rnd() * 3))
+  if (h > 15) d.setUTCHours(13 + Math.floor(rnd() * 3))
+  return d.getTime()
 }
-function jitterHours(base: number, spread: number): number {
-  return base + Math.floor((rnd() - 0.5) * 2 * spread)
+
+type PlannedTask = {
+  id: string
+  title: string
+  stage: Stage
+  createdAt: number
+  stageTimes: number[]
+  closedAt: number | null
+  assigneeId: string
+  points: number
+  estimateDays: number | null
+  serviceClass: 'standard' | 'expedite' | 'fixed_date'
+  dueDate: number | null
+  expeditedAt: number | null
 }
-
-const DEMO_EMAILS = ['anna@demo.seed', 'igor@demo.seed', 'maria@demo.seed']
-const PLACEHOLDER_HASH = 'demo-seed-not-a-real-hash:noscrypt'
-
-const MEMBER_DEFS = [
-  { email: 'anna@demo.seed', firstName: 'Анна', lastName: 'Соколова', jobTitle: 'Frontend-разработчик' },
-  { email: 'igor@demo.seed', firstName: 'Игорь', lastName: 'Лебедев', jobTitle: 'Backend-разработчик' },
-  { email: 'maria@demo.seed', firstName: 'Мария', lastName: 'Орлова', jobTitle: 'QA-инженер' },
-]
-
-const CLOSED_TITLES = [
-  'Вёрстка страницы профиля', 'Интеграция с GitFlic OAuth', 'Фикс гонки в SSE-переподключении',
-  'Миграция на Drizzle 0.45', 'Ретенция: онбординг-чеклист', 'Тёмная тема для доски',
-  'Экспорт CFD в PNG', 'Кэширование аналитики на vue-query', 'Рефактор очереди pg-boss',
-  'Валидация форм через zod', 'Адаптив для мобильной доски', 'Drag-n-drop колонок',
-  'Уведомления о назначении задач', 'Поиск по задачам', 'Лейблы и фильтры на доске',
-  'Свимлейны по классу обслуживания', 'Метрика cycle time на карточке', 'WIP-лимиты с подсветкой',
-  'Архивирование завершённых спринтов', 'Импорт задач из CSV', 'Бёрндаун-чарт спринта',
-  'Роли и RBAC в воркспейсе', 'Аватары пользователей через MinIO', 'Восстановление пароля по email',
-  'Логирование через pino', 'Health-check эндпоинт', 'Rate-limit на auth-роуты',
-]
-
-const OPEN_TITLES = [
-  'Прогноз срока спринта (CPM/PERT)', 'Monte Carlo на странице аналитики', 'Граф зависимостей задач',
-  'Каденс пополнения бэклога', 'SLE-дашборд по доске', 'Интеграция с Pachca (уведомления)',
-  'Вебхуки в GitFlic CI', 'Настройка Caddy + TLS', 'Бэкап Postgres по расписанию',
-  'Темплейт лендинга со скриншотами', 'Drill-down по scatter cycle time', 'Алерты о застрявших задачах',
-]
 
 async function main() {
   const url = process.env.DATABASE_URL_ADMIN ?? process.env.DATABASE_URL
   if (!url) throw new Error('DATABASE_URL_ADMIN / DATABASE_URL not set — check .env')
-
-  const ownerEmail = (process.env.SEED_OWNER_EMAIL ?? '').trim().toLowerCase()
-  if (!ownerEmail) {
-    throw new Error('SEED_OWNER_EMAIL is required. Run: SEED_OWNER_EMAIL=you@example.com bun run db:seed')
-  }
+  if (/prod/i.test(url)) throw new Error('Refusing to seed a database whose URL mentions "prod"')
 
   const client = postgres(url, { max: 4 })
-  const db = drizzle(client, { schema: { tasks } })
+  const db = drizzle(client)
 
   try {
-    const [owner] = await db.select().from(users).where(eq(users.email, ownerEmail))
-    if (!owner) {
-      throw new Error(
-        `Owner user "${ownerEmail}" not found. Register/login with that email in the app first, then re-run the seed (the seed never creates the owner to avoid password-hash issues).`,
-      )
+    await db.delete(workspaces).where(inArray(workspaces.slug, [WORKSPACE_SLUG, ...LEGACY_SLUGS]))
+    await db.delete(users).where(or(like(users.email, '%@demo.seed'), like(users.email, '%@new.demo.seed')))
+
+    const passwordHash = await new Hash(new Scrypt({})).make(OWNER_PASSWORD)
+    let [owner] = await db.select({ id: users.id }).from(users).where(eq(users.email, OWNER_EMAIL))
+    if (owner) {
+      await db.update(users).set({ passwordHash, personalDataConsentAt: new Date(), emailVerifiedAt: new Date() }).where(eq(users.id, owner.id))
     }
+    else {
+      ;[owner] = await db.insert(users).values({
+        email: OWNER_EMAIL,
+        passwordHash,
+        firstName: 'Даниил',
+        lastName: 'Черкесов',
+        jobTitle: 'Тимлид',
+        personalDataConsentAt: new Date(),
+        emailVerifiedAt: new Date(),
+      }).returning({ id: users.id })
+    }
+    const ownerId = owner!.id
 
-    await db.delete(workspaces).where(eq(workspaces.slug, 'demo-flow'))
-    await db.delete(users).where(like(users.email, '%@demo.seed'))
+    const memberRows = await db.insert(users).values(MEMBERS.map(m => ({
+      ...m,
+      passwordHash: 'demo-seed-not-a-real-hash',
+      personalDataConsentAt: new Date(),
+    }))).returning({ id: users.id })
+    const team = [ownerId, ...memberRows.map(r => r.id)]
 
-    const memberRows = await db
-      .insert(users)
-      .values(
-        MEMBER_DEFS.map((m) => ({
-          email: m.email,
-          passwordHash: PLACEHOLDER_HASH,
-          firstName: m.firstName,
-          lastName: m.lastName,
-          jobTitle: m.jobTitle,
-        })),
-      )
-      .returning({ id: users.id, email: users.email })
-    const memberIdByEmail = new Map(memberRows.map((r) => [r.email, r.id]))
-    const memberIds = DEMO_EMAILS.map((e) => memberIdByEmail.get(e)!)
-    const assigneePool = [owner.id, ...memberIds]
-
-    const [ws] = await db
-      .insert(workspaces)
-      .values({
-        name: 'Demo Flow',
-        slug: 'demo-flow',
-        description: 'Демонстрационный воркспейс для скриншотов лендинга.',
-        industry: 'Software',
-      })
-      .returning({ id: workspaces.id })
+    const [ws] = await db.insert(workspaces).values({
+      name: 'Платформа доставки',
+      slug: WORKSPACE_SLUG,
+      description: 'Продуктовая команда сервиса доставки еды: клиентское и курьерское приложения, админка, API партнёров.',
+      industry: 'Доставка',
+    }).returning({ id: workspaces.id })
     const workspaceId = ws!.id
 
     await db.insert(workspaceMembers).values([
-      { workspaceId, userId: owner.id, role: 'owner' },
-      ...memberIds.map((userId) => ({ workspaceId, userId, role: 'member' as const })),
+      { workspaceId, userId: ownerId, role: 'owner' as const },
+      ...memberRows.map((r, i) => ({ workspaceId, userId: r.id, role: (i === 0 ? 'admin' : 'member') as 'admin' | 'member' })),
     ])
 
-    const [board] = await db
-      .insert(boards)
-      .values({
-        workspaceId,
-        name: 'Поток',
-        slug: 'potok',
-        color: '#e85002',
-        sleDays: 7,
-        sleProbability: '0.85',
-      })
-      .returning({ id: boards.id })
+    const [board] = await db.insert(boards).values({
+      workspaceId,
+      name: 'Продукт',
+      slug: 'produkt',
+      key: 'ДОС',
+      color: '#e85002',
+      sleDays: 6,
+      sleProbability: '0.85',
+    }).returning({ id: boards.id })
     const boardId = board!.id
 
-    const columnDefs: { name: string; role: ColRole; wipLimit: number | null }[] = [
-      { name: 'Бэклог', role: 'backlog', wipLimit: null },
-      { name: 'В работе', role: 'in_progress', wipLimit: 4 },
-      { name: 'Ревью', role: 'review', wipLimit: 3 },
-      { name: 'Готово', role: 'done', wipLimit: null },
-    ]
-    const insertedCols = await db
-      .insert(boardColumns)
-      .values(
-        columnDefs.map((c, i) => ({
-          workspaceId,
-          boardId,
-          name: c.name,
-          position: i,
-          wipLimit: c.wipLimit,
-          columnRole: c.role,
-        })),
-      )
-      .returning({ id: boardColumns.id, columnRole: boardColumns.columnRole })
-    const cols = Object.fromEntries(
-      insertedCols.map((c) => [c.columnRole, c.id]),
-    ) as Cols
+    const cols = await db.insert(boardColumns).values(COLUMNS.map((c, i) => ({
+      workspaceId,
+      boardId,
+      name: c.name,
+      position: i,
+      wipLimit: c.wip,
+      columnRole: c.role,
+    }))).returning({ id: boardColumns.id })
+    const colId = Object.fromEntries(COLUMNS.map((c, i) => [c.stage, cols[i]!.id])) as Record<Stage, string>
+    const roleOf = Object.fromEntries(COLUMNS.map(c => [c.stage, c.role])) as Record<Stage, string>
 
-    const seedTasks: SeedTask[] = []
-    const positionByCol: Record<string, number> = { [cols.backlog]: 0, [cols.in_progress]: 0, [cols.review]: 0, [cols.done]: 0 }
+    const planned: PlannedTask[] = []
+    const historyStart = NOW - HISTORY_WEEKS * 7 * DAY
 
-    const storyPointPool = [1, 2, 3, 3, 5, 5, 8]
-    const cycleDayPool = [2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 11, 13, 16]
-
-    const expediteIdx = new Set([3, 11, 19])
-    const fixedDateIdx = new Set([6, 14])
-
-    for (let i = 0; i < CLOSED_TITLES.length; i++) {
-      const cycleDays = pick(cycleDayPool)
-      const ageDays = 2 + Math.floor(rnd() * 39)
-      const closedAt = new Date(NOW.getTime() - ageDays * DAY + jitterHours(0, 6) * HOUR)
-      const createdAt = new Date(closedAt.getTime() - cycleDays * DAY - jitterHours(4, 3) * HOUR)
-      let serviceClass: ServiceClassValue = 'standard'
-      if (expediteIdx.has(i)) serviceClass = 'expedite'
-      else if (fixedDateIdx.has(i)) serviceClass = 'fixed_date'
-      const dueDate = serviceClass === 'fixed_date' ? new Date(closedAt.getTime() + 2 * DAY) : null
-      const expeditedAt = serviceClass === 'expedite' ? new Date(createdAt.getTime() + 6 * HOUR) : null
-      seedTasks.push({
+    // Closed work spread over the history window, a little denser recently: the team got faster.
+    CLOSED_TITLES.forEach((title, i) => {
+      const progress = (i + rnd() * 0.8) / CLOSED_TITLES.length
+      const closedAt = workHour(historyStart + Math.pow(progress, 0.85) * (NOW - historyStart - 2 * DAY))
+      const cycleDays = pick([1.5, 2, 2.5, 3, 3, 3.5, 4, 4, 5, 5, 6, 7, 9, 12])
+      const startedAt = workHour(closedAt - cycleDays * DAY)
+      const createdAt = workHour(startedAt - between(1, 10) * DAY)
+      const span = closedAt - startedAt
+      const serviceClass = i % 17 === 5 ? 'expedite' : i % 23 === 9 ? 'fixed_date' : 'standard'
+      planned.push({
         id: crypto.randomUUID(),
-        title: CLOSED_TITLES[i]!,
-        storyPoints: pick(storyPointPool),
-        serviceClass,
-        assigneeId: assigneePool[i % assigneePool.length]!,
+        title,
+        stage: 'done',
         createdAt,
+        stageTimes: [
+          workHour(createdAt + between(0.2, 0.8) * (startedAt - createdAt)),
+          startedAt,
+          workHour(startedAt + span * between(0.45, 0.65)),
+          workHour(startedAt + span * between(0.7, 0.85)),
+          closedAt,
+        ],
         closedAt,
-        currentRole: 'done',
-        dueDate,
-        expeditedAt,
-      })
-    }
-
-    const openColRoles: ColRole[] = [
-      'backlog', 'backlog', 'backlog', 'backlog',
-      'in_progress', 'in_progress', 'in_progress',
-      'review', 'review',
-      'in_progress',
-      'backlog', 'review',
-    ]
-    for (let i = 0; i < OPEN_TITLES.length; i++) {
-      const role = openColRoles[i]!
-      const createdAt = new Date(NOW.getTime() - (3 + Math.floor(rnd() * 18)) * DAY)
-      let serviceClass: ServiceClassValue = 'standard'
-      let dueDate: Date | null = null
-      let expeditedAt: Date | null = null
-      if (i === 0) {
-        serviceClass = 'expedite'
-        expeditedAt = new Date(createdAt.getTime() + 4 * HOUR)
-      } else if (i === 1) {
-        serviceClass = 'fixed_date'
-        dueDate = new Date(NOW.getTime() + 5 * DAY)
-      }
-      seedTasks.push({
-        id: crypto.randomUUID(),
-        title: OPEN_TITLES[i]!,
-        storyPoints: pick(storyPointPool),
+        assigneeId: team[i % team.length]!,
+        points: pick([1, 2, 3, 3, 5, 5, 8]),
+        estimateDays: null,
         serviceClass,
-        assigneeId: assigneePool[i % assigneePool.length]!,
-        createdAt,
-        closedAt: null,
-        currentRole: role,
-        dueDate,
-        expeditedAt,
+        dueDate: serviceClass === 'fixed_date' ? closedAt + DAY : null,
+        expeditedAt: serviceClass === 'expedite' ? createdAt + 2 * HOUR : null,
       })
-    }
+    })
 
-    const roleOrder: ColRole[] = ['backlog', 'in_progress', 'review', 'done']
-    const taskRows: (typeof tasks.$inferInsert)[] = []
-    const eventRows: (typeof taskEvents.$inferInsert)[] = []
-    const assigneeRows: (typeof taskAssignees.$inferInsert)[] = []
-
-    for (const t of seedTasks) {
-      const columnId = cols[t.currentRole]
-      taskRows.push({
-        id: t.id,
-        workspaceId,
-        boardId,
-        columnId,
+    OPEN_TASKS.forEach((t, i) => {
+      const stageIdx = STAGES.indexOf(t.stage)
+      const startedAt = workHour(NOW - between(0.5, 4.5) * DAY)
+      const createdAt = workHour(startedAt - between(2, 14) * DAY)
+      const stageTimes: number[] = []
+      for (let s = 1; s <= stageIdx; s++) {
+        const ts = s === 2 ? startedAt : workHour(s < 2 ? createdAt + (startedAt - createdAt) * 0.5 : startedAt + (NOW - startedAt) * (s - 2) / (stageIdx - 1 || 1) * 0.9)
+        stageTimes.push(Math.min(ts, NOW - HOUR))
+      }
+      planned.push({
+        id: crypto.randomUUID(),
         title: t.title,
-        description: '',
-        assigneeId: t.assigneeId,
-        serviceClass: t.serviceClass,
-        dueDate: t.dueDate,
-        expeditedAt: t.expeditedAt,
-        position: positionByCol[columnId]!++,
-        closedAt: t.closedAt,
-        storyPoints: t.storyPoints,
-        createdAt: t.createdAt,
-        updatedAt: t.closedAt ?? NOW,
+        stage: t.stage,
+        createdAt,
+        stageTimes,
+        closedAt: null,
+        assigneeId: team[(i * 3) % team.length]!,
+        points: t.points,
+        estimateDays: t.estimateDays,
+        serviceClass: t.serviceClass ?? 'standard',
+        dueDate: t.dueInDays ? NOW + t.dueInDays * DAY : null,
+        expeditedAt: t.serviceClass === 'expedite' ? createdAt + 2 * HOUR : null,
       })
-      assigneeRows.push({ taskId: t.id, userId: t.assigneeId, workspaceId, addedBy: t.assigneeId, addedAt: t.createdAt })
+    })
 
-      const targetIdx = roleOrder.indexOf(t.currentRole)
-      const endTs = (t.closedAt ?? NOW).getTime()
-      const startTs = t.createdAt.getTime()
-      const span = Math.max(endTs - startTs, HOUR)
-      const stepCount = Math.max(targetIdx, 1)
+    planned.sort((a, b) => a.createdAt - b.createdAt)
+    const positions: Record<string, number> = {}
 
-      eventRows.push({
-        workspaceId,
-        taskId: t.id,
-        eventType: 'task_created',
-        fromColumnId: null,
-        toColumnId: cols.backlog,
-        actorId: t.assigneeId,
-        payload: { initialPosition: 0 },
-        createdAt: t.createdAt,
+    await db.insert(tasks).values(planned.map(t => ({
+      id: t.id,
+      workspaceId,
+      boardId,
+      columnId: colId[t.stage],
+      number: 0,
+      title: t.title,
+      description: '',
+      assigneeId: t.assigneeId,
+      serviceClass: t.serviceClass,
+      dueDate: t.dueDate ? new Date(t.dueDate) : null,
+      expeditedAt: t.expeditedAt ? new Date(t.expeditedAt) : null,
+      position: (positions[t.stage] = (positions[t.stage] ?? -1) + 1),
+      closedAt: t.closedAt ? new Date(t.closedAt) : null,
+      storyPoints: t.points,
+      estimateDays: t.estimateDays,
+      createdAt: new Date(t.createdAt),
+      updatedAt: new Date(t.closedAt ?? NOW),
+    })))
+
+    await db.insert(taskAssignees).values(planned.map(t => ({
+      taskId: t.id, userId: t.assigneeId, workspaceId, addedBy: ownerId, addedAt: new Date(t.createdAt),
+    })))
+
+    const events: (typeof taskEvents.$inferInsert)[] = []
+    for (const t of planned) {
+      events.push({
+        workspaceId, taskId: t.id, eventType: 'task_created', fromColumnId: null, toColumnId: colId.backlog,
+        actorId: t.assigneeId, payload: { initialPosition: 0 }, createdAt: new Date(t.createdAt),
       })
-
-      for (let step = 1; step <= targetIdx; step++) {
-        const fromRole = roleOrder[step - 1]!
-        const toRole = roleOrder[step]!
-        const ts = new Date(startTs + (span * step) / (stepCount + 1) + jitterHours(0, 1) * HOUR)
-        const enteringDone = toRole === 'done'
-        const moveTs = enteringDone && t.closedAt ? t.closedAt : ts
-        eventRows.push({
+      t.stageTimes.forEach((ts, idx) => {
+        const from = STAGES[idx]!
+        const to = STAGES[idx + 1]!
+        events.push({
           workspaceId,
           taskId: t.id,
-          eventType: enteringDone ? 'task_closed' : 'task_moved',
-          fromColumnId: cols[fromRole],
-          toColumnId: cols[toRole],
+          eventType: to === 'done' ? 'task_closed' : 'task_moved',
+          fromColumnId: colId[from],
+          toColumnId: colId[to],
           actorId: t.assigneeId,
-          payload: {
-            fromPosition: 0,
-            toPosition: 0,
-            fromColumnRole: fromRole,
-            toColumnRole: toRole,
-          },
-          createdAt: moveTs,
+          payload: { fromPosition: 0, toPosition: 0, fromColumnRole: roleOf[from], toColumnRole: roleOf[to] },
+          createdAt: new Date(ts),
         })
+      })
+    }
+    await db.insert(taskEvents).values(events)
+
+    // Five closed two-week sprints behind the active one; closed tasks belong to the sprint they finished in.
+    const sprintRows: { id: string, start: number, end: number }[] = []
+    const SPRINT_DAYS = 14
+    const activeStart = workHour(NOW - 5 * DAY)
+    for (let s = 5; s >= 1; s--) {
+      const start = activeStart - s * SPRINT_DAYS * DAY
+      const end = start + SPRINT_DAYS * DAY
+      const [row] = await db.insert(sprints).values({
+        workspaceId, boardId,
+        name: `Спринт ${11 - s}`,
+        goal: '',
+        state: 'closed',
+        plannedStartAt: new Date(start), plannedEndAt: new Date(end),
+        startedAt: new Date(start), endedAt: new Date(end),
+        capacity: 34,
+      }).returning({ id: sprints.id })
+      sprintRows.push({ id: row!.id, start, end })
+    }
+    const [active] = await db.insert(sprints).values({
+      workspaceId, boardId,
+      name: 'Спринт 11 – Оплата и курьеры',
+      goal: 'Запустить рассрочку и точное время прибытия курьера, не уронив SLA доставки.',
+      state: 'active',
+      plannedStartAt: new Date(activeStart),
+      plannedEndAt: new Date(activeStart + SPRINT_DAYS * DAY),
+      startedAt: new Date(activeStart),
+      capacity: 34,
+    }).returning({ id: sprints.id })
+
+    const sprintLinks: (typeof sprintTasks.$inferInsert)[] = []
+    for (const t of planned) {
+      if (t.closedAt) {
+        const sp = sprintRows.find(s => t.closedAt! >= s.start && t.closedAt! < s.end)
+        if (sp) sprintLinks.push({ sprintId: sp.id, taskId: t.id, workspaceId, addedAt: new Date(sp.start) })
+      }
+      else if (OPEN_TASKS.find(o => o.title === t.title)?.inSprint) {
+        sprintLinks.push({ sprintId: active!.id, taskId: t.id, workspaceId, addedAt: new Date(activeStart) })
       }
     }
+    await db.insert(sprintTasks).values(sprintLinks)
 
-    await db.insert(tasks).values(taskRows)
-    await db.insert(taskAssignees).values(assigneeRows)
-    await db.insert(taskEvents).values(eventRows)
+    const byTitle = new Map(planned.map(t => [t.title, t.id]))
+    await db.insert(taskDependencies).values(DEPENDENCIES.map(([blocker, blocked]) => ({
+      blockerTaskId: byTitle.get(blocker)!,
+      blockedTaskId: byTitle.get(blocked)!,
+      workspaceId,
+      createdBy: ownerId,
+      createdAt: new Date(activeStart),
+    })))
 
-    const openTasks = seedTasks.filter((t) => t.closedAt === null)
-    const recentClosed = [...seedTasks]
-      .filter((t) => t.closedAt !== null)
-      .sort((a, b) => b.closedAt!.getTime() - a.closedAt!.getTime())
-      .slice(0, 2)
-    const sprintTaskList = [...openTasks.slice(0, 8), ...recentClosed]
-
-    const [sprint] = await db
-      .insert(sprints)
-      .values({
-        workspaceId,
-        boardId,
-        name: 'Спринт 7 — Аналитика и прогноз',
-        goal: 'Запустить CPM/PERT-прогноз спринта и Monte Carlo на странице аналитики.',
-        state: 'active',
-        plannedStartAt: new Date(NOW.getTime() - 5 * DAY),
-        plannedEndAt: new Date(NOW.getTime() + 16 * DAY),
-        startedAt: new Date(NOW.getTime() - 5 * DAY),
-        capacity: 40,
-      })
-      .returning({ id: sprints.id })
-    const sprintId = sprint!.id
-
-    await db.insert(sprintTasks).values(
-      sprintTaskList.map((t) => ({
-        sprintId,
-        taskId: t.id,
-        workspaceId,
-        addedAt: new Date(NOW.getTime() - 5 * DAY),
-      })),
-    )
-
-    const byTitle = (title: string) => openTasks.find((t) => t.title === title)!
-    const chain: [string, string][] = [
-      ['Граф зависимостей задач', 'Прогноз срока спринта (CPM/PERT)'],
-      ['Прогноз срока спринта (CPM/PERT)', 'Monte Carlo на странице аналитики'],
-      ['Граф зависимостей задач', 'Каденс пополнения бэклога'],
-    ]
-    const depRows = chain
-      .map(([blocker, blocked]) => ({ b: byTitle(blocker), d: byTitle(blocked) }))
-      .filter((r) => r.b && r.d && sprintTaskList.includes(r.b) && sprintTaskList.includes(r.d))
-      .map((r) => ({
-        blockerTaskId: r.b.id,
-        blockedTaskId: r.d.id,
-        workspaceId,
-        createdBy: owner.id,
-        createdAt: new Date(NOW.getTime() - 6 * DAY),
-      }))
-    await db.insert(taskDependencies).values(depRows)
-
-    const closedCount = seedTasks.filter((t) => t.closedAt !== null).length
     console.log('\n=== DEMO SEED COMPLETE ===')
-    console.log(`tasks:        ${seedTasks.length} (closed: ${closedCount}, open: ${openTasks.length})`)
-    console.log(`task_events:  ${eventRows.length}`)
-    console.log(`members:      ${memberIds.length} (+ owner ${ownerEmail})`)
-    console.log(`dependencies: ${depRows.length}`)
-    console.log(`sprint tasks: ${sprintTaskList.length}`)
-    console.log(`workspaceId:  ${workspaceId}`)
-    console.log(`boardId:      ${boardId}`)
-    console.log(`sprintId:     ${sprintId}`)
-    console.log(`\nLog in as ${ownerEmail} and open the Demo Flow board → Аналитика / Спринты.`)
-  } finally {
+    console.log(`workspace: Платформа доставки (/${WORKSPACE_SLUG}), board «Продукт» key ДОС`)
+    console.log(`tasks: ${planned.length} (closed ${CLOSED_TITLES.length}, open ${OPEN_TASKS.length}), events: ${events.length}`)
+    console.log(`team: ${team.length}, sprints: ${sprintRows.length} closed + 1 active, dependencies: ${DEPENDENCIES.length}`)
+    console.log(`login: ${OWNER_EMAIL} (password from SEED_OWNER_PASSWORD or the local default in scripts/seed-demo.ts)`)
+    console.log(`workspaceId=${workspaceId} boardId=${boardId} sprintId=${active!.id}`)
+  }
+  finally {
     await client.end({ timeout: 5 })
   }
 }
