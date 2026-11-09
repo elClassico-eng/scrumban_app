@@ -3,6 +3,7 @@ import { ControlCenterPrefsSchema } from '#shared/validation/control-center'
 import { SidebarPrefsSchema } from '#shared/validation/sidebar'
 import { ShortcutPrefsSchema } from '#shared/validation/shortcuts'
 import { EmailPrefsSchema } from '#shared/validation/email-prefs'
+import { AppearancePrefsSchema } from '#shared/validation/appearance'
 import { updateUserProfile } from '../../services/users.service'
 import { requireAuth } from '../../utils/auth'
 import { toHttpError } from '../../utils/errors'
@@ -31,6 +32,7 @@ const BodySchema = z
     sidebarPrefs: SidebarPrefsSchema.optional(),
     shortcutPrefs: ShortcutPrefsSchema.optional(),
     emailPrefs: EmailPrefsSchema.optional(),
+    appearancePrefs: AppearancePrefsSchema.optional(),
     timeZone: z.string().max(64).refine(isTimeZone, 'Неизвестный часовой пояс').optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
@@ -64,6 +66,7 @@ export default defineEventHandler(async (event) => {
         shortcutPrefs: user.shortcutPrefs ?? {},
         emailPrefs: user.emailPrefs,
         timeZone: user.timeZone,
+        appearancePrefs: user.appearancePrefs ?? {},
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

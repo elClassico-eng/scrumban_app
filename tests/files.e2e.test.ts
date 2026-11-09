@@ -217,6 +217,34 @@ describe('serving', () => {
     expect((await follow(stranger, ticket.body.file.url)).status).toBe(404)
   })
 
+  it('a background is private to its owner and lands in appearance prefs', async () => {
+    const a = await registerUser('bg')
+    const b = await registerUser('bgm')
+    const wsId = await workspaceOf(a)
+    await addMember(a, wsId, b.email, 'member')
+    const ticket = await fetchWithJar<Ticket>(a.jar, '/api/users/me/background', { method: 'POST', body: { name: 'bg.webp', contentType: 'image/webp', size: 4 } })
+    expect(ticket.status).toBe(200)
+    await uploadTo(ticket.body.uploadUrl, 'webp', 'image/webp')
+    expect((await fetchWithJar(a.jar, `/api/users/me/background/${ticket.body.file.id}/complete`, { method: 'POST' })).status).toBe(200)
+
+    const me = await fetchWithJar<{ user: { appearancePrefs: { background?: { kind: string, url?: string } } } }>(a.jar, '/api/users/me')
+    expect(me.body.user.appearancePrefs.background).toEqual({ kind: 'file', url: ticket.body.file.url })
+    expect((await follow(a, ticket.body.file.url)).status).toBe(302)
+    expect((await follow(b, ticket.body.file.url)).status).toBe(404)
+
+    expect((await fetchWithJar(a.jar, '/api/users/me/background', { method: 'DELETE' })).status).toBe(200)
+    const after = await fetchWithJar<{ user: { appearancePrefs: { background?: { kind: string } } } }>(a.jar, '/api/users/me')
+    expect(after.body.user.appearancePrefs.background).toEqual({ kind: 'none' })
+  })
+
+  it('rejects out-of-range appearance values', async () => {
+    const a = await registerUser('ap')
+    const res = await fetchWithJar(a.jar, '/api/users/me', { method: 'PATCH', body: { appearancePrefs: { dim: 0.95 } } })
+    expect(res.status).toBe(400)
+    const ok = await fetchWithJar<{ user: { appearancePrefs: { dim: number } } }>(a.jar, '/api/users/me', { method: 'PATCH', body: { appearancePrefs: { dim: 0.5, blur: 4 } } })
+    expect(ok.body.user.appearancePrefs).toMatchObject({ dim: 0.5, blur: 4 })
+  })
+
   it('lists task files including comment files', async () => {
     const owner = await registerUser('ls')
     const wsId = await workspaceOf(owner)

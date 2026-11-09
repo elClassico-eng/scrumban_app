@@ -5,7 +5,7 @@ import { tasks } from './tasks'
 import { users } from './users'
 import { workspaces } from './workspaces'
 
-export const fileKind = pgEnum('file_kind', ['attachment', 'user_avatar', 'workspace_logo', 'board_image'])
+export const fileKind = pgEnum('file_kind', ['attachment', 'user_avatar', 'workspace_logo', 'board_image', 'user_background'])
 export const fileStatus = pgEnum('file_status', ['pending', 'staged', 'ready'])
 
 export const files = pgTable(

@@ -1,4 +1,4 @@
-export type FileKind = 'attachment' | 'user_avatar' | 'workspace_logo' | 'board_image'
+export type FileKind = 'attachment' | 'user_avatar' | 'workspace_logo' | 'board_image' | 'user_background'
 
 export type FileView = {
   id: string

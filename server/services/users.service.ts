@@ -2,6 +2,7 @@ import type { ControlCenterPrefs } from '#shared/types/control-center'
 import type { SidebarPrefs } from '#shared/types/sidebar'
 import type { ShortcutPrefs } from '#shared/types/shortcuts'
 import type { EmailPrefs } from '#shared/types/notification'
+import type { AppearancePrefs } from '#shared/types/appearance'
 // UsersService: thin business-logic layer over the users table.
 // Normalises email to lowercase for predictable lookups, and translates
 // PostgreSQL unique-violation errors into a domain ConflictError so the
@@ -77,6 +78,7 @@ export async function updateUserProfile(input: {
     shortcutPrefs?: ShortcutPrefs
     emailPrefs?: EmailPrefs
     timeZone?: string
+    appearancePrefs?: AppearancePrefs
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -95,6 +97,9 @@ export async function updateUserProfile(input: {
   if (input.patch.shortcutPrefs) set.shortcutPrefs = input.patch.shortcutPrefs
   if (input.patch.emailPrefs) set.emailPrefs = input.patch.emailPrefs
   if (input.patch.timeZone) set.timeZone = input.patch.timeZone
+  if (input.patch.appearancePrefs) {
+    set.appearancePrefs = sql`${users.appearancePrefs} || ${JSON.stringify(input.patch.appearancePrefs)}::jsonb` as unknown as AppearancePrefs
+  }
 
   const [row] = await useDB()
     .update(users)

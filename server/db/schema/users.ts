@@ -8,6 +8,7 @@ import type { ControlCenterPrefs } from '../../../shared/types/control-center'
 import type { SidebarPrefs } from '../../../shared/types/sidebar'
 import type { ShortcutPrefs } from '../../../shared/types/shortcuts'
 import type { EmailPrefs } from '../../../shared/types/notification'
+import type { AppearancePrefs } from '../../../shared/types/appearance'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -28,6 +29,7 @@ export const users = pgTable('users', {
   sidebarPrefs: jsonb('sidebar_prefs').$type<SidebarPrefs>().notNull().default({}),
   shortcutPrefs: jsonb('shortcut_prefs').$type<ShortcutPrefs>().notNull().default({}),
   emailPrefs: jsonb('email_prefs').$type<EmailPrefs>().notNull().default({ digest: true, instant: [] }),
+  appearancePrefs: jsonb('appearance_prefs').$type<AppearancePrefs>().notNull().default({}),
   timeZone: varchar('time_zone', { length: 64 }).notNull().default('Europe/Moscow'),
   digestSentAt: timestamp('digest_sent_at', { withTimezone: true }),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),

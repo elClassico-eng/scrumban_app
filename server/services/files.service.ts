@@ -128,15 +128,15 @@ export async function startUpload(input: {
   return ticketFor(row, { userId: input.userId, role: input.actorRole })
 }
 
-export async function startAvatarUpload(input: { userId: string, body: z.infer<typeof StartAvatarUploadSchema> }): Promise<UploadTicket> {
-  checkLimits('user_avatar', input.body.contentType, input.body.size)
+export async function startUserImageUpload(input: { userId: string, kind: 'user_avatar' | 'user_background', body: z.infer<typeof StartAvatarUploadSchema> }): Promise<UploadTicket> {
+  checkLimits(input.kind, input.body.contentType, input.body.size)
   const id = crypto.randomUUID()
   const row = await withUser(input.userId, async (tx) => {
-    await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, input.userId), eq(files.status, 'pending')))
+    await tx.delete(files).where(and(eq(files.kind, input.kind), eq(files.userId, input.userId), eq(files.status, 'pending')))
     const [created] = await tx.insert(files).values({
       id,
       workspaceId: null,
-      kind: 'user_avatar',
+      kind: input.kind,
       userId: input.userId,
       storageKey: storageKeyFor({ fileId: id, workspaceId: null, userId: input.userId }),
       name: sanitizeFileName(input.body.name),
@@ -156,7 +156,7 @@ export async function findFile(workspaceId: string | null, fileId: string): Prom
     return withTenant(workspaceId, tx =>
       tx.select().from(files).where(and(eq(files.id, fileId), eq(files.workspaceId, workspaceId))).then(r => r[0]))
   }
-  return useDB().select().from(files).where(and(eq(files.id, fileId), eq(files.kind, 'user_avatar'))).then(r => r[0])
+  return useDB().select().from(files).where(and(eq(files.id, fileId), inArray(files.kind, ['user_avatar', 'user_background']))).then(r => r[0])
 }
 
 function inScope<T>(row: FileRow, fn: (tx: DbTransaction) => Promise<T>): Promise<T> {
@@ -169,6 +169,12 @@ async function setOwnerImage(row: FileRow): Promise<void> {
     if (row.kind === 'user_avatar') {
       await tx.update(users).set({ avatarUrl: url }).where(eq(users.id, row.userId!))
       await tx.delete(files).where(and(eq(files.kind, 'user_avatar'), eq(files.userId, row.userId!), ne(files.id, row.id)))
+    }
+    if (row.kind === 'user_background') {
+      await tx.update(users)
+        .set({ appearancePrefs: sql`${users.appearancePrefs} || ${JSON.stringify({ background: { kind: 'file', url } })}::jsonb` })
+        .where(eq(users.id, row.userId!))
+      await tx.delete(files).where(and(eq(files.kind, 'user_background'), eq(files.userId, row.userId!), ne(files.id, row.id)))
     }
     if (row.kind === 'workspace_logo') {
       await tx.update(workspaces).set({ logoUrl: url }).where(eq(workspaces.id, row.workspaceId!))
@@ -230,6 +236,15 @@ export async function removeAvatar(userId: string): Promise<void> {
   })
 }
 
+export async function removeBackground(userId: string): Promise<void> {
+  await withUser(userId, async (tx) => {
+    await tx.delete(files).where(and(eq(files.kind, 'user_background'), eq(files.userId, userId)))
+    await tx.update(users)
+      .set({ appearancePrefs: sql`${users.appearancePrefs} || '{"background":{"kind":"none"}}'::jsonb` })
+      .where(eq(users.id, userId))
+  })
+}
+
 async function sharesWorkspace(viewerId: string, ownerId: string): Promise<boolean> {
   if (viewerId === ownerId) return true
   const [mine, theirs] = await Promise.all([listWorkspacesForUser(viewerId), listWorkspacesForUser(ownerId)])
@@ -249,6 +264,7 @@ export async function resolveFileRedirect(input: {
   if (!row || row.status === 'pending') throw new NotFoundError('Файл не найден')
   if (row.status === 'staged' && row.uploadedBy !== input.userId) throw new NotFoundError('Файл не найден')
   if (row.kind === 'user_avatar' && !(await sharesWorkspace(input.userId, row.userId!))) throw new NotFoundError('Файл не найден')
+  if (row.kind === 'user_background' && row.userId !== input.userId) throw new NotFoundError('Файл не найден')
   const useThumb = input.thumb && !!row.thumbKey
   const contentType = useThumb ? THUMB_TYPE : row.contentType
   const windowSec = row.kind !== 'attachment' || useThumb ? IMAGE_WINDOW_SEC : ATTACHMENT_WINDOW_SEC

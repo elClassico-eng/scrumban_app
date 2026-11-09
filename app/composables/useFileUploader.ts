@@ -6,6 +6,7 @@ export type UploadTarget =
   | { kind: 'workspace_logo', workspaceId: string }
   | { kind: 'board_image', workspaceId: string, boardId: string }
   | { kind: 'user_avatar' }
+  | { kind: 'user_background' }
 
 export type UploadItem = {
   id: string
@@ -71,9 +72,12 @@ export function useFileUploader() {
         width: face?.width ?? thumb?.width,
         height: face?.height ?? thumb?.height,
       }
-      const ticket = target.kind === 'user_avatar'
-        ? await $fetch<UploadTicket>(apiRoutes.avatar, { method: 'POST', body: meta })
-        : await $fetch<UploadTicket>(apiRoutes.files(target.workspaceId), {
+      const base = 'workspaceId' in target
+        ? apiRoutes.files(target.workspaceId)
+        : target.kind === 'user_avatar' ? apiRoutes.avatar : apiRoutes.background
+      const ticket = !('workspaceId' in target)
+        ? await $fetch<UploadTicket>(base, { method: 'POST', body: meta })
+        : await $fetch<UploadTicket>(base, {
             method: 'POST',
             body: {
               ...meta,
@@ -84,9 +88,7 @@ export function useFileUploader() {
           })
       await put(ticket.uploadUrl, body, contentType, p => patch(id, { progress: p }))
       if (ticket.thumbUploadUrl && thumb) await put(ticket.thumbUploadUrl, thumb.blob, 'image/webp', () => {})
-      const completeUrl = target.kind === 'user_avatar'
-        ? `${apiRoutes.avatar}/${ticket.file.id}/complete`
-        : `${apiRoutes.files(target.workspaceId)}/${ticket.file.id}/complete`
+      const completeUrl = `${base}/${ticket.file.id}/complete`
       const done = await $fetch<{ file: FileView }>(completeUrl, { method: 'POST' })
       patch(id, { status: 'done', progress: 1, file: done.file })
       return done.file

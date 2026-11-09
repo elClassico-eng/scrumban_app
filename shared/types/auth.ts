@@ -2,6 +2,7 @@ import type { ControlCenterPrefs } from './control-center'
 import type { SidebarPrefs } from './sidebar'
 import type { ShortcutPrefs } from './shortcuts'
 import type { EmailPrefs } from './notification'
+import type { AppearancePrefs } from './appearance'
 
 declare module '#auth-utils' {
   interface User {
@@ -61,6 +62,7 @@ export interface UserProfile {
   shortcutPrefs: ShortcutPrefs
   emailPrefs: EmailPrefs
   timeZone: string
+  appearancePrefs: AppearancePrefs
   changelogSeenAt: string | null
   emailVerifiedAt: string | null
   createdAt: string
@@ -78,6 +80,7 @@ export interface UpdateUserProfileInput {
   shortcutPrefs?: ShortcutPrefs
   emailPrefs?: EmailPrefs
   timeZone?: string
+  appearancePrefs?: AppearancePrefs
   dismissedHints?: string[]
   firstName?: string | null
   lastName?: string | null

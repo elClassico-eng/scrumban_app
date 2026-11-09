@@ -428,6 +428,13 @@
       "when": 1794196951230,
       "tag": "0060_user_time_zone",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1794197412879,
+      "tag": "0061_user_background",
+      "breakpoints": true
     }
   ]
 }
