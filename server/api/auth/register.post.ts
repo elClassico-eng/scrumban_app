@@ -1,5 +1,6 @@
-// POST /api/auth/register — atomically creates user + first workspace +
-// owner-membership in one DB transaction, then starts a session. Failure
+// POST /api/auth/register — atomically creates the user (and, when the
+// caller sends one, a first workspace with owner-membership) in one DB
+// transaction, then starts a session. Failure
 // anywhere rolls everything back so no orphan users are left behind.
 // Verification email is best-effort after commit.
 import { createSession } from '../../services/user-sessions.service'
@@ -27,7 +28,7 @@ const RegisterSchema = z.object({
     description: z.string().trim().max(2000).optional(),
     purpose: z.string().trim().max(2000).optional(),
     industry: z.string().trim().max(100).optional(),
-  }),
+  }).optional(),
 })
 
 export default defineEventHandler(async (event) => {
@@ -44,14 +45,16 @@ export default defineEventHandler(async (event) => {
         lastName: body.lastName,
         middleName: body.middleName,
       })
-      const ws = await createWorkspaceInTx(tx, {
-        name: body.workspace.name,
-        slug: body.workspace.slug,
-        ownerId: created.id,
-        description: body.workspace.description,
-        purpose: body.workspace.purpose,
-        industry: body.workspace.industry,
-      })
+      const ws = body.workspace
+        ? await createWorkspaceInTx(tx, {
+            name: body.workspace.name,
+            slug: body.workspace.slug,
+            ownerId: created.id,
+            description: body.workspace.description,
+            purpose: body.workspace.purpose,
+            industry: body.workspace.industry,
+          })
+        : null
       return { user: created, workspace: ws }
     })
 
@@ -72,7 +75,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       user: { id: user.id, email: user.email },
-      workspace: { id: workspace.id, slug: workspace.slug },
+      workspace: workspace ? { id: workspace.id, slug: workspace.slug } : null,
     }
   }
   catch (err) {

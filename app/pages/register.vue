@@ -6,7 +6,9 @@ import { apiRoutes, pageRoutes } from '~/routing'
 definePageMeta({ layout: 'auth', colorMode: 'light', cardMaxWidth: 'lg:max-w-xl' })
 useHead({ title: 'Регистрация – Такт' })
 
-type Step = 1 | 2 | 3
+const route = useRoute()
+
+type Step = 1 | 2
 const step = ref<Step>(1)
 
 const personalSchema = z.object({
@@ -26,18 +28,8 @@ const credentialsSchema = z
     path: ['confirmPassword'],
   })
 
-const teamSchema = z.object({
-  name: z.string().trim().min(1, 'Введите название команды').max(255),
-  slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
-    .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
-  industry: z.string().trim().max(100).optional(),
-  description: z.string().trim().max(2000).optional(),
-  purpose: z.string().trim().max(2000).optional(),
-})
-
 type PersonalState = z.infer<typeof personalSchema>
 type CredentialsState = z.infer<typeof credentialsSchema>
-type TeamState = z.infer<typeof teamSchema>
 
 const personalState = reactive<PersonalState>({
   firstName: '',
@@ -49,19 +41,6 @@ const credentialsState = reactive<CredentialsState>({
   email: '',
   password: '',
   confirmPassword: '',
-})
-
-const teamState = reactive<TeamState>({
-  name: '',
-  slug: '',
-  industry: '',
-  description: '',
-  purpose: '',
-})
-
-const slugTouched = ref(false)
-watch(() => teamState.name, (name) => {
-  if (!slugTouched.value) teamState.slug = slugify(name)
 })
 
 const submitting = ref(false)
@@ -77,34 +56,22 @@ function goToCredentials() {
   step.value = 2
 }
 
-function goToTeam() {
-  const parsed = credentialsSchema.safeParse(credentialsState)
-  if (!parsed.success) {
-    submitError.value = parsed.error.issues[0]?.message ?? 'Заполните все поля'
-    return
-  }
-  submitError.value = null
-  step.value = 3
-}
-
 function back() {
   submitError.value = null
-  if (step.value === 3) step.value = 2
-  else if (step.value === 2) step.value = 1
+  step.value = 1
 }
 
 provideAuthStepper({
   step,
-  total: 3,
+  total: 2,
   next: () => {
     if (step.value === 1) goToCredentials()
-    else if (step.value === 2) goToTeam()
   },
   prev: back,
 })
 
-async function finishOnboarding() {
-  const parsed = teamSchema.safeParse(teamState)
+async function createAccount() {
+  const parsed = credentialsSchema.safeParse(credentialsState)
   if (!parsed.success) {
     submitError.value = parsed.error.issues[0]?.message ?? 'Заполните все поля'
     return
@@ -121,16 +88,9 @@ async function finishOnboarding() {
         firstName: personalState.firstName,
         lastName: personalState.lastName,
         middleName: personalState.middleName || undefined,
-        workspace: {
-          name: teamState.name,
-          slug: teamState.slug,
-          industry: teamState.industry || undefined,
-          description: teamState.description || undefined,
-          purpose: teamState.purpose || undefined,
-        },
       },
     })
-    const nextParam = (useRoute().query.next as string | undefined) ?? ''
+    const nextParam = (route.query.next as string | undefined) ?? ''
     const isSafeNext = nextParam.startsWith('/') && !nextParam.startsWith('//') && !nextParam.includes('://')
     window.location.href = isSafeNext ? nextParam : pageRoutes.workspaces
   }
@@ -146,11 +106,11 @@ async function finishOnboarding() {
     <TaktLoader v-if="submitting" label="Создаём аккаунт…" />
     <div class="space-y-3">
       <p class="text-[11px] uppercase tracking-[0.18em] text-muted font-medium">
-        Шаг {{ step }} из 3
+        Шаг {{ step }} из 2
       </p>
       <div class="flex items-center gap-1.5">
         <div
-          v-for="i in 3"
+          v-for="i in 2"
           :key="i"
           class="h-1 flex-1 rounded-full transition-colors"
           :class="step >= i ? 'bg-primary' : 'bg-default/40'"
@@ -203,11 +163,11 @@ async function finishOnboarding() {
     </UForm>
 
     <UForm
-      v-else-if="step === 2"
+      v-else
       :state="credentialsState"
       :schema="credentialsSchema"
       class="space-y-6"
-      @submit.prevent="goToTeam"
+      @submit.prevent="createAccount"
     >
       <div class="space-y-2">
         <h1 class="text-3xl font-bold tracking-tight">Учётные данные</h1>
@@ -238,75 +198,8 @@ async function finishOnboarding() {
         <UButton type="button" variant="ghost" color="neutral" size="xl" @click="back">
           Назад
         </UButton>
-        <UButton type="submit" block size="xl" class="font-semibold">
-          Дальше
-        </UButton>
-      </div>
-    </UForm>
-
-    <UForm
-      v-else-if="step === 3"
-      :state="teamState"
-      :schema="teamSchema"
-      class="space-y-6"
-      @submit.prevent="finishOnboarding"
-    >
-      <div class="space-y-2">
-        <h1 class="text-3xl font-bold tracking-tight">О команде</h1>
-        <p class="text-sm text-muted leading-relaxed">
-          Создадим workspace, в котором будет работать команда.
-        </p>
-      </div>
-      <div class="space-y-4">
-        <UFormField label="Название команды" name="name" required>
-          <UInput v-model="teamState.name" size="lg" class="w-full" autofocus />
-        </UFormField>
-        <UFormField
-          label="Slug"
-          name="slug"
-          hint="URL-идентификатор: латиница, цифры и дефисы"
-          required
-        >
-          <UInput
-            v-model="teamState.slug"
-            size="lg"
-            class="w-full"
-            @update:model-value="slugTouched = true"
-          />
-        </UFormField>
-        <UFormField label="Индустрия" name="industry">
-          <UInput v-model="teamState.industry" size="lg" class="w-full" placeholder="IT, агентство, промышленность..." />
-        </UFormField>
-        <UFormField label="Чем занимается команда" name="description">
-          <UTextarea
-            v-model="teamState.description"
-            :rows="2"
-            class="w-full"
-            placeholder="Кратко опишите специализацию"
-          />
-        </UFormField>
-        <UFormField label="Для чего планируете использовать" name="purpose">
-          <UTextarea
-            v-model="teamState.purpose"
-            :rows="2"
-            class="w-full"
-            placeholder="Например: трекинг задач + аналитика flow"
-          />
-        </UFormField>
-      </div>
-      <UAlert
-        v-if="submitError"
-        color="error"
-        variant="soft"
-        :title="submitError"
-        icon="i-hugeicons-alert-circle"
-      />
-      <div class="flex gap-3 pt-2">
-        <UButton type="button" variant="ghost" color="neutral" size="xl" @click="back">
-          Назад
-        </UButton>
         <UButton type="submit" :loading="submitting" block size="xl" class="font-semibold">
-          Готово
+          Создать аккаунт
         </UButton>
       </div>
     </UForm>
