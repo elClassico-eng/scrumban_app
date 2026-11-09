@@ -442,6 +442,13 @@
       "when": 1794198288230,
       "tag": "0062_user_start_page",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1794200463595,
+      "tag": "0063_workspace_board_defaults",
+      "breakpoints": true
     }
   ]
 }

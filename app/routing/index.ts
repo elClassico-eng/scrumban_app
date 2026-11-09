@@ -17,6 +17,7 @@ export const apiRoutes = {
   usersMeSessions: '/api/users/me/sessions',
   usersMePachca: '/api/users/me/pachca',
   usersMeDeletionPreview: '/api/users/me/deletion-preview',
+  boardDefaults: (wsId: string) => `/api/workspaces/${wsId}/board-defaults`,
   usersMeSession: (sid: string) => `/api/users/me/sessions/${sid}`,
   usersDismissHint: '/api/users/me/dismiss-hint',
   usersChangelogSeen: '/api/users/me/changelog-seen',

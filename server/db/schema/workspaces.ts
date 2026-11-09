@@ -4,7 +4,9 @@
 // workspace_members is the many-to-many join with users; it also stores
 // the user's role within that specific workspace (so the same person can
 // be Owner of one workspace and Viewer of another).
+import type { BoardDefaults } from '../../../shared/types/board-defaults'
 import {
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -32,6 +34,7 @@ export const workspaces = pgTable('workspaces', {
   industry: varchar('industry', { length: 100 }),
   logoUrl: text('logo_url'),
   cardStyle: workspaceCardStyle('card_style').notNull().default('cover'),
+  boardDefaults: jsonb('board_defaults').$type<BoardDefaults>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
