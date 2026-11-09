@@ -3,6 +3,7 @@ useNotificationsSse()
 const { hint } = useGlobalShortcuts()
 const { frame } = useSidebarPrefs()
 useAppearanceSync()
+useTimeZoneSync()
 </script>
 
 <template>

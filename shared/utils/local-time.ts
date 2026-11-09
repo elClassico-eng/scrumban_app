@@ -25,3 +25,9 @@ export function dueBucket(dueDate: Date, now: Date, timeZone: string): { kind: '
   if (dueDay < today) return { kind: 'overdue', days: (Date.parse(today) - Date.parse(dueDay)) / DAY_MS }
   return null
 }
+
+export const DEFAULT_TIME_ZONE = 'Europe/Moscow'
+
+export function shouldSyncZone(input: { userZone: string, browserZone: string | undefined, synced: boolean }): boolean {
+  return !input.synced && input.userZone === DEFAULT_TIME_ZONE && !!input.browserZone && input.browserZone !== input.userZone
+}

@@ -77,25 +77,12 @@ function setPachca(type: InstantNotificationType, on: boolean) {
   savePachca(toggled(matrix.value.pachca, type, on))
 }
 
-const TZ_SYNCED_KEY = 'scrumban:tz-synced'
 const HOURS = Array.from({ length: 24 }, (_, h) => ({ label: `${String(h).padStart(2, '0')}:00`, value: h }))
 const timeZones = Intl.supportedValuesOf('timeZone').map(tz => ({ label: tz.replaceAll('_', ' '), value: tz }))
 const timeZone = computed(() => me.data.value?.user.timeZone ?? 'Europe/Moscow')
 const digestHour = computed(() => emailPrefs.value.digestHour ?? DEFAULT_DIGEST_HOUR)
 const pachcaDigest = computed(() => links.value.some(l => l.digest))
 
-watch(() => me.data.value?.user.timeZone, (tz) => {
-  if (!tz) return
-  try {
-    if (localStorage.getItem(TZ_SYNCED_KEY)) return
-    localStorage.setItem(TZ_SYNCED_KEY, '1')
-    const browser = Intl.DateTimeFormat().resolvedOptions().timeZone
-    if (tz === 'Europe/Moscow' && browser && browser !== tz) saveProfile({ timeZone: browser })
-  }
-  catch {
-    // Storage blocked: skip the one-off sync, the user can pick the zone by hand.
-  }
-}, { immediate: true })
 
 function pachcaValue(type: InstantNotificationType): boolean | 'indeterminate' {
   const state = pachcaCellState(links.value, type)

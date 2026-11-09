@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dueBucket, isDigestDue, localParts } from '#shared/utils/local-time'
+import { dueBucket, isDigestDue, localParts, shouldSyncZone } from '#shared/utils/local-time'
 
 const at = (iso: string) => new Date(iso)
 
@@ -44,5 +44,17 @@ describe('dueBucket reads the due date as a calendar day and "today" in the zone
 
   it('future tasks are not in the digest', () => {
     expect(dueBucket(due('2026-11-12'), at('2026-11-09T06:05:00Z'), 'Europe/Moscow')).toBeNull()
+  })
+})
+
+describe('shouldSyncZone', () => {
+  it('adopts the browser zone once while the default is still set', () => {
+    expect(shouldSyncZone({ userZone: 'Europe/Moscow', browserZone: 'Pacific/Honolulu', synced: false })).toBe(true)
+  })
+
+  it('leaves a zone the user picked and never repeats', () => {
+    expect(shouldSyncZone({ userZone: 'Asia/Tokyo', browserZone: 'Pacific/Honolulu', synced: false })).toBe(false)
+    expect(shouldSyncZone({ userZone: 'Europe/Moscow', browserZone: 'Pacific/Honolulu', synced: true })).toBe(false)
+    expect(shouldSyncZone({ userZone: 'Europe/Moscow', browserZone: 'Europe/Moscow', synced: false })).toBe(false)
   })
 })
