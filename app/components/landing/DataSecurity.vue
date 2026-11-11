@@ -20,7 +20,7 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
         title="Данные команды видит только команда"
         lead="Что Такт хранит о вас и вашей команде, чего не хранит и как это защищено."
       />
-      <div class="ledger reveal">
+      <div class="ledger reveal" data-header-dark>
         <div>
           <h3>Хранится</h3>
           <div v-for="d in DATA_STORED" :key="d.what" class="ledger__row">

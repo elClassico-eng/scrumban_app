@@ -78,5 +78,7 @@ import { STEPS } from '~/utils/landing-content'
 
 @media (max-width: 900px) {
   .how { grid-template-columns: 1fr; }
+  .how__card { text-align: center; }
+  .how__illo { display: flex; justify-content: center; }
 }
 </style>

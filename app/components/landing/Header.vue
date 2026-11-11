@@ -78,7 +78,7 @@ onBeforeUnmount(() => io?.disconnect())
   pointer-events: none;
 }
 .lhdr::before { transition: background 0.3s; }
-.lhdr--dark::before { background: linear-gradient(rgba(10, 10, 10, 0.5), rgba(10, 10, 10, 0)); }
+.lhdr--dark::before { background: none; }
 .lhdr--dark .lhdr__in { color: #fff; }
 .lhdr--dark .lhdr__mark { color: #fff; }
 .lhdr--dark .lhdr__links a:hover { background: rgba(255, 255, 255, 0.12); }
@@ -113,6 +113,9 @@ onBeforeUnmount(() => io?.disconnect())
 .lhdr__sheet { display: none; }
 
 @media (max-width: 900px) {
+  /* No blur on phones: a plain solid bar is cheaper and always readable. */
+  .lhdr::before { inset: 0; background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; mask-image: none; -webkit-mask-image: none; }
+  .lhdr--dark::before { background: var(--ink); }
   .lhdr__links, .lhdr__right { display: none; }
   .lhdr__burger { display: block; }
   .lhdr__sheet {

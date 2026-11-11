@@ -55,6 +55,7 @@ onMounted(() => {
 }
 @media (max-width: 640px) {
   .bento { grid-template-columns: 1fr; }
+  .bento__small { display: flex; flex-direction: column; align-items: center; text-align: center; }
   .bento__big { grid-column: auto; }
   .bento__media { height: 200px; }
 }
