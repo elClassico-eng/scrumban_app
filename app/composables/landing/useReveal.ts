@@ -2,7 +2,6 @@ import type { Ref } from 'vue'
 
 export function useReveal(rootRef: Ref<HTMLElement | null>) {
   let io: IntersectionObserver | null = null
-  let failTimer: ReturnType<typeof setTimeout> | undefined
 
   onMounted(() => {
     const root = rootRef.value
@@ -28,12 +27,9 @@ export function useReveal(rootRef: Ref<HTMLElement | null>) {
         if (el.getBoundingClientRect().top < window.innerHeight * 0.94) el.classList.add('in')
       })
     })
-
-    failTimer = setTimeout(() => els.forEach(el => el.classList.add('in')), 1500)
   })
 
   onBeforeUnmount(() => {
     io?.disconnect()
-    if (failTimer) clearTimeout(failTimer)
   })
 }

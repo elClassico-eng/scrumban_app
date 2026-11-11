@@ -20,7 +20,7 @@ import { COMPARISON } from '~/utils/landing-content'
             <text x="440" y="182" fill="#fff">P50</text>
           </svg>
         </article>
-        <article class="card diff__table reveal">
+        <article class="diff__table reveal">
           <div class="diff__grid-table" role="table" aria-label="Обычный трекер и Такт">
             <div role="row" class="diff__head">
               <span role="columnheader" />
@@ -41,6 +41,7 @@ import { COMPARISON } from '~/utils/landing-content'
 
 <style scoped>
 .diff { display: grid; grid-template-columns: 1.05fr 1fr; gap: 16px; }
+.diff__table { padding: 12px 0 0 24px; }
 .diff__cone h3 { font-size: 30px; line-height: 1.15; }
 .diff__cone p { margin-top: 12px; }
 .diff__cone svg { width: 100%; height: auto; margin-top: 20px; }
@@ -64,6 +65,7 @@ import { COMPARISON } from '~/utils/landing-content'
 
 @media (max-width: 900px) {
   .diff { grid-template-columns: 1fr; }
+  .diff__table { padding: 0; }
 }
 @media (max-width: 520px) {
   .diff__grid-table > div { grid-template-columns: 84px 1fr 1fr; }

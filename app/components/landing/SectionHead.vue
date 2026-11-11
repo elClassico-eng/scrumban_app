@@ -9,7 +9,7 @@ defineProps<{ n: number, label: string, title?: string, lead?: string }>()
     <div class="shead__rail" aria-hidden="true" />
     <span class="shead__n"><i>такт {{ String(n).padStart(2, '0') }}</i> · {{ label }}</span>
     <div v-if="title || lead || $slots.default" class="shead__row">
-      <h2 v-if="title">{{ glueShortWords(title) }}</h2>
+      <h2 v-if="title"><LandingSplitWords :text="glueShortWords(title)" /></h2>
       <p v-if="lead" class="shead__lead muted">{{ glueShortWords(lead) }}</p>
       <slot />
     </div>

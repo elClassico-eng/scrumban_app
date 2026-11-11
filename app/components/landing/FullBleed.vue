@@ -5,8 +5,8 @@ import { FULL_BLEED } from '~/utils/landing-content'
 <template>
   <section class="bleed" :style="{ '--bleed-image': `url(${FULL_BLEED.image})` }">
     <div class="bleed__in reveal">
-      <h2>{{ FULL_BLEED.title }}</h2>
-      <p>{{ FULL_BLEED.text }}</p>
+      <h2><LandingSplitWords :text="FULL_BLEED.title" /></h2>
+      <p><LandingSplitWords :text="FULL_BLEED.text" :start="3" /></p>
       <a v-if="FULL_BLEED.cta" class="btn btn--lg bleed__cta" :href="FULL_BLEED.cta.to">{{ FULL_BLEED.cta.label }}</a>
     </div>
   </section>

@@ -90,7 +90,7 @@ async function submit() {
           <a class="btn btn--dark" href="/">На главную</a>
         </div>
 
-        <form v-else class="card fb__form" @submit.prevent="submit">
+        <form v-else class="fb__form" @submit.prevent="submit">
           <label class="fb__field">
             <span>Что нравится</span>
             <textarea v-model="form.liked" rows="5" maxlength="5000" />
@@ -174,7 +174,7 @@ async function submit() {
 .fb__field i, .fb__rating i { font-style: normal; font-weight: 400; font-size: 12.5px; margin-left: 6px; }
 .fb__field :is(input, textarea) {
   width: 100%;
-  border: 1px solid transparent;
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 13px 14px;
   font: 15px/1.5 var(--font-body);
@@ -183,17 +183,17 @@ async function submit() {
 }
 /* Fixed size instead of a resize handle; grows with the text where supported. */
 .fb__field textarea { resize: none; min-height: 140px; max-height: 360px; field-sizing: content; }
-.fb__field :is(input, textarea):focus { outline: 2px solid var(--orange); outline-offset: 0; }
+.fb__field :is(input, textarea):focus { outline: 2px solid var(--orange); outline-offset: 0; border-color: transparent; }
 .fb__rating { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 14px; font-weight: 500; }
 .fb__rating div { display: flex; gap: 8px; }
 .fb__rating button {
   width: 48px; height: 48px;
-  border: 0; border-radius: 14px;
+  border: 1px solid var(--line); border-radius: 14px;
   background: #fff; color: var(--ink);
   font: 500 16px var(--font-display);
   cursor: pointer;
 }
-.fb__rating button.on { background: var(--ink); color: #fff; }
+.fb__rating button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 .fb__rating p { font-size: 12.5px; font-weight: 400; }
 .fb__row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fb__check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
