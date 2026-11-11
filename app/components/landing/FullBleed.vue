@@ -23,12 +23,11 @@ import { FULL_BLEED } from '~/utils/landing-content'
   color: #fff;
   text-align: center;
 }
-/* The gradient image has a ~2% light frame baked in (made for the auth card), so overscan to crop it. */
 .bleed::before {
   content: "";
   position: absolute;
-  inset: -6%;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.45)), var(--bleed-image) center / cover no-repeat;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35), transparent 70%), var(--bleed-image) center / cover no-repeat #120c09;
 }
 .bleed__in { position: relative; max-width: 860px; padding: 0 var(--gut); }
 .bleed h2 { font-size: clamp(44px, 7vw, 88px); line-height: 1; max-width: none; }

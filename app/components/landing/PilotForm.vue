@@ -46,7 +46,7 @@ async function submit() {
             <li v-for="t in PILOT_TERMS" :key="t">{{ t }}</li>
           </ul>
         </article>
-        <article class="card card--soft reveal">
+        <article class="card card--warm reveal">
           <div v-if="sent" class="pilot__done">
             <h3>Спасибо! Я напишу вам в течение пары дней</h3>
             <p class="muted">Ответ придёт на {{ form.email }}.</p>

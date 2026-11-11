@@ -47,7 +47,7 @@ onMounted(() => {
 .bento__text { padding: 24px 28px 28px; }
 .bento__big h3 { font-size: 21px; margin-bottom: 6px; }
 .bento__small { padding: 24px; }
-.bento__ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--orange-soft); color: var(--orange); font-size: 22px; }
+.bento__ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: #fff; color: var(--orange); font-size: 22px; }
 .bento__small h3 { font-size: 18px; margin: 22px 0 6px; }
 .bento__small p { font-size: 14.5px; }
 

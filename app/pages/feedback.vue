@@ -72,30 +72,36 @@ async function submit() {
     <LandingHeader />
     <main class="fb">
       <div class="wrap fb__wrap">
-        <p class="fb__tag">Обратная связь</p>
-        <h1>Расскажите, как вам Такт</h1>
-        <p class="fb__lead muted">
-          Я читаю каждый отзыв. Хватит и одного поля – а если нужен ответ, оставьте почту.
-        </p>
+        <aside class="fb__intro">
+          <p class="fb__tag">Обратная связь</p>
+          <h1>Расскажите, как вам Такт</h1>
+          <p class="fb__lead muted">
+            Я читаю каждый отзыв. Хватит и одного поля – а если нужен ответ, оставьте почту.
+          </p>
+          <div class="fb__beta">
+            <b>Такт в бете</b>
+            <p>Возможны неточности: продукт постоянно дорабатывается. Если что-то сломалось или считает странно, опишите, что вы делали и что увидели, – так я быстрее найду причину.</p>
+          </div>
+        </aside>
 
-        <div v-if="sent" class="card card--soft fb__done">
+        <div v-if="sent" class="card card--warm fb__done">
           <h2>Спасибо! Прочитаю каждый отзыв</h2>
           <p class="muted">Если вы просили ответ, напишу на указанную почту.</p>
           <a class="btn btn--dark" href="/">На главную</a>
         </div>
 
-        <form v-else class="fb__form" @submit.prevent="submit">
+        <form v-else class="card fb__form" @submit.prevent="submit">
           <label class="fb__field">
             <span>Что нравится</span>
-            <textarea v-model="form.liked" rows="3" maxlength="5000" />
+            <textarea v-model="form.liked" rows="5" maxlength="5000" />
           </label>
           <label class="fb__field">
             <span>Что мешает</span>
-            <textarea v-model="form.disliked" rows="3" maxlength="5000" />
+            <textarea v-model="form.disliked" rows="5" maxlength="5000" />
           </label>
           <label class="fb__field">
             <span>Чего не хватает</span>
-            <textarea v-model="form.missing" rows="3" maxlength="5000" />
+            <textarea v-model="form.missing" rows="5" maxlength="5000" />
           </label>
 
           <fieldset class="fb__rating">
@@ -155,34 +161,39 @@ async function submit() {
 
 <style scoped>
 .fb { padding: 56px 0 24px; }
-.fb__wrap { max-width: 720px; }
+.fb__wrap { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: start; }
+.fb__intro { position: sticky; top: 120px; }
 .fb__tag { font: 11px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange); }
-.fb h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.08; margin-top: 14px; }
+.fb h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.05; margin-top: 14px; }
 .fb__lead { margin-top: 16px; font-size: 18px; }
-.fb__form { display: grid; gap: 18px; margin-top: 36px; }
+.fb__beta { margin-top: 28px; padding: 18px 20px; border-radius: 18px; background: var(--orange-soft); font-size: 14.5px; }
+.fb__beta b { display: block; margin-bottom: 4px; font-weight: 500; color: var(--orange); }
+.fb__beta p { color: var(--ink-2); }
+.fb__form { display: grid; gap: 18px; }
 .fb__field { display: grid; gap: 8px; font-size: 14px; font-weight: 500; }
 .fb__field i, .fb__rating i { font-style: normal; font-weight: 400; font-size: 12.5px; margin-left: 6px; }
 .fb__field :is(input, textarea) {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid transparent;
   border-radius: 14px;
   padding: 13px 14px;
   font: 15px/1.5 var(--font-body);
   color: var(--ink);
   background: #fff;
-  resize: vertical;
 }
-.fb__field :is(input, textarea):focus { outline: 2px solid var(--orange); outline-offset: 0; border-color: transparent; }
+/* Fixed size instead of a resize handle; grows with the text where supported. */
+.fb__field textarea { resize: none; min-height: 140px; max-height: 360px; field-sizing: content; }
+.fb__field :is(input, textarea):focus { outline: 2px solid var(--orange); outline-offset: 0; }
 .fb__rating { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 14px; font-weight: 500; }
 .fb__rating div { display: flex; gap: 8px; }
 .fb__rating button {
   width: 48px; height: 48px;
-  border: 1px solid var(--line); border-radius: 14px;
+  border: 0; border-radius: 14px;
   background: #fff; color: var(--ink);
   font: 500 16px var(--font-display);
   cursor: pointer;
 }
-.fb__rating button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.fb__rating button.on { background: var(--ink); color: #fff; }
 .fb__rating p { font-size: 12.5px; font-weight: 400; }
 .fb__row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .fb__check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
@@ -191,9 +202,13 @@ async function submit() {
 .fb__trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .fb__submit { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 13.5px; }
 .fb__error { color: #c43f00; }
-.fb__done { margin-top: 36px; display: grid; gap: 12px; justify-items: start; }
+.fb__done { display: grid; gap: 12px; justify-items: start; }
 .fb__done h2 { font-size: 26px; }
 
+@media (max-width: 900px) {
+  .fb__wrap { grid-template-columns: 1fr; gap: 32px; }
+  .fb__intro { position: static; }
+}
 @media (max-width: 640px) {
   .fb__row { grid-template-columns: 1fr; }
 }

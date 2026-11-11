@@ -95,7 +95,7 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
           <p>{{ https.text }}</p>
         </article>
 
-        <article class="sec__card sec__card--soft sec__card--wide reveal">
+        <article class="sec__card sec__card--warm sec__card--wide reveal">
           <div class="sec__top">
             <span class="sec__ico"><UIcon :name="keys.icon!" /></span>
             <span class="sec__proof mono">AES-GCM</span>
@@ -135,14 +135,13 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
   flex-direction: column;
   gap: 8px;
   padding: 26px;
-  border: 1px solid var(--line);
   border-radius: 22px;
-  background: #fff;
+  background: var(--soft);
   overflow: hidden;
 }
 .sec__card--wide { grid-column: span 2; }
-.sec__card--dark { background: var(--ink); border-color: transparent; color: #fff; }
-.sec__card--soft { background: var(--soft); border-color: transparent; }
+.sec__card--dark { background: var(--ink); color: #fff; }
+.sec__card--warm { background: var(--orange-soft); }
 .sec__card h3 { margin-top: 14px; font-size: 18px; line-height: 1.3; }
 .sec__card p { color: var(--ink-2); font-size: 14.5px; }
 .sec__card--dark p { color: rgba(255, 255, 255, 0.66); }
@@ -155,7 +154,7 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  background: var(--orange-soft);
+  background: #fff;
   color: var(--orange);
   font-size: 22px;
 }

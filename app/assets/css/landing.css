@@ -64,14 +64,14 @@
   & .btn--ghost:hover { background: var(--soft); }
   & .btn--lg { padding: 16px 28px; font-size: 15px; }
 
+  /* Borderless surfaces: soft fill by default, warm for the action card, dark for accents. */
   & .card {
-    border: 1px solid var(--line);
     border-radius: 22px;
     padding: 28px;
-    background: #fff;
+    background: var(--soft);
   }
-  & .card--soft { background: var(--soft); border-color: transparent; }
-  & .card--dark { background: var(--ink); color: #fff; border-color: transparent; }
+  & .card--warm { background: var(--orange-soft); }
+  & .card--dark { background: var(--ink); color: #fff; }
   & .card--dark .muted { color: rgba(255, 255, 255, 0.66); }
 
   & .section, & [id] { scroll-margin-top: 112px; }

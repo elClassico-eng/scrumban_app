@@ -35,5 +35,7 @@ defineProps<{ n: number, label: string, title?: string, lead?: string }>()
 .shead__n i { font-style: normal; color: var(--orange); }
 .shead__row { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap; }
 .shead__row h2 { max-width: 18ch; }
+/* Without a lead beside it the heading may use the full row. */
+.shead__row h2:only-child { max-width: none; }
 .shead__lead { font-size: 17px; max-width: 46ch; }
 </style>
