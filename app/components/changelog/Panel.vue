@@ -7,13 +7,13 @@ const workspaceStore = useWorkspaceStore()
 const workspaceId = computed(() => workspaceStore.currentId ?? null)
 const isMobile = useMediaQuery('(max-width: 767px)')
 
-const { entries, loading, markSeen, retryIfFailed } = useChangelog()
+const { entries, loading, markSeen, ensureLoaded } = useChangelog()
 const activePath = ref<string | null>(null)
 const active = computed(() => entries.value.find(e => e.path === activePath.value) ?? entries.value[0] ?? null)
 
 watch(open, (isOpen) => {
   if (!isOpen) return
-  retryIfFailed()
+  ensureLoaded()
   activePath.value = entries.value[0]?.path ?? null
   markSeen()
 })

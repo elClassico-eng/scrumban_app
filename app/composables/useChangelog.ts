@@ -19,8 +19,11 @@ export function useChangelog() {
   const entries = computed(() => data.value ?? [])
   const loading = computed(() => status.value === 'idle' || status.value === 'pending')
 
-  function retryIfFailed() {
-    if (data.value === null) refresh()
+  // Nuxt can leave this key with `[]` and status 'error' (a cancelled or failed fetch) or
+  // 'idle' (purged after its components unmounted); neither retries on its own, so the
+  // panel showed «Пока нет записей» until a reload. The changelog is never really empty.
+  function ensureLoaded() {
+    if (!entries.value.length && status.value !== 'pending') refresh()
   }
 
   const hasUnread = computed(() => {
@@ -45,7 +48,7 @@ export function useChangelog() {
     if (hasUnread.value) seenMutation.mutate()
   }
 
-  return { entries, loading, hasUnread, markSeen, retryIfFailed }
+  return { entries, loading, hasUnread, markSeen, ensureLoaded }
 }
 
 export type ChangelogEntryDoc = ReturnType<typeof useChangelog>['entries']['value'][number]
