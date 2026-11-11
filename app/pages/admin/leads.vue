@@ -62,7 +62,10 @@ useHead({ title: 'Заявки – Такт' })
           </NuxtLink>
           <h1 class="text-2xl font-semibold tracking-tight">Заявки с лендинга</h1>
         </div>
-        <span v-if="!isLoading && !error" class="text-sm text-muted font-mono tabular-nums">{{ leads.length }}</span>
+        <div class="flex items-center gap-4 text-sm">
+          <NuxtLink :to="pageRoutes.adminFeedback" class="text-muted hover:text-default">Отзывы</NuxtLink>
+          <span v-if="!isLoading && !error" class="text-muted font-mono tabular-nums">{{ leads.length }}</span>
+        </div>
       </div>
 
       <div v-if="isLoading" class="h-40 grid place-items-center text-muted">

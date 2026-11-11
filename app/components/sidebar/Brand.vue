@@ -27,6 +27,15 @@ const hotkey = computed(() => describeCombo(combos.value.toggle_sidebar).keys.jo
       <TaktMark class="size-6" />
     </NuxtLink>
     <span :class="['truncate text-base font-semibold tracking-tight text-highlighted', sidebarFade(collapsed)]">Такт</span>
+    <UTooltip text="Бета: возможны неточности, Такт постоянно улучшается. Нашли проблему? Оставьте отзыв">
+      <a
+        :href="pageRoutes.feedback"
+        target="_blank"
+        rel="noopener"
+        :class="['shrink-0 rounded-md bg-accent-500/10 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-accent-600 dark:text-accent-400 transition-colors hover:bg-accent-500/20', sidebarFade(collapsed)]"
+        :tabindex="collapsed ? -1 : 0"
+      >бета</a>
+    </UTooltip>
     <button
       type="button"
       :class="['ml-auto grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg text-muted transition-colors hover:bg-elevated hover:text-highlighted', sidebarFade(collapsed)]"

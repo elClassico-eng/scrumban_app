@@ -206,6 +206,7 @@ export const apiRoutes = {
   notificationsStream: '/api/notifications/stream',
 
   adminLeads: '/api/admin/leads',
+  adminFeedback: '/api/admin/feedback',
   meConsent: '/api/users/me/consent',
   feedback: '/api/feedback',
 } as const
@@ -235,6 +236,7 @@ export const pageRoutes = {
   pachcaSettings: (id: string) => `/settings/workspaces/${id}/integrations/pachca`,
 
   adminLeads: '/admin/leads',
+  adminFeedback: '/admin/feedback',
 
   workspaces: '/workspaces',
   workspace: (id: string) => `/workspaces/${id}`,

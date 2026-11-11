@@ -5,6 +5,7 @@ import { CookieJar, fetchWithJar } from './helpers/http'
 import { TEST_URL } from './setup.global'
 
 process.env.DATABASE_URL = TEST_URL
+process.env.ADMIN_EMAILS = 'admin@example.com'
 
 await setup({ dev: true })
 
@@ -92,5 +93,32 @@ describe('POST /api/feedback', () => {
     }
     expect(statuses.slice(0, 5)).toEqual([200, 200, 200, 200, 200])
     expect(statuses[5]).toBe(429)
+  })
+})
+
+describe('GET /api/admin/feedback', () => {
+  async function signUp(email: string) {
+    const jar = new CookieJar()
+    await fetchWithJar(jar, '/api/auth/register', {
+      method: 'POST',
+      body: { email, password: 'correct horse battery 1' },
+      headers: uniqueIp(),
+    })
+    return jar
+  }
+
+  it('lists reviews newest first for the admin', async () => {
+    await postFeedback({ liked: 'Первый' })
+    await postFeedback({ disliked: 'Второй', email: 'me@example.com', wantsReply: true, consent: true, rating: 2 })
+    const res = await fetchWithJar<{ feedback: Array<Record<string, unknown>> }>(await signUp('admin@example.com'), '/api/admin/feedback')
+    expect(res.status).toBe(200)
+    expect(res.body.feedback).toHaveLength(2)
+    expect(res.body.feedback[0]).toMatchObject({ disliked: 'Второй', email: 'me@example.com', wantsReply: true, rating: 2 })
+    expect(res.body.feedback[1]).toMatchObject({ liked: 'Первый' })
+  })
+
+  it('is forbidden for regular users', async () => {
+    const res = await fetchWithJar(await signUp('user@example.com'), '/api/admin/feedback')
+    expect(res.status).toBe(403)
   })
 })
