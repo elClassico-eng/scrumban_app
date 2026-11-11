@@ -201,6 +201,7 @@ async function submit() {
 .fb__field textarea { resize: none; min-height: 180px; max-height: 360px; field-sizing: content; }
 .fb__field :is(input, textarea):focus { outline: 2px solid var(--orange); outline-offset: 0; border-color: transparent; }
 .fb__topics { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 14px; font-weight: 500; }
+.fb__topics legend, .fb__rating legend { margin-bottom: 12px; }
 .fb__topics div { display: flex; flex-wrap: wrap; gap: 8px; }
 .fb__topics button {
   display: inline-flex; align-items: center; gap: 8px;

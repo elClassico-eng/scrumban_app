@@ -3,7 +3,7 @@ import { FULL_BLEED } from '~/utils/landing-content'
 </script>
 
 <template>
-  <section class="bleed" :style="{ '--bleed-image': `url(${FULL_BLEED.image})` }">
+  <section class="bleed" data-header-dark :style="{ '--bleed-image': `url(${FULL_BLEED.image})` }">
     <div class="bleed__in reveal">
       <h2><LandingSplitWords :text="FULL_BLEED.title" /></h2>
       <p><LandingSplitWords :text="FULL_BLEED.text" :start="3" /></p>
