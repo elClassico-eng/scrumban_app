@@ -5,17 +5,24 @@ import { LANDING_NAV } from '~/utils/landing-content'
 const { start, startLabel, authenticated } = useAccessCta()
 const open = ref(false)
 
-// Over a [data-header-dark] section the header switches to light text.
-// ponytail: zone is computed from the viewport height at mount; recompute on resize if it matters.
-const HEADER_ZONE = 110
+// Over a [data-header-dark] section the header switches to light text. Only the line the
+// nav sits on counts, so a dark block merely touching the header does not flip it.
+// ponytail: the line is measured once at mount; recompute on resize if it matters.
 const overDark = ref(false)
+const navRow = ref<HTMLElement | null>(null)
 let io: IntersectionObserver | null = null
 onMounted(() => {
   const dark = document.querySelectorAll('[data-header-dark]')
-  if (!dark.length) return
+  if (!dark.length || !navRow.value) return
+  const r = navRow.value.getBoundingClientRect()
+  const y = Math.round(r.top + r.height / 2)
+  const under = new Set<Element>()
   io = new IntersectionObserver(
-    entries => entries.forEach(e => (overDark.value = e.isIntersecting)),
-    { rootMargin: `0px 0px ${HEADER_ZONE - window.innerHeight}px 0px` },
+    (entries) => {
+      entries.forEach(e => (e.isIntersecting ? under.add(e.target) : under.delete(e.target)))
+      overDark.value = under.size > 0
+    },
+    { rootMargin: `-${y}px 0px ${y + 1 - window.innerHeight}px 0px` },
   )
   dark.forEach(el => io!.observe(el))
 })
@@ -25,7 +32,7 @@ onBeforeUnmount(() => io?.disconnect())
 <template>
   <header class="lhdr" :class="{ 'lhdr--dark': overDark && !open }">
     <LandingAnnounceBar />
-    <div class="lhdr__in">
+    <div ref="navRow" class="lhdr__in">
       <a class="lhdr__logo" href="/#top" aria-label="Такт – на главную">
         <TaktMark animated class="lhdr__mark" />
         <b>Такт</b><i>*</i>
