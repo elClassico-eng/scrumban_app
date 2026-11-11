@@ -7,7 +7,7 @@ import { STEPS } from '~/utils/landing-content'
     <div class="wrap">
       <LandingSectionHead :n="2" label="как это работает" title="Прогноз из того, что вы и так делаете" />
       <div class="how">
-        <article v-for="(s, i) in STEPS" :key="s.title" class="card how__card reveal">
+        <article v-for="(s, i) in STEPS" :key="s.title" class="how__card reveal">
           <span class="how__num mono">0{{ i + 1 }}</span>
           <div class="how__illo" aria-hidden="true">
             <svg v-if="i === 0" viewBox="0 0 150 96" fill="none" stroke="#111110" stroke-width="1.5">
@@ -43,7 +43,7 @@ import { STEPS } from '~/utils/landing-content'
 </template>
 
 <style scoped>
-.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
 .how__num { font-size: 12px; color: var(--ink-3); }
 .how__illo { height: 96px; margin-top: 18px; }
 .how__illo svg { height: 100%; width: auto; overflow: visible; }

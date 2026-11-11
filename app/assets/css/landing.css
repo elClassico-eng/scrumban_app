@@ -64,11 +64,10 @@
   & .btn--ghost:hover { background: var(--soft); }
   & .btn--lg { padding: 16px 28px; font-size: 15px; }
 
-  /* Borderless surfaces: soft fill by default, warm for the action card, dark for accents. */
+  /* Plain by default (no fill, no border); warm for the action card, dark for accents. */
   & .card {
     border-radius: 22px;
     padding: 28px;
-    background: var(--soft);
   }
   & .card--warm { background: var(--orange-soft); }
   & .card--dark { background: var(--ink); color: #fff; }

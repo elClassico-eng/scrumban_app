@@ -6,10 +6,20 @@ definePageMeta({ layout: false })
 useHead({ title: 'Обратная связь – Такт' })
 useSeoMeta({ description: 'Расскажите, что нравится в Такте, что мешает и чего не хватает.' })
 
+type Topic = 'disliked' | 'missing' | 'liked'
+
+// One text field; the chosen topic decides which API field it goes to.
+const TOPICS: { key: Topic, label: string, icon: string, placeholder: string }[] = [
+  { key: 'disliked', label: 'Что-то не работает', icon: 'i-hugeicons-bug-01', placeholder: 'Что вы делали и что увидели? Например: «перетащил задачу в Ревью – она вернулась обратно»' },
+  { key: 'missing', label: 'Не хватает функции', icon: 'i-hugeicons-idea-01', placeholder: 'Чего не хватает и для какой задачи? Например: «импорт задач из Jira»' },
+  { key: 'liked', label: 'Что нравится', icon: 'i-hugeicons-favourite', placeholder: 'Что оказалось полезным для вашей команды?' },
+]
+
+const topic = ref<Topic>('disliked')
+const activeTopic = computed(() => TOPICS.find(t => t.key === topic.value)!)
+
 const form = reactive({
-  liked: '',
-  disliked: '',
-  missing: '',
+  text: '',
   rating: null as number | null,
   email: '',
   team: '',
@@ -25,7 +35,7 @@ onMounted(async () => {
   if (email && !form.email) form.email = email
 })
 
-const hasText = computed(() => !!(form.liked.trim() || form.disliked.trim() || form.missing.trim()))
+const hasText = computed(() => !!form.text.trim())
 const needsConsent = computed(() => !!(form.email.trim() || form.team.trim()))
 const canSend = computed(() =>
   hasText.value
@@ -45,9 +55,7 @@ async function submit() {
     await $fetch(apiRoutes.feedback, {
       method: 'POST',
       body: {
-        liked: form.liked,
-        disliked: form.disliked,
-        missing: form.missing,
+        [topic.value]: form.text,
         rating: form.rating ?? undefined,
         email: form.email.trim() || undefined,
         team: form.team.trim() || undefined,
@@ -76,7 +84,7 @@ async function submit() {
           <p class="fb__tag">Обратная связь</p>
           <h1>Расскажите, как вам Такт</h1>
           <p class="fb__lead muted">
-            Я читаю каждый отзыв. Хватит и одного поля – а если нужен ответ, оставьте почту.
+            Я читаю каждый отзыв. Выберите тему и опишите в паре предложений – а если нужен ответ, оставьте почту.
           </p>
           <div class="fb__beta">
             <b>Такт в бете</b>
@@ -91,17 +99,25 @@ async function submit() {
         </div>
 
         <form v-else class="fb__form" @submit.prevent="submit">
+          <fieldset class="fb__topics">
+            <legend>О чём отзыв</legend>
+            <div role="radiogroup">
+              <button
+                v-for="t in TOPICS"
+                :key="t.key"
+                type="button"
+                role="radio"
+                :aria-checked="topic === t.key"
+                :class="{ on: topic === t.key }"
+                @click="topic = t.key"
+              >
+                <UIcon :name="t.icon" />{{ t.label }}
+              </button>
+            </div>
+          </fieldset>
           <label class="fb__field">
-            <span>Что нравится</span>
-            <textarea v-model="form.liked" rows="5" maxlength="5000" />
-          </label>
-          <label class="fb__field">
-            <span>Что мешает</span>
-            <textarea v-model="form.disliked" rows="5" maxlength="5000" />
-          </label>
-          <label class="fb__field">
-            <span>Чего не хватает</span>
-            <textarea v-model="form.missing" rows="5" maxlength="5000" />
+            <span class="sr-only">Текст отзыва</span>
+            <textarea v-model="form.text" rows="6" maxlength="5000" :placeholder="activeTopic.placeholder" />
           </label>
 
           <fieldset class="fb__rating">
@@ -182,8 +198,22 @@ async function submit() {
   background: #fff;
 }
 /* Fixed size instead of a resize handle; grows with the text where supported. */
-.fb__field textarea { resize: none; min-height: 140px; max-height: 360px; field-sizing: content; }
+.fb__field textarea { resize: none; min-height: 180px; max-height: 360px; field-sizing: content; }
 .fb__field :is(input, textarea):focus { outline: 2px solid var(--orange); outline-offset: 0; border-color: transparent; }
+.fb__topics { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 14px; font-weight: 500; }
+.fb__topics div { display: flex; flex-wrap: wrap; gap: 8px; }
+.fb__topics button {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: #fff; color: var(--ink);
+  font: 500 14px var(--font-body);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.fb__topics button :deep(svg) { width: 16px; height: 16px; color: var(--orange); }
+.fb__topics button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.fb__field textarea::placeholder { color: var(--ink-3); }
 .fb__rating { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 14px; font-weight: 500; }
 .fb__rating div { display: flex; gap: 8px; }
 .fb__rating button {
