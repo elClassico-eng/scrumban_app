@@ -221,7 +221,7 @@ defineExpose({
   padding: 0 0.25rem;
   font-weight: 500;
 }
-:global(.dark) .rich-editor :deep(.mention) {
+.dark .rich-editor :deep(.mention) {
   color: var(--color-accent-400);
   background: color-mix(in oklab, var(--color-accent-500) 15%, transparent);
 }
