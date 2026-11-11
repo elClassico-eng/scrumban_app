@@ -136,12 +136,12 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
   gap: 8px;
   padding: 26px;
   border-radius: 22px;
-  background: var(--soft);
   overflow: hidden;
 }
 .sec__card--wide { grid-column: span 2; }
 .sec__card--dark { background: var(--ink); color: #fff; }
 .sec__card--warm { background: var(--orange-soft); }
+.sec__card--warm .sec__ico { background: #fff; }
 .sec__card h3 { margin-top: 14px; font-size: 18px; line-height: 1.3; }
 .sec__card p { color: var(--ink-2); font-size: 14.5px; }
 .sec__card--dark p { color: rgba(255, 255, 255, 0.66); }
@@ -154,7 +154,7 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  background: #fff;
+  background: var(--orange-soft);
   color: var(--orange);
   font-size: 22px;
 }
@@ -197,7 +197,7 @@ const CIPHER = 'b3f1·9ac0·e27d·41b8·0c9e·77fa·d4a2·5e61·c08b·19f3·aa47
 .cipher { display: flex; gap: 32px; margin-top: auto; padding-top: 16px; font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
 .cipher span { animation: sec-marquee 18s linear infinite; }
 
-.ctrl { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 16px; padding: 22px 28px; border-radius: 22px; background: var(--soft); }
+.ctrl { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 16px; padding: 22px 26px; }
 .ctrl b { font-weight: 500; }
 
 @keyframes sec-ring { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.6); opacity: 0; } }

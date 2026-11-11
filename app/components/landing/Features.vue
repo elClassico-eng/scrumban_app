@@ -29,7 +29,7 @@ onMounted(() => {
             <p class="muted">{{ f.text }}</p>
           </div>
         </article>
-        <article v-for="f in FEATURES_SMALL" :key="f.title" class="card bento__small reveal">
+        <article v-for="f in FEATURES_SMALL" :key="f.title" class="bento__small reveal">
           <span class="bento__ico"><UIcon :name="f.icon!" /></span>
           <h3>{{ f.title }}</h3>
           <p class="muted">{{ f.text }}</p>
@@ -40,14 +40,13 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.bento { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.bento__big { grid-column: span 2; border-radius: 22px; background: var(--soft); overflow: hidden; display: flex; flex-direction: column; }
-.bento__media { height: 260px; overflow: hidden; }
+.bento { display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px 24px; }
+.bento__big { grid-column: span 2; display: flex; flex-direction: column; }
+.bento__media { height: 260px; overflow: hidden; border-radius: 22px; }
 .bento__media :is(img, video) { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; }
-.bento__text { padding: 24px 28px 28px; }
+.bento__text { padding-top: 22px; }
 .bento__big h3 { font-size: 21px; margin-bottom: 6px; }
-.bento__small { padding: 24px; }
-.bento__ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: #fff; color: var(--orange); font-size: 22px; }
+.bento__ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--orange-soft); color: var(--orange); font-size: 22px; }
 .bento__small h3 { font-size: 18px; margin: 22px 0 6px; }
 .bento__small p { font-size: 14.5px; }
 
