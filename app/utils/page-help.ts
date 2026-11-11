@@ -7,6 +7,10 @@ const DOC = {
   inbox: { label: 'Входящие и мои задачи', path: '/docs/guide/inbox' },
   tasks: { label: 'Задачи: номера, наблюдение, совместная правка', path: '/docs/guide/tasks' },
   list: { label: 'Список и массовые действия', path: '/docs/guide/list' },
+  editor: { label: 'Редактор описаний и комментариев', path: '/docs/guide/editor' },
+  files: { label: 'Файлы и вложения', path: '/docs/guide/files' },
+  pachca: { label: 'Интеграция с «Пачкой»', path: '/docs/guide/pachca' },
+  settings: { label: 'Настройки аккаунта и команды', path: '/docs/guide/settings' },
   scrumban: { label: 'Scrumban: ритм плюс поток', path: '/docs/methodology/scrumban' },
   kanban: { label: 'Kanban: поток и WIP-лимиты', path: '/docs/methodology/kanban' },
   scrum: { label: 'Scrum: спринты и ритм', path: '/docs/methodology/scrum' },
@@ -58,7 +62,7 @@ const HELP: Record<string, PageHelp> = {
       'Цифры у колонки – сколько задач в ней и какой WIP-лимит.',
       'Фильтры «Срочные» и «С блокерами» помогают быстро найти, что мешает потоку.',
     ],
-    docs: [DOC.list, DOC.tasks, DOC.kanban, DOC.little, DOC.sle],
+    docs: [DOC.list, DOC.tasks, DOC.editor, DOC.files, DOC.kanban, DOC.little, DOC.sle],
   },
   'workspaces-id-boards-boardId-analytics': {
     title: 'Аналитика доски',
@@ -102,6 +106,21 @@ const HELP: Record<string, PageHelp> = {
     title: 'Участники',
     tips: ['Роль определяет, что человек может делать: от просмотра до управления воркспейсом.'],
     docs: [DOC.roles],
+  },
+  'settings-section': {
+    title: 'Настройки',
+    tips: ['Чипы сверху переключают личные настройки и настройки каждой команды, вкладки – разделы внутри.'],
+    docs: [DOC.settings],
+  },
+  'settings-workspaces-id-section': {
+    title: 'Настройки команды',
+    tips: ['Хранилище показывает, сколько места занимают файлы команды и что лежит в корзине.'],
+    docs: [DOC.settings, DOC.files, DOC.pachca],
+  },
+  'settings-workspaces-id-integrations-pachca': {
+    title: 'Интеграция с «Пачкой»',
+    tips: ['Подключение идёт по шагам: создайте бота в «Пачке» и вставьте его токен. Ленты досок настраиваются в настройках доски.'],
+    docs: [DOC.pachca],
   },
 }
 
