@@ -33,10 +33,18 @@ function shortDate(iso: string) {
     v-model:open="open"
     :fullscreen="isMobile"
     title="Что нового"
-    :ui="{ content: 'sm:max-w-5xl', body: 'p-0 sm:p-0' }"
+    :ui="{ content: 'sm:max-w-[min(1320px,94vw)]', body: 'p-0 sm:p-0' }"
   >
+    <template #title>
+      <span class="flex items-center gap-2">
+        <span class="grid size-7 place-items-center rounded-lg bg-accent-500/15 text-accent-600 dark:text-accent-400">
+          <UIcon name="i-hugeicons-sparkles" class="size-4" />
+        </span>
+        Что нового
+      </span>
+    </template>
     <template #body>
-      <div v-if="entries.length" class="grid md:h-[min(760px,82vh)] md:grid-cols-[220px_1fr]">
+      <div v-if="entries.length" class="grid md:h-[min(860px,86vh)] md:grid-cols-[240px_1fr]">
         <nav class="flex gap-1 overflow-x-auto border-b border-default p-2 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r" aria-label="Релизы и обновления">
           <button
             v-for="e in entries"
