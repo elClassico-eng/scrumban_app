@@ -175,10 +175,12 @@ export const ROADMAP: RoadmapItem[] = [
   },
   {
     id: 'release',
-    title: 'Выпуск 0.2 в прод',
-    text: 'Слияние релизной ветки, тег, деплой на Yandex Cloud после возобновления хостинга.',
-    status: 'now',
+    title: 'Релизы в прод',
+    text: 'Релизная ветка, тег и деплой: с версии 0.2 каждый выпуск выходит этим путём вместе с документацией и записью в журнале изменений.',
+    status: 'done',
     area: 'platform',
+    release: '0.2',
+    docs: '/docs/project/changelog',
   },
   {
     id: 'pilots-foundation',

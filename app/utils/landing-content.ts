@@ -128,7 +128,7 @@ export const PILOT_TERMS: string[] = [
 
 export const FULL_BLEED: { title: string, text: string, image: string, cta?: { label: string, to: string } } = {
   title: 'Ритм важнее скорости',
-  text: 'Команда, которая работает ровно, предсказуемее команды, которая работает быстро. Такт делает этот ритм видимым.',
+  text: 'Сроки срывает не медленная команда, а работа рывками и очереди. Такт показывает, где сбивается поток, и по его ритму считает, когда всё будет готово.',
   // Unsplash License (free, no attribution required): https://unsplash.com/photos/background-pattern-px-d44bbe7o
   image: '/landing/rhythm.webp',
 }

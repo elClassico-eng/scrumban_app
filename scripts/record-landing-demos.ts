@@ -217,12 +217,20 @@ const CHANGELOG_SCENES: Record<string, Scene> = {
     }
   },
 
-  async site(page) {
-    await page.goto(`${BASE}/?about=1`)
-    await pause(page, 3200)
-    await page.mouse.move(720, 450)
-    await smoothScroll(page, 2400, 60)
+  async feedback(page) {
+    await page.goto(`${BASE}/feedback`)
+    await pause(page, 1800)
+    await page.getByRole('radio', { name: 'Не хватает функции' }).click()
     await pause(page, 1200)
+    await page.getByRole('radio', { name: 'Что-то не работает' }).click()
+    await pause(page, 600)
+    await page.locator('textarea').click()
+    await page.keyboard.type('Перетащил задачу в «Ревью», а после обновления она вернулась в «В работе».', { delay: 40 })
+    await pause(page, 700)
+    await page.getByRole('button', { name: '4', exact: true }).click()
+    await pause(page, 900)
+    await page.getByRole('button', { name: 'Отправить отзыв' }).hover()
+    await pause(page, 1500)
   },
 }
 
