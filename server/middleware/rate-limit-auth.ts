@@ -12,6 +12,9 @@ const TARGET_PATHS = new Set([
   '/api/leads',
   '/api/feedback',
 ])
+// Public forms: the email is optional and chosen by the sender, so keying on it
+// would hand out a fresh bucket per request. These are limited per address only.
+const IP_ONLY_PATHS = new Set(['/api/leads', '/api/feedback'])
 const buckets = new Map<string, Bucket>()
 
 function getClientIp(event: H3Event): string {
@@ -52,7 +55,7 @@ export default defineEventHandler(async (event) => {
     // malformed body — fall through, key on IP only
   }
 
-  const key = `${path}::${ip}::${email}`
+  const key = IP_ONLY_PATHS.has(path) ? `${path}::${ip}` : `${path}::${ip}::${email}`
   const now = Date.now()
   sweepExpired(now)
 

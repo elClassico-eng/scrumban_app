@@ -94,6 +94,17 @@ describe('POST /api/feedback', () => {
     expect(statuses.slice(0, 5)).toEqual([200, 200, 200, 200, 200])
     expect(statuses[5]).toBe(429)
   })
+
+  it('keeps the limit when the sender changes the email on every request', async () => {
+    const headers = uniqueIp()
+    const statuses: number[] = []
+    for (let i = 0; i < 6; i++) {
+      const res = await postFeedback({ liked: `Отзыв ${i}`, email: `spam${i}@example.com`, consent: true }, new CookieJar(), headers)
+      statuses.push(res.status)
+    }
+    expect(statuses.slice(0, 5)).toEqual([200, 200, 200, 200, 200])
+    expect(statuses[5]).toBe(429)
+  })
 })
 
 describe('GET /api/admin/feedback', () => {
