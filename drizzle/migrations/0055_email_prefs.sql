@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "email_prefs" jsonb DEFAULT '{"digest":true,"instant":[]}'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "digest_sent_at" timestamp with time zone;

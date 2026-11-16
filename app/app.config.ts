@@ -47,7 +47,7 @@ export default defineAppConfig({
     colors: {
       primary: 'brand',
       secondary: 'violet',
-      neutral: 'slate',
+      neutral: 'zinc',
       success: 'emerald',
       info: 'sky',
       warning: 'amber',

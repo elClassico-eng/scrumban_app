@@ -35,6 +35,7 @@ export interface TaskCommentResponse {
 export interface CreateTaskCommentInput {
   body: string
   parentId?: string
+  fileIds?: string[]
 }
 
 export interface UpdateTaskCommentInput {

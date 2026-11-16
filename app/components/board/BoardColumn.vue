@@ -204,7 +204,7 @@ const wipBarState = computed(() => {
 
 <template>
   <div
-    class="w-[312px] shrink-0 rounded-xl flex flex-col max-h-full"
+    class="group w-[312px] shrink-0 rounded-xl flex flex-col max-h-full"
     :class="tint ? 'column-tinted' : 'bg-elevated/70'"
     :style="{ '--column-color': hex }"
   >
@@ -213,8 +213,8 @@ const wipBarState = computed(() => {
         <UIcon
           v-if="canManage"
           name="i-hugeicons-grip-vertical"
-          class="column-drag-handle size-3.5 text-dimmed hover:text-default cursor-grab active:cursor-grabbing shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Перетащи, чтобы переставить колонку"
+          class="column-drag-handle size-4 text-dimmed hover:text-default cursor-grab active:cursor-grabbing shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
+          title="Перетащите, чтобы переставить колонку"
         />
         <span class="size-2.5 rounded-full shrink-0" :style="{ background: hex }" />
         <input

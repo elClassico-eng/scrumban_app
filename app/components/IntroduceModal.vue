@@ -21,8 +21,8 @@ watchEffect(() => {
 })
 
 const schema = z.object({
-  firstName: z.string().trim().min(1, 'Введи имя').max(100),
-  lastName: z.string().trim().min(1, 'Введи фамилию').max(100),
+  firstName: z.string().trim().min(1, 'Введите имя').max(100),
+  lastName: z.string().trim().min(1, 'Введите фамилию').max(100),
 })
 type State = z.infer<typeof schema>
 const state = reactive<State>({ firstName: '', lastName: '' })

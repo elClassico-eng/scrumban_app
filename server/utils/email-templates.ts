@@ -114,7 +114,7 @@ ${opts.acceptUrl}
   return { subject, html, text }
 }
 
-function baseTemplate(opts: { preheader: string, body: string }): string {
+export function baseTemplate(opts: { preheader: string, body: string }): string {
   return `<!doctype html>
 <html lang="ru">
 <head>
@@ -144,7 +144,7 @@ function baseTemplate(opts: { preheader: string, body: string }): string {
 </html>`
 }
 
-function ctaButton(label: string, href: string): string {
+export function ctaButton(label: string, href: string): string {
   return `<a href="${escapeHtml(href)}"
     style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;
     padding:12px 24px;border-radius:10px;font-weight:600;font-size:15px;">
@@ -152,7 +152,7 @@ function ctaButton(label: string, href: string): string {
   </a>`
 }
 
-function escapeHtml(s: string): string {
+export function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

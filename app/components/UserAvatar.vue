@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DisplayNameSource } from '~/utils/display-name'
+import type { DisplayNameSource } from '#shared/utils/display-name'
 
 interface AvatarUser extends DisplayNameSource {
   avatarUrl?: string | null

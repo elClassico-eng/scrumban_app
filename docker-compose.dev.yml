@@ -36,5 +36,20 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"
 
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: scrumban-minio-dev
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: takt
+      MINIO_ROOT_PASSWORD: takt-dev-secret
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:3000
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
 volumes:
   postgres_dev_data:
+  minio-data:

@@ -2,7 +2,7 @@
 import { useQueryClient } from '@tanstack/vue-query'
 import type { MaybeRef } from 'vue'
 import type { TaskComment, TaskCommentListResponse } from '#shared/types/comment'
-import type { MemberView } from '#shared/types/workspace'
+import type { FileView } from '#shared/types/files'
 
 const props = defineProps<{
   workspaceId: MaybeRef<string>
@@ -26,6 +26,47 @@ const myRole = computed(() =>
 const isAdmin = computed(() => hasRole(myRole.value, 'admin'))
 const isLead = computed(() => hasRole(myRole.value, 'scrum_master'))
 const canWrite = computed(() => hasRole(myRole.value, 'member'))
+
+const taskFiles = useTaskFilesApi(props.workspaceId, props.boardId, props.taskId)
+const filesByComment = computed(() => {
+  const bodies = new Map(comments.value.map(c => [c.id, c.body]))
+  const map: Record<string, FileView[]> = {}
+  for (const f of taskFiles.list.data.value ?? []) {
+    if (f.commentId && !bodies.get(f.commentId)?.includes(f.id)) (map[f.commentId] ??= []).push(f)
+  }
+  return map
+})
+const { items: composerUploads, upload: uploadForComment, dismiss: dismissUpload } = useFileUploader()
+const { items: inlineUploads, upload: uploadInline } = useFileUploader()
+const stagedFiles = computed(() => composerUploads.value.filter(i => i.status === 'done' && i.file).map(i => i.file!))
+const composerUploading = computed(() => [...composerUploads.value, ...inlineUploads.value].some(i => i.status === 'uploading'))
+const filePicker = ref<HTMLInputElement | null>(null)
+
+function attachToComposer(list: File[]) {
+  for (const f of list) {
+    void uploadForComment(f, { kind: 'attachment', workspaceId: unref(props.workspaceId), taskId: unref(props.taskId), forComment: true })
+  }
+}
+
+function onPickFiles(e: Event) {
+  const el = e.target as HTMLInputElement
+  attachToComposer([...(el.files ?? [])])
+  el.value = ''
+}
+
+async function removeComposerUpload(id: string) {
+  const item = composerUploads.value.find(i => i.id === id)
+  if (item?.file) {
+    await $fetch(`/api/workspaces/${unref(props.workspaceId)}/files/${item.file.id}`, { method: 'DELETE' }).catch(() => null)
+  }
+  dismissUpload(id)
+}
+
+function removeCommentFile(file: FileView) {
+  taskFiles.remove.mutate(file.id, {
+    onError: err => toast.add({ title: getErrorMessage(err, 'Не удалось удалить файл'), color: 'error', icon: 'i-hugeicons-alert-circle' }),
+  })
+}
 
 const threaded = computed(() => {
   const replies = new Map<string, TaskComment[]>()
@@ -129,59 +170,30 @@ function commentRole(c: TaskComment): string {
 }
 
 const composerBody = ref('')
-const composerMentions = ref<Record<string, string>>({})
-const composerRef = ref<HTMLTextAreaElement | null>(null)
+const composerRef = ref<{ focus: () => void, insertMention: () => void } | null>(null)
+const inlineFileIds = ref<string[]>([])
 
-function insertMentionInto(refEl: HTMLTextAreaElement | null, value: Ref<string>, name: string) {
-  const el = refEl
-  if (!el) {
-    value.value = `${value.value} @${name} `.replace(/^\s+/, '')
-    return
+async function uploadCommentImage(file: File) {
+  const f = await uploadInline(file, { kind: 'attachment', workspaceId: unref(props.workspaceId), taskId: unref(props.taskId), forComment: true })
+  if (!f) {
+    toast.add({ title: 'Не удалось загрузить картинку', color: 'error', icon: 'i-hugeicons-alert-circle' })
+    return null
   }
-  const start = el.selectionStart ?? value.value.length
-  const end = el.selectionEnd ?? value.value.length
-  const before = value.value.slice(0, start)
-  const after = value.value.slice(end)
-  const insert = `@${name} `
-  value.value = `${before}${insert}${after}`
-  nextTick(() => {
-    el.focus()
-    const caret = before.length + insert.length
-    el.setSelectionRange(caret, caret)
-  })
-}
-
-const mentionPickerOpen = ref(false)
-function openMentionPicker() {
-  mentionPickerOpen.value = true
-}
-
-function onComposerKeydown(e: KeyboardEvent) {
-  if (e.key !== '@') return
-  const el = e.target as HTMLTextAreaElement
-  const cursor = el.selectionStart ?? 0
-  const prev = composerBody.value[cursor - 1] ?? ''
-  if (cursor === 0 || /\s/.test(prev)) {
-    e.preventDefault()
-    mentionPickerOpen.value = true
-  }
-}
-
-function onMentionSelectForComposer(member: MemberView) {
-  const name = displayName(member)
-  composerMentions.value[name] = member.userId
-  insertMentionInto(composerRef.value, composerBody, name)
+  inlineFileIds.value = [...inlineFileIds.value, f.id]
+  return { url: f.url, name: f.name }
 }
 
 async function submitComment() {
-  const visible = composerBody.value.trim()
-  if (!visible) return
-  const body = serializeMentions(visible, composerMentions.value)
+  if (create.isPending.value || !composerHasContent.value) return
+  const body = composerBody.value.trim()
+  const fileIds = [...stagedFiles.value.map(f => f.id), ...inlineFileIds.value.filter(id => body.includes(id))]
   try {
-    await create.mutateAsync({ body, parentId: replyTo.value?.id })
+    await create.mutateAsync({ body, parentId: replyTo.value?.id, fileIds })
     composerBody.value = ''
-    composerMentions.value = {}
+    inlineFileIds.value = []
     replyTo.value = null
+    composerUploads.value = []
+    await taskFiles.invalidate()
   }
   catch (err) {
     toast.add({
@@ -194,51 +206,31 @@ async function submitComment() {
 
 const editingId = ref<string | null>(null)
 const editVisible = ref('')
-const editMentions = ref<Record<string, string>>({})
-const editRef = ref<HTMLTextAreaElement | null>(null)
-const editPickerOpen = ref(false)
+const editRef = ref<{ focus: () => void, insertMention: () => void } | null>(null)
+
+function setEditRef(el: unknown) {
+  editRef.value = el as typeof editRef.value
+}
 
 function startEdit(c: TaskComment) {
-  const { text, mentions } = deserializeMentions(c.body)
   editingId.value = c.id
-  editVisible.value = text
-  editMentions.value = mentions
+  editVisible.value = c.body
 }
 
 function cancelEdit() {
   editingId.value = null
   editVisible.value = ''
-  editMentions.value = {}
-}
-
-function onEditKeydown(e: KeyboardEvent) {
-  if (e.key !== '@') return
-  const el = e.target as HTMLTextAreaElement
-  const cursor = el.selectionStart ?? 0
-  const prev = editVisible.value[cursor - 1] ?? ''
-  if (cursor === 0 || /\s/.test(prev)) {
-    e.preventDefault()
-    editPickerOpen.value = true
-  }
-}
-
-function onMentionSelectForEdit(member: MemberView) {
-  const name = displayName(member)
-  editMentions.value[name] = member.userId
-  insertMentionInto(editRef.value, editVisible, name)
 }
 
 async function commitEdit() {
   const id = editingId.value
   if (!id) return
-  const visible = editVisible.value.trim()
-  if (!visible) return
-  const body = serializeMentions(visible, editMentions.value)
+  const body = editVisible.value.trim()
+  if (!body) return
   try {
     await update.mutateAsync({ commentId: id, body })
     editingId.value = null
     editVisible.value = ''
-    editMentions.value = {}
   }
   catch (err) {
     toast.add({
@@ -289,7 +281,7 @@ function onDelete(c: TaskComment) {
   })
 }
 
-const composerHasContent = computed(() => composerBody.value.trim().length > 0)
+const composerHasContent = computed(() => (composerBody.value.trim().length > 0 || stagedFiles.value.length > 0) && !composerUploading.value)
 
 function formatTime(iso: string): string {
   return new Intl.DateTimeFormat('ru', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
@@ -371,18 +363,18 @@ function timeLabel(iso: string): string {
             v-if="editingId === c.id"
             class="rounded-lg bg-default border border-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
           >
-            <textarea
-              ref="editRef"
+            <LazyCommonRichEditor
+              :ref="setEditRef"
               v-model="editVisible"
-              rows="3"
-              class="w-full bg-transparent border-0 outline-none px-3.5 py-2.5 text-[13.5px] text-default leading-relaxed resize-none"
-              @keydown="onEditKeydown"
+              variant="comment"
+              :members="members"
+              @submit="commitEdit"
             />
             <div class="flex items-center gap-1 px-2 py-1.5 border-t border-default">
               <button
                 type="button"
                 class="size-7 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors"
-                @click="editPickerOpen = true"
+                @click="editRef?.insertMention()"
               >
                 <UIcon name="i-hugeicons-at-sign" class="size-3.5" />
               </button>
@@ -405,18 +397,19 @@ function timeLabel(iso: string): string {
             v-else
             class="rounded-tl-[4px] rounded-[12px] bg-elevated px-3.5 py-2.5"
           >
-            <p class="m-0 text-[13.5px] text-default leading-[1.55] whitespace-pre-wrap break-words">
-              <template
-                v-for="(seg, idx) in parseMentionSegments(c.body)"
-                :key="idx"
-              >
-                <span
-                  v-if="seg.type === 'mention'"
-                  class="text-accent-600 font-medium bg-accent-50 rounded px-1"
-                >@{{ seg.name }}</span>
-                <template v-else>{{ seg.value }}</template>
-              </template>
-            </p>
+            <LazyCommonRichEditor
+              v-if="c.body"
+              :model-value="c.body"
+              variant="comment"
+              :editable="false"
+            />
+            <FilesAttachmentList
+              v-if="filesByComment[c.id]?.length"
+              :class="c.body ? 'mt-2' : ''"
+              compact
+              :files="filesByComment[c.id]!"
+              @remove="removeCommentFile"
+            />
           </div>
 
           <div v-if="editingId !== c.id" class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
@@ -453,8 +446,10 @@ function timeLabel(iso: string): string {
     </div>
 
     <div v-if="canWrite" class="sticky bottom-0 -mx-4 px-4 sm:-mx-7 sm:px-7 pt-3 pb-1 bg-gradient-to-t from-[var(--ui-bg)] via-[var(--ui-bg)]/95 to-transparent">
-      <div
+      <FilesAttachmentDropzone
+        paste-target="self"
         class="rounded-lg border border-default bg-default focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50 transition-colors"
+        @files="attachToComposer"
       >
         <div v-if="replyTo" class="flex items-center gap-2 border-b border-default px-3.5 py-1.5 text-[12px] text-muted">
           <UIcon name="i-hugeicons-message-square-reply" class="size-3.5 shrink-0" />
@@ -468,23 +463,34 @@ function timeLabel(iso: string): string {
             <UIcon name="i-hugeicons-x" class="size-3" />
           </button>
         </div>
-        <textarea
+        <LazyCommonRichEditor
           ref="composerRef"
           v-model="composerBody"
-          rows="2"
+          variant="comment"
+          :members="members"
+          :upload-image="uploadCommentImage"
           placeholder="Написать комментарий, @упомянуть коллегу…"
-          class="w-full bg-transparent border-0 outline-none px-3.5 py-2.5 text-[13.5px] text-default leading-relaxed resize-none"
-          @keydown="onComposerKeydown"
+          @submit="submitComment"
         />
+        <FilesUploadTiles v-if="composerUploads.length" class="px-3.5 pb-2" :items="composerUploads" @dismiss="removeComposerUpload" />
         <div class="flex items-center gap-1 px-2 py-1.5 border-t border-default">
           <button
             type="button"
             class="h-7 px-2 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors inline-flex items-center gap-1 text-[12px]"
-            @click="openMentionPicker"
+            @click="composerRef?.insertMention()"
           >
             <UIcon name="i-hugeicons-at-sign" class="size-3.5" />
             Упомянуть
           </button>
+          <button
+            type="button"
+            class="h-7 px-2 rounded-md grid place-items-center text-muted hover:bg-elevated hover:text-default cursor-pointer transition-colors inline-flex items-center gap-1 text-[12px]"
+            @click="filePicker?.click()"
+          >
+            <UIcon name="i-hugeicons-attachment-01" class="size-3.5" />
+            Файл
+          </button>
+          <input ref="filePicker" type="file" multiple class="hidden" @change="onPickFiles">
           <div class="flex-1" />
           <UButton
             icon="i-hugeicons-send"
@@ -496,18 +502,8 @@ function timeLabel(iso: string): string {
             Отправить
           </UButton>
         </div>
-      </div>
+      </FilesAttachmentDropzone>
     </div>
 
-    <TaskMentionPicker
-      v-model:open="mentionPickerOpen"
-      :members="members"
-      @select="onMentionSelectForComposer"
-    />
-    <TaskMentionPicker
-      v-model:open="editPickerOpen"
-      :members="members"
-      @select="onMentionSelectForEdit"
-    />
   </section>
 </template>

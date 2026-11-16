@@ -28,6 +28,8 @@ export function humanizeTaskEventType(type: TaskEventType): string {
     task_removed_from_sprint: 'Убрана из спринта',
     task_blocked: 'Заблокирована',
     task_unblocked: 'Разблокирована',
+    task_attachment_added: 'Прикреплён файл',
+    task_attachment_removed: 'Удалён файл',
   }
   return map[type]
 }

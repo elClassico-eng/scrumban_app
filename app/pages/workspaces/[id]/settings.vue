@@ -3,8 +3,7 @@ import { pageRoutes } from '~/routing'
 
 definePageMeta({
   middleware: (to) => {
-    useWorkspaceStore().setCurrent(to.params.id as string)
-    return navigateTo(pageRoutes.settings('team'), { replace: true })
+    return navigateTo(pageRoutes.workspaceSettings(to.params.id as string), { replace: true })
   },
 })
 </script>

@@ -2,9 +2,21 @@ import { z } from 'zod'
 import { ControlCenterPrefsSchema } from '#shared/validation/control-center'
 import { SidebarPrefsSchema } from '#shared/validation/sidebar'
 import { ShortcutPrefsSchema } from '#shared/validation/shortcuts'
+import { EmailPrefsSchema } from '#shared/validation/email-prefs'
+import { AppearancePrefsSchema } from '#shared/validation/appearance'
 import { updateUserProfile } from '../../services/users.service'
 import { requireAuth } from '../../utils/auth'
 import { toHttpError } from '../../utils/errors'
+
+function isTimeZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: tz })
+    return true
+  }
+  catch {
+    return false
+  }
+}
 
 const BodySchema = z
   .object({
@@ -19,6 +31,10 @@ const BodySchema = z
     controlCenterPrefs: ControlCenterPrefsSchema.optional(),
     sidebarPrefs: SidebarPrefsSchema.optional(),
     shortcutPrefs: ShortcutPrefsSchema.optional(),
+    emailPrefs: EmailPrefsSchema.optional(),
+    appearancePrefs: AppearancePrefsSchema.optional(),
+    startPage: z.string().regex(/^\/workspaces\/[0-9a-f-]{36}\/boards\/[0-9a-f-]{36}$/).nullable().optional(),
+    timeZone: z.string().max(64).refine(isTimeZone, 'Неизвестный часовой пояс').optional(),
   })
   .refine(d => Object.keys(d).length > 0, {
     message: 'Provide at least one field to update',
@@ -49,6 +65,10 @@ export default defineEventHandler(async (event) => {
         controlCenterPrefs: user.controlCenterPrefs ?? {},
         sidebarPrefs: user.sidebarPrefs ?? {},
         shortcutPrefs: user.shortcutPrefs ?? {},
+        emailPrefs: user.emailPrefs,
+        timeZone: user.timeZone,
+        appearancePrefs: user.appearancePrefs ?? {},
+        startPage: user.startPage,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

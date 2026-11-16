@@ -5,17 +5,11 @@ import { toHttpError } from '../utils/errors'
 
 const LeadSchema = z.object({
   email: z.email().max(255),
-  team: z.string().max(200).optional(),
-  intents: z.array(z.enum(['try', 'partner', 'follow'])).max(3).default([]),
+  teamSize: z.string().trim().max(50).optional(),
+  currentTool: z.string().trim().max(200).optional(),
   company: z.string().optional(),
   consent: z.literal(true),
 })
-
-const INTENT_LABEL: Record<string, string> = {
-  try: 'Хочу попробовать',
-  partner: 'Обсудить сотрудничество',
-  follow: 'Просто следить',
-}
 
 function esc(s: string): string {
   return s.replace(/[<>&]/g, c => (c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&amp;'))
@@ -26,19 +20,19 @@ export default defineEventHandler(async (event) => {
     const body = await readValidatedBody(event, LeadSchema.parse)
     if (body.company && body.company.trim()) return { ok: true }
 
-    const team = body.team?.trim() || null
-    await createLead({ email: body.email, team, intents: body.intents.join(',') })
+    const teamSize = body.teamSize || null
+    const currentTool = body.currentTool || null
+    await createLead({ email: body.email, teamSize, currentTool, consentAt: new Date() })
 
     const notifyTo = process.env.LEADS_NOTIFY_EMAIL
     if (notifyTo) {
-      const intentText = body.intents.map(i => INTENT_LABEL[i] ?? i).join(', ') || '—'
       try {
         await sendEmail({
           to: notifyTo,
-          subject: `Такт — новая заявка: ${body.email}`,
+          subject: `Такт – заявка на пилот: ${body.email}`,
           html: `<p><b>Email:</b> ${esc(body.email)}</p>`
-            + `<p><b>Команда / роль:</b> ${esc(team ?? '—')}</p>`
-            + `<p><b>Интерес:</b> ${esc(intentText)}</p>`,
+            + `<p><b>Размер команды:</b> ${esc(teamSize ?? '–')}</p>`
+            + `<p><b>Чем пользуются:</b> ${esc(currentTool ?? '–')}</p>`,
         })
       }
       catch (mailErr) {

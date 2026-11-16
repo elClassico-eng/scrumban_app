@@ -1,70 +1,50 @@
 <script setup lang="ts">
-const colorMode = useColorMode()
-const { resetHints } = useHints()
-const toast = useToast()
-
-const themes = [
+const THEMES = [
   { value: 'light', label: 'Светлая', icon: 'i-hugeicons-sun-03' },
   { value: 'dark', label: 'Тёмная', icon: 'i-hugeicons-moon' },
-  { value: 'system', label: 'Системная', icon: 'i-hugeicons-monitor' },
+  { value: 'system', label: 'Как в системе', icon: 'i-hugeicons-computer' },
 ]
 
-async function onResetHints() {
-  try {
-    await resetHints.mutateAsync()
-    toast.add({
-      title: 'Подсказки снова появятся',
-      color: 'success',
-      icon: 'i-hugeicons-check',
-      duration: 1500,
-    })
-  }
-  catch (err) {
-    toast.add({
-      title: getErrorMessage(err, 'Не удалось сбросить подсказки'),
-      color: 'error',
-      icon: 'i-hugeicons-alert-circle',
-    })
-  }
-}
+const colorMode = useColorMode()
+const { prefs, set } = useAppearance()
 </script>
 
 <template>
   <div class="space-y-4">
-    <section class="surface-soft rounded-2xl p-5">
-      <h2 class="mb-1 font-semibold text-default">Тема оформления</h2>
-      <p class="mb-4 text-xs text-muted">Выбор сохраняется в этом браузере</p>
-      <div class="flex flex-wrap gap-2">
+    <SettingsTile title="Тема">
+      <div class="grid gap-2 sm:grid-cols-3">
         <button
-          v-for="t in themes"
+          v-for="t in THEMES"
           :key="t.value"
           type="button"
-          class="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
-          :class="colorMode.preference === t.value
-            ? 'border-accent-400 bg-accent-50 text-default dark:bg-accent-950'
-            : 'border-default text-muted hover:border-accent-300 hover:text-default'"
+          class="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+          :class="colorMode.preference === t.value ? 'bg-accent-500/10 text-default ring-1 ring-accent-500' : 'bg-zinc-100 text-muted hover:text-default dark:bg-elevated/60'"
+          :aria-pressed="colorMode.preference === t.value"
           @click="colorMode.preference = t.value"
         >
           <UIcon :name="t.icon" class="size-4" />
           {{ t.label }}
         </button>
       </div>
-    </section>
+    </SettingsTile>
 
-    <section class="surface-soft rounded-2xl p-5">
-      <h2 class="mb-1 font-semibold text-default">Подсказки</h2>
-      <p class="mb-4 text-xs text-muted">
-        Вернуть обучающие блоки, которые вы закрыли: подсказки в симуляторе, на доске и в отчётах
-      </p>
-      <UButton
-        size="sm"
-        variant="outline"
-        color="neutral"
-        :loading="resetHints.isPending.value"
-        @click="onResetHints"
-      >
-        Показать подсказки заново
-      </UButton>
-    </section>
+    <SettingsTile title="Интерфейс">
+      <div class="divide-y divide-default">
+        <div class="flex items-center justify-between gap-4 pb-3">
+          <div>
+            <p class="text-sm text-default">Компактные карточки</p>
+            <p class="text-xs text-muted">Больше задач на экране доски</p>
+          </div>
+          <USwitch :model-value="prefs.compactCards" @update:model-value="set({ compactCards: $event })" />
+        </div>
+        <div class="flex items-center justify-between gap-4 pt-3">
+          <div>
+            <p class="text-sm text-default">Меньше анимаций</p>
+            <p class="text-xs text-muted">Без плавных переходов и заставки</p>
+          </div>
+          <USwitch :model-value="prefs.reduceMotion" @update:model-value="set({ reduceMotion: $event })" />
+        </div>
+      </div>
+    </SettingsTile>
   </div>
 </template>

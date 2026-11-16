@@ -70,10 +70,12 @@ const archivedCount = computed(() => archivedBoards.data.value?.boards.length ??
 const { isVisible, favorites, frame, toggleFavorite, sortBoards, setBoardOrder } = useSidebarPrefs()
 const { combos } = useShortcutPrefs()
 const help = useHelpPanel()
+const { prefs: appearance } = useAppearance()
 const boards = computed(() => sortBoards(boardsList.data.value?.boards ?? []))
 const favoriteBoards = computed(() => boards.value.filter(b => favorites.value.has(b.id)))
 
 const inboxBadge = useInboxBadge(computed(() => current.value?.id ?? null))
+const { list: myInvitations } = useMyInvitationsApi()
 const { list: myTasksList } = useWorkspaceTasksApi(computed(() => current.value?.id ?? ''), { mine: true })
 
 const personalLinks = computed(() => {
@@ -81,7 +83,7 @@ const personalLinks = computed(() => {
   if (!ws) return []
   const openTasks = (myTasksList.data.value?.tasks ?? []).filter(t => !t.closedAt).length
   const links = [
-    { id: 'inbox' as const, to: pageRoutes.workspaceInbox(ws.id), badge: inboxBadge.value, badgeTone: 'accent' as const, combo: combos.value.go_inbox },
+    { id: 'inbox' as const, to: pageRoutes.workspaceInbox(ws.id), badge: inboxBadge.value + (myInvitations.data.value?.invitations.length ?? 0), badgeTone: 'accent' as const, combo: combos.value.go_inbox },
     { id: 'my_tasks' as const, to: pageRoutes.workspaceMyTasks(ws.id), badge: openTasks, badgeTone: 'muted' as const, combo: combos.value.go_my_tasks },
   ]
   return links.filter(l => isVisible(l.id)).map(l => ({ ...l, ...SIDEBAR_ITEM_META[l.id] }))
@@ -144,7 +146,7 @@ const customizeOpen = ref(false)
       @invite="inviteOpen = true"
     />
 
-    <MotionConfig reduced-motion="user">
+    <MotionConfig :reduced-motion="appearance.reduceMotion ? 'always' : 'user'">
     <nav class="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-2 py-2">
       <template v-if="current">
         <div v-if="personalLinks.length" class="flex flex-col gap-0.5 pt-1">
@@ -243,6 +245,13 @@ const customizeOpen = ref(false)
           :label="SIDEBAR_ITEM_META.docs.label"
           :collapsed="collapsed"
           external
+        />
+        <SidebarNavItem
+          v-if="isVisible('settings')"
+          to="/settings"
+          :icon="SIDEBAR_ITEM_META.settings.icon"
+          :label="SIDEBAR_ITEM_META.settings.label"
+          :collapsed="collapsed"
         />
       </div>
     </nav>

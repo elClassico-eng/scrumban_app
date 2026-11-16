@@ -10,7 +10,7 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [name: string] }>()
 
 const schema = z.object({
-  name: z.string().trim().min(1, 'Введи название').max(255),
+  name: z.string().trim().min(1, 'Введите название').max(255),
 })
 type State = z.infer<typeof schema>
 const state = reactive<State>({ name: props.currentName })

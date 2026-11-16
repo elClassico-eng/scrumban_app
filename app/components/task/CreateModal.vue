@@ -13,7 +13,7 @@ const props = defineProps<{
 const open = defineModel<boolean>('open', { default: false })
 
 const schema = z.object({
-  title: z.string().trim().min(1, 'Введи название').max(255),
+  title: z.string().trim().min(1, 'Введите название').max(255),
   description: z.string().max(20_000).optional(),
   serviceClass: z.enum(['expedite', 'fixed_date', 'standard', 'intangible']),
   dueDate: z.string().optional(),
@@ -33,13 +33,14 @@ const wsId = computed(() => props.workspaceId)
 const bId = computed(() => props.boardId)
 const { create } = useTasksApi(wsId, bId)
 const { list: membersList } = useMembersApi(wsId)
+const members = computed(() => membersList.data.value?.members ?? [])
 
 const assigneeOptions = computed(() => [
   { label: 'Не назначен', value: null },
   ...(membersList.data.value?.members ?? []).map(m => ({
     label: displayName(m),
     value: m.userId,
-    avatar: m.avatarUrl ? { src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
+    avatar: m.avatarUrl ? { as: PLAIN_IMG, src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
   })),
 ])
 
@@ -81,7 +82,7 @@ async function onSubmit() {
     await create.mutateAsync({
       columnId: props.columnId,
       title: state.title,
-      description: state.description || undefined,
+      description: state.description?.trim() || undefined,
       serviceClass: state.serviceClass,
       dueDate: state.dueDate
         ? new Date(`${state.dueDate}T23:59:59Z`).toISOString()
@@ -152,12 +153,15 @@ watch(open, (v) => {
         </UFormField>
 
         <UFormField label="Описание" name="description" hint="необязательно">
-          <UTextarea
-            v-model="state.description"
-            :rows="4"
-            placeholder="Контекст, ссылки, критерии готовности…"
-            class="w-full"
-          />
+          <div class="rounded-md border border-default px-3 py-2 transition-colors focus-within:border-accent-500 focus-within:ring-2 focus-within:ring-accent-50">
+            <LazyCommonRichEditor
+              :model-value="state.description ?? ''"
+              variant="document"
+              :members="members"
+              placeholder="Контекст, ссылки, критерии готовности… «/» – блоки"
+              @update:model-value="state.description = $event"
+            />
+          </div>
         </UFormField>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">

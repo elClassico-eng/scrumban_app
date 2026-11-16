@@ -5,7 +5,7 @@ import { pageRoutes } from '~/routing'
 const open = defineModel<boolean>('open', { default: false })
 
 const schema = z.object({
-  name: z.string().trim().min(1, 'Введи название').max(255),
+  name: z.string().trim().min(1, 'Введите название').max(255),
   slug: z.string().trim().toLowerCase().min(3, 'Минимум 3 символа').max(64)
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Только латиница, цифры и дефисы'),
 })

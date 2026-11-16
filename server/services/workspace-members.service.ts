@@ -22,6 +22,7 @@ import {
   ValidationError,
 } from '../utils/errors'
 import { requireMinRole, roleAtLeast, strictlyOutranks } from '../utils/rbac'
+import { dropLinks } from './messenger-links.service'
 
 export interface MemberView {
   userId: string
@@ -31,6 +32,7 @@ export interface MemberView {
   middleName: string | null
   avatarUrl: string | null
   jobTitle: string | null
+  bio: string | null
   role: WorkspaceMemberRole
   createdAt: Date
 }
@@ -46,6 +48,7 @@ const memberSelect = {
   middleName: users.middleName,
   avatarUrl: users.avatarUrl,
   jobTitle: users.jobTitle,
+  bio: users.bio,
   role: workspaceMembers.role,
   createdAt: workspaceMembers.createdAt,
 } as const
@@ -202,6 +205,7 @@ export async function removeMember(input: {
         ),
       )
   })
+  await dropLinks(input.workspaceId, input.targetUserId)
 }
 
 async function findMemberRow(workspaceId: string, userId: string) {
@@ -240,7 +244,7 @@ async function assertNotLastOwner(
   // owners includes the candidate; if it's the only one they are the last.
   if (owners.length <= 1) {
     throw new ValidationError(
-      `Это последний владелец workspace — сначала назначь другого владельца (user ${candidateUserId})`,
+      `Это последний владелец workspace – сначала назначьте другого владельца (user ${candidateUserId})`,
     )
   }
 }

@@ -5,6 +5,7 @@ export interface Board {
   slug: string
   color: string
   icon: string | null
+  imageUrl: string | null
   key: string
   taskSeq: number
   sleDays: number | null

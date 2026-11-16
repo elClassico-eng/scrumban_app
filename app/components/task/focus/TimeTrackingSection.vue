@@ -115,7 +115,7 @@ async function commitEdit() {
   if (!id) return
   const secs = editHours.value * 3600 + editMinutes.value * 60
   if (secs <= 0) {
-    toast.add({ title: 'Укажи длительность > 0', color: 'error', icon: 'i-hugeicons-alert-circle' })
+    toast.add({ title: 'Укажите длительность больше нуля', color: 'error', icon: 'i-hugeicons-alert-circle' })
     return
   }
   try {
@@ -154,7 +154,7 @@ function cancelAdd() {
 async function commitAdd() {
   const secs = addHours.value * 3600 + addMinutes.value * 60
   if (secs <= 0) {
-    toast.add({ title: 'Укажи длительность > 0', color: 'error', icon: 'i-hugeicons-alert-circle' })
+    toast.add({ title: 'Укажите длительность больше нуля', color: 'error', icon: 'i-hugeicons-alert-circle' })
     return
   }
   try {

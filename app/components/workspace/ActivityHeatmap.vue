@@ -40,6 +40,7 @@ const actorItems = computed(() => [
     label: m.userId === props.userId ? `${displayName(m)} (вы)` : displayName(m),
     value: m.userId,
     avatar: {
+      as: PLAIN_IMG,
       src: m.avatarUrl ?? undefined,
       alt: displayName(m),
       text: initials(m),

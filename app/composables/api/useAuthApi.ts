@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from '@tanstack/vue-query'
 import { apiRoutes, pageRoutes } from '~/routing'
+import { LAST_PATH_KEY, START_PAGE_KEY } from '~/utils/home-redirect'
 import type {
   SessionResponse,
   LoginInput,
@@ -53,6 +54,8 @@ export function useAuthApi() {
   const logout = useMutation({
     mutationFn: () => $fetch(apiRoutes.authLogout, { method: 'POST' }),
     onSuccess: () => {
+      localStorage.removeItem(LAST_PATH_KEY)
+      localStorage.removeItem(START_PAGE_KEY)
       window.location.href = pageRoutes.login
     },
   })

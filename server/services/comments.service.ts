@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, isNull, or } from 'drizzle-orm'
 import {
+  files,
   taskComments,
   taskEvents,
   tasks,
@@ -10,12 +11,18 @@ import {
 import { withTenant, type DbTransaction } from '../utils/db'
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errors'
 import { publishBoardEvent } from '../utils/events'
+import { markdownToPlain } from '../utils/markdown-plain'
 import { extractMentionedUserIds } from '../utils/mentions'
 import { requireMinRole, roleAtLeast } from '../utils/rbac'
 import { emitNotification } from './notifications.service'
 import { addWatcher, notifyWatchers } from './task-watchers.service'
 
 const COMMENT_SNIPPET_LEN = 140
+
+function commentSnippet(body: string): string {
+  const plain = markdownToPlain(body)
+  return plain.length > COMMENT_SNIPPET_LEN ? `${plain.slice(0, COMMENT_SNIPPET_LEN)}…` : plain
+}
 
 const COMMENT_MAX_LENGTH = 5000
 const EDIT_WINDOW_MS = 5 * 60 * 1000
@@ -88,11 +95,12 @@ export async function createComment(input: {
   authorId: string
   body: string
   parentId?: string
+  fileIds?: string[]
   actorRole: WorkspaceMemberRole
 }): Promise<CommentView> {
   requireMinRole(input.actorRole, 'member')
   const trimmed = input.body.trim()
-  if (!trimmed) throw new ValidationError('Комментарий не может быть пустым')
+  if (!trimmed && !input.fileIds?.length) throw new ValidationError('Комментарий не может быть пустым')
   if (trimmed.length > COMMENT_MAX_LENGTH) {
     throw new ValidationError(`Комментарий длиннее ${COMMENT_MAX_LENGTH} символов`)
   }
@@ -122,6 +130,18 @@ export async function createComment(input: {
       })
       .returning()
 
+    if (input.fileIds?.length) {
+      await tx.update(files)
+        .set({ commentId: inserted!.id, status: 'ready' })
+        .where(and(
+          inArray(files.id, input.fileIds),
+          eq(files.taskId, input.taskId),
+          eq(files.uploadedBy, input.authorId),
+          eq(files.status, 'staged'),
+          eq(files.kind, 'attachment'),
+        ))
+    }
+
     await tx.insert(taskEvents).values({
       workspaceId: input.workspaceId,
       taskId: input.taskId,
@@ -137,9 +157,7 @@ export async function createComment(input: {
       .where(eq(taskComments.id, inserted!.id))
 
     const view = toView(row!, mentionedUserIds)
-    const snippet = trimmed.length > COMMENT_SNIPPET_LEN
-      ? `${trimmed.slice(0, COMMENT_SNIPPET_LEN)}…`
-      : trimmed
+    const snippet = commentSnippet(trimmed)
 
     for (const userId of mentionedUserIds) {
       await emitNotification({
@@ -511,9 +529,7 @@ export async function updateCommentAssignment(input: {
           commentId: existing.id,
           actorId: input.actorId,
           taskTitle: task.title,
-          snippet: existing.body.length > COMMENT_SNIPPET_LEN
-            ? `${existing.body.slice(0, COMMENT_SNIPPET_LEN)}…`
-            : existing.body,
+          snippet: commentSnippet(existing.body),
         },
       })
     }

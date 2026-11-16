@@ -3,7 +3,7 @@ import { requireAuth } from '../../../../utils/auth'
 import { ForbiddenError, NotFoundError, toHttpError } from '../../../../utils/errors'
 import { listWorkspacesForUser } from '../../../../services/workspaces.service'
 
-const ALLOWED_TASKS = ['automations:run', 'forecast:daily-snapshots'] as const
+const ALLOWED_TASKS = ['automations:run', 'forecast:daily-snapshots', 'notifications:daily-digest', 'integrations:feeds', 'files:cleanup', 'files:purge'] as const
 
 const ParamsSchema = z.object({ name: z.string().min(1) })
 
@@ -23,7 +23,8 @@ export default defineEventHandler(async (event) => {
       throw new NotFoundError('Неизвестный таск')
     }
 
-    const result = await runTask(name)
+    const body = await readBody<{ payload?: Record<string, unknown> } | undefined>(event).catch(() => undefined)
+    const result = await runTask(name, { payload: body?.payload ?? {} })
     return { result }
   }
   catch (err) {

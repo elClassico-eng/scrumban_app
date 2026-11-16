@@ -15,6 +15,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
@@ -34,6 +35,7 @@ export const boards = pgTable(
     slug: varchar('slug', { length: 64 }).notNull(),
     color: varchar('color', { length: 7 }).notNull().default('#e85002'),
     icon: varchar('icon', { length: 64 }),
+    imageUrl: text('image_url'),
     // Prefix of task keys (ПОТ-42). '' on insert = derived from the name by a trigger.
     key: varchar('key', { length: 10 }).notNull().default(''),
     // Last task number handed out on this board; bumped by the tasks insert trigger.

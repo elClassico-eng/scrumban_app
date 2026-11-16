@@ -3,6 +3,7 @@
 // userId, so callers cannot accidentally expose data to non-members.
 // (RLS will enforce the same rules at the DB layer in the next step;
 // service-level guards remain as defence in depth.)
+import type { BoardDefaults } from '#shared/types/board-defaults'
 import { and, count, eq, inArray, sql } from 'drizzle-orm'
 import {
   workspaceMembers,
@@ -77,6 +78,7 @@ const workspaceWithRoleSelect = {
   industry: workspaces.industry,
   logoUrl: workspaces.logoUrl,
   cardStyle: workspaces.cardStyle,
+  boardDefaults: workspaces.boardDefaults,
   createdAt: workspaces.createdAt,
   updatedAt: workspaces.updatedAt,
   role: workspaceMembers.role,
@@ -200,6 +202,21 @@ export async function updateWorkspace(input: {
   if (!updated) throw new NotFoundError('Workspace не найден')
 
   return { ...updated, role: input.actorRole }
+}
+
+export async function setBoardDefaults(input: {
+  workspaceId: string
+  actorRole: WorkspaceMemberRole
+  defaults: BoardDefaults
+}): Promise<BoardDefaults> {
+  requireMinRole(input.actorRole, 'scrum_master')
+  const [row] = await useDB()
+    .update(workspaces)
+    .set({ boardDefaults: input.defaults, updatedAt: new Date() })
+    .where(eq(workspaces.id, input.workspaceId))
+    .returning({ boardDefaults: workspaces.boardDefaults })
+  if (!row) throw new NotFoundError('Workspace не найден')
+  return row.boardDefaults
 }
 
 export async function deleteWorkspace(input: {

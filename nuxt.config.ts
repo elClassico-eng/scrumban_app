@@ -7,6 +7,10 @@ export default defineNuxtConfig({
     '/**': { ssr: false },
     '/': { prerender: true, ssr: true },
     '/docs/**': { prerender: true, ssr: true },
+    '/privacy': { prerender: true, ssr: true },
+    '/consent': { prerender: true, ssr: true },
+    '/terms': { prerender: true, ssr: true },
+    '/feedback': { prerender: true, ssr: true },
   },
 
   // SPA shells otherwise point at a prerendered _payload.json with `data: undefined`,
@@ -18,6 +22,10 @@ export default defineNuxtConfig({
       title: 'Такт',
       htmlAttrs: { lang: 'ru' },
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+      script: [{
+        tagPosition: 'head',
+        innerHTML: `try{var d=document.documentElement;if(localStorage.getItem('scrumban:last-path'))d.classList.add('takt-returning');var a=JSON.parse(localStorage.getItem('scrumban:appearance')||'null');if(Array.isArray(a))d.classList.add.apply(d.classList,a)}catch(e){}`,
+      }],
     },
   },
 
@@ -74,12 +82,14 @@ export default defineNuxtConfig({
     experimental: { tasks: true },
     prerender: {
       crawlLinks: true,
-      routes: ['/', '/docs'],
+      routes: ['/', '/docs', '/privacy', '/consent', '/terms', '/feedback'],
       // A not-yet-added docs screenshot (IPX 404) must not fail the whole build.
       ignore: ['/_ipx'],
     },
     scheduledTasks: {
-      '0 * * * *': ['automations:run'],
+      '* * * * *': ['integrations:feeds'],
+      '0 * * * *': ['automations:run', 'files:cleanup', 'notifications:daily-digest'],
+      '*/10 * * * *': ['files:purge'],
       '0 3 * * *': ['forecast:daily-snapshots'],
     },
     externals: {
@@ -93,6 +103,11 @@ export default defineNuxtConfig({
       password: '',
       maxAge: 60 * 60 * 24 * 30,
     },
+  },
+
+  vite: {
+    // Nuxt UI loads Tiptap unbundled; pre-bundling our direct imports would give dev two ProseMirror copies.
+    optimizeDeps: { exclude: ['@tiptap/core', '@tiptap/extension-list', '@tiptap/extension-mention', '@tiptap/extension-paragraph', 'marked'] },
   },
 
   typescript: {

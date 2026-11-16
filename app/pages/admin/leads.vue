@@ -9,6 +9,8 @@ type LeadRow = {
   email: string
   team: string | null
   intents: string
+  teamSize: string | null
+  currentTool: string | null
   source: string
   createdAt: string
 }
@@ -27,9 +29,10 @@ const { data, isLoading, error } = useQuery({
 
 const leads = computed(() => data.value?.leads ?? [])
 const forbidden = computed(() => getErrorStatus(error.value) === 403)
+const hasLegacy = computed(() => leads.value.some(l => l.team || l.intents))
 
 function intentLabels(raw: string): string {
-  if (!raw) return '—'
+  if (!raw) return '–'
   return raw.split(',').map(k => INTENT_LABEL[k] ?? k).join(', ')
 }
 
@@ -59,7 +62,10 @@ useHead({ title: 'Заявки – Такт' })
           </NuxtLink>
           <h1 class="text-2xl font-semibold tracking-tight">Заявки с лендинга</h1>
         </div>
-        <span v-if="!isLoading && !error" class="text-sm text-muted font-mono tabular-nums">{{ leads.length }}</span>
+        <div class="flex items-center gap-4 text-sm">
+          <NuxtLink :to="pageRoutes.adminFeedback" class="text-muted hover:text-default">Отзывы</NuxtLink>
+          <span v-if="!isLoading && !error" class="text-muted font-mono tabular-nums">{{ leads.length }}</span>
+        </div>
       </div>
 
       <div v-if="isLoading" class="h-40 grid place-items-center text-muted">
@@ -87,8 +93,12 @@ useHead({ title: 'Заявки – Такт' })
           <thead>
             <tr class="bg-elevated text-muted text-xs uppercase tracking-wide">
               <th class="text-left font-medium px-4 py-3">Email</th>
-              <th class="text-left font-medium px-4 py-3">Команда / роль</th>
-              <th class="text-left font-medium px-4 py-3">Интерес</th>
+              <th class="text-left font-medium px-4 py-3">Размер команды</th>
+              <th class="text-left font-medium px-4 py-3">Чем пользуются</th>
+              <template v-if="hasLegacy">
+                <th class="text-left font-medium px-4 py-3">Команда / роль</th>
+                <th class="text-left font-medium px-4 py-3">Интерес</th>
+              </template>
               <th class="text-left font-medium px-4 py-3 whitespace-nowrap">Дата</th>
             </tr>
           </thead>
@@ -97,8 +107,12 @@ useHead({ title: 'Заявки – Такт' })
               <td class="px-4 py-3">
                 <a :href="`mailto:${lead.email}`" class="text-accent-600 hover:underline">{{ lead.email }}</a>
               </td>
-              <td class="px-4 py-3 text-toned">{{ lead.team || '—' }}</td>
-              <td class="px-4 py-3 text-toned">{{ intentLabels(lead.intents) }}</td>
+              <td class="px-4 py-3 text-toned">{{ lead.teamSize || '–' }}</td>
+              <td class="px-4 py-3 text-toned">{{ lead.currentTool || '–' }}</td>
+              <template v-if="hasLegacy">
+                <td class="px-4 py-3 text-toned">{{ lead.team || '–' }}</td>
+                <td class="px-4 py-3 text-toned">{{ intentLabels(lead.intents) }}</td>
+              </template>
               <td class="px-4 py-3 text-muted whitespace-nowrap tabular-nums">{{ formatDate(lead.createdAt) }}</td>
             </tr>
           </tbody>

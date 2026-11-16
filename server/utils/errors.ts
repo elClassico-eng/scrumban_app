@@ -16,6 +16,9 @@ export class ValidationError extends Error {
 export class UnauthorizedError extends Error {
   readonly statusCode = 401
 }
+export class GoneError extends Error {
+  readonly statusCode = 410
+}
 
 type DomainError =
   | NotFoundError
@@ -23,6 +26,7 @@ type DomainError =
   | ConflictError
   | ValidationError
   | UnauthorizedError
+  | GoneError
 
 export function isDomainError(err: unknown): err is DomainError {
   return (
@@ -30,7 +34,8 @@ export function isDomainError(err: unknown): err is DomainError {
     err instanceof ForbiddenError ||
     err instanceof ConflictError ||
     err instanceof ValidationError ||
-    err instanceof UnauthorizedError
+    err instanceof UnauthorizedError ||
+    err instanceof GoneError
   )
 }
 

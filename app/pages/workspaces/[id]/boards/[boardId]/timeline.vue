@@ -123,7 +123,7 @@ function closeTaskModal() {
     >
       <UIcon name="i-hugeicons-calendar-clock" class="size-10 text-dimmed" />
       <p class="font-medium">Нет активного спринта</p>
-      <p class="text-sm text-muted">Запусти спринт, чтобы увидеть сетевой план.</p>
+      <p class="text-sm text-muted">Запустите спринт, чтобы увидеть сетевой план.</p>
     </div>
 
     <template v-else>

@@ -98,7 +98,7 @@ const assigneeMenu = computed(() =>
     const isAssigned = assigneeIdSet.value.has(m.userId)
     return {
       label: displayName(m),
-      avatar: m.avatarUrl ? { src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
+      avatar: m.avatarUrl ? { as: PLAIN_IMG, src: m.avatarUrl, alt: displayName(m) } : { text: initials(m) },
       disabled: isAssigned,
       onSelect: () => emit('assignee-add', m.userId),
     }

@@ -9,6 +9,7 @@ type MemberView = {
   middleName: string | null
   avatarUrl: string | null
   jobTitle: string | null
+  bio?: string | null
   role: Role
   createdAt: string | Date
 }
@@ -90,6 +91,8 @@ const roleOptions = computed(() => roleOptionsBelow(props.myRole))
         @click="emit('stopEdit')"
       />
     </div>
+
+    <p v-if="member.bio" class="mb-3 line-clamp-2 text-[12.5px] leading-relaxed text-toned">{{ member.bio }}</p>
 
     <div class="flex items-center gap-2.5 pt-3 border-t border-default mt-auto">
       <template v-if="isEditing && canEdit">

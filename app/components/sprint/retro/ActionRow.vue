@@ -25,7 +25,7 @@ const dueDay = computed(() => props.note.dueDate?.slice(0, 10) ?? '')
 const assigneeItems = computed<DropdownMenuItem[][]>(() => [
   props.members.map(m => ({
     label: displayName(m),
-    avatar: m.avatarUrl ? { src: m.avatarUrl } : { text: initials(m) },
+    avatar: m.avatarUrl ? { as: PLAIN_IMG, src: m.avatarUrl } : { text: initials(m) },
     onSelect: () => emit('patch', { assigneeId: m.userId }),
   })),
   ...(props.note.assigneeId ? [[{ label: 'Без ответственного', icon: 'i-hugeicons-cancel-01', onSelect: () => emit('patch', { assigneeId: null }) }]] : []),

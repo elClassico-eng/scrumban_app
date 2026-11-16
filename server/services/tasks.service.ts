@@ -16,6 +16,7 @@
 import { and, asc, eq, getTableColumns, gt, gte, inArray, lt, lte, sql } from 'drizzle-orm'
 import {
   boardColumns,
+  files,
   taskAssignees,
   taskChecklistItems,
   taskEvents,
@@ -57,6 +58,10 @@ const taskWithAssigneesSelect = {
     SELECT SUM(${timeEntries.durationSeconds})::int FROM ${timeEntries}
     WHERE ${timeEntries.taskId} = tasks.id AND ${timeEntries.durationSeconds} IS NOT NULL
   ), 0)`.as('time_spent_seconds'),
+  attachmentCount: sql<number>`COALESCE((
+    SELECT COUNT(*)::int FROM ${files}
+    WHERE ${files.taskId} = tasks.id AND ${files.status} = 'ready'
+  ), 0)`.as('attachment_count'),
 }
 
 export async function listTasksForBoard(input: {
@@ -558,7 +563,7 @@ export async function moveTask(input: {
         .where(eq(tasks.columnId, input.toColumnId))
       if ((agg!.n ?? 0) >= toCol.wipLimit) {
         throw new ValidationError(
-          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведи задачу в Expedite или попроси Scrum Master принудительно переместить её с указанием причины.`,
+          `Достигнут WIP-лимит колонки (${toCol.wipLimit}). Переведите задачу в Expedite или попросите Scrum Master принудительно переместить её с указанием причины.`,
         )
       }
     }

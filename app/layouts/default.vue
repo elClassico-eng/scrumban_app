@@ -2,6 +2,8 @@
 useNotificationsSse()
 const { hint } = useGlobalShortcuts()
 const { frame } = useSidebarPrefs()
+useAppearanceSync()
+useTimeZoneSync()
 </script>
 
 <template>
@@ -15,6 +17,7 @@ const { frame } = useSidebarPrefs()
       </main>
     </div>
     <IntroduceModal />
+    <ConsentGate />
     <HelpPanel />
     <ShortcutLeaderHint :hint="hint" />
   </div>

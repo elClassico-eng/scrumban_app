@@ -10,6 +10,7 @@ export type NotificationType =
   | 'comment_assigned'
   | 'watched_comment'
   | 'watched_status'
+  | 'integration_failed'
 
 export interface Notification {
   id: string
@@ -51,3 +52,15 @@ export interface MarkAllReadInput {
 export interface MarkAllReadResponse {
   count: number
 }
+export const INSTANT_NOTIFICATION_TYPES = ['mention', 'reply', 'comment_assigned', 'assigned'] as const
+
+export type InstantNotificationType = (typeof INSTANT_NOTIFICATION_TYPES)[number]
+
+export type EmailPrefs = {
+  digest: boolean
+  instant: InstantNotificationType[]
+  digestHour?: number
+}
+
+export const DEFAULT_DIGEST_HOUR = 9
+export const DEFAULT_EMAIL_PREFS: EmailPrefs = { digest: true, instant: [], digestHour: DEFAULT_DIGEST_HOUR }

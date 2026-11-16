@@ -64,6 +64,35 @@ async function addMember(
   })
 }
 
+describe('workspace board defaults', () => {
+  it('new boards take the defaults, old boards stay, members cannot set them', async () => {
+    const owner = await registerUser('defaults@example.com')
+    const wsId = await createWorkspace(owner, 'defaults')
+    const old = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body: { name: 'Old', slug: 'old' } })
+
+    const put = await fetchWithJar<{ boardDefaults: Record<string, unknown> }>(owner.jar, `/api/workspaces/${wsId}/board-defaults`, {
+      method: 'PUT',
+      body: { sleProbability: 0.95, replenishmentPeriodDays: 14, columnTint: true },
+    })
+    expect(put.status).toBe(200)
+    expect(put.body.boardDefaults).toEqual({ sleProbability: 0.95, replenishmentPeriodDays: 14, columnTint: true })
+
+    const fresh = await fetchWithJar<{ board: { sleProbability: string, replenishmentPeriodDays: number, columnTint: boolean } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body: { name: 'New', slug: 'new' } })
+    expect(Number(fresh.body.board.sleProbability)).toBe(0.95)
+    expect(fresh.body.board.replenishmentPeriodDays).toBe(14)
+    expect(fresh.body.board.columnTint).toBe(true)
+
+    const stale = await fetchWithJar<{ board: { replenishmentPeriodDays: number } }>(owner.jar, `/api/workspaces/${wsId}/boards/${old.body.board.id}`)
+    expect(stale.body.board.replenishmentPeriodDays).toBe(7)
+
+    expect((await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/board-defaults`, { method: 'PUT', body: { replenishmentPeriodDays: 61 } })).status).toBe(400)
+
+    const member = await registerUser('defaults-member@example.com')
+    await addMember(owner, wsId, member.email, 'member')
+    expect((await fetchWithJar(member.jar, `/api/workspaces/${wsId}/board-defaults`, { method: 'PUT', body: { columnTint: false } })).status).toBe(403)
+  })
+})
+
 describe('POST /api/workspaces/:id/boards', () => {
   it('owner can create a board', async () => {
     const owner = await registerUser('owner@example.com')

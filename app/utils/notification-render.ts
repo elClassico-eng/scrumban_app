@@ -1,6 +1,6 @@
 import type { Notification } from '#shared/types/notification'
 import { pageRoutes } from '~/routing'
-import { displayName } from '~/utils/display-name'
+import { displayName } from '#shared/utils/display-name'
 
 export type RouteTarget = string | { path: string; query: Record<string, string> }
 
@@ -189,6 +189,15 @@ export function renderNotification(n: Notification): RenderedNotification {
         target: taskTarget(n, p),
         icon: 'i-hugeicons-message-user-01',
         color: BLUE,
+      }
+    case 'integration_failed':
+      return {
+        title: 'Пачка перестала принимать сообщения',
+        why: String(p.message ?? 'Проверьте токен бота'),
+        cta: 'Открыть интеграции',
+        target: pageRoutes.workspaceSettings(n.workspaceId, 'integrations'),
+        icon: 'i-hugeicons-plug-socket',
+        color: ACCENT,
       }
   }
 }

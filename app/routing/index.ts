@@ -15,6 +15,9 @@ export const apiRoutes = {
   usersMe: '/api/users/me',
   usersMePassword: '/api/users/me/password',
   usersMeSessions: '/api/users/me/sessions',
+  usersMePachca: '/api/users/me/pachca',
+  usersMeDeletionPreview: '/api/users/me/deletion-preview',
+  boardDefaults: (wsId: string) => `/api/workspaces/${wsId}/board-defaults`,
   usersMeSession: (sid: string) => `/api/users/me/sessions/${sid}`,
   usersDismissHint: '/api/users/me/dismiss-hint',
   usersChangelogSeen: '/api/users/me/changelog-seen',
@@ -26,6 +29,13 @@ export const apiRoutes = {
 
   workspaces: '/api/workspaces',
   workspace: (id: string) => `/api/workspaces/${id}`,
+  pachca: (wsId: string) => `/api/workspaces/${wsId}/integrations/pachca`,
+  files: (wsId: string) => `/api/workspaces/${wsId}/files`,
+  avatar: '/api/users/me/avatar',
+  taskFiles: (wsId: string, boardId: string, taskId: string) => `${boardBase(wsId, boardId)}/tasks/${taskId}/files`,
+  storageUsage: (wsId: string) => `/api/workspaces/${wsId}/files/usage`,
+  pachcaLinkToken: (token: string) => `/api/integrations/pachca/link/${token}`,
+  boardFeeds: (wsId: string, boardId: string) => `${boardBase(wsId, boardId)}/feeds`,
   workspaceLabel: (wsId: string) => `/api/workspaces/${wsId}/label`,
 
   members: (wsId: string) => `/api/workspaces/${wsId}/members`,
@@ -196,20 +206,24 @@ export const apiRoutes = {
   notificationsStream: '/api/notifications/stream',
 
   adminLeads: '/api/admin/leads',
+  adminFeedback: '/api/admin/feedback',
+  meConsent: '/api/users/me/consent',
+  feedback: '/api/feedback',
 } as const
 
-export type SettingsTab =
-  | 'profile'
-  | 'security'
-  | 'notifications'
-  | 'appearance'
-  | 'danger'
-  | 'team'
+export const ME_SECTIONS = ['profile', 'security', 'notifications', 'appearance', 'work', 'account'] as const
+export type MeSection = (typeof ME_SECTIONS)[number]
+
+export const WORKSPACE_SECTIONS = ['general', 'storage', 'integrations', 'boards', 'delete'] as const
+export type WorkspaceSection = (typeof WORKSPACE_SECTIONS)[number]
 
 export const pageRoutes = {
   home: '/',
   landing: '/?about=1',
   privacy: '/privacy',
+  consent: '/consent',
+  terms: '/terms',
+  feedback: '/feedback',
   login: '/login',
   register: '/register',
   verifyEmail: (token: string) => `/verify-email/${token}`,
@@ -217,10 +231,12 @@ export const pageRoutes = {
   resetPassword: (token: string) => `/reset-password/${token}`,
   invite: (token: string) => `/invite/${token}`,
 
-  settings: (tab?: SettingsTab) => (tab && tab !== 'profile' ? `/settings?tab=${tab}` : '/settings'),
-  me: '/settings',
+  settings: (section: MeSection = 'profile') => `/settings/${section}`,
+  workspaceSettings: (id: string, section: WorkspaceSection = 'general') => `/settings/workspaces/${id}/${section}`,
+  pachcaSettings: (id: string) => `/settings/workspaces/${id}/integrations/pachca`,
 
   adminLeads: '/admin/leads',
+  adminFeedback: '/admin/feedback',
 
   workspaces: '/workspaces',
   workspace: (id: string) => `/workspaces/${id}`,

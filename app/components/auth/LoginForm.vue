@@ -14,7 +14,7 @@ const state = reactive<LoginState>({ email: '', password: '' })
 const { login } = useAuthApi()
 
 const errorMessage = computed(() =>
-  login.isError.value ? getErrorMessage(login.error.value, 'Не удалось войти, попробуй позже') : null,
+  login.isError.value ? getErrorMessage(login.error.value, 'Не удалось войти. Попробуйте позже') : null,
 )
 
 function onSubmit() {

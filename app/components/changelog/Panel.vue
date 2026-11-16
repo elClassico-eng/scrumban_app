@@ -7,12 +7,13 @@ const workspaceStore = useWorkspaceStore()
 const workspaceId = computed(() => workspaceStore.currentId ?? null)
 const isMobile = useMediaQuery('(max-width: 767px)')
 
-const { entries, markSeen } = useChangelog()
+const { entries, loading, markSeen, ensureLoaded } = useChangelog()
 const activePath = ref<string | null>(null)
 const active = computed(() => entries.value.find(e => e.path === activePath.value) ?? entries.value[0] ?? null)
 
 watch(open, (isOpen) => {
   if (!isOpen) return
+  ensureLoaded()
   activePath.value = entries.value[0]?.path ?? null
   markSeen()
 })
@@ -32,10 +33,18 @@ function shortDate(iso: string) {
     v-model:open="open"
     :fullscreen="isMobile"
     title="Что нового"
-    :ui="{ content: 'sm:max-w-5xl', body: 'p-0 sm:p-0' }"
+    :ui="{ content: 'sm:max-w-[min(1320px,94vw)]', body: 'p-0 sm:p-0' }"
   >
+    <template #title>
+      <span class="flex items-center gap-2">
+        <span class="grid size-7 place-items-center rounded-lg bg-accent-500/15 text-accent-600 dark:text-accent-400">
+          <UIcon name="i-hugeicons-sparkles" class="size-4" />
+        </span>
+        Что нового
+      </span>
+    </template>
     <template #body>
-      <div v-if="entries.length" class="grid md:h-[min(760px,82vh)] md:grid-cols-[220px_1fr]">
+      <div v-if="entries.length" class="grid md:h-[min(860px,86vh)] md:grid-cols-[240px_1fr]">
         <nav class="flex gap-1 overflow-x-auto border-b border-default p-2 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r" aria-label="Релизы и обновления">
           <button
             v-for="e in entries"
@@ -61,8 +70,11 @@ function shortDate(iso: string) {
         </div>
       </div>
       <div v-else class="space-y-2 px-4 py-16 text-center">
-        <UIcon name="i-hugeicons-sparkles" class="mx-auto size-10 text-muted" />
-        <p class="text-sm text-muted">Пока нет записей</p>
+        <UIcon
+          :name="loading ? 'i-hugeicons-loading-03' : 'i-hugeicons-sparkles'"
+          :class="['mx-auto size-10 text-muted', loading && 'animate-spin']"
+        />
+        <p class="text-sm text-muted">{{ loading ? 'Загружаем обновления…' : 'Пока нет записей' }}</p>
       </div>
     </template>
   </UModal>

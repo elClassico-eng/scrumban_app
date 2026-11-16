@@ -90,7 +90,7 @@ const isDone = computed(() => props.task.closedAt != null)
 
 <template>
   <div
-    class="group relative bg-default rounded-lg shadow-sm pl-4 pr-3 py-2.5 cursor-pointer hover:shadow-md transition-all overflow-hidden"
+    class="task-card group relative bg-default rounded-lg shadow-sm pl-4 pr-3 py-2.5 cursor-pointer hover:shadow-md transition-all overflow-hidden"
     :class="[
       isDone ? 'bg-muted' : '',
       task.blockedReason || blockerCount > 0 ? 'ring-1 ring-red-200 dark:ring-red-900' : '',
@@ -142,6 +142,14 @@ const isDone = computed(() => props.task.closedAt != null)
       >
         <span class="size-1.5 rounded-full bg-zinc-400" />
         {{ task.storyPoints }}
+      </span>
+      <span
+        v-if="task.attachmentCount > 0"
+        class="inline-flex items-center gap-0.5 text-[11px] text-muted tabular-nums shrink-0"
+        :title="`Файлов: ${task.attachmentCount}`"
+      >
+        <UIcon name="i-hugeicons-attachment-01" class="size-3" />
+        {{ task.attachmentCount }}
       </span>
     </div>
 

@@ -1,34 +1,52 @@
 <script setup lang="ts">
-const { go: goToApp, heroLabel } = useAccessCta()
+defineProps<{ release: { version: string, title: string } | null }>()
+
+const { start, startLabel } = useAccessCta()
 </script>
 
 <template>
-  <header id="top" class="hero">
-    <div class="cone" aria-hidden="true">
-      <i class="cone__l cone__l--1" /><i class="cone__l cone__l--2" /><i class="cone__l cone__l--3" />
-      <svg class="cone__arcs" viewBox="0 0 1200 500" fill="none" preserveAspectRatio="xMidYMax meet">
-        <path d="M100 500 Q 600 90 1100 500" stroke="currentColor" stroke-width="1" opacity="0.28" />
-        <path d="M210 500 Q 600 190 990 500" stroke="currentColor" stroke-width="1" opacity="0.34" />
-        <path d="M330 500 Q 600 290 870 500" stroke="currentColor" stroke-width="1" opacity="0.4" />
-        <text x="600" y="120" text-anchor="middle" class="cone__t">P95</text>
-        <text x="600" y="218" text-anchor="middle" class="cone__t">P85</text>
-        <text x="600" y="316" text-anchor="middle" class="cone__t">P50</text>
-      </svg>
-    </div>
-
-    <div class="wrap hero__content">
-      <div class="chip reveal"><span class="pulse" />Открытая бета v0.1</div>
-      <h1 class="hero__h1 reveal">
-        Сроки спринта – <span class="hl">с вероятностью</span>,<br>а не на глаз.
-      </h1>
-      <p class="hero__sub reveal">
-        Scrumban-доска, где сроки спринта считает математика:
-        Monte Carlo и CPM/PERT, а не интуиция.
+  <section class="hero">
+    <div class="wrap">
+      <a v-if="release" class="hero__chip reveal" href="#updates">✦ {{ release.title }} →</a>
+      <h1 class="hero__h1 reveal">Сроки спринта – <em>с&nbsp;вероятностью</em>,<br class="hero__br"> а&nbsp;не&nbsp;на&nbsp;глаз</h1>
+      <p class="hero__sub muted reveal">
+        Scrumban-доска, которая по истории вашей команды считает, когда работа будет готова. Бесплатно, пока идёт бета.
       </p>
-      <div class="hero__cta reveal">
-        <button class="btn btn--dark" @click="goToApp">{{ heroLabel }}</button>
-        <NuxtLink class="btn btn--light" to="/docs" external>Документация</NuxtLink>
+      <div class="hero__cta reveal" data-cta-start>
+        <button type="button" class="btn btn--dark btn--lg" @click="start">{{ startLabel }}</button>
+        <a class="btn btn--ghost btn--lg" href="#pilot">Стать пилотной командой →</a>
       </div>
+      <LandingDemoSlider />
     </div>
-  </header>
+  </section>
 </template>
+
+<style scoped>
+.hero { padding: 72px 0 0; text-align: center; }
+.hero__chip {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange);
+  font-size: 13px;
+}
+.hero__h1 {
+  margin: 26px auto 0;
+  font-size: clamp(40px, 5.6vw, 76px);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+}
+.hero__h1 em { font-style: normal; color: var(--orange); }
+.hero__sub { margin: 22px auto 0; max-width: 46ch; font-size: 19px; }
+.hero__cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 34px; }
+
+@media (max-width: 900px) {
+  .hero__br { display: none; }
+}
+@media (max-width: 640px) {
+  .hero { padding-top: 48px; }
+  .hero__sub { font-size: 17px; }
+}
+</style>

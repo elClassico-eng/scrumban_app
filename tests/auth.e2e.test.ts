@@ -85,6 +85,49 @@ describe('POST /api/auth/register', () => {
     })
     expect(res.status).toBe(409)
   })
+
+  it('registers without a workspace', async () => {
+    const jar = new CookieJar()
+    const res = await fetchWithJar<{ workspace: unknown }>(jar, '/api/auth/register', {
+      method: 'POST',
+      body: { email: 'solo@example.com', password: credentials.password },
+      headers: uniqueIp(),
+    })
+    expect(res.status).toBe(200)
+    expect(res.body.workspace).toBeNull()
+
+    const list = await fetchWithJar<{ workspaces: unknown[] }>(jar, '/api/workspaces')
+    expect(list.status).toBe(200)
+    expect(list.body.workspaces).toHaveLength(0)
+  })
+
+  it('invited user registers without a workspace and accepts the invite', async () => {
+    const owner = new CookieJar()
+    const ownerRes = await fetchWithJar<{ workspace: { id: string } }>(owner, '/api/auth/register', {
+      method: 'POST',
+      body: credentials,
+      headers: uniqueIp(),
+    })
+    const invite = await fetchWithJar<{ token: string }>(owner, `/api/workspaces/${ownerRes.body.workspace.id}/invitations`, {
+      method: 'POST',
+      body: { role: 'member' },
+    })
+    expect(invite.status).toBe(200)
+
+    const invitee = new CookieJar()
+    const reg = await fetchWithJar(invitee, '/api/auth/register', {
+      method: 'POST',
+      body: { email: 'invitee@example.com', password: credentials.password },
+      headers: uniqueIp(),
+    })
+    expect(reg.status).toBe(200)
+
+    const accept = await fetchWithJar(invitee, `/api/invitations/${invite.body.token}/accept`, { method: 'POST' })
+    expect(accept.status).toBe(200)
+
+    const list = await fetchWithJar<{ workspaces: Array<{ id: string }> }>(invitee, '/api/workspaces')
+    expect(list.body.workspaces.map(w => w.id)).toEqual([ownerRes.body.workspace.id])
+  })
 })
 
 describe('POST /api/auth/login', () => {
@@ -156,5 +199,50 @@ describe('POST /api/auth/logout', () => {
 
     const session = await fetchWithJar(jar, '/api/auth/session')
     expect(session.status).toBe(401)
+  })
+})
+
+describe('personal data consent', () => {
+  type Session = { user: { personalDataConsentAt: string | null } }
+
+  async function register(body: Record<string, unknown>) {
+    const jar = new CookieJar()
+    const res = await fetchWithJar(jar, '/api/auth/register', {
+      method: 'POST',
+      body: { email: 'consent@example.com', password: credentials.password, ...body },
+      headers: uniqueIp(),
+    })
+    return { jar, status: res.status }
+  }
+
+  it('register with consent stores the consent time', async () => {
+    const { jar, status } = await register({ consent: true })
+    expect(status).toBe(200)
+    const session = await fetchWithJar<Session>(jar, '/api/auth/session')
+    expect(session.body.user.personalDataConsentAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('register without consent leaves it null', async () => {
+    const { jar } = await register({})
+    const session = await fetchWithJar<Session>(jar, '/api/auth/session')
+    expect(session.body.user.personalDataConsentAt).toBeNull()
+  })
+
+  it('rejects consent: false', async () => {
+    const { status } = await register({ consent: false })
+    expect(status).toBe(400)
+  })
+
+  it('POST /api/users/me/consent sets the time', async () => {
+    const { jar } = await register({})
+    const res = await fetchWithJar(jar, '/api/users/me/consent', { method: 'POST' })
+    expect(res.status).toBe(204)
+    const session = await fetchWithJar<Session>(jar, '/api/auth/session')
+    expect(session.body.user.personalDataConsentAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  it('POST /api/users/me/consent requires a session', async () => {
+    const res = await fetchWithJar(new CookieJar(), '/api/users/me/consent', { method: 'POST' })
+    expect(res.status).toBe(401)
   })
 })

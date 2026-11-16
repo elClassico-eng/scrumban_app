@@ -41,7 +41,7 @@ export function useTaskMove(workspaceId: MaybeRef<string>, boardId: MaybeRef<str
       const isWipBlock = getErrorStatus(err) === 422
       toast.add({
         title: isWipBlock ? 'WIP-лимит достигнут' : 'Не удалось переместить задачу',
-        description: getErrorMessage(err, 'Попробуй ещё раз'),
+        description: getErrorMessage(err, 'Попробуйте ещё раз'),
         color: isWipBlock ? 'warning' : 'error',
         icon: 'i-hugeicons-alert-circle',
       })

@@ -11,6 +11,7 @@ export const SIDEBAR_ITEM_META: Record<SidebarItemId, { label: string, icon: str
   whats_new: { label: 'Что нового', icon: 'i-hugeicons-sparkles' },
   help: { label: 'Справка', icon: 'i-hugeicons-help-circle' },
   docs: { label: 'Документация', icon: 'i-hugeicons-book-open-01' },
+  settings: { label: 'Настройки', icon: 'i-hugeicons-settings-01' },
 }
 
 export const SIDEBAR_SPRING = { type: 'spring', stiffness: 520, damping: 38, mass: 0.8 } as const

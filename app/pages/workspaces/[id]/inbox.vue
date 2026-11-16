@@ -175,6 +175,8 @@ const EMPTY: Record<InboxView, { title: string, hint: string }> = {
       <p class="mt-1 text-sm text-muted">Что касается вас в этом воркспейсе: разберите и двигайтесь дальше</p>
     </div>
 
+    <WorkspaceMyInvitationsSection />
+
     <UiUnderlineTabs v-model="view" :items="tabs" label="Разделы входящих" indicator-id="inbox-tab" />
 
     <div class="flex flex-wrap items-center gap-2">

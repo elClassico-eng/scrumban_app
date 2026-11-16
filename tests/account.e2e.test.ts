@@ -130,6 +130,30 @@ describe('удаление аккаунта', () => {
   })
 })
 
+describe('превью удаления', () => {
+  it('считает членства, задачи, комментарии и блокеры-владения', async () => {
+    const owner = await registerUser('preview@example.com')
+    const heir = await registerUser('preview-heir@example.com')
+    const ws = await fetchWithJar<{ workspaces: { id: string }[] }>(owner.jar, '/api/workspaces')
+    const wsId = ws.body.workspaces[0]!.id
+    const board = await fetchWithJar<{ board: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards`, { method: 'POST', body: { name: 'Main', slug: 'main' } })
+    const boardId = board.body.board.id
+    const cols = await fetchWithJar<{ columns: { id: string }[] }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/columns`)
+    const task = await fetchWithJar<{ task: { id: string } }>(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks`, { method: 'POST', body: { columnId: cols.body.columns[0]!.id, title: 'Моя задача' } })
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/boards/${boardId}/tasks/${task.body.task.id}/comments`, { method: 'POST', body: { body: 'Комментарий' } })
+
+    const before = await fetchWithJar<{ memberships: number, tasksCreated: number, comments: number, soleOwned: { id: string, name: string }[] }>(owner.jar, '/api/users/me/deletion-preview')
+    expect(before.status).toBe(200)
+    expect(before.body).toMatchObject({ memberships: 1, tasksCreated: 1, comments: 1 })
+    expect(before.body.soleOwned.map(w => w.id)).toEqual([wsId])
+
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/members`, { method: 'POST', body: { email: 'preview-heir@example.com', role: 'admin' } })
+    await fetchWithJar(owner.jar, `/api/workspaces/${wsId}/members/${heir.id}`, { method: 'PATCH', body: { role: 'owner' } })
+    const after = await fetchWithJar<{ soleOwned: unknown[] }>(owner.jar, '/api/users/me/deletion-preview')
+    expect(after.body.soleOwned).toEqual([])
+  })
+})
+
 describe('control center prefs', () => {
   it('stores control center prefs and rejects unknown tiles', async () => {
     const u = await registerUser('cc@example.com')

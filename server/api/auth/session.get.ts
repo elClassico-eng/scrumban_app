@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
         jobTitle: user.jobTitle,
         bio: user.bio,
         emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
+        personalDataConsentAt: user.personalDataConsentAt ? user.personalDataConsentAt.toISOString() : null,
       },
     }
   } catch (err) {

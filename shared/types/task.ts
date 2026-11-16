@@ -23,6 +23,7 @@ export interface Task {
   storyPoints: number | null
   checklistTotal: number
   checklistDone: number
+  attachmentCount: number
   timeSpentSeconds: number
   createdAt: string
   updatedAt: string

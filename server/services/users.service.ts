@@ -1,12 +1,16 @@
 import type { ControlCenterPrefs } from '#shared/types/control-center'
 import type { SidebarPrefs } from '#shared/types/sidebar'
 import type { ShortcutPrefs } from '#shared/types/shortcuts'
+import type { EmailPrefs } from '#shared/types/notification'
+import type { AppearancePrefs } from '#shared/types/appearance'
 // UsersService: thin business-logic layer over the users table.
 // Normalises email to lowercase for predictable lookups, and translates
 // PostgreSQL unique-violation errors into a domain ConflictError so the
 // HTTP layer can map it to 409 without sniffing pg error codes itself.
-import { eq, sql } from 'drizzle-orm'
-import { users, type User } from '../db/schema'
+import { and, count, eq, sql } from 'drizzle-orm'
+import { taskComments, taskEvents, users, type User } from '../db/schema'
+import { withTenant } from '../utils/db'
+import { findSoleOwnedWorkspaces, listWorkspacesForUser } from './workspaces.service'
 import { ConflictError, NotFoundError } from '../utils/errors'
 
 const PG_UNIQUE_VIOLATION = '23505'
@@ -31,6 +35,7 @@ export interface CreateUserInput {
   firstName?: string | null
   lastName?: string | null
   middleName?: string | null
+  personalDataConsentAt?: Date | null
 }
 
 type UsersTx = Parameters<Parameters<ReturnType<typeof useDB>['transaction']>[0]>[0]
@@ -45,6 +50,7 @@ export async function createUserInTx(tx: UsersTx, input: CreateUserInput): Promi
         firstName: input.firstName ?? null,
         lastName: input.lastName ?? null,
         middleName: input.middleName ?? null,
+        personalDataConsentAt: input.personalDataConsentAt ?? null,
       })
       .returning()
     return row!
@@ -74,6 +80,10 @@ export async function updateUserProfile(input: {
     controlCenterPrefs?: ControlCenterPrefs
     sidebarPrefs?: SidebarPrefs
     shortcutPrefs?: ShortcutPrefs
+    emailPrefs?: EmailPrefs
+    timeZone?: string
+    appearancePrefs?: AppearancePrefs
+    startPage?: string | null
   }
 }): Promise<User> {
   const set: Partial<typeof users.$inferInsert> & { updatedAt: Date } = {
@@ -90,6 +100,12 @@ export async function updateUserProfile(input: {
   if (input.patch.controlCenterPrefs) set.controlCenterPrefs = input.patch.controlCenterPrefs
   if (input.patch.sidebarPrefs) set.sidebarPrefs = input.patch.sidebarPrefs
   if (input.patch.shortcutPrefs) set.shortcutPrefs = input.patch.shortcutPrefs
+  if (input.patch.emailPrefs) set.emailPrefs = input.patch.emailPrefs
+  if (input.patch.timeZone) set.timeZone = input.patch.timeZone
+  if ('startPage' in input.patch) set.startPage = input.patch.startPage ?? null
+  if (input.patch.appearancePrefs) {
+    set.appearancePrefs = sql`${users.appearancePrefs} || ${JSON.stringify(input.patch.appearancePrefs)}::jsonb` as unknown as AppearancePrefs
+  }
 
   const [row] = await useDB()
     .update(users)
@@ -143,6 +159,38 @@ export async function markChangelogSeen(userId: string): Promise<string> {
   return row.changelogSeenAt.toISOString()
 }
 
+export async function recordPersonalDataConsent(userId: string): Promise<void> {
+  const now = new Date()
+  const [row] = await useDB()
+    .update(users)
+    .set({ personalDataConsentAt: now, updatedAt: now })
+    .where(eq(users.id, userId))
+    .returning({ id: users.id })
+  if (!row) throw new NotFoundError('Пользователь не найден')
+}
+
 export async function deleteUser(userId: string): Promise<void> {
   await useDB().delete(users).where(eq(users.id, userId))
+}
+
+export type DeletionPreview = {
+  memberships: number
+  tasksCreated: number
+  comments: number
+  soleOwned: { id: string, name: string }[]
+}
+
+export async function deletionPreview(userId: string): Promise<DeletionPreview> {
+  const memberships = await listWorkspacesForUser(userId)
+  let tasksCreated = 0
+  let commentCount = 0
+  for (const ws of memberships) {
+    const [t, c] = await withTenant(ws.id, tx => Promise.all([
+      tx.select({ n: count() }).from(taskEvents).where(and(eq(taskEvents.eventType, 'task_created'), eq(taskEvents.actorId, userId))),
+      tx.select({ n: count() }).from(taskComments).where(eq(taskComments.authorId, userId)),
+    ]))
+    tasksCreated += t[0]?.n ?? 0
+    commentCount += c[0]?.n ?? 0
+  }
+  return { memberships: memberships.length, tasksCreated, comments: commentCount, soleOwned: await findSoleOwnedWorkspaces(userId) }
 }

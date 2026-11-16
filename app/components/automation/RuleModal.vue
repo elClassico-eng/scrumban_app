@@ -77,7 +77,7 @@ function onSubmit() {
   }
   const parsed = RuleInputSchema.safeParse(candidate)
   if (!parsed.success) {
-    errorMessage.value = parsed.error.issues[0]?.message ?? 'Проверь параметры'
+    errorMessage.value = parsed.error.issues[0]?.message ?? 'Проверьте параметры'
     return
   }
   errorMessage.value = null

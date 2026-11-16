@@ -1,4 +1,5 @@
 import type { Role } from './domain'
+import type { BoardDefaults } from './board-defaults'
 
 export type WorkspaceCardStyle = 'cover' | 'compact'
 
@@ -11,6 +12,7 @@ export interface Workspace {
   industry: string | null
   logoUrl: string | null
   cardStyle: WorkspaceCardStyle
+  boardDefaults: BoardDefaults
   createdAt: string
   updatedAt: string
 }
@@ -59,6 +61,7 @@ export interface MemberView {
   middleName: string | null
   avatarUrl: string | null
   jobTitle: string | null
+  bio: string | null
   role: Role
   createdAt: string
 }

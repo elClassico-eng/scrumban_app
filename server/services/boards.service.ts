@@ -13,6 +13,7 @@ import { boardColorForIndex } from '#shared/constants/board-colors'
 import {
   boardColumns,
   boards,
+  workspaces,
   type Board,
   type WorkspaceMemberRole,
 } from '../db/schema'
@@ -75,6 +76,8 @@ export async function createBoard(input: {
     return await withTenant(input.workspaceId, async (tx) => {
       const existing = await tx.select({ id: boards.id }).from(boards)
       const color = input.color ?? boardColorForIndex(existing.length)
+      const [ws] = await tx.select({ defaults: workspaces.boardDefaults }).from(workspaces).where(eq(workspaces.id, input.workspaceId))
+      const defaults = ws?.defaults ?? {}
       const [row] = await tx
         .insert(boards)
         .values({
@@ -84,6 +87,9 @@ export async function createBoard(input: {
           color,
           icon: input.icon ?? null,
           ...(input.key ? { key: input.key } : {}),
+          ...(defaults.sleProbability !== undefined ? { sleProbability: String(defaults.sleProbability) } : {}),
+          ...(defaults.replenishmentPeriodDays !== undefined ? { replenishmentPeriodDays: defaults.replenishmentPeriodDays } : {}),
+          ...(defaults.columnTint !== undefined ? { columnTint: defaults.columnTint } : {}),
         })
         .returning()
 

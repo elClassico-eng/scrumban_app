@@ -386,6 +386,90 @@
       "when": 1792786263214,
       "tag": "0054_retro_meeting",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1792963245645,
+      "tag": "0055_email_prefs",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1793047276184,
+      "tag": "0056_pachca_integration",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1793122775983,
+      "tag": "0057_files",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1793123176702,
+      "tag": "0058_files_rls_split",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793550401712,
+      "tag": "0059_rich_text_markdown",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1794196951230,
+      "tag": "0060_user_time_zone",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1794197412879,
+      "tag": "0061_user_appearance_prefs",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1794198288230,
+      "tag": "0062_user_start_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1794200463595,
+      "tag": "0063_workspace_board_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1794213942289,
+      "tag": "0064_personal_data_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1794214862127,
+      "tag": "0065_pilot_lead_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1794215032416,
+      "tag": "0066_feedback",
+      "breakpoints": true
     }
   ]
 }
